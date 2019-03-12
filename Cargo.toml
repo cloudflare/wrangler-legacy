@@ -1,0 +1,15 @@
+[package]
+name = "wrangler"
+version = "0.1.0"
+authors = ["Ashley Williams <ashley666ashley@gmail.com>"]
+edition = "2018"
+license = "BSD3.0"
+description = "wrangle your workers, CLI for cloudflare API"
+
+[dependencies]
+clap = "2.32.0"
+config = "0.9.2"
+dirs = "1.0.5"
+failure = "0.1.5"
+reqwest = "0.9.11"
+serde = { version = "1.0", features = ["derive"] }
