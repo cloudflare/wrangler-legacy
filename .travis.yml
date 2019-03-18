@@ -11,15 +11,15 @@ DEPLOY_TO_GITHUB: &DEPLOY_TO_GITHUB
   before_deploy:
     - git config --local user.name "Ashley Williams"
     - git config --local user.email "ashley666ashley@gmail.com"
-    - name="wasm-pack-$TRAVIS_TAG-$TARGET"
+    - name="worker-cli-$TRAVIS_TAG-$TARGET"
     - mkdir $name
-    - cp target/$TARGET/release/wasm-pack $name/
+    - cp target/$TARGET/release/worker-cli $name/
     - cp README.md LICENSE-MIT LICENSE-APACHE $name/
     - tar czvf $name.tar.gz $name
   deploy:
     provider: releases
     api_key: GH_TOKEN
-    file: wasm-pack-$TRAVIS_TAG-$TARGET.tar.gz
+    file: worker-cli-$TRAVIS_TAG-$TARGET.tar.gz
     skip_cleanup: true
     on:
       branch: master
