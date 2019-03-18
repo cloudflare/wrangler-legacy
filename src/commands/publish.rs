@@ -14,7 +14,7 @@ pub fn publish(zone_id: &str, settings: Settings) -> Result<(), failure::Error> 
 
     let res = client
         .put(&worker_addr)
-        .header("X-Auth-Key", settings.auth_key)
+        .header("X-Auth-Key", settings.api_key)
         .header("X-Auth-Email", settings.email)
         .multipart(build_form()?)
         .send();
@@ -29,9 +29,9 @@ fn build_form() -> Result<Form, failure::Error> {
     concat_js()?;
     let form = Form::new()
         .file("metadata", "./worker/metadata_wasm.json")
-        .expect("metadata missin")
+        .expect("🚧 `./worker/metadata_wasm.json` not found. Did you delete it? 🚧")
         .file("wasmprogram", "./pkg/wasm_worker_bg.wasm")
-        .expect("wasm missing")
+        .expect("🚧 `./pkg/wasm_worker_bg.wasm` not found. Have you run `wrangler build`? 🚧")
         .file("script", "./worker/generated/script.js")
         .expect("script missing");
     Ok(form)

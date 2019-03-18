@@ -8,7 +8,7 @@ pub fn whoami(settings: Settings) -> Result<(), failure::Error> {
 
     let res = client
         .get(user_addr)
-        .header("X-Auth-Key", settings.auth_key)
+        .header("X-Auth-Key", settings.api_key)
         .header("X-Auth-Email", settings.email)
         .header(CONTENT_TYPE, "application/json")
         .send();

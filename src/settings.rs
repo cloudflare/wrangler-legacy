@@ -1,10 +1,10 @@
 use config::{Config, Environment, File};
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct Settings {
     pub email: String,
-    pub auth_key: String,
+    pub api_key: String,
 }
 
 impl Settings {

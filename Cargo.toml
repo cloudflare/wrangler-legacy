@@ -13,3 +13,4 @@ dirs = "1.0.5"
 failure = "0.1.5"
 reqwest = "0.9.11"
 serde = { version = "1.0", features = ["derive"] }
+toml = "0.5.0"
