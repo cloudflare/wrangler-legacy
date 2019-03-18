@@ -11,7 +11,10 @@ pub fn config(email: &str, api_key: &str) -> Result<(), failure::Error> {
 
     let toml = toml::to_string(&s)?;
 
-    let config_dir = Path::new(&dirs::home_dir().expect("🚧 Could not determine home directory. 🚧")).join(".wrangler").join("config");
+    let config_dir =
+        Path::new(&dirs::home_dir().expect("🚧 Could not determine home directory. 🚧"))
+            .join(".wrangler")
+            .join("config");
     fs::create_dir_all(&config_dir)?;
 
     let config_file = config_dir.join("default.toml");

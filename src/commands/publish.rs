@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::Write;
+use std::path::Path;
 
 use crate::settings::Settings;
 use reqwest::multipart::Form;
@@ -24,7 +24,7 @@ pub fn publish(zone_id: &str, settings: Settings) -> Result<(), failure::Error> 
 }
 
 fn build_form() -> Result<Form, failure::Error> {
-    fs::create_dir("./worker/generated")?;
+    build_generated_dir()?;
     modify_js()?;
     concat_js()?;
     let form = Form::new()
@@ -37,22 +37,28 @@ fn build_form() -> Result<Form, failure::Error> {
     Ok(form)
 }
 
+fn build_generated_dir() -> Result<(), failure::Error> {
+    let dir = "./worker/generated";
+    if !Path::new(dir).is_dir() {
+        fs::create_dir("./worker/generated")?;
+    }
+    Ok(())
+}
+
 fn modify_js() -> Result<(), failure::Error> {
     let bindgen_js: String = fs::read_to_string("./pkg/wasm_worker.js")?.parse()?;
     // i am sorry for this hack, plz forgive
-    let modded = bindgen_js.replace("path_or_module instanceof WebAssembly.Module", "true");
+    let modded = bindgen_js.replace("module_or_path instanceof WebAssembly.Module", "true");
 
-    let mut modified_bindgen_js = fs::File::create("./worker/generated/wasm_worker.js")?;
-    modified_bindgen_js.write_all(modded.as_bytes())?;
+    fs::write("./worker/generated/wasm_worker.js", modded.as_bytes())?;
     Ok(())
 }
 
 fn concat_js() -> Result<(), failure::Error> {
-    let bindgen_js: String = fs::read_to_string("./worker/wasm_worker.js")?.parse()?;
+    let bindgen_js: String = fs::read_to_string("./worker/generated/wasm_worker.js")?.parse()?;
     let worker_js: String = fs::read_to_string("./worker/worker.js")?.parse()?;
     let js = format!("{} {}", bindgen_js, worker_js);
 
-    let mut script = fs::File::create("./worker/generated/script.js")?;
-    script.write_all(js.as_bytes())?;
+    fs::write("./worker/generated/script.js", js.as_bytes())?;
     Ok(())
 }

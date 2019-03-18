@@ -5,7 +5,6 @@ mod commands;
 mod settings;
 
 fn main() -> Result<(), failure::Error> {
-
     let matches = App::new(" ☁️ ✨ wrangler")
         .version("0.1.0")
         .author("ashley g williams <ashley666ashley@gmail.com>")
@@ -56,7 +55,8 @@ fn main() -> Result<(), failure::Error> {
             .expect("An API key must be provided.");
         commands::config(email, api_key)?;
     } else {
-        let settings = Settings::new().expect("🚧 Whoops! You aren't configured yet. Run `wrangler config`! 🚧");
+        let settings = Settings::new()
+            .expect("🚧 Whoops! You aren't configured yet. Run `wrangler config`! 🚧");
 
         if let Some(matches) = matches.subcommand_matches("publish") {
             let zone_id = matches
@@ -78,7 +78,6 @@ fn main() -> Result<(), failure::Error> {
         if matches.subcommand_matches("whoami").is_some() {
             commands::whoami(settings)?;
         }
-
     }
     Ok(())
 }

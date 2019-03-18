@@ -1,5 +1,5 @@
 use config::{Config, Environment, File};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct Settings {

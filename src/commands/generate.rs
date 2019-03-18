@@ -2,7 +2,7 @@ use std::process::Command;
 
 pub fn generate() -> Result<(), failure::Error> {
     let worker_init =
-        "cargo generate --git https://github.com/rustwasm/wasm-pack-template.git --name wasm-worker";
+        "cargo generate --git https://github.com/cloudflare/rustwasm-worker-template --name wasm-worker";
 
     let _output = if cfg!(target_os = "windows") {
         Command::new("cmd").args(&["/C", worker_init]).output()?
