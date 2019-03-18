@@ -11,6 +11,10 @@ clap = "2.32.0"
 config = "0.9.2"
 dirs = "1.0.5"
 failure = "0.1.5"
+openssl = { version = '0.10.11', optional = true }
 reqwest = "0.9.11"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.5.0"
+
+[features]
+vendored-openssl = ['openssl/vendored']
