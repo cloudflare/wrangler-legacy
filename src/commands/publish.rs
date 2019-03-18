@@ -24,6 +24,7 @@ pub fn publish(zone_id: &str, settings: Settings) -> Result<(), failure::Error> 
 }
 
 fn build_form() -> Result<Form, failure::Error> {
+    fs::create_dir("./worker/generated")?;
     modify_js()?;
     concat_js()?;
     let form = Form::new()
@@ -31,7 +32,7 @@ fn build_form() -> Result<Form, failure::Error> {
         .expect("metadata missin")
         .file("wasmprogram", "./pkg/wasm_worker_bg.wasm")
         .expect("wasm missing")
-        .file("script", "./worker/script.js")
+        .file("script", "./worker/generated/script.js")
         .expect("script missing");
     Ok(form)
 }
@@ -41,7 +42,7 @@ fn modify_js() -> Result<(), failure::Error> {
     // i am sorry for this hack, plz forgive
     let modded = bindgen_js.replace("path_or_module instanceof WebAssembly.Module", "true");
 
-    let mut modified_bindgen_js = fs::File::create("./worker/wasm_worker.js")?;
+    let mut modified_bindgen_js = fs::File::create("./worker/generated/wasm_worker.js")?;
     modified_bindgen_js.write_all(modded.as_bytes())?;
     Ok(())
 }
@@ -51,7 +52,7 @@ fn concat_js() -> Result<(), failure::Error> {
     let worker_js: String = fs::read_to_string("./worker/worker.js")?.parse()?;
     let js = format!("{} {}", bindgen_js, worker_js);
 
-    let mut script = fs::File::create("./worker/script.js")?;
+    let mut script = fs::File::create("./worker/generated/script.js")?;
     script.write_all(js.as_bytes())?;
     Ok(())
 }
