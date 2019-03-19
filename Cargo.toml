@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["Ashley Williams <ashley666ashley@gmail.com>"]
 edition = "2018"
 license = "BSD3.0"
-description = "wrangle your workers, CLI for cloudflare API"
+description = "wrangle your workers, CLI for rustwasm Cloudflare workers!"
+readme = "README.md"
+categories = ["wasm"]
 
 [dependencies]
 clap = "2.32.0"
