@@ -5,7 +5,7 @@ mod commands;
 mod settings;
 
 fn main() -> Result<(), failure::Error> {
-    let matches = App::new(" ☁️ ✨ wrangler")
+    let matches = App::new("👷‍♀️🧡☁️ ✨ worker")
         .version("0.1.0")
         .author("ashley g williams <ashley666ashley@gmail.com>")
         .subcommand(
