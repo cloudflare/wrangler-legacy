@@ -9,7 +9,13 @@ fn main() -> Result<(), failure::Error> {
         .version("0.1.0")
         .author("ashley g williams <ashley666ashley@gmail.com>")
         .subcommand(
-            SubCommand::with_name("generate").about("👯 Generate a new wasm worker project"),
+            SubCommand::with_name("generate")
+                .about("👯 Generate a new wasm worker project")
+                .arg(
+                    Arg::with_name("name")
+                        .help("the name of your worker! defaults to 'wasm-worker'")
+                        .index(1),
+                ),
         )
         .subcommand(
             SubCommand::with_name("build").about("🦀⚙️ Build your wasm with wasm-pack"),
@@ -67,8 +73,9 @@ fn main() -> Result<(), failure::Error> {
             commands::publish(zone_id, settings.clone())?;
         }
 
-        if matches.subcommand_matches("generate").is_some() {
-            commands::generate()?;
+        if let Some(matches) = matches.subcommand_matches("generate") {
+            let name = matches.value_of("name").unwrap_or("wasm-worker");
+            commands::generate(name)?;
         }
 
         if matches.subcommand_matches("build").is_some() {
