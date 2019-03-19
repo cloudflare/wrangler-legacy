@@ -2,6 +2,7 @@ use std::process::Command;
 
 pub fn build() -> Result<(), failure::Error> {
     let build_wasm = "wasm-pack build --target no-modules";
+    println!("🌀 Compiling your project to WebAssembly...");
 
     let _output = if cfg!(target_os = "windows") {
         Command::new("cmd").args(&["/C", build_wasm]).output()?
