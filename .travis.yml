@@ -11,15 +11,15 @@ DEPLOY_TO_GITHUB: &DEPLOY_TO_GITHUB
   before_deploy:
     - git config --local user.name "Ashley Williams"
     - git config --local user.email "ashley666ashley@gmail.com"
-    - name="worker-cli-$TRAVIS_TAG-$TARGET"
+    - name="wrangler-$TRAVIS_TAG-$TARGET"
     - mkdir $name
-    - cp target/$TARGET/release/worker-cli $name/
+    - cp target/$TARGET/release/wrangler $name/
     - cp README.md LICENSE-MIT LICENSE-APACHE $name/
     - tar czvf $name.tar.gz $name
   deploy:
     provider: releases
     api_key: GH_TOKEN
-    file: worker-cli-$TRAVIS_TAG-$TARGET.tar.gz
+    file: wrangler-$TRAVIS_TAG-$TARGET.tar.gz
     skip_cleanup: true
     on:
       branch: master

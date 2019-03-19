@@ -1,8 +1,8 @@
-# worker-cli
+# 🤠 wrangler
 
-[![Build Status](https://travis-ci.com/ashleygwilliams/worker-cli.svg?token=hHeDp9pQmz9kvsgRNVHy&branch=master)](https://travis-ci.com/ashleygwilliams/worker-cli)
+[![Build Status](https://travis-ci.com/ashleygwilliams/wrangler.svg?token=hHeDp9pQmz9kvsgRNVHy&branch=master)](https://travis-ci.com/ashleygwilliams/wrangler)
 
-`worker-cli` is a CLI tool designed for folks who are interested in using Rust-generated WebAssembly on
+`wrangler` is a CLI tool designed for folks who are interested in using Rust-generated WebAssembly on
 Cloudflare Workers. This tool gives you the follow commands:
 
   - 👯 `generate`: scaffold  a `hello-wasm-worker` project, including boilerplate for a Rust library and a
@@ -10,7 +10,7 @@ Cloudflare Workers. This tool gives you the follow commands:
   - 🦀⚙️ `build`: build your project using `wasm-pack`
   - ☁️ 🆙 `publish`: publish your worker and WebAssembly to Cloudflare
 
-To set up `worker-cli` to work with your Cloudflare account, use the following commands:
+To set up `wrangler` to work with your Cloudflare account, use the following commands:
 
   - `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, you
     can use the flags `--email` and `--api-key` to the command to skip the interactive part.
@@ -21,21 +21,21 @@ To set up `worker-cli` to work with your Cloudflare account, use the following c
 
 ## ⚡ Quick Start
 
-1. Install `worker-cli`:
+1. Install `wrangler`:
 
     - (preferred) install a binary via the [GitHub Release tab]
-    - `cargo install worker-cli`
+    - `cargo install wrangler`
 
 2. Configure with you Cloudflare account:
 
     ```
-    worker config <email> <api_key>
+    wrangler config <email> <api_key>
     ``` 
 
 2. Generate a new project:
 
     ```
-    worker generate
+    wrangler generate
     ```
 
 3. Move into the new project directory:
@@ -47,13 +47,13 @@ To set up `worker-cli` to work with your Cloudflare account, use the following c
 4. Build your project:
 
     ```
-    worker build
+    wrangler build
     ```
 
 5. Publish your project:
 
     ```
-    worker publish -- <zone_id>
+    wrangler publish -- <zone_id>
     ```
 
     ... where `<zone_id>` is replaced with the `id` for the Cloudflare zone your are publishing to!
