@@ -17,7 +17,7 @@ impl Krate {
     pub fn new(krate_path: &str) -> Result<Krate, failure::Error> {
         let manifest_path = Path::new(krate_path).join("Cargo.toml");
         if !manifest_path.is_file() {
-            panic!(
+            failure::bail!(
                 "crate directory is missing a `Cargo.toml` file; is `{}` the \
                  wrong directory?",
                 krate_path
