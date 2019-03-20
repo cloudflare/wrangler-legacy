@@ -1,4 +1,7 @@
+use std::str::FromStr;
+
 use clap::{App, Arg, SubCommand};
+use commands::HTTPMethod;
 use settings::Settings;
 
 mod commands;
@@ -15,6 +18,20 @@ fn main() -> Result<(), failure::Error> {
                     Arg::with_name("name")
                         .help("the name of your worker! defaults to 'wasm-worker'")
                         .index(1),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("preview")
+                .about("🔬Publish your code temporarily on cloudflareworkers.com")
+                .arg(
+                    Arg::with_name("method")
+                        .help("Type of request to preview your worker with (get, post)")
+                        .index(1),
+                )
+                .arg(
+                    Arg::with_name("body")
+                        .help("Body string to post to your preview worker request")
+                        .index(2),
                 ),
         )
         .subcommand(
@@ -71,6 +88,18 @@ fn main() -> Result<(), failure::Error> {
 
             commands::build()?;
             commands::publish(zone_id, settings.clone())?;
+        }
+
+        if let Some(matches) = matches.subcommand_matches("preview") {
+            let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
+
+            let body = match matches.value_of("body") {
+                Some(s) => Some(s.to_string()),
+                None => None,
+            };
+
+            commands::build()?;
+            commands::preview(method, body)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("generate") {

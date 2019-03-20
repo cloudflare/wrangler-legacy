@@ -8,6 +8,7 @@ Cloudflare Workers. This tool gives you the follow commands:
   - 👯 `generate`: scaffold  a `hello-wasm-worker` project, including boilerplate for a Rust library and a
      Cloudflare worker 
   - 🦀⚙️ `build`: build your project using `wasm-pack`
+  - 🔬 `preview`: preview your project using the cloudflareworkers.com API
   - ☁️ 🆙 `publish`: publish your worker and WebAssembly to Cloudflare
 
 To set up `wrangler` to work with your Cloudflare account, use the following commands:
@@ -50,7 +51,13 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
     wrangler build
     ```
 
-5. Publish your project:
+5. Preview your project:
+
+    ```
+    wrangler preview
+    ```
+
+6. Publish your project:
 
     ```
     wrangler publish -- <zone_id>

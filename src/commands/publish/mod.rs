@@ -1,4 +1,5 @@
 mod krate;
+pub mod preview;
 
 use std::fs;
 use std::path::Path;
