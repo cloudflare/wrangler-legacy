@@ -16,14 +16,16 @@ pub fn publish(zone_id: &str, settings: Settings) -> Result<(), failure::Error> 
 
     let client = reqwest::Client::new();
 
-    let res = client
+    client
         .put(&worker_addr)
         .header("X-Auth-Key", settings.api_key)
         .header("X-Auth-Email", settings.email)
         .multipart(build_form()?)
-        .send();
+        .send()?;
 
-    println!("{:?}", &res?.text());
+    println!(
+        "✨ Success! Your worker was successfully published. You can see it [here](TODO). ✨",
+    );
     Ok(())
 }
 

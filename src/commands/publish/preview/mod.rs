@@ -38,7 +38,6 @@ pub fn preview(
         "__ew_fiddle_preview={}{}{}{}",
         script_id, session, https, preview_host
     );
-    println!("{}", &p.id);
 
     let method = method.unwrap_or_default();
 
@@ -46,7 +45,7 @@ pub fn preview(
         HTTPMethod::Get => get(preview_address, cookie, client)?,
         HTTPMethod::Post => post(preview_address, cookie, client, body)?,
     };
-    println!("{}", worker_res);
+    println!("👷‍♀️ Your worker responded with: {}", worker_res);
 
     open(preview_host, https, script_id)?;
 
@@ -86,7 +85,7 @@ fn get(
     client: reqwest::Client,
 ) -> Result<String, failure::Error> {
     let res = client.get(preview_address).header("Cookie", cookie).send();
-
+    println!("👷‍♀️ GET {}", preview_address);
     Ok(res?.text()?)
 }
 
@@ -104,5 +103,6 @@ fn post(
             .send(),
         None => client.post(preview_address).header("Cookie", cookie).send(),
     };
+    println!("👷‍♀️ POST {}", preview_address,);
     Ok(res?.text()?)
 }

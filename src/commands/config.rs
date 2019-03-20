@@ -18,6 +18,11 @@ pub fn config(email: &str, api_key: &str) -> Result<(), failure::Error> {
     fs::create_dir_all(&config_dir)?;
 
     let config_file = config_dir.join("default.toml");
-    fs::write(config_file, &toml)?;
+    fs::write(&config_file, &toml)?;
+
+    println!(
+        "✨ Successfully configured. You can find your configuration file at: {}. ✨",
+        &config_file.to_string_lossy()
+    );
     Ok(())
 }
