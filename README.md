@@ -24,6 +24,11 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
 
 1. Install `wrangler`:
 
+    *for now*...
+    - build one from this source
+    - ask ashley for a binary
+
+    *eventually*.... 
     - (preferred) install a binary via the [GitHub Release tab]
     - `cargo install wrangler`
 
@@ -60,7 +65,7 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
 6. Publish your project:
 
     ```
-    wrangler publish -- <zone_id>
+    wrangler publish <zone_id>
     ```
 
     ... where `<zone_id>` is replaced with the `id` for the Cloudflare zone your are publishing to!
