@@ -39,14 +39,13 @@ fn build_form() -> Result<Form, failure::Error> {
     let wasm_path = &format!("./pkg/{}_bg.wasm", name);
     let script_path = "./worker/generated/script.js";
 
-    let form = Form::new()
+    Ok(Form::new()
         .file("metadata", metadata_path)
         .unwrap_or_else(|_| panic!("{} not found. Did you delete it?", metadata_path))
         .file("wasmprogram", wasm_path)
         .unwrap_or_else(|_| panic!("{} not found. Have you run wrangler build?", wasm_path))
         .file("script", script_path)
-        .unwrap_or_else(|_| panic!("{} not found. Did you rename your js files?", script_path));
-    Ok(form)
+        .unwrap_or_else(|_| panic!("{} not found. Did you rename your js files?", script_path)))
 }
 
 fn build_generated_dir() -> Result<(), failure::Error> {
