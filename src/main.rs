@@ -6,6 +6,7 @@ use commands::HTTPMethod;
 use settings::Settings;
 
 mod commands;
+mod install;
 mod settings;
 
 fn main() -> Result<(), failure::Error> {

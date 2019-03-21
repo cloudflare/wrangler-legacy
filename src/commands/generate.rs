@@ -1,11 +1,10 @@
-mod cargo_generate;
-
-use crate::commands;
+use crate::{commands, install};
 use binary_install::Cache;
 use std::process::Command;
 
 pub fn generate(name: &str, cache: Cache) -> Result<(), failure::Error> {
-    let binary_path = cargo_generate::install(&cache)?.binary("cargo-generate")?;
+    let tool_name = "cargo-generate";
+    let binary_path = install::install(tool_name, &cache)?.binary(tool_name)?;
 
     let worker_init = format!(
         "{} generate --git https://github.com/cloudflare/rustwasm-worker-template --name {}",

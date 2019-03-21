@@ -6,8 +6,7 @@ use krate::Krate;
 use binary_install::{Cache, Download};
 use which::which;
 
-pub fn install(cache: &Cache) -> Result<Download, failure::Error> {
-    let tool_name = "cargo-generate";
+pub fn install(tool_name: &str, cache: &Cache) -> Result<Download, failure::Error> {
     let owner = "ashleygwilliams";
 
     if let Ok(path) = which(tool_name) {
@@ -41,7 +40,7 @@ fn download_prebuilt(
             tool_name
         )),
     };
-    println!("{}", url);
+
     let binaries = &[tool_name];
     match cache.download(true, tool_name, binaries, &url)? {
         Some(download) => {
