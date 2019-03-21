@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use binary_install::Cache;
 use clap::{App, Arg, SubCommand};
 use commands::HTTPMethod;
 use settings::Settings;
@@ -9,6 +10,7 @@ mod settings;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
+    let cache = Cache::new("wrangler")?;
 
     let matches = App::new("👷‍♀️🧡☁️ ✨ wrangler")
         .version("0.1.0")
@@ -106,7 +108,7 @@ fn main() -> Result<(), failure::Error> {
 
         if let Some(matches) = matches.subcommand_matches("generate") {
             let name = matches.value_of("name").unwrap_or("wasm-worker");
-            commands::generate(name)?;
+            commands::generate(name, cache)?;
         }
 
         if matches.subcommand_matches("build").is_some() {
