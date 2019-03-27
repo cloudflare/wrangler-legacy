@@ -91,7 +91,7 @@ fn main() -> Result<(), failure::Error> {
                 .value_of("zone_id")
                 .expect("A zone ID must be provided.");
 
-            commands::build()?;
+            commands::build(&cache)?;
             commands::publish(zone_id, settings.clone())?;
         }
 
@@ -103,17 +103,17 @@ fn main() -> Result<(), failure::Error> {
                 None => None,
             };
 
-            commands::build()?;
+            commands::build(&cache)?;
             commands::preview(method, body)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("generate") {
             let name = matches.value_of("name").unwrap_or("wasm-worker");
-            commands::generate(name, cache)?;
+            commands::generate(name, &cache)?;
         }
 
         if matches.subcommand_matches("build").is_some() {
-            commands::build()?;
+            commands::build(&cache)?;
         }
 
         if matches.subcommand_matches("whoami").is_some() {

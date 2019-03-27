@@ -6,16 +6,11 @@ use krate::Krate;
 use binary_install::{Cache, Download};
 use which::which;
 
-pub fn install(tool_name: &str, cache: &Cache) -> Result<Download, failure::Error> {
-    let owner = "ashleygwilliams";
-
+pub fn install(tool_name: &str, owner: &str, cache: &Cache) -> Result<Download, failure::Error> {
     if let Ok(path) = which(tool_name) {
         log::debug!("found global {} binary at: {}", tool_name, path.display());
         return Ok(Download::at(path.parent().unwrap()));
     }
-
-    let msg = format!("⬇️ Installing {}...", tool_name);
-    println!("{}", msg);
 
     let latest_version = get_latest_version(tool_name)?;
     let download = download_prebuilt(cache, tool_name, owner, &latest_version);
@@ -33,6 +28,7 @@ fn download_prebuilt(
     owner: &str,
     version: &str,
 ) -> Result<Download, failure::Error> {
+    println!("⬇️ Installing {}...", tool_name);
     let url = match prebuilt_url(tool_name, owner, version) {
         Some(url) => url,
         None => failure::bail!(format!(
@@ -43,10 +39,7 @@ fn download_prebuilt(
 
     let binaries = &[tool_name];
     match cache.download(true, tool_name, binaries, &url)? {
-        Some(download) => {
-            println!("success with {:?}", download);
-            Ok(download)
-        }
+        Some(download) => Ok(download),
         None => failure::bail!("{} is not installed!", tool_name),
     }
 }
@@ -62,10 +55,11 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
         return None;
     };
 
-    Some(format!(
-        "https://github.com/{0}/{1}/releases/download/v{2}/cargo-generate-v{2}-{3}.tar.gz",
+    let url = format!(
+        "https://github.com/{0}/{1}/releases/download/v{2}/{1}-v{2}-{3}.tar.gz",
         owner, tool_name, version, target
-    ))
+    );
+    Some(url)
 }
 
 fn get_latest_version(tool_name: &str) -> Result<String, failure::Error> {
