@@ -38,8 +38,8 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
     ```
 
 1. Move into the new project directory:
-    ```
 
+    ```
     cd wasm-worker
     ```
 
