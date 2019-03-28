@@ -1,6 +1,6 @@
 # 🤠 wrangler
 
-[![Build Status](https://travis-ci.com/ashleygwilliams/wrangler.svg?token=hHeDp9pQmz9kvsgRNVHy&branch=master)](https://travis-ci.com/ashleygwilliams/wrangler)
+[![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler)
 
 `wrangler` is a CLI tool designed for folks who are interested in using Rust-generated WebAssembly on
 Cloudflare Workers. This tool gives you the follow commands:
