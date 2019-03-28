@@ -1,14 +1,8 @@
-trigger:
-  branches:
-    include:
-      - refs/heads/master
-      - refs/tags/*
-
 jobs:
   - job: test
-  - displayName: "Run tests, cargo fmt, and cargo clippy"
-  - steps:
-    - template: ci/azure-install-rust.yml
-    - script: cargo test --locked
-    - script: cargo fmt --all -- --check
-    - script: cargo clippy
+    displayName: "Run tests, cargo fmt, and cargo clippy"
+    steps:
+      - template: ci/azure-install-rust.yml
+      - script: cargo test --locked
+      - script: cargo fmt --all -- --check
+      - script: cargo clippy
