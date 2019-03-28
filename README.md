@@ -2,6 +2,8 @@
 
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler)
 
+✨ CHECK OUT THE [TUTORIAL](https://developers.cloudflare.com/workers/webassembly/tutorial/) ✨
+
 `wrangler` is a CLI tool designed for folks who are interested in using Rust-generated WebAssembly on
 Cloudflare Workers. This tool gives you the follow commands:
 
@@ -19,6 +21,7 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
     this command will print out your account information, including the type of plan you are currently on.
 
     ⚠️ NEVER PUBLISH CREDENTIALS TO VERSION CONTROL! ⚠️
+
 
 ## ⚡ Quick Start
 
