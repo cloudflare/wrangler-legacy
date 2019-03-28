@@ -24,45 +24,51 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
 
 1. Install `wrangler`:
 
-    *for now*...
-    - build one from this source
-    - ask ashley for a binary
-
-    *eventually*.... 
-    - (preferred) install a binary via the [GitHub Release tab]
-    - `cargo install wrangler`
-
-2. Configure with you Cloudflare account:
-
     ```
-    wrangler config <email> <api_key>
-    ``` 
+    cargo install wrangler
+    ```
 
-2. Generate a new project:
+1. Generate a new project:
 
     ```
     wrangler generate
     ```
 
-3. Move into the new project directory:
+1. Move into the new project directory:
     ```
 
     cd wasm-worker
     ```
 
-4. Build your project:
+1. Build your project:
 
     ```
     wrangler build
     ```
 
-5. Preview your project:
+1. Preview your project:
 
     ```
     wrangler preview
     ```
 
-6. Publish your project:
+1. (optional) Configure with you Cloudflare account:
+
+    ```
+    wrangler config <email> <api_key>
+    ```
+
+    Configuring your account is required to use the `publish` step, which will push your Worker live to the
+    Cloudflare edge. If you don't configure, you can still use `wrangler` to generate, build, and preview
+    a Worker.
+
+1. Check your configuration:
+
+    ```
+    wrangler whoami
+    ```
+
+1. Publish your project:
 
     ```
     wrangler publish <zone_id>
