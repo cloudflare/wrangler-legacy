@@ -74,25 +74,17 @@ fn main() -> Result<(), failure::Error> {
         )
         .get_matches();
 
-    if let Some(matches) = matches.subcommand_matches("config") {
-        let email = matches
-            .value_of("email")
-            .expect("An email address must be provided.");
-        let api_key = matches
-            .value_of("api-key")
-            .expect("An API key must be provided.");
-        commands::config(email, api_key)?;
-    } else {
-        let settings = Settings::new()
-            .expect("🚧 Whoops! You aren't configured yet. Run `wrangler config`! 🚧");
-
-        if let Some(matches) = matches.subcommand_matches("publish") {
-            let zone_id = matches
-                .value_of("zone_id")
-                .expect("A zone ID must be provided.");
-
-            commands::build(&cache)?;
-            commands::publish(zone_id, settings.clone())?;
+    if matches.subcommand_matches("publish").is_none()
+        && matches.subcommand_matches("whoami").is_none()
+    {
+        if let Some(matches) = matches.subcommand_matches("config") {
+            let email = matches
+                .value_of("email")
+                .expect("An email address must be provided.");
+            let api_key = matches
+                .value_of("api-key")
+                .expect("An API key must be provided.");
+            commands::config(email, api_key)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("preview") {
@@ -114,6 +106,18 @@ fn main() -> Result<(), failure::Error> {
 
         if matches.subcommand_matches("build").is_some() {
             commands::build(&cache)?;
+        }
+    } else {
+        let settings = Settings::new()
+            .expect("🚧 Whoops! You aren't configured yet. Run `wrangler config`! 🚧");
+
+        if let Some(matches) = matches.subcommand_matches("publish") {
+            let zone_id = matches
+                .value_of("zone_id")
+                .expect("A zone ID must be provided.");
+
+            commands::build(&cache)?;
+            commands::publish(zone_id, settings.clone())?;
         }
 
         if matches.subcommand_matches("whoami").is_some() {
