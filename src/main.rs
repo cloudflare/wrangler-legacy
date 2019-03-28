@@ -1,14 +1,17 @@
 use std::str::FromStr;
 
+use binary_install::Cache;
 use clap::{App, Arg, SubCommand};
 use commands::HTTPMethod;
 use settings::Settings;
 
 mod commands;
+mod install;
 mod settings;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
+    let cache = Cache::new("wrangler")?;
 
     let matches = App::new("👷‍♀️🧡☁️ ✨ wrangler")
         .version("0.1.0")
@@ -88,7 +91,7 @@ fn main() -> Result<(), failure::Error> {
                 .value_of("zone_id")
                 .expect("A zone ID must be provided.");
 
-            commands::build()?;
+            commands::build(&cache)?;
             commands::publish(zone_id, settings.clone())?;
         }
 
@@ -100,17 +103,17 @@ fn main() -> Result<(), failure::Error> {
                 None => None,
             };
 
-            commands::build()?;
+            commands::build(&cache)?;
             commands::preview(method, body)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("generate") {
             let name = matches.value_of("name").unwrap_or("wasm-worker");
-            commands::generate(name)?;
+            commands::generate(name, &cache)?;
         }
 
         if matches.subcommand_matches("build").is_some() {
-            commands::build()?;
+            commands::build(&cache)?;
         }
 
         if matches.subcommand_matches("whoami").is_some() {
