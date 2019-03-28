@@ -23,9 +23,7 @@ pub fn publish(zone_id: &str, settings: Settings) -> Result<(), failure::Error> 
         .multipart(build_form()?)
         .send()?;
 
-    println!(
-        "✨ Success! Your worker was successfully published. You can see it [here](TODO). ✨",
-    );
+    println!("✨ Success! Your worker was successfully published. ✨",);
     Ok(())
 }
 
