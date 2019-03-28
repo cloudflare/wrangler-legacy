@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use crate::settings::Settings;
+use crate::user::settings::Settings;
 
 pub fn config(email: &str, api_key: &str) -> Result<(), failure::Error> {
     let s = Settings {
