@@ -1,6 +1,7 @@
 mod krate;
 mod target;
 
+use failure::ResultExt;
 use krate::Krate;
 
 use binary_install::{Cache, Download};
@@ -14,12 +15,7 @@ pub fn install(tool_name: &str, owner: &str, cache: &Cache) -> Result<Download, 
 
     let latest_version = get_latest_version(tool_name)?;
     let download = download_prebuilt(cache, tool_name, owner, &latest_version);
-    match download {
-        Ok(download) => Ok(download),
-        Err(_) => {
-            failure::bail!("could not download pre-built `{}`.", tool_name);
-        }
-    }
+    Ok(download.context(format!("could not download pre-built `{}`.", tool_name))?)
 }
 
 fn download_prebuilt(
@@ -37,7 +33,13 @@ fn download_prebuilt(
         )),
     };
 
-    let binaries = &[tool_name];
+    let binary_name = if cfg!(target_os = "windows") {
+        format!("{}.exe", tool_name)
+    } else {
+        tool_name.to_owned()
+    };
+    let binaries = &[binary_name.as_str()];
+
     match cache.download(true, tool_name, binaries, &url)? {
         Some(download) => Ok(download),
         None => failure::bail!("{} is not installed!", tool_name),
@@ -59,6 +61,7 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
         "https://github.com/{0}/{1}/releases/download/v{2}/{1}-v{2}-{3}.tar.gz",
         owner, tool_name, version, target
     );
+    log::trace!("URL to download {}", &url);
     Some(url)
 }
 
