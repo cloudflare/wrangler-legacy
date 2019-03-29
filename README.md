@@ -9,7 +9,7 @@
 Cloudflare Workers. This tool gives you the follow commands:
 
   - 👯 `generate`: scaffold  a `hello-wasm-worker` project, including boilerplate for a Rust library and a
-     Cloudflare worker 
+     Cloudflare worker
   - 🦀⚙️ `build`: build your project using `wasm-pack`
   - 🔬 `preview`: preview your project using the cloudflareworkers.com API
   - ☁️ 🆙 `publish`: publish your worker and WebAssembly to Cloudflare
@@ -23,6 +23,13 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
 
     ⚠️ NEVER PUBLISH CREDENTIALS TO VERSION CONTROL! ⚠️
 
+##
+
+Before you begin, you'll need to install OpenSSL 1.1 on your machine:
+
+```
+brew install openssl@1.1
+```
 
 ## ⚡ Quick Start
 
