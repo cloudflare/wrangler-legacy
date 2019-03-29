@@ -27,7 +27,6 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
 
 Before you begin, you'll need to install OpenSSL 1.1 on your machine:
 
-```
     ```
     brew install openssl@1.1
     ```
