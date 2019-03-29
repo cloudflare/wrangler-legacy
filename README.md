@@ -18,7 +18,7 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
 
   - `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, you
     can use the flags `--email` and `--api-key` to the command to skip the interactive part.
-  - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is approrpriately set up. When successful,
+  - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is appropriately set up. When successful,
     this command will print out your account information, including the type of plan you are currently on.
 
     ⚠️ NEVER PUBLISH CREDENTIALS TO VERSION CONTROL! ⚠️
@@ -28,16 +28,37 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
 Before you begin, you'll need to install OpenSSL 1.1 on your machine:
 
 ```
-brew install openssl@1.1
-```
+    ```
+    brew install openssl@1.1
+    ```
 
-## ⚡ Quick Start
+## ⚓ Installation
+
+1. Install `cargo`:
+
+Wrangler is installed through [Cargo](https://github.com/rust-lang/cargo#compiling-from-source), a Rust package manager. Rustup, a tool for installing Rust, will also install Cargo. On Linux and macOS systems, `rustup` can be installed as follows:
+
+    ```
+    curl https://sh.rustup.rs -sSf | sh
+    ```
+
+Additional installation methods are available [here](https://forge.rust-lang.org/other-installation-methods.html).
 
 1. Install `wrangler`:
 
     ```
     cargo install wrangler
     ```
+
+1. Check for OpenSSL version
+
+If you are on a Mac, you may encounter an OpenSSL error when attempting to generate a project. You can resolve that issue by installing OpenSSL v1.1 through Homebrew (need to install Homebrew? Instructions available [here](https://brew.sh/)).
+
+    ```
+    $ brew install openssl@1.1
+    ```
+
+## ⚡ Quick Start
 
 1. Generate a new project:
 
