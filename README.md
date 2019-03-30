@@ -9,7 +9,7 @@
 Cloudflare Workers. This tool gives you the follow commands:
 
   - 👯 `generate`: scaffold  a `hello-wasm-worker` project, including boilerplate for a Rust library and a
-     Cloudflare Worker 
+     Cloudflare Worker
   - 🦀⚙️ `build`: build your project using `wasm-pack`
   - 🔬 `preview`: preview your project using the cloudflareworkers.com API
   - ☁️ 🆙 `publish`: publish your Worker and WebAssembly to Cloudflare
@@ -23,14 +23,33 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
 
     ⚠️ NEVER PUBLISH CREDENTIALS TO VERSION CONTROL! ⚠️
 
+## ⚓ Installation
 
-## ⚡ Quick Start
+1. Install `cargo`:
+
+    Wrangler is installed through [Cargo](https://github.com/rust-lang/cargo#compiling-from-source), a Rust package manager. Rustup, a tool for installing Rust, will also install Cargo. On Linux and macOS systems, `rustup` can be installed as follows:
+
+    ```
+    curl https://sh.rustup.rs -sSf | sh
+    ```
+
+    Additional installation methods are available [here](https://forge.rust-lang.org/other-installation-methods.html).
 
 1. Install `wrangler`:
 
     ```
     cargo install wrangler
     ```
+
+1. Troubleshooting OpenSSL errors
+
+    If you are on a Mac, you might encounter an OpenSSL error when attempting to generate a project. You can resolve that issue by installing OpenSSL v1.1 through Homebrew (need to install Homebrew? Instructions available [here](https://brew.sh/)).
+
+    ```
+    $ brew install openssl@1.1
+    ```
+
+## ⚡ Quick Start
 
 1. Generate a new project:
 
