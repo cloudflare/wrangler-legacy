@@ -9,16 +9,16 @@
 Cloudflare Workers. This tool gives you the follow commands:
 
   - 👯 `generate`: scaffold  a `hello-wasm-worker` project, including boilerplate for a Rust library and a
-     Cloudflare worker 
+     Cloudflare Worker 
   - 🦀⚙️ `build`: build your project using `wasm-pack`
   - 🔬 `preview`: preview your project using the cloudflareworkers.com API
-  - ☁️ 🆙 `publish`: publish your worker and WebAssembly to Cloudflare
+  - ☁️ 🆙 `publish`: publish your Worker and WebAssembly to Cloudflare
 
 To set up `wrangler` to work with your Cloudflare account, use the following commands:
 
   - `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, you
     can use the flags `--email` and `--api-key` to the command to skip the interactive part.
-  - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is approrpriately set up. When successful,
+  - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is appropriately set up. When successful,
     this command will print out your account information, including the type of plan you are currently on.
 
     ⚠️ NEVER PUBLISH CREDENTIALS TO VERSION CONTROL! ⚠️
@@ -56,7 +56,7 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
     wrangler preview
     ```
 
-1. (optional) Configure with you Cloudflare account:
+1. (optional) Configure with your Cloudflare account:
 
     ```
     wrangler config <email> <api_key>
@@ -78,4 +78,4 @@ To set up `wrangler` to work with your Cloudflare account, use the following com
     wrangler publish <zone_id>
     ```
 
-    ... where `<zone_id>` is replaced with the `id` for the Cloudflare zone your are publishing to!
+    ... where `<zone_id>` is replaced with the `id` for the Cloudflare zone you are publishing to!
