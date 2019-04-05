@@ -23,6 +23,11 @@ fn main() -> Result<(), failure::Error> {
                     Arg::with_name("name")
                         .help("the name of your worker! defaults to 'wasm-worker'")
                         .index(1),
+                )
+                .arg(
+                    Arg::with_name("template")
+                        .help("a link to a github template! defaultes to cloudflare/rustwasm-worker-template")
+                        .index(2),
                 ),
         )
         .subcommand(
@@ -101,7 +106,10 @@ fn main() -> Result<(), failure::Error> {
 
         if let Some(matches) = matches.subcommand_matches("generate") {
             let name = matches.value_of("name").unwrap_or("wasm-worker");
-            commands::generate(name, &cache)?;
+            let template = matches
+                .value_of("template")
+                .unwrap_or("https://github.com/cloudflare/rustwasm-worker-template");
+            commands::generate(name, template, &cache)?;
         }
 
         if matches.subcommand_matches("build").is_some() {
