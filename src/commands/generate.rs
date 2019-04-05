@@ -2,13 +2,14 @@ use crate::{commands, install};
 use binary_install::Cache;
 use std::process::Command;
 
-pub fn generate(name: &str, cache: &Cache) -> Result<(), failure::Error> {
+pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure::Error> {
     let tool_name = "cargo-generate";
     let binary_path = install::install(tool_name, "ashleygwilliams", cache)?.binary(tool_name)?;
 
     let worker_init = format!(
-        "{} generate --git https://github.com/cloudflare/rustwasm-worker-template --name {}",
+        "{} generate --git {} --name {}",
         binary_path.to_string_lossy(),
+        template,
         name
     );
     commands::run(command(&worker_init, name), &worker_init)?;
