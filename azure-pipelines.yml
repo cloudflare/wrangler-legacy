@@ -18,3 +18,12 @@ jobs:
       - template: ci/azure-install-rust.yml
       - script: cargo test --locked
         displayName: "cargo test --locked"
+
+  - job: test_wrangler_nightly
+    displayName: "Run wrangler tests (nightly)"
+    steps:
+      - template: ci/azure-install-rust.yml
+        parameters:
+          toolchain: nightly
+      - script: cargo test --locked
+        displayName: "cargo test --locked"
