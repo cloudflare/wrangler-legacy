@@ -1,8 +1,20 @@
 jobs:
-  - job: test
-    displayName: "Run tests, cargo fmt, and cargo clippy"
+  - job: test_wrangler
+    displayName: "Run wrangler tests, fmt, and clippy"
     steps:
       - template: ci/azure-install-rust.yml
       - script: cargo test --locked
+        displayName: "cargo test --locked"
       - script: cargo fmt --all -- --check
+        displayName: "cargo fmt"
       - script: cargo clippy
+        displayName: "cargo clippy"
+
+  - job: test_wrangler_windows
+    displayName: "Run wrangler tests (Windows)"
+    pool:
+      vmImage: vs2017-win2016
+    steps:
+      - template: ci/azure-install-rust.yml
+      - script: cargo test --locked
+        displayName: "cargo test --locked"
