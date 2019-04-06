@@ -7,10 +7,10 @@
 ✨ CHECK OUT THE [TUTORIAL](https://developers.cloudflare.com/workers/webassembly/tutorial/) ✨
 
 `wrangler` is a CLI tool designed for folks who are interested in using Rust-generated WebAssembly on
-Cloudflare Workers. This tool gives you the follow commands:
+Cloudflare Workers. This tool gives you the following commands:
 
   - ### 👯 `generate` 
-    Scaffold  a project, including boilerplate for a Rust library and a Cloudflare Worker.
+    Scaffold a project, including boilerplate for a Rust library and a Cloudflare Worker.
     You can pass a name and template to this command optionally. 
 
     ```
@@ -22,12 +22,12 @@ Cloudflare Workers. This tool gives you the follow commands:
     Build your project using `wasm-pack`.
   - ### 🔬 `preview`
     Preview your project using the cloudflareworkers.com API.
-  - ☁️ 🆙 `publish`
+  - ### ☁️ 🆙 `publish`
     Publish your Worker and WebAssembly to Cloudflare.
   - ### Configuration
     To set up `wrangler` to work with your Cloudflare account, use the following commands:
 
-    - `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, 
+    - 🔧 `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, 
        you can use the flags `--email` and `--api-key` to the command to skip the interactive part.
     - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is appropriately set up.
        When successful,
