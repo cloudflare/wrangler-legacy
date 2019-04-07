@@ -14,7 +14,7 @@ fn main() -> Result<(), failure::Error> {
     let cache = Cache::new("wrangler")?;
 
     let matches = App::new("👷‍♀️🧡☁️ ✨ wrangler")
-        .version("0.1.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .author("ashley g williams <ashley666ashley@gmail.com>")
         .subcommand(
             SubCommand::with_name("generate")
