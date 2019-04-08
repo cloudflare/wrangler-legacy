@@ -1,17 +1,18 @@
 use std::str::FromStr;
 
-use binary_install::Cache;
+use cache::get_wrangler_cache;
 use clap::{App, Arg, SubCommand};
 use commands::HTTPMethod;
 use settings::Settings;
 
+mod cache;
 mod commands;
 mod install;
 mod settings;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
-    let cache = Cache::new("wrangler")?;
+    let cache = get_wrangler_cache()?;
 
     let matches = App::new("👷‍♀️🧡☁️ ✨ wrangler")
         .version("0.1.0")
