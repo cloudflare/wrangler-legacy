@@ -3,12 +3,13 @@ use std::str::FromStr;
 use cache::get_wrangler_cache;
 use clap::{App, Arg, SubCommand};
 use commands::HTTPMethod;
-use settings::Settings;
 
 mod cache;
 mod commands;
 mod install;
-mod settings;
+mod user;
+
+use user::User;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
@@ -56,6 +57,11 @@ fn main() -> Result<(), failure::Error> {
                         .help("the ID of the zone to publish the worker to")
                         .index(1)
                         .required(true),
+                )
+                .arg(
+                    Arg::with_name("name")
+                        .help("(optional) For multiscript users, provide a script name")
+                        .index(2)
                 ),
         )
         .subcommand(
@@ -117,20 +123,20 @@ fn main() -> Result<(), failure::Error> {
             commands::build(&cache)?;
         }
     } else {
-        let settings = Settings::new()
-            .expect("🚧 Whoops! You aren't configured yet. Run `wrangler config`! 🚧");
+        let user = User::new().expect("😵 There was an error accessing your account.");
 
         if let Some(matches) = matches.subcommand_matches("publish") {
             let zone_id = matches
                 .value_of("zone_id")
                 .expect("A zone ID must be provided.");
+            let name = matches.value_of("name");
 
             commands::build(&cache)?;
-            commands::publish(zone_id, settings.clone())?;
+            commands::publish(zone_id, &user, name)?;
         }
 
         if matches.subcommand_matches("whoami").is_some() {
-            commands::whoami(settings)?;
+            commands::whoami(&user);
         }
     }
     Ok(())
