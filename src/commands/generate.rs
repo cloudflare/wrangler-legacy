@@ -16,7 +16,7 @@ pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure
     Ok(())
 }
 
-pub fn command(cmd: &str, name: &str) -> Command {
+fn command(cmd: &str, name: &str) -> Command {
     println!(
         "🐑 Generating a new rustwasm worker project with name '{}'...",
         name
