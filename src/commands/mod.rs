@@ -8,7 +8,7 @@ pub mod generate;
 pub mod publish;
 pub mod whoami;
 
-pub use self::config::config;
+pub use self::config::global_config;
 pub use build::build;
 pub use generate::generate;
 pub use publish::preview::preview;

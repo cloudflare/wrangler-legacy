@@ -96,7 +96,7 @@ fn main() -> Result<(), failure::Error> {
             let api_key = matches
                 .value_of("api-key")
                 .expect("An API key must be provided.");
-            commands::config(email, api_key)?;
+            commands::global_config(email, api_key)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("preview") {

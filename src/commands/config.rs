@@ -3,7 +3,7 @@ use std::path::Path;
 
 use crate::user::settings::Settings;
 
-pub fn config(email: &str, api_key: &str) -> Result<(), failure::Error> {
+pub fn global_config(email: &str, api_key: &str) -> Result<(), failure::Error> {
     let s = Settings {
         email: email.to_string(),
         api_key: api_key.to_string(),
