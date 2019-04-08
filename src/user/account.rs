@@ -50,8 +50,8 @@ fn account_data(settings: Settings) -> Result<AccountData, failure::Error> {
 
     let mut res = client
         .get(user_addr)
-        .header("X-Auth-Key", settings.api_key)
-        .header("X-Auth-Email", settings.email)
+        .header("X-Auth-Key", settings.global.api_key)
+        .header("X-Auth-Email", settings.global.email)
         .header(CONTENT_TYPE, "application/json")
         .send()?;
 
@@ -69,8 +69,8 @@ fn script_status(settings: Settings, account_data: &AccountData) -> Result<bool,
 
     let mut res = client
         .get(&addr)
-        .header("X-Auth-Key", settings.api_key)
-        .header("X-Auth-Email", settings.email)
+        .header("X-Auth-Key", settings.global.api_key)
+        .header("X-Auth-Email", settings.global.email)
         .header(CONTENT_TYPE, "application/json")
         .send()?;
 

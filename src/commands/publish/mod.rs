@@ -36,8 +36,8 @@ fn single_script(zone_id: &str, user: &User) -> Result<(), failure::Error> {
 
     client
         .put(&worker_addr)
-        .header("X-Auth-Key", settings.api_key)
-        .header("X-Auth-Email", settings.email)
+        .header("X-Auth-Key", settings.global.api_key)
+        .header("X-Auth-Email", settings.global.email)
         .multipart(build_form()?)
         .send()?;
 
@@ -56,8 +56,8 @@ fn multi_script(zone_id: &str, user: &User, name: &str) -> Result<(), failure::E
 
     client
         .put(&worker_addr)
-        .header("X-Auth-Key", settings.api_key)
-        .header("X-Auth-Email", settings.email)
+        .header("X-Auth-Key", settings.global.api_key)
+        .header("X-Auth-Email", settings.global.email)
         .multipart(build_form()?)
         .send()?;
 
