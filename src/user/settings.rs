@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs;
 use std::path::Path;
 
 use config::{Config, Environment, File};
@@ -12,10 +13,30 @@ pub struct GlobalSettings {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ProjectSettings {
+    pub name: String,
     pub zone_id: String,
     pub account_id: String,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
+}
+
+impl ProjectSettings {
+    pub fn generate(name: String) -> Result<ProjectSettings, failure::Error> {
+        let project_settings = ProjectSettings {
+            name: name.clone(),
+            zone_id: "".to_string(),
+            account_id: "".to_string(),
+            route: Some("".to_string()),
+            routes: None,
+        };
+
+        let toml = toml::to_string(&project_settings)?;
+        let config_path = Path::new("./").join(&name);
+        let config_file = config_path.join("wrangler.toml");
+
+        fs::write(&config_file, &toml)?;
+        Ok(project_settings)
+    }
 }
 
 #[derive(Clone, Serialize)]

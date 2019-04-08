@@ -1,3 +1,4 @@
+use crate::user::settings::ProjectSettings;
 use crate::{commands, install};
 use binary_install::Cache;
 use std::process::Command;
@@ -13,6 +14,7 @@ pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure
         name
     );
     commands::run(command(&worker_init, name), &worker_init)?;
+    ProjectSettings::generate(name.to_string())?;
     Ok(())
 }
 
