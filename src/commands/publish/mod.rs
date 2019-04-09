@@ -6,7 +6,6 @@ use std::path::Path;
 
 use crate::user::User;
 
-use failure::ResultExt;
 use reqwest::multipart::Form;
 
 pub fn publish(user: &User, name: Option<&str>) -> Result<(), failure::Error> {
@@ -70,7 +69,6 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
 fn build_form() -> Result<Form, failure::Error> {
     let name = krate::Krate::new("./")?.name.replace("-", "_");
     build_generated_dir()?;
-    modify_js(&name)?;
     concat_js(&name)?;
 
     let metadata_path = "./worker/metadata_wasm.json";
@@ -94,21 +92,8 @@ fn build_generated_dir() -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn modify_js(name: &str) -> Result<(), failure::Error> {
-    let bindgen_js_path = format!("./pkg/{}.js", name);
-    let bindgen_js: String = fs::read_to_string(&bindgen_js_path)
-        .context(format!("Error reading {}", bindgen_js_path))?
-        .parse()?;
-    // i am sorry for this hack, plz forgive
-    let modded = bindgen_js.replace("module_or_path instanceof WebAssembly.Module", "true");
-
-    let modded_js_path = format!("./worker/generated/{}.js", name);
-    fs::write(modded_js_path, modded.as_bytes())?;
-    Ok(())
-}
-
 fn concat_js(name: &str) -> Result<(), failure::Error> {
-    let bindgen_js_path = format!("./worker/generated/{}.js", name);
+    let bindgen_js_path = format!("./pkg/{}.js", name);
     let bindgen_js: String = fs::read_to_string(bindgen_js_path)?.parse()?;
 
     let worker_js: String = fs::read_to_string("./worker/worker.js")?.parse()?;
