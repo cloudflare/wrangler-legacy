@@ -25,9 +25,14 @@ Cloudflare Workers. This tool gives you the following commands:
   - ### 🔬 `preview`
     Preview your project using the cloudflareworkers.com API.
   - ### ☁️ 🆙 `publish`
-    Publish your Worker and WebAssembly to Cloudflare.
+    Publish your Worker and WebAssembly to Cloudflare. This uses the `account_id` and `zone_id`
+    from the `wrangler.toml`.
   - ### 🔧 `config`
-    Configure your global Cloudflare user
+    Configure your global Cloudflare user. You will need to pass your email and API key:
+
+    ```
+    wrangler config <email> <api_key>
+    ```
 
 ## 🔩 Configuration
 
@@ -139,7 +144,5 @@ There are two types of configuration that `wrangler` uses: global user and per p
 1. Publish your project:
 
     ```
-    wrangler publish <zone_id>
+    wrangler publish
     ```
-
-    ... where `<zone_id>` is replaced with the `id` for the Cloudflare zone you are publishing to!
