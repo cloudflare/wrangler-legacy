@@ -55,7 +55,7 @@ fn main() -> Result<(), failure::Error> {
                 .arg(
                     Arg::with_name("name")
                         .help("(optional) For multiscript users, provide a script name")
-                        .index(2)
+                        .index(1)
                 ),
         )
         .subcommand(
@@ -119,15 +119,16 @@ fn main() -> Result<(), failure::Error> {
     } else {
         let user = User::new()?;
 
+        if matches.subcommand_matches("whoami").is_some() {
+            commands::whoami(&user);
+        }
+
         if let Some(matches) = matches.subcommand_matches("publish") {
+            println!("src/main:127");
             let name = matches.value_of("name");
 
             commands::build(&cache)?;
-            commands::publish(&user, name)?;
-        }
-
-        if matches.subcommand_matches("whoami").is_some() {
-            commands::whoami(&user);
+            commands::publish(user, name)?;
         }
     }
     Ok(())

@@ -50,6 +50,7 @@ fn data(settings: Settings) -> Result<UserData, failure::Error> {
         .header("X-Auth-Email", settings.global_user.email)
         .send()?;
 
+    println!("THE RESPONSEE : {:?}", &res.text()?);
     let user_res: UserResponse = serde_json::from_str(&res.text()?)?;
     let user: UserData = user_res.result;
     Ok(user)
