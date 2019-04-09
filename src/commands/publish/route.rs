@@ -11,7 +11,6 @@ pub struct Route {
 
 impl Route {
     pub fn create(user: User, script: Option<String>) -> Result<Route, failure::Error> {
-        println!("Creating a route...");
         if user.account.multiscript {
             match script {
                 Some(s) => multi_script(user, s),

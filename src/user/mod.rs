@@ -20,9 +20,6 @@ pub struct UserResponse {
 #[derive(Debug, Deserialize)]
 pub struct UserData {
     pub email: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub username: String,
 }
 
 impl User {
@@ -50,7 +47,6 @@ fn data(settings: Settings) -> Result<UserData, failure::Error> {
         .header("X-Auth-Email", settings.global_user.email)
         .send()?;
 
-    println!("THE RESPONSEE : {:?}", &res.text()?);
     let user_res: UserResponse = serde_json::from_str(&res.text()?)?;
     let user: UserData = user_res.result;
     Ok(user)

@@ -12,7 +12,6 @@ use failure::ResultExt;
 use reqwest::multipart::Form;
 
 pub fn publish(user: User, name: Option<&str>) -> Result<(), failure::Error> {
-    println!("Calling publish....");
     if user.account.multiscript {
         if name.is_none() {
             println!("⚠️ You have multiscript account. Using a default name, 'wasm-worker'.")
@@ -52,7 +51,6 @@ fn single_script(user: &User) -> Result<(), failure::Error> {
 }
 
 fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
-    println!("Using multiscript...");
     let zone_id = &user.settings.project.zone_id;
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/zones/{}/workers/scripts/{}",

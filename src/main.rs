@@ -124,7 +124,6 @@ fn main() -> Result<(), failure::Error> {
         }
 
         if let Some(matches) = matches.subcommand_matches("publish") {
-            println!("src/main:127");
             let name = matches.value_of("name");
 
             commands::build(&cache)?;
