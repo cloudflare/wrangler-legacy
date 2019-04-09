@@ -46,8 +46,8 @@ fn data(settings: Settings) -> Result<UserData, failure::Error> {
 
     let mut res = client
         .get(user_addr)
-        .header("X-Auth-Key", settings.global.api_key)
-        .header("X-Auth-Email", settings.global.email)
+        .header("X-Auth-Key", settings.global_user.api_key)
+        .header("X-Auth-Email", settings.global_user.email)
         .send()?;
 
     let user_res: UserResponse = serde_json::from_str(&res.text()?)?;

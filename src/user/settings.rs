@@ -6,7 +6,7 @@ use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct GlobalSettings {
+pub struct GlobalUserSettings {
     pub email: String,
     pub api_key: String,
 }
@@ -41,20 +41,23 @@ impl ProjectSettings {
 
 #[derive(Clone, Serialize)]
 pub struct Settings {
-    pub global: GlobalSettings,
+    pub global_user: GlobalUserSettings,
     pub project: ProjectSettings,
 }
 
 impl Settings {
     pub fn new() -> Result<Self, failure::Error> {
-        let global = get_global_config()?;
+        let global_user = get_global_config()?;
         let project = get_project_config()?;
 
-        Ok(Settings { global, project })
+        Ok(Settings {
+            global_user,
+            project,
+        })
     }
 }
 
-fn get_global_config() -> Result<GlobalSettings, failure::Error> {
+fn get_global_config() -> Result<GlobalUserSettings, failure::Error> {
     let mut s = Config::new();
 
     let config_path = dirs::home_dir()
@@ -68,7 +71,7 @@ fn get_global_config() -> Result<GlobalSettings, failure::Error> {
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
     s.merge(Environment::with_prefix("CF"))?;
 
-    let settings: Result<GlobalSettings, config::ConfigError> = s.try_into();
+    let settings: Result<GlobalUserSettings, config::ConfigError> = s.try_into();
     match settings {
         Ok(s) => Ok(s),
         Err(e) => {

@@ -33,8 +33,8 @@ fn script_status(settings: Settings) -> Result<bool, failure::Error> {
 
     let mut res = client
         .get(&addr)
-        .header("X-Auth-Key", settings.global.api_key)
-        .header("X-Auth-Email", settings.global.email)
+        .header("X-Auth-Key", settings.global_user.api_key)
+        .header("X-Auth-Email", settings.global_user.email)
         .header(CONTENT_TYPE, "application/json")
         .send()?;
 
