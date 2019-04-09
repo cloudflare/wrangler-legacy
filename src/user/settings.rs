@@ -24,9 +24,9 @@ impl ProjectSettings {
     pub fn generate(name: String) -> Result<ProjectSettings, failure::Error> {
         let project_settings = ProjectSettings {
             name: name.clone(),
-            zone_id: "".to_string(),
-            account_id: "".to_string(),
-            route: Some("".to_string()),
+            zone_id: String::new(),
+            account_id: String::new(),
+            route: Some(String::new()),
             routes: None,
         };
 
@@ -68,7 +68,17 @@ fn get_global_config() -> Result<GlobalSettings, failure::Error> {
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
     s.merge(Environment::with_prefix("CF"))?;
 
-    Ok(s.try_into()?)
+    let settings: Result<GlobalSettings, config::ConfigError> = s.try_into();
+    match settings {
+        Ok(s) => Ok(s),
+        Err(e) => {
+            let msg = format!(
+                "⚠️ Your global config has an error, run `wrangler config`: {}",
+                e
+            );
+            Err(failure::err_msg(msg))
+        }
+    }
 }
 
 fn get_project_config() -> Result<ProjectSettings, failure::Error> {
@@ -83,5 +93,15 @@ fn get_project_config() -> Result<ProjectSettings, failure::Error> {
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
     s.merge(Environment::with_prefix("CF"))?;
 
-    Ok(s.try_into()?)
+    let settings: Result<ProjectSettings, config::ConfigError> = s.try_into();
+    match settings {
+        Ok(s) => Ok(s),
+        Err(e) => {
+            let msg = format!(
+                "⚠️ Your project config has an error, check your `wrangler.toml`: {}",
+                e
+            );
+            Err(failure::err_msg(msg))
+        }
+    }
 }

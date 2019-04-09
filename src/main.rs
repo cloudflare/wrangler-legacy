@@ -117,7 +117,7 @@ fn main() -> Result<(), failure::Error> {
             commands::build(&cache)?;
         }
     } else {
-        let user = User::new().expect("😵 There was an error accessing your account.");
+        let user = User::new()?;
 
         if let Some(matches) = matches.subcommand_matches("publish") {
             let name = matches.value_of("name");

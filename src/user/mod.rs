@@ -27,8 +27,7 @@ pub struct UserData {
 
 impl User {
     pub fn new() -> Result<User, failure::Error> {
-        let settings = Settings::new()
-            .expect("🚧 Whoops! You aren't configured yet. Run `wrangler config`! 🚧");
+        let settings = Settings::new()?;
 
         let account = Account::new(settings.clone())?;
         let data = data(settings.clone())?;
