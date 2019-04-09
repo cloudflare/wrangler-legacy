@@ -9,23 +9,24 @@ use crate::user::User;
 use failure::ResultExt;
 use reqwest::multipart::Form;
 
-pub fn publish(zone_id: &str, user: &User, name: Option<&str>) -> Result<(), failure::Error> {
+pub fn publish(user: &User, name: Option<&str>) -> Result<(), failure::Error> {
     if user.account.multiscript {
         if name.is_none() {
             println!("⚠️ You have multiscript account. Using a default name, 'wasm-worker'.")
         }
         let name = name.unwrap_or("wasm-worker");
-        multi_script(zone_id, &user, name)?;
+        multi_script(&user, name)?;
     } else {
         if name.is_some() {
             println!("⚠️ You only have a single script account. Ignoring name.")
         }
-        single_script(zone_id, &user)?;
+        single_script(&user)?;
     }
     Ok(())
 }
 
-fn single_script(zone_id: &str, user: &User) -> Result<(), failure::Error> {
+fn single_script(user: &User) -> Result<(), failure::Error> {
+    let zone_id = &user.settings.project.zone_id;
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/zones/{}/workers/script",
         zone_id
@@ -36,8 +37,8 @@ fn single_script(zone_id: &str, user: &User) -> Result<(), failure::Error> {
 
     client
         .put(&worker_addr)
-        .header("X-Auth-Key", settings.api_key)
-        .header("X-Auth-Email", settings.email)
+        .header("X-Auth-Key", settings.global_user.api_key)
+        .header("X-Auth-Email", settings.global_user.email)
         .multipart(build_form()?)
         .send()?;
 
@@ -45,7 +46,8 @@ fn single_script(zone_id: &str, user: &User) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn multi_script(zone_id: &str, user: &User, name: &str) -> Result<(), failure::Error> {
+fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
+    let zone_id = &user.settings.project.zone_id;
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/zones/{}/workers/scripts/{}",
         zone_id, name,
@@ -56,8 +58,8 @@ fn multi_script(zone_id: &str, user: &User, name: &str) -> Result<(), failure::E
 
     client
         .put(&worker_addr)
-        .header("X-Auth-Key", settings.api_key)
-        .header("X-Auth-Email", settings.email)
+        .header("X-Auth-Key", settings.global_user.api_key)
+        .header("X-Auth-Email", settings.global_user.email)
         .multipart(build_form()?)
         .send()?;
 

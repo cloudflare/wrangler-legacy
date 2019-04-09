@@ -6,6 +6,8 @@
 
 ✨ CHECK OUT THE [TUTORIAL](https://developers.cloudflare.com/workers/webassembly/tutorial/) ✨
 
+## 🎙️ Commands
+
 `wrangler` is a CLI tool designed for folks who are interested in using Rust-generated WebAssembly on
 Cloudflare Workers. This tool gives you the following commands:
 
@@ -23,17 +25,52 @@ Cloudflare Workers. This tool gives you the following commands:
   - ### 🔬 `preview`
     Preview your project using the cloudflareworkers.com API.
   - ### ☁️ 🆙 `publish`
-    Publish your Worker and WebAssembly to Cloudflare.
-  - ### Configuration
-    To set up `wrangler` to work with your Cloudflare account, use the following commands:
+    Publish your Worker and WebAssembly to Cloudflare. This uses the `account_id` and `zone_id`
+    from the `wrangler.toml`.
+  - ### 🔧 `config`
+    Configure your global Cloudflare user. You will need to pass your email and API key:
+
+    ```
+    wrangler config <email> <api_key>
+    ```
+
+## 🔩 Configuration
+
+There are two types of configuration that `wrangler` uses: global user and per project.
+
+- ### Global User
+
+    In Cloudflare's system, you have a User that can have multiple Accounts and Zones. As a result, your User
+    is configured globally on your machine. Your Account(s) and Zone(s) will be configured per project, but
+    will use your User credentials to authenticate all API calls. This config file is created in a `.wrangler`
+    directory in your computer's home directory.
+
+    To set up `wrangler` to work with your Cloudflare user, use the following commands:
 
     - 🔧 `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, 
        you can use the flags `--email` and `--api-key` to the command to skip the interactive part.
     - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is appropriately set up.
-       When successful,
-       this command will print out your account information, including the type of plan you are
-       currently on.
+       When successful, this command will print out your user information, including the type of plan you
+       are currently on.
 
+
+- ### Per Project
+
+    Your project will need to have several things configured before you can publish your worker. These values
+    are stored in a `wrangler.toml` file that `wrangler generate` will make for you. You will need to manually
+    edit this file to add these values before you can publish.
+
+    - `name`: This is the name of your project. It will be the name of your script.
+    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on.
+    - `account_id`: This is the ID of the account associated with your zone. You might have more than one account,
+        so make sure to use the ID of the account associated with the `zone_id` you provide.
+    - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
+        - `*example.com/*`
+        - `http://example.com/hello`
+        - `https://example.com/*/world`
+
+    Cloudflare templates automatically add the `wrangler.toml` file to `.gitignore`.
+    
     ⚠️ NEVER PUBLISH CREDENTIALS TO VERSION CONTROL! ⚠️
 
 ## ⚓ Installation
@@ -107,7 +144,5 @@ Cloudflare Workers. This tool gives you the following commands:
 1. Publish your project:
 
     ```
-    wrangler publish <zone_id>
+    wrangler publish
     ```
-
-    ... where `<zone_id>` is replaced with the `id` for the Cloudflare zone you are publishing to!

@@ -1,10 +1,10 @@
 use std::fs;
 use std::path::Path;
 
-use crate::user::settings::Settings;
+use crate::user::settings::GlobalUserSettings;
 
-pub fn config(email: &str, api_key: &str) -> Result<(), failure::Error> {
-    let s = Settings {
+pub fn global_config(email: &str, api_key: &str) -> Result<(), failure::Error> {
+    let s = GlobalUserSettings {
         email: email.to_string(),
         api_key: api_key.to_string(),
     };
