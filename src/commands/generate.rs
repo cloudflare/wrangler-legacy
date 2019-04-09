@@ -24,7 +24,6 @@ pub fn command(cmd: &str, name: &str) -> Command {
 
     if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
-        c.arg(cmd);
         c.args(&["/C", cmd]);
         c
     } else {
