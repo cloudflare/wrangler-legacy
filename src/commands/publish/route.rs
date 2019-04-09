@@ -4,7 +4,9 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct Route {
+    #[serde(skip_serializing_if = "Option::is_none")]
     enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     script: Option<String>,
     pattern: String,
 }
@@ -40,15 +42,21 @@ fn multi_script(user: User, script: String) -> Result<Route, failure::Error> {
 
     let client = reqwest::Client::new();
     let settings = user.settings;
+    let body = serde_json::to_string(&route)?;
 
-    client
-        .put(&routes_addr)
+    let mut res = client
+        .post(&routes_addr)
         .header("X-Auth-Key", settings.global_user.api_key)
         .header("X-Auth-Email", settings.global_user.email)
         .header(CONTENT_TYPE, "application/json")
-        .body(serde_json::to_string(&route)?)
+        .body(body)
         .send()?;
 
+
+    if !res.status().is_success() {
+        let msg = format!("⛔ There was an error creating your route.\n Status Code: {}\n Msg: {}", res.status(), res.text()?);
+        failure::bail!(msg)
+    }
     Ok(route)
 }
 
