@@ -6,6 +6,8 @@
 
 ✨ CHECK OUT THE [TUTORIAL](https://developers.cloudflare.com/workers/webassembly/tutorial/) ✨
 
+## 🎙️ Commands
+
 `wrangler` is a CLI tool designed for folks who are interested in using Rust-generated WebAssembly on
 Cloudflare Workers. This tool gives you the following commands:
 
@@ -24,8 +26,10 @@ Cloudflare Workers. This tool gives you the following commands:
     Preview your project using the cloudflareworkers.com API.
   - ### ☁️ 🆙 `publish`
     Publish your Worker and WebAssembly to Cloudflare.
+  - ### 🔧 `config`
+    Configure your global Cloudflare user
 
-## Configuration
+## 🔩 Configuration
 
 There are two types of configuration that `wrangler` uses: global user and per project.
 
