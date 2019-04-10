@@ -52,9 +52,12 @@ fn multi_script(user: User, script: String) -> Result<Route, failure::Error> {
         .body(body)
         .send()?;
 
-
     if !res.status().is_success() {
-        let msg = format!("⛔ There was an error creating your route.\n Status Code: {}\n Msg: {}", res.status(), res.text()?);
+        let msg = format!(
+            "⛔ There was an error creating your route.\n Status Code: {}\n Msg: {}",
+            res.status(),
+            res.text()?
+        );
         failure::bail!(msg)
     }
     Ok(route)

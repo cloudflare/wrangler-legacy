@@ -46,7 +46,10 @@ fn single_script(user: &User) -> Result<(), failure::Error> {
         .multipart(build_form()?)
         .send()?;
 
-    println!("✨ Success! Your worker was successfully published. You can view it at {}. ✨", settings.project.route.unwrap());
+    println!(
+        "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
+        settings.project.route.unwrap()
+    );
     Ok(())
 }
 
