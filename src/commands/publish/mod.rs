@@ -26,6 +26,10 @@ pub fn publish(user: User, name: Option<&str>) -> Result<(), failure::Error> {
         single_script(&user)?;
         Route::create(user, None)?;
     }
+    println!(
+        "✨ Success! Your worker was successfully published. You can view it at {}. ✨",   
+        user.settings.project.route.unwrap()
+    );
     Ok(())
 }
 
@@ -46,10 +50,6 @@ fn single_script(user: &User) -> Result<(), failure::Error> {
         .multipart(build_form()?)
         .send()?;
 
-    println!(
-        "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
-        settings.project.route.unwrap()
-    );
     Ok(())
 }
 
@@ -70,7 +70,6 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
         .multipart(build_form()?)
         .send()?;
 
-    println!("✨ Success! Your worker was successfully published. ✨",);
     Ok(())
 }
 
