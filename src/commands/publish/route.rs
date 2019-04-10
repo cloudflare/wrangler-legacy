@@ -12,7 +12,7 @@ pub struct Route {
 }
 
 impl Route {
-    pub fn create(user: User, script: Option<String>) -> Result<Route, failure::Error> {
+    pub fn create(user: &User, script: Option<String>) -> Result<Route, failure::Error> {
         if user.account.multiscript {
             match script {
                 Some(s) => multi_script(user, s),
@@ -27,7 +27,7 @@ impl Route {
     }
 }
 
-fn multi_script(user: User, script: String) -> Result<Route, failure::Error> {
+fn multi_script(user: &User, script: String) -> Result<Route, failure::Error> {
     let pattern = &user.settings.clone().project.route.expect("⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.");
     let route = Route {
         script: Some(script),
@@ -41,7 +41,7 @@ fn multi_script(user: User, script: String) -> Result<Route, failure::Error> {
     );
 
     let client = reqwest::Client::new();
-    let settings = user.settings;
+    let settings = user.settings.to_owned();
     let body = serde_json::to_string(&route)?;
 
     let mut res = client
@@ -63,7 +63,7 @@ fn multi_script(user: User, script: String) -> Result<Route, failure::Error> {
     Ok(route)
 }
 
-fn single_script(user: User) -> Result<Route, failure::Error> {
+fn single_script(user: &User) -> Result<Route, failure::Error> {
     let pattern = user.settings.clone().project.route.expect("⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.");
     let route = Route {
         script: None,
@@ -77,7 +77,7 @@ fn single_script(user: User) -> Result<Route, failure::Error> {
     );
 
     let client = reqwest::Client::new();
-    let settings = user.settings;
+    let settings = user.settings.to_owned();
 
     client
         .put(&filters_addr)

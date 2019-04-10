@@ -18,16 +18,16 @@ pub fn publish(user: User, name: Option<&str>) -> Result<(), failure::Error> {
         }
         let name = name.unwrap_or("wasm-worker");
         multi_script(&user, name)?;
-        Route::create(user, Some(name.to_string()))?;
+        Route::create(&user, Some(name.to_string()))?;
     } else {
         if name.is_some() {
             println!("⚠️ You only have a single script account. Ignoring name.")
         }
         single_script(&user)?;
-        Route::create(user, None)?;
+        Route::create(&user, None)?;
     }
     println!(
-        "✨ Success! Your worker was successfully published. You can view it at {}. ✨",   
+        "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
         user.settings.project.route.unwrap()
     );
     Ok(())
