@@ -1,5 +1,7 @@
 mod krate;
 pub mod preview;
+mod route;
+use route::Route;
 
 use std::fs;
 use std::path::Path;
@@ -8,19 +10,25 @@ use crate::user::User;
 
 use reqwest::multipart::Form;
 
-pub fn publish(user: &User, name: Option<&str>) -> Result<(), failure::Error> {
+pub fn publish(user: User, name: Option<&str>) -> Result<(), failure::Error> {
     if user.account.multiscript {
         if name.is_none() {
             println!("⚠️ You have multiscript account. Using a default name, 'wasm-worker'.")
         }
         let name = name.unwrap_or("wasm-worker");
         multi_script(&user, name)?;
+        Route::create(&user, Some(name.to_string()))?;
     } else {
         if name.is_some() {
             println!("⚠️ You only have a single script account. Ignoring name.")
         }
         single_script(&user)?;
+        Route::create(&user, None)?;
     }
+    println!(
+        "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
+        user.settings.project.route.unwrap()
+    );
     Ok(())
 }
 
@@ -41,7 +49,6 @@ fn single_script(user: &User) -> Result<(), failure::Error> {
         .multipart(build_form()?)
         .send()?;
 
-    println!("✨ Success! Your worker was successfully published. ✨",);
     Ok(())
 }
 
@@ -62,7 +69,6 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
         .multipart(build_form()?)
         .send()?;
 
-    println!("✨ Success! Your worker was successfully published. ✨",);
     Ok(())
 }
 

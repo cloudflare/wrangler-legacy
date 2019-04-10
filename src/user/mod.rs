@@ -20,9 +20,6 @@ pub struct UserResponse {
 #[derive(Debug, Deserialize)]
 pub struct UserData {
     pub email: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub username: String,
 }
 
 impl User {
