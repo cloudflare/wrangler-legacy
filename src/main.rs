@@ -56,7 +56,14 @@ fn main() -> Result<(), failure::Error> {
                     Arg::with_name("name")
                         .help("(optional) For multiscript users, provide a script name")
                         .index(1)
-                ),
+                )
+                .arg(
+                    Arg::with_name("force")
+                        .help("overwrite prexisting scripts and routes")
+                        .short("f")
+                        .long("force")
+                        .multiple(false)
+                )
         )
         .subcommand(
             SubCommand::with_name("config")
