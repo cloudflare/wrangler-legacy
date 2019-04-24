@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 use std::fs;
 use std::path::Path;
 
@@ -16,18 +17,38 @@ pub struct GlobalUserSettings {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ProjectSettings {
     pub name: String,
+    #[serde(rename = "type")]
+    pub project_type: ProjectType,
     pub zone_id: String,
-    pub account_id: String,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum ProjectType {
+    JavaScript,
+    Rust,
+}
+
+impl fmt::Display for ProjectType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let printable = match *self {
+            ProjectType::JavaScript => "js",
+            ProjectType::Rust => "rust",
+        };
+        write!(f, "{}", printable)
+    }
+}
+
 impl ProjectSettings {
-    pub fn generate(name: String) -> Result<ProjectSettings, failure::Error> {
+    pub fn generate(
+        name: String,
+        project_type: ProjectType,
+    ) -> Result<ProjectSettings, failure::Error> {
         let project_settings = ProjectSettings {
             name: name.clone(),
+            project_type: project_type.clone(),
             zone_id: String::new(),
-            account_id: String::new(),
             route: Some(String::new()),
             routes: None,
         };
@@ -87,7 +108,7 @@ fn get_global_config() -> Result<GlobalUserSettings, failure::Error> {
     }
 }
 
-fn get_project_config() -> Result<ProjectSettings, failure::Error> {
+pub fn get_project_config() -> Result<ProjectSettings, failure::Error> {
     let mut s = Config::new();
 
     let config_path = Path::new("./wrangler.toml");

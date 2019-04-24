@@ -30,7 +30,7 @@ fn main() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("template")
-                        .help("a link to a github template! defaultes to cloudflare/rustwasm-worker-template")
+                        .help("a link to a github template! defaults to cloudflare/worker-template")
                         .index(2),
                 ),
         )
@@ -53,12 +53,7 @@ fn main() -> Result<(), failure::Error> {
         )
         .subcommand(
             SubCommand::with_name("publish")
-                .about("☁️ 🆙 Push your worker to the orange cloud")
-                .arg(
-                    Arg::with_name("name")
-                        .help("(optional) For multiscript users, provide a script name")
-                        .index(1)
-                ),
+                .about("☁️ 🆙 Push your worker to the orange cloud"),
         )
         .subcommand(
             SubCommand::with_name("config")
@@ -82,8 +77,8 @@ fn main() -> Result<(), failure::Error> {
         )
         .get_matches();
 
-    if matches.subcommand_matches("publish").is_none()
-        && matches.subcommand_matches("whoami").is_none()
+    if matches.subcommand_matches("config").is_some()
+        || matches.subcommand_matches("generate").is_some()
     {
         if let Some(matches) = matches.subcommand_matches("config") {
             let email = matches
@@ -95,32 +90,16 @@ fn main() -> Result<(), failure::Error> {
             commands::global_config(email, api_key)?;
         }
 
-        if let Some(matches) = matches.subcommand_matches("preview") {
-            let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
-
-            let body = match matches.value_of("body") {
-                Some(s) => Some(s.to_string()),
-                None => None,
-            };
-
-            commands::build(&cache)?;
-            commands::preview(method, body)?;
-        }
-
         if let Some(matches) = matches.subcommand_matches("generate") {
             let name = matches.value_of("name").unwrap_or("wasm-worker");
             let template = matches
                 .value_of("template")
-                .unwrap_or("https://github.com/cloudflare/rustwasm-worker-template");
+                .unwrap_or("https://github.com/cloudflare/worker-template");
             info!(
                 "Generate command called with template {}, and name {}",
                 template, name
             );
             commands::generate(name, template, &cache)?;
-        }
-
-        if matches.subcommand_matches("build").is_some() {
-            commands::build(&cache)?;
         }
     } else {
         info!("Getting user and project settings");
@@ -130,11 +109,25 @@ fn main() -> Result<(), failure::Error> {
             commands::whoami(&user);
         }
 
-        if let Some(matches) = matches.subcommand_matches("publish") {
-            let name = matches.value_of("name");
+        if matches.subcommand_matches("build").is_some() {
+            commands::build(&cache, &user.settings.project.project_type)?;
+        }
 
-            commands::build(&cache)?;
-            commands::publish(user, name)?;
+        if let Some(matches) = matches.subcommand_matches("preview") {
+            let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
+
+            let body = match matches.value_of("body") {
+                Some(s) => Some(s.to_string()),
+                None => None,
+            };
+
+            commands::build(&cache, &user.settings.project.project_type)?;
+            commands::preview(method, body)?;
+        }
+
+        if matches.subcommand_matches("publish").is_some() {
+            commands::build(&cache, &user.settings.project.project_type)?;
+            commands::publish(user)?;
         }
     }
     Ok(())

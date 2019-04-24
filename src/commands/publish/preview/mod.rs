@@ -8,6 +8,8 @@ use crate::commands::publish;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::user::settings::{get_project_config, ProjectType};
+
 #[derive(Debug, Deserialize)]
 struct Preview {
     pub id: String,
@@ -20,10 +22,19 @@ pub fn preview(
     let create_address = "https://cloudflareworkers.com/script";
 
     let client = reqwest::Client::new();
-    let res = client
-        .post(create_address)
-        .multipart(publish::build_form()?)
-        .send();
+
+    let project_type = get_project_config()?.project_type;
+
+    let res = match project_type {
+        ProjectType::Rust => client
+            .post(create_address)
+            .multipart(publish::build_form()?)
+            .send(),
+        ProjectType::JavaScript => client
+            .post(create_address)
+            .body(publish::build_js()?)
+            .send(),
+    };
 
     let p: Preview = serde_json::from_str(&res?.text()?)?;
 
