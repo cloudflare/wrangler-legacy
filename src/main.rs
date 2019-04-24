@@ -132,9 +132,13 @@ fn main() -> Result<(), failure::Error> {
 
         if let Some(matches) = matches.subcommand_matches("publish") {
             let name = matches.value_of("name");
+            let force = match matches.occurrences_of("force") {
+                0 => false,
+                _ => true,
+            };
 
             commands::build(&cache)?;
-            commands::publish(user, name)?;
+            commands::publish(user, name, force)?;
         }
     }
     Ok(())

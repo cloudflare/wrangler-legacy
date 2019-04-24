@@ -10,7 +10,7 @@ use crate::user::User;
 
 use reqwest::multipart::Form;
 
-pub fn publish(user: User, name: Option<&str>) -> Result<(), failure::Error> {
+pub fn publish(user: User, name: Option<&str>, force: bool) -> Result<(), failure::Error> {
     if user.account.multiscript {
         if name.is_none() {
             println!("⚠️ You have multiscript account. Using a default name, 'wasm-worker'.")
@@ -22,8 +22,8 @@ pub fn publish(user: User, name: Option<&str>) -> Result<(), failure::Error> {
         if name.is_some() {
             println!("⚠️ You only have a single script account. Ignoring name.")
         }
-        single_script(&user)?;
-        Route::create(&user, None)?;
+        Route::create(&user, None, force)?;
+        single_script(&user, force)?;
     }
     println!(
         "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
@@ -32,7 +32,7 @@ pub fn publish(user: User, name: Option<&str>) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn single_script(user: &User) -> Result<(), failure::Error> {
+fn single_script(user: &User, force: bool) -> Result<(), failure::Error> {
     let zone_id = &user.settings.project.zone_id;
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/zones/{}/workers/script",
@@ -46,6 +46,7 @@ fn single_script(user: &User) -> Result<(), failure::Error> {
         .put(&worker_addr)
         .header("X-Auth-Key", settings.global_user.api_key)
         .header("X-Auth-Email", settings.global_user.email)
+        .header("If-None-Match", "*".to_string())
         .multipart(build_form()?)
         .send()?;
 
@@ -53,6 +54,27 @@ fn single_script(user: &User) -> Result<(), failure::Error> {
 }
 
 fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
+    let zone_id = &user.settings.project.zone_id;
+    let worker_addr = format!(
+        "https://api.cloudflare.com/client/v4/zones/{}/workers/scripts/{}",
+        zone_id, name,
+    );
+
+    let client = reqwest::Client::new();
+    let settings = user.settings.clone();
+
+    client
+        .put(&worker_addr)
+        .header("X-Auth-Key", settings.global_user.api_key)
+        .header("X-Auth-Email", settings.global_user.email)
+        .header("If-None-Match", "*".to_string())
+        .multipart(build_form()?)
+        .send()?;
+
+    Ok(())
+}
+
+fn force_multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
     let zone_id = &user.settings.project.zone_id;
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/zones/{}/workers/scripts/{}",
