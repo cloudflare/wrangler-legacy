@@ -28,7 +28,9 @@ impl Route {
 }
 
 fn multi_script(user: &User, script: String) -> Result<Route, failure::Error> {
-    let pattern = &user.settings.clone().project.route.expect("⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.");
+    let pattern = &user.settings.clone().project.route.expect(
+        "⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.",
+    );
     let route = Route {
         script: Some(script),
         pattern: pattern.to_string(),
@@ -64,7 +66,9 @@ fn multi_script(user: &User, script: String) -> Result<Route, failure::Error> {
 }
 
 fn single_script(user: &User) -> Result<Route, failure::Error> {
-    let pattern = user.settings.clone().project.route.expect("⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.");
+    let pattern = user.settings.clone().project.route.expect(
+        "⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.",
+    );
     let route = Route {
         script: None,
         pattern,

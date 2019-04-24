@@ -7,31 +7,40 @@ pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure
     let tool_name = "cargo-generate";
     let binary_path = install::install(tool_name, "ashleygwilliams", cache)?.binary(tool_name)?;
 
-    let worker_init = format!(
-        "{} generate --git {} --name {}",
-        binary_path.to_string_lossy(),
+    let args = [
+        &*binary_path.to_string_lossy(),
+        "generate",
+        "--git",
         template,
-        name
-    );
-    commands::run(command(&worker_init, name), &worker_init)?;
+        "--name",
+        name,
+    ];
+
+    let command = command(name, &args);
+    let command_name = format!("{:?}", command);
+
+    commands::run(command, &command_name)?;
     ProjectSettings::generate(name.to_string())?;
     Ok(())
 }
 
-fn command(cmd: &str, name: &str) -> Command {
+fn command(name: &str, args: &[&str]) -> Command {
     println!(
         "🐑 Generating a new rustwasm worker project with name '{}'...",
         name
     );
 
-    if cfg!(target_os = "windows") {
+    let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
-        c.args(&["/C", cmd]);
+        c.arg("/C");
         c
     } else {
         let mut c = Command::new("sh");
         c.arg("-c");
-        c.arg(cmd);
         c
-    }
+    };
+
+    c.args(args);
+
+    c
 }
