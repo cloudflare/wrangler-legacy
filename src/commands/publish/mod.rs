@@ -5,13 +5,12 @@ use route::Route;
 
 use log::info;
 
+use reqwest::multipart::Form;
 use std::fs;
-use std::path::Path;
 
 use crate::user::settings::ProjectType;
 use crate::user::User;
-
-use reqwest::multipart::Form;
+use crate::wranglerjs::Bundle;
 
 pub fn publish(user: User) -> Result<(), failure::Error> {
     let name = &user.settings.project.name;
@@ -78,38 +77,29 @@ fn build_js() -> Result<String, failure::Error> {
 }
 
 fn build_form() -> Result<Form, failure::Error> {
-    let name = krate::Krate::new("./")?.name.replace("-", "_");
-    build_generated_dir()?;
-    concat_js(&name)?;
+    let bundle = Bundle::new();
 
-    let metadata_path = "./worker/metadata_wasm.json";
-    let wasm_path = &format!("./pkg/{}_bg.wasm", name);
-    let script_path = "./worker/generated/script.js";
+    let form = Form::new()
+        .file("metadata", bundle.metadata_path())
+        .unwrap_or_else(|_| panic!("{} not found. Did you delete it?", bundle.metadata_path()))
+        .file("script", bundle.script_path())
+        .unwrap_or_else(|_| {
+            panic!(
+                "{} not found. Did you rename your js files?",
+                bundle.script_path()
+            )
+        });
 
-    Ok(Form::new()
-        .file("metadata", metadata_path)
-        .unwrap_or_else(|_| panic!("{} not found. Did you delete it?", metadata_path))
-        .file("wasmprogram", wasm_path)
-        .unwrap_or_else(|_| panic!("{} not found. Have you run wrangler build?", wasm_path))
-        .file("script", script_path)
-        .unwrap_or_else(|_| panic!("{} not found. Did you rename your js files?", script_path)))
-}
-
-fn build_generated_dir() -> Result<(), failure::Error> {
-    let dir = "./worker/generated";
-    if !Path::new(dir).is_dir() {
-        fs::create_dir("./worker/generated")?;
+    if bundle.has_wasm() {
+        Ok(form
+            .file("wasmprogram", bundle.wasm_path())
+            .unwrap_or_else(|_| {
+                panic!(
+                    "{} not found. Have you run wrangler build?",
+                    bundle.wasm_path()
+                )
+            }))
+    } else {
+        Ok(form)
     }
-    Ok(())
-}
-
-fn concat_js(name: &str) -> Result<(), failure::Error> {
-    let bindgen_js_path = format!("./pkg/{}.js", name);
-    let bindgen_js: String = fs::read_to_string(bindgen_js_path)?.parse()?;
-
-    let worker_js: String = fs::read_to_string("./worker/worker.js")?.parse()?;
-    let js = format!("{} {}", bindgen_js, worker_js);
-
-    fs::write("./worker/generated/script.js", js.as_bytes())?;
-    Ok(())
 }
