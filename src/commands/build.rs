@@ -1,14 +1,16 @@
 use crate::user::settings::ProjectType;
 use crate::wranglerjs;
-use crate::{commands, install};
 use binary_install::Cache;
 use std::path::PathBuf;
 use std::process::Command;
 
 pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
-    match project_type {
-        _ => wranglerjs::run_build(),
+    if !wranglerjs::is_installed() {
+        println!("missing deps; installing...");
+        wranglerjs::install();
     }
+
+    wranglerjs::run_build();
     Ok(())
 }
 
