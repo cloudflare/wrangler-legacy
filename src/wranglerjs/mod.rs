@@ -26,8 +26,10 @@ impl Bundle {
 }
 
 pub fn run_build() -> Result<(), failure::Error> {
-    Command::new("wrangler-js")
+    let output = Command::new("wrangler-js")
         .output()
         .expect("failed to execute process");
+    assert!(output.status.success());
+    println!("{}", String::from_utf8_lossy(&output.stdout));
     Ok(())
 }
