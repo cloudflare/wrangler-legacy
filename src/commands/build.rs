@@ -1,16 +1,10 @@
+use crate::wranglerjs;
 use crate::{commands, install};
 use binary_install::Cache;
 use std::process::Command;
 
 pub fn build(cache: &Cache) -> Result<(), failure::Error> {
-    let tool_name = "wasm-pack";
-    let binary_path = install::install(tool_name, "rustwasm", cache)?.binary(tool_name)?;
-    let build_wasm = format!(
-        "{} build --target no-modules",
-        binary_path.to_string_lossy()
-    );
-    commands::run(command(&build_wasm), &build_wasm)?;
-    Ok(())
+    wranglerjs::run_build()
 }
 
 fn command(cmd: &str) -> Command {

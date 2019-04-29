@@ -8,6 +8,7 @@ mod cache;
 mod commands;
 mod install;
 mod user;
+mod wranglerjs;
 
 use user::User;
 
