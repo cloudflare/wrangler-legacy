@@ -1,5 +1,5 @@
+use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::path::Path;
 
 pub struct Bundle {}
 
@@ -25,8 +25,30 @@ impl Bundle {
     }
 }
 
+fn executable_path() -> PathBuf {
+    Path::new(".")
+        .join("node_modules")
+        .join(".bin")
+        .join("wrangler-js")
+}
+
 pub fn run_build() -> Result<(), failure::Error> {
-    let output = Command::new("wrangler-js")
+    let output = Command::new(executable_path())
+        .output()
+        .expect("failed to execute process");
+    assert!(output.status.success());
+    println!("{}", String::from_utf8_lossy(&output.stdout));
+    Ok(())
+}
+
+pub fn is_installed() -> bool {
+    executable_path().exists()
+}
+
+pub fn install() -> Result<(), failure::Error> {
+    let output = Command::new("npm")
+        .arg("install")
+        .arg("wrangler-js")
         .output()
         .expect("failed to execute process");
     assert!(output.status.success());

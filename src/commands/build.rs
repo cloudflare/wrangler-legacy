@@ -1,9 +1,13 @@
 use crate::wranglerjs;
-use crate::{commands, install};
 use binary_install::Cache;
 use std::process::Command;
 
 pub fn build(cache: &Cache) -> Result<(), failure::Error> {
+    if !wranglerjs::is_installed() {
+        println!("missing deps; installing...");
+        wranglerjs::install();
+    }
+
     wranglerjs::run_build()
 }
 
