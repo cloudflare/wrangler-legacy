@@ -9,7 +9,9 @@ use which::which;
 pub fn install(tool_name: &str, owner: &str, cache: &Cache) -> Result<Download, failure::Error> {
     if let Ok(path) = which(tool_name) {
         log::debug!("found global {} binary at: {}", tool_name, path.display());
-        return Ok(Download::at(path.parent().unwrap()));
+        return Ok(Download::at(
+            path.parent().expect("⚠️ There is no path parent"),
+        ));
     }
 
     let latest_version = get_latest_version(tool_name)?;
@@ -28,7 +30,6 @@ fn download_prebuilt(
     owner: &str,
     version: &str,
 ) -> Result<Download, failure::Error> {
-    println!("⬇️ Installing {}...", tool_name);
     let url = match prebuilt_url(tool_name, owner, version) {
         Some(url) => url,
         None => failure::bail!(format!(
@@ -39,7 +40,10 @@ fn download_prebuilt(
 
     let binaries = &[tool_name];
     match cache.download(true, tool_name, binaries, &url)? {
-        Some(download) => Ok(download),
+        Some(download) => {
+            println!("⬇️ Installing {}...", tool_name);
+            Ok(download)
+        }
         None => failure::bail!("{} is not installed!", tool_name),
     }
 }

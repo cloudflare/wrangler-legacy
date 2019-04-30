@@ -27,7 +27,10 @@ pub fn publish(user: User, name: Option<&str>) -> Result<(), failure::Error> {
     }
     println!(
         "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
-        user.settings.project.route.unwrap()
+        user.settings
+            .project
+            .route
+            .expect("⚠️ There should be a route")
     );
     Ok(())
 }
