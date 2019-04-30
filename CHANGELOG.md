@@ -7,7 +7,7 @@
     - **Fix `publish` and `preview` bug for projects with a `-` - [jaysonsantos], [issue/36] [pull/38]**
 
         Rust is a sometimes surprisingly opinionated language! When your `Cargo.toml` specifies a project
-        name with a hypen(`-`) in the name, the Rust compiler will implicitly understand this as a `_` for
+        name with a hyphen(`-`) in the name, the Rust compiler will implicitly understand this as a `_` for
         all imports and when it creates compiled artifacts it will name them with a `_`.
 
         The original implementation of `wrangler` skipped over this, and as a result would go looking for a
