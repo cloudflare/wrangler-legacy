@@ -4,8 +4,6 @@ mod route;
 use route::Route;
 
 use reqwest::multipart::Form;
-use std::fs;
-use std::path::Path;
 
 use crate::user::User;
 use crate::wranglerjs::Bundle;
@@ -73,6 +71,7 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
 }
 
 fn build_form() -> Result<Form, failure::Error> {
+    // FIXME(sven): shouldn't new
     let bundle = Bundle::new();
 
     let form = Form::new()
@@ -88,7 +87,7 @@ fn build_form() -> Result<Form, failure::Error> {
 
     if bundle.has_wasm() {
         Ok(form
-            .file("wasmprogram", bundle.wasm_path())
+            .file(bundle.get_wasm_binding(), bundle.wasm_path())
             .unwrap_or_else(|_| {
                 panic!(
                     "{} not found. Have you run wrangler build?",
