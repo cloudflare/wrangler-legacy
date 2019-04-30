@@ -77,6 +77,7 @@ fn build_js() -> Result<String, failure::Error> {
 }
 
 fn build_form() -> Result<Form, failure::Error> {
+    // FIXME(sven): shouldn't new
     let bundle = Bundle::new();
 
     let form = Form::new()
@@ -92,7 +93,7 @@ fn build_form() -> Result<Form, failure::Error> {
 
     if bundle.has_wasm() {
         Ok(form
-            .file("wasmprogram", bundle.wasm_path())
+            .file(bundle.get_wasm_binding(), bundle.wasm_path())
             .unwrap_or_else(|_| {
                 panic!(
                     "{} not found. Have you run wrangler build?",

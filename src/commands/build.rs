@@ -7,10 +7,16 @@ use std::process::Command;
 pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
     if !wranglerjs::is_installed() {
         println!("missing deps; installing...");
-        wranglerjs::install();
+        wranglerjs::install().expect("could not install wranglerjs");
     }
 
-    wranglerjs::run_build();
+    let wranglerjs_output = wranglerjs::run_build().expect("could not run wranglerjs");
+    let bundle = wranglerjs::Bundle::new();
+
+    bundle
+        .write(wranglerjs_output)
+        .expect("could not write bundle to disk");
+
     Ok(())
 }
 
