@@ -4,6 +4,8 @@ use cache::get_wrangler_cache;
 use clap::{App, Arg, SubCommand};
 use commands::HTTPMethod;
 
+use log::info;
+
 mod cache;
 mod commands;
 mod install;
@@ -110,6 +112,10 @@ fn main() -> Result<(), failure::Error> {
             let template = matches
                 .value_of("template")
                 .unwrap_or("https://github.com/cloudflare/rustwasm-worker-template");
+            info!(
+                "Generate command called with template {}, and name {}",
+                template, name
+            );
             commands::generate(name, template, &cache)?;
         }
 
@@ -117,6 +123,7 @@ fn main() -> Result<(), failure::Error> {
             commands::build(&cache)?;
         }
     } else {
+        info!("Getting user and project settings");
         let user = User::new()?;
 
         if matches.subcommand_matches("whoami").is_some() {

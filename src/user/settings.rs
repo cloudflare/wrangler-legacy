@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use log::info;
+
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 
@@ -34,6 +36,7 @@ impl ProjectSettings {
         let config_path = Path::new("./").join(&name);
         let config_file = config_path.join("wrangler.toml");
 
+        info!("Writing a wrangler.toml file at {}", config_file.display());
         fs::write(&config_file, &toml)?;
         Ok(project_settings)
     }
