@@ -12,10 +12,13 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
 
     let wranglerjs_output = wranglerjs::run_build().expect("could not run wranglerjs");
     let bundle = wranglerjs::Bundle::new();
+    let out = wranglerjs_output.compiler_output();
 
     bundle
         .write(wranglerjs_output)
         .expect("could not write bundle to disk");
+
+    println!("{}", out);
 
     Ok(())
 }
