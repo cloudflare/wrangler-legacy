@@ -60,12 +60,14 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
     let client = reqwest::Client::new();
     let settings = user.settings.clone();
 
-    client
+    let mut res = client
         .put(&worker_addr)
         .header("X-Auth-Key", settings.global_user.api_key)
         .header("X-Auth-Email", settings.global_user.email)
         .multipart(build_form()?)
         .send()?;
+
+    println!("{}", res.text().unwrap());
 
     Ok(())
 }
@@ -86,6 +88,7 @@ fn build_form() -> Result<Form, failure::Error> {
         });
 
     if bundle.has_wasm() {
+        println!("add wasm bindinds");
         Ok(form
             .file(bundle.get_wasm_binding(), bundle.wasm_path())
             .unwrap_or_else(|_| {

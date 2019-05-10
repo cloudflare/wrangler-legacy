@@ -7,12 +7,19 @@ use std::process::Command;
 // FIXME(sven): make this private
 #[derive(Deserialize, Debug)]
 pub struct WrangerjsOutput {
-    pub wasm: Option<String>,
-    pub wasm_name: String,
-    pub script: String,
+    wasm: Option<String>,
+    wasm_name: String,
+    script: String,
+    compiler_output: String,
 }
 
-pub struct Bundle {}
+impl WrangerjsOutput {
+    pub fn compiler_output(&self) -> String {
+        self.compiler_output.clone()
+    }
+}
+
+pub struct Bundle { }
 
 impl Bundle {
     pub fn new() -> Bundle {
@@ -24,8 +31,7 @@ impl Bundle {
         metadata_file.write_all(create_metadata(self).as_bytes())?;
 
         let mut script_file = File::create(self.script_path())?;
-        let mut script = wranglerjs_output.script;
-        script += &create_prologue();
+        let mut script = create_prologue();
 
         match wranglerjs_output.wasm {
             Some(wasm) => {
@@ -38,6 +44,7 @@ impl Bundle {
             None => {}
         }
 
+        script += &wranglerjs_output.script;
         script_file.write_all(script.as_bytes())?;
 
         Ok(())
@@ -66,10 +73,11 @@ impl Bundle {
 }
 
 fn executable_path() -> PathBuf {
-    Path::new(".")
-        .join("node_modules")
-        .join(".bin")
-        .join("wrangler-js")
+    Path::new("/home/sven/Documents/xtuc/wrangler-js").join("index.js")
+    // Path::new(".")
+    //     .join("node_modules")
+    //     .join(".bin")
+    //     .join("wrangler-js")
 }
 
 pub fn run_build() -> Result<WrangerjsOutput, failure::Error> {
@@ -78,7 +86,7 @@ pub fn run_build() -> Result<WrangerjsOutput, failure::Error> {
         .expect("failed to execute process");
     println!("{}", String::from_utf8_lossy(&output.stderr));
     assert!(output.status.success());
-    println!("{}", String::from_utf8_lossy(&output.stdout));
+    // println!("{}", String::from_utf8_lossy(&output.stdout));
 
     Ok(
         serde_json::from_str(&String::from_utf8_lossy(&output.stdout))
@@ -111,6 +119,7 @@ pub fn create_prologue() -> String {
 pub fn create_wasm_prologue(name: String, binding: String) -> String {
     format!(
         "
+        const oldFetch = fetch;
         function fetch(name) {{
           if (name === \"{name}\") {{
             return Promise.resolve({{
@@ -119,7 +128,7 @@ pub fn create_wasm_prologue(name: String, binding: String) -> String {
               }}
             }});
           }}
-          throw new Error(\"unreachable: attempt to fetch \" + name);
+          return oldFetch(name);
         }}
     ",
         name = name,
