@@ -6,7 +6,6 @@ use route::Route;
 use log::info;
 
 use std::fs;
-use std::io::Read;
 use std::path::Path;
 
 use crate::user::settings::ProjectType;
@@ -75,10 +74,7 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
 }
 
 fn build_js() -> Result<String, failure::Error> {
-    let mut f = fs::File::open("worker.js")?;
-    let mut buffer = String::new();
-    f.read_to_string(&mut buffer)?;
-    Ok(buffer)
+    Ok(fs::read_to_string("worker.js")?)
 }
 
 fn build_form() -> Result<Form, failure::Error> {
