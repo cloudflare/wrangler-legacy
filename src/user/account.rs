@@ -2,6 +2,8 @@ use super::settings::Settings;
 use reqwest::header::CONTENT_TYPE;
 use serde::{self, Deserialize};
 
+use log::info;
+
 #[derive(Debug, Deserialize)]
 pub struct Account {
     pub multiscript: bool,
@@ -25,6 +27,8 @@ impl Account {
 }
 
 fn script_status(settings: Settings) -> Result<bool, failure::Error> {
+    info!("Requesting user's script status...");
+
     let addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/settings",
         settings.project.account_id

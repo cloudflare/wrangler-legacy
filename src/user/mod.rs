@@ -1,14 +1,11 @@
 use serde::Deserialize;
 
-use account::Account;
 use settings::Settings;
 
-mod account;
 pub mod settings;
 
 pub struct User {
     pub data: UserData,
-    pub account: Account,
     pub settings: Settings,
 }
 
@@ -26,13 +23,8 @@ impl User {
     pub fn new() -> Result<User, failure::Error> {
         let settings = Settings::new()?;
 
-        let account = Account::new(settings.clone())?;
         let data = data(settings.clone())?;
-        Ok(User {
-            settings,
-            account,
-            data,
-        })
+        Ok(User { settings, data })
     }
 }
 
