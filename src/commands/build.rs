@@ -4,6 +4,8 @@ use binary_install::Cache;
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::emoji;
+
 pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
     match project_type {
         ProjectType::JavaScript => {
@@ -24,7 +26,7 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
 }
 
 fn command(args: &[&str], binary_path: PathBuf) -> Command {
-    println!("🌀 Compiling your project to WebAssembly...");
+    println!("{} Compiling your project to WebAssembly...", emoji::SWIRL);
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");

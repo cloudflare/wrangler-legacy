@@ -12,6 +12,7 @@ categories = ["wasm"]
 binary-install = "0.0.2"
 clap = "2.32.0"
 config = "0.9.2"
+console = "0.7.5"
 dirs = "1.0.5"
 env_logger = "0.6.1"
 failure = "0.1.5"

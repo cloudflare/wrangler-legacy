@@ -8,6 +8,7 @@ use log::info;
 
 mod cache;
 mod commands;
+mod emoji;
 mod install;
 mod user;
 
@@ -17,12 +18,12 @@ fn main() -> Result<(), failure::Error> {
     env_logger::init();
     let cache = get_wrangler_cache()?;
 
-    let matches = App::new("👷‍♀️🧡☁️ ✨ wrangler")
+    let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("ashley g williams <ashley666ashley@gmail.com>")
         .subcommand(
             SubCommand::with_name("generate")
-                .about("👯 Generate a new wasm worker project")
+                .about(&*format!("{} Generate a new wasm worker project", emoji::DANCERS))
                 .arg(
                     Arg::with_name("name")
                         .help("the name of your worker! defaults to 'wasm-worker'")
@@ -36,7 +37,7 @@ fn main() -> Result<(), failure::Error> {
         )
         .subcommand(
             SubCommand::with_name("preview")
-                .about("🔬Publish your code temporarily on cloudflareworkers.com")
+                .about(&*format!("{} Publish your code temporarily on cloudflareworkers.com", emoji::MICROSCOPE))
                 .arg(
                     Arg::with_name("method")
                         .help("Type of request to preview your worker with (get, post)")
@@ -49,15 +50,16 @@ fn main() -> Result<(), failure::Error> {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("build").about("🦀⚙️ Build your wasm with wasm-pack"),
+            SubCommand::with_name("build")
+                .about(&*format!("{} Build your wasm with wasm-pack", emoji::CRAB)),
         )
         .subcommand(
             SubCommand::with_name("publish")
-                .about("☁️ 🆙 Push your worker to the orange cloud"),
+                .about(&*format!("{} Push your worker to the orange cloud", emoji::UP)),
         )
         .subcommand(
             SubCommand::with_name("config")
-                .about("🕵️‍♀️ Setup wrangler with your Cloudflare account")
+                .about(&*format!("{} Setup wrangler with your Cloudflare account", emoji::SLEUTH))
                 .arg(
                     Arg::with_name("email")
                         .help("the email address associated with your Cloudflare account")
@@ -73,7 +75,7 @@ fn main() -> Result<(), failure::Error> {
         )
         .subcommand(
             SubCommand::with_name("whoami")
-                .about("🕵️‍♀️ Retrieve your user info and test your auth config"),
+                .about(&*format!("{} Retrieve your user info and test your auth config", emoji::SLEUTH))
         )
         .get_matches();
 
