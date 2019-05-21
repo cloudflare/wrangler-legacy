@@ -87,11 +87,10 @@ impl Bundle {
 }
 
 fn executable_path() -> PathBuf {
-    Path::new("/home/sven/Documents/xtuc/wrangler-js").join("index.js")
-    // Path::new(".")
-    //     .join("node_modules")
-    //     .join(".bin")
-    //     .join("wrangler-js")
+    Path::new(".")
+        .join("node_modules")
+        .join(".bin")
+        .join("wrangler-js")
 }
 
 pub fn run_build() -> Result<WrangerjsOutput, failure::Error> {
