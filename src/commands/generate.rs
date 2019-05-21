@@ -42,5 +42,5 @@ fn project_type(template: &str) -> ProjectType {
     if template.contains("rust") {
         return ProjectType::Rust;
     }
-    ProjectType::JavaScript
+    ProjectType::Webpack
 }
