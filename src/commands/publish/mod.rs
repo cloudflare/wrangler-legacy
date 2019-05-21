@@ -15,7 +15,7 @@ use reqwest::multipart::Form;
 
 pub fn publish(user: User) -> Result<(), failure::Error> {
     let name = &user.settings.project.name;
-    multi_script(&user, name)?;
+    publish_script(&user, name)?;
     Route::create(&user, Some(name.to_string()))?;
     println!(
         "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
@@ -27,7 +27,7 @@ pub fn publish(user: User) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
+fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
     let zone_id = &user.settings.project.zone_id;
     let project_type = &user.settings.project.project_type;
     let worker_addr = format!(
