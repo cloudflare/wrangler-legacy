@@ -11,9 +11,13 @@ pub struct Route {
 }
 
 impl Route {
-    pub fn create(user: &User, script: String) -> Result<Route, failure::Error> {
+    pub fn publish(user: &User, script: String) -> Result<Route, failure::Error> {
         create(user, script)
     }
+
+    //pub fn exists(&self, user: &User, script: String) -> Result<bool, failure::Error> {
+        
+    //}
 }
 
 fn create(user: &User, script: String) -> Result<Route, failure::Error> {
