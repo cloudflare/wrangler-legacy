@@ -1,0 +1,15 @@
+{
+  "name": "wrangler-js",
+  "version": "0.1.3",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sven Sauleau <sven@sauleau.com>",
+  "license": "MIT",
+  "bin": {
+    "wrangler-js": "./index.js"
+  },
+  "dependencies": {
+    "webpack": "^4.29.6"
+  }
+}
