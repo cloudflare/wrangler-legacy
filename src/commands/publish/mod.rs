@@ -3,6 +3,9 @@ pub mod preview;
 mod route;
 use route::Route;
 
+mod package;
+use package::Package;
+
 use log::info;
 
 use std::fs;
@@ -15,7 +18,7 @@ use reqwest::multipart::Form;
 
 pub fn publish(user: User) -> Result<(), failure::Error> {
     let name = &user.settings.project.name;
-    multi_script(&user, name)?;
+    publish_script(&user, name)?;
     Route::create(&user, Some(name.to_string()))?;
     println!(
         "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
@@ -27,7 +30,7 @@ pub fn publish(user: User) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
+fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
     let zone_id = &user.settings.project.zone_id;
     let project_type = &user.settings.project.project_type;
     let worker_addr = format!(
@@ -45,7 +48,7 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
                 .put(&worker_addr)
                 .header("X-Auth-Key", settings.global_user.api_key)
                 .header("X-Auth-Email", settings.global_user.email)
-                .multipart(build_form()?)
+                .multipart(build_multipart_script()?)
                 .send()?
         }
         ProjectType::JavaScript => {
@@ -55,7 +58,7 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
                 .header("X-Auth-Key", settings.global_user.api_key)
                 .header("X-Auth-Email", settings.global_user.email)
                 .header("Content-Type", "application/javascript")
-                .body(build_js()?)
+                .body(build_js_script()?)
                 .send()?
         }
     };
@@ -73,11 +76,12 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn build_js() -> Result<String, failure::Error> {
-    Ok(fs::read_to_string("worker.js")?)
+fn build_js_script() -> Result<String, failure::Error> {
+    let package = Package::new("./")?;
+    Ok(fs::read_to_string(package.main)?)
 }
 
-fn build_form() -> Result<Form, failure::Error> {
+fn build_multipart_script() -> Result<Form, failure::Error> {
     let name = krate::Krate::new("./")?.name.replace("-", "_");
     build_generated_dir()?;
     concat_js(&name)?;
