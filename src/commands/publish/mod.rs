@@ -45,7 +45,7 @@ fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
                 .put(&worker_addr)
                 .header("X-Auth-Key", settings.global_user.api_key)
                 .header("X-Auth-Email", settings.global_user.email)
-                .multipart(build_form()?)
+                .multipart(build_multipart_script()?)
                 .send()?
         }
         ProjectType::JavaScript => {
@@ -55,7 +55,7 @@ fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
                 .header("X-Auth-Key", settings.global_user.api_key)
                 .header("X-Auth-Email", settings.global_user.email)
                 .header("Content-Type", "application/javascript")
-                .body(build_js()?)
+                .body(build_js_script()?)
                 .send()?
         }
     };
@@ -73,11 +73,11 @@ fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn build_js() -> Result<String, failure::Error> {
+fn build_js_script() -> Result<String, failure::Error> {
     Ok(fs::read_to_string("worker.js")?)
 }
 
-fn build_form() -> Result<Form, failure::Error> {
+fn build_multipart_script() -> Result<Form, failure::Error> {
     let name = krate::Krate::new("./")?.name.replace("-", "_");
     build_generated_dir()?;
     concat_js(&name)?;
