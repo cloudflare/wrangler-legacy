@@ -21,12 +21,16 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             commands::run(command, &command_name)?;
         }
         ProjectType::Webpack => {
+            let wasm_pack_path =
+                install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
+
             if !wranglerjs::is_installed() {
                 println!("missing deps; installing...");
                 wranglerjs::install().expect("could not install wranglerjs");
             }
 
-            let wranglerjs_output = wranglerjs::run_build().expect("could not run wranglerjs");
+            let wranglerjs_output =
+                wranglerjs::run_build(wasm_pack_path).expect("could not run wranglerjs");
             let bundle = wranglerjs::Bundle::new();
             let out = wranglerjs_output.compiler_output();
 
