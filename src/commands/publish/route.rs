@@ -11,15 +11,12 @@ pub struct Route {
 }
 
 impl Route {
-    pub fn create(user: &User, script: Option<String>) -> Result<Route, failure::Error> {
-        match script {
-                Some(s) => multi_script(user, s),
-                None => failure::bail!("⚠️ You must provide the name of the script you'd like to associate with this route."),
-            }
+    pub fn create(user: &User, script: String) -> Result<Route, failure::Error> {
+        create(user, script)
     }
 }
 
-fn multi_script(user: &User, script: String) -> Result<Route, failure::Error> {
+fn create(user: &User, script: String) -> Result<Route, failure::Error> {
     let pattern = &user.settings.clone().project.route.expect(
         "⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.",
     );
