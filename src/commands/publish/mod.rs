@@ -37,12 +37,36 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
     let client = reqwest::Client::new();
     let settings = user.settings.clone();
 
-    let mut res = client
-        .put(&worker_addr)
-        .header("X-Auth-Key", settings.global_user.api_key)
-        .header("X-Auth-Email", settings.global_user.email)
-        .multipart(build_form()?)
-        .send()?;
+    let mut res = match project_type {
+        ProjectType::Rust => {
+            info!("Rust project detected. Publishing...");
+            client
+                .put(&worker_addr)
+                .header("X-Auth-Key", settings.global_user.api_key)
+                .header("X-Auth-Email", settings.global_user.email)
+                .multipart(build_form()?)
+                .send()?
+        }
+        ProjectType::JavaScript => {
+            info!("JavaScript project detected. Publishing...");
+            client
+                .put(&worker_addr)
+                .header("X-Auth-Key", settings.global_user.api_key)
+                .header("X-Auth-Email", settings.global_user.email)
+                .header("Content-Type", "application/javascript")
+                .body(build_js()?)
+                .send()?
+        }
+        ProjectType::Webpack => {
+            info!("Webpack project detected. Publishing...");
+            client
+                .put(&worker_addr)
+                .header("X-Auth-Key", settings.global_user.api_key)
+                .header("X-Auth-Email", settings.global_user.email)
+                .multipart(build_form()?)
+                .send()?
+        }
+    };
 
     if res.status().is_success() {
         println!("🥳 Successfully published your script.")
