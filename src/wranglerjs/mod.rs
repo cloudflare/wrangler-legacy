@@ -93,12 +93,13 @@ fn executable_path() -> PathBuf {
         .join("wrangler-js")
 }
 
-pub fn run_build() -> Result<WrangerjsOutput, failure::Error> {
+pub fn run_build(wasm_pack_path: PathBuf) -> Result<WrangerjsOutput, failure::Error> {
     if !Path::new(BUNDLE_OUT).exists() {
         fs::create_dir(BUNDLE_OUT)?;
     }
 
     let output = Command::new(executable_path())
+        .env("WASM_PACK_PATH", wasm_pack_path)
         .output()
         .expect("failed to execute process");
     println!("{}", String::from_utf8_lossy(&output.stderr));

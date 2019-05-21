@@ -6,7 +6,7 @@ const config = require(join(process.cwd(), "./webpack.config.js"));
 
 let compilerOutput = "";
 const oldConsoleLog = console.log;
-console.log = msg => compilerOutput += msg;
+console.log = (...msg) => compilerOutput += msg.join(" ");
 
 const compiler = webpack(config);
 
