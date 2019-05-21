@@ -5,13 +5,13 @@ use route::Route;
 
 use log::info;
 
+use reqwest::multipart::Form;
 use std::fs;
 use std::path::Path;
 
 use crate::user::settings::ProjectType;
 use crate::user::User;
-
-use reqwest::multipart::Form;
+use crate::wranglerjs::Bundle;
 
 pub fn publish(user: User) -> Result<(), failure::Error> {
     let name = &user.settings.project.name;
@@ -56,6 +56,15 @@ fn multi_script(user: &User, name: &str) -> Result<(), failure::Error> {
                 .header("X-Auth-Email", settings.global_user.email)
                 .header("Content-Type", "application/javascript")
                 .body(build_js()?)
+                .send()?
+        }
+        ProjectType::Webpack => {
+            info!("Webpack project detected. Publishing...");
+            client
+                .put(&worker_addr)
+                .header("X-Auth-Key", settings.global_user.api_key)
+                .header("X-Auth-Email", settings.global_user.email)
+                .multipart(build_webpack_form()?)
                 .send()?
         }
     };
@@ -112,4 +121,34 @@ fn concat_js(name: &str) -> Result<(), failure::Error> {
 
     fs::write("./worker/generated/script.js", js.as_bytes())?;
     Ok(())
+}
+
+fn build_webpack_form() -> Result<Form, failure::Error> {
+    // FIXME(sven): shouldn't new
+    let bundle = Bundle::new();
+
+    let form = Form::new()
+        .file("metadata", bundle.metadata_path())
+        .unwrap_or_else(|_| panic!("{} not found. Did you delete it?", bundle.metadata_path()))
+        .file("script", bundle.script_path())
+        .unwrap_or_else(|_| {
+            panic!(
+                "{} not found. Did you rename your js files?",
+                bundle.script_path()
+            )
+        });
+
+    if bundle.has_wasm() {
+        println!("add wasm bindinds");
+        Ok(form
+            .file(bundle.get_wasm_binding(), bundle.wasm_path())
+            .unwrap_or_else(|_| {
+                panic!(
+                    "{} not found. Have you run wrangler build?",
+                    bundle.wasm_path()
+                )
+            }))
+    } else {
+        Ok(form)
+    }
 }
