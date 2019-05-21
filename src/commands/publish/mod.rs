@@ -3,6 +3,9 @@ pub mod preview;
 mod route;
 use route::Route;
 
+mod package;
+use package::Package;
+
 use log::info;
 
 use std::fs;
@@ -74,7 +77,8 @@ fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
 }
 
 fn build_js_script() -> Result<String, failure::Error> {
-    Ok(fs::read_to_string("worker.js")?)
+    let package = Package::new("./")?;
+    Ok(fs::read_to_string(package.main)?)
 }
 
 fn build_multipart_script() -> Result<Form, failure::Error> {
