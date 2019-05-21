@@ -72,6 +72,10 @@ impl Bundle {
         Path::new(&self.wasm_path()).exists()
     }
 
+    pub fn has_webpack_config(&self) -> bool {
+        Path::new("webpack.config.js").exists()
+    }
+
     pub fn get_wasm_binding(&self) -> String {
         assert!(self.has_wasm());
         "wasmprogram".to_string()
@@ -93,15 +97,25 @@ fn executable_path() -> PathBuf {
         .join("wrangler-js")
 }
 
-pub fn run_build(wasm_pack_path: PathBuf) -> Result<WrangerjsOutput, failure::Error> {
+pub fn run_build(
+    wasm_pack_path: PathBuf,
+    bundle: &Bundle,
+) -> Result<WrangerjsOutput, failure::Error> {
     if !Path::new(BUNDLE_OUT).exists() {
         fs::create_dir(BUNDLE_OUT)?;
     }
 
-    let output = Command::new(executable_path())
-        .env("WASM_PACK_PATH", wasm_pack_path)
-        .output()
-        .expect("failed to execute process");
+    let mut command = Command::new(executable_path());
+    command.env("WASM_PACK_PATH", wasm_pack_path);
+
+    // if {webpack.config.js} is not present, we can let wrangler-js determine
+    // the entry file, based on the {package.json} file.
+    // https://github.com/cloudflare/wrangler/issues/98
+    if !bundle.has_webpack_config() {
+        command.arg("--auto-webpack-config");
+    }
+
+    let output = command.output().expect("failed to execute process");
     println!("{}", String::from_utf8_lossy(&output.stderr));
     assert!(output.status.success());
     // println!("{}", String::from_utf8_lossy(&output.stdout));

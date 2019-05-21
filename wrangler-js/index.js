@@ -2,7 +2,18 @@
 
 const webpack = require("webpack");
 const { join } = require("path");
-const config = require(join(process.cwd(), "./webpack.config.js"));
+
+function hasFlag(name) {
+  return process.argv.indexOf("--" + name) !== -1;
+}
+
+let config;
+if (hasFlag("auto-webpack-config") === true) {
+  const entry = require(join(process.cwd(), "package.json")).main;
+  config = { entry };
+} else {
+  config = require(join(process.cwd(), "./webpack.config.js"));
+}
 
 let compilerOutput = "";
 const oldConsoleLog = console.log;

@@ -29,9 +29,9 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
                 wranglerjs::install().expect("could not install wranglerjs");
             }
 
-            let wranglerjs_output =
-                wranglerjs::run_build(wasm_pack_path).expect("could not run wranglerjs");
             let bundle = wranglerjs::Bundle::new();
+            let wranglerjs_output =
+                wranglerjs::run_build(wasm_pack_path, &bundle).expect("could not run wranglerjs");
             let out = wranglerjs_output.compiler_output();
 
             bundle
