@@ -128,27 +128,27 @@ pub fn install() -> Result<(), failure::Error> {
 }
 
 pub fn create_prologue() -> String {
-    "
+    r#"
         const window = this;
-    "
+    "#
     .to_string()
 }
 
 pub fn create_wasm_prologue(name: String, binding: String) -> String {
     format!(
-        "
-        const oldFetch = fetch;
-        function fetch(name) {{
-          if (name === \"{name}\") {{
-            return Promise.resolve({{
-              arrayBuffer() {{
-                return {binding}; // defined in bindinds
+        r#"
+            const oldFetch = fetch;
+            function fetch(name) {{
+              if (name === "{name}") {{
+                return Promise.resolve({{
+                  arrayBuffer() {{
+                    return {binding}; // defined in bindinds
+                  }}
+                }});
               }}
-            }});
-          }}
-          return oldFetch(name);
-        }}
-    ",
+              return oldFetch(name);
+            }}
+        "#,
         name = name,
         binding = binding
     )
@@ -158,26 +158,26 @@ pub fn create_wasm_prologue(name: String, binding: String) -> String {
 fn create_metadata(bundle: &Bundle) -> String {
     if bundle.has_wasm() {
         format!(
-            "
+            r#"
                 {{
-                    \"body_part\": \"script\",
-                    \"binding\": {{
-                        \"name\": \"{name}\",
-                        \"type\": \"wasm_module\",
-                        \"part\": \"{name}\"
+                    "body_part": "script",
+                    "binding": {{
+                        "name": "{name}",
+                        "type": "wasm_module",
+                        "part": "{name}"
                     }}
                 }}
-            ",
+            "#,
             name = bundle.get_wasm_binding(),
         )
         .to_string()
     } else {
         format!(
-            "
+            r#"
                 {{
-                    \"body_part\": \"script\"
+                    "body_part": "script"
                 }}
-            "
+            "#
         )
         .to_string()
     }
