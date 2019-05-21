@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -19,7 +20,8 @@ impl WrangerjsOutput {
     }
 }
 
-pub struct Bundle { }
+const BUNDLE_OUT: &str = "./worker";
+pub struct Bundle {}
 
 impl Bundle {
     pub fn new() -> Bundle {
@@ -51,11 +53,19 @@ impl Bundle {
     }
 
     pub fn metadata_path(&self) -> String {
-        "./worker/metadata.json".to_string()
+        Path::new(BUNDLE_OUT)
+            .join("metadata.json".to_string())
+            .to_str()
+            .unwrap()
+            .to_string()
     }
 
     pub fn wasm_path(&self) -> String {
-        "./worker/module.wasm".to_string()
+        Path::new(BUNDLE_OUT)
+            .join("module.wasm".to_string())
+            .to_str()
+            .unwrap()
+            .to_string()
     }
 
     pub fn has_wasm(&self) -> bool {
@@ -68,7 +78,11 @@ impl Bundle {
     }
 
     pub fn script_path(&self) -> String {
-        "./worker/script.js".to_string()
+        Path::new(BUNDLE_OUT)
+            .join("script.js".to_string())
+            .to_str()
+            .unwrap()
+            .to_string()
     }
 }
 
@@ -81,6 +95,10 @@ fn executable_path() -> PathBuf {
 }
 
 pub fn run_build() -> Result<WrangerjsOutput, failure::Error> {
+    if !Path::new(BUNDLE_OUT).exists() {
+        fs::create_dir(BUNDLE_OUT)?;
+    }
+
     let output = Command::new(executable_path())
         .output()
         .expect("failed to execute process");
