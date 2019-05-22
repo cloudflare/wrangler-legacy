@@ -19,7 +19,8 @@ use reqwest::multipart::Form;
 pub fn publish(user: User) -> Result<(), failure::Error> {
     let name = &user.settings.project.name;
     publish_script(&user, name)?;
-    Route::publish(&user, name.to_string())?;
+    let route = Route::new(&user)?;
+    Route::publish(&user, route)?;
     println!(
         "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
         user.settings
