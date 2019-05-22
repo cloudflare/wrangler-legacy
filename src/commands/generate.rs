@@ -8,7 +8,7 @@ pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure
     let tool_name = "cargo-generate";
     let binary_path = install::install(tool_name, "ashleygwilliams", cache)?.binary(tool_name)?;
 
-    let args = ["generate", "--git", template, "--name", name];
+    let args = ["generate", "--git", template, "--name", name, "--force"];
 
     let project_type = project_type(template);
     let command = command(name, binary_path, &args, &project_type);
