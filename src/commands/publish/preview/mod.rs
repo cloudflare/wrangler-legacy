@@ -28,11 +28,11 @@ pub fn preview(
     let res = match project_type {
         ProjectType::Rust => client
             .post(create_address)
-            .multipart(publish::build_form()?)
+            .multipart(publish::build_multipart_script()?)
             .send(),
         ProjectType::JavaScript => client
             .post(create_address)
-            .body(publish::build_js()?)
+            .body(publish::build_js_script()?)
             .send(),
         ProjectType::Webpack => panic!("unimplemented"),
     };
