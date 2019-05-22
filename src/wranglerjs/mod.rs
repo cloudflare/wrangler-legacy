@@ -1,5 +1,6 @@
 use crate::commands::publish::package::Package;
 use log::info;
+use number_prefix::{NumberPrefix, Prefixed, Standalone};
 use serde::Deserialize;
 use std::env;
 use std::fs;
@@ -20,6 +21,9 @@ pub struct WrangerjsOutput {
     // used; it's tedious to remove a directory with content in JavaScript so
     // let's do it in Rust!
     dist_to_clean: String,
+    // indication of file sizes
+    wasm_size: f32,
+    script_size: f32,
 }
 
 impl WrangerjsOutput {}
@@ -60,6 +64,20 @@ impl Bundle {
         // cleanup {Webpack} dist.
         info!("Remove {}", wranglerjs_output.dist_to_clean);
         fs::remove_dir_all(wranglerjs_output.dist_to_clean).expect("could not clean Webpack dist.");
+
+        // show output stats
+        if self.has_wasm() {
+            println!(
+                "Sizes: wasm={} script={}",
+                format_size(wranglerjs_output.wasm_size),
+                format_size(wranglerjs_output.script_size)
+            );
+        } else {
+            println!(
+                "Sizes: script={}",
+                format_size(wranglerjs_output.script_size)
+            );
+        }
 
         Ok(())
     }
@@ -251,5 +269,12 @@ fn create_metadata(bundle: &Bundle) -> String {
             "#
         )
         .to_string()
+    }
+}
+
+fn format_size(s: f32) -> String {
+    match NumberPrefix::decimal(s) {
+        Standalone(bytes) => format!("{} bytes", bytes),
+        Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
     }
 }

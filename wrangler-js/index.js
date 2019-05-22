@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const webpack = require("webpack");
+const { ConcatSource } = require("webpack-sources");
 const { join } = require("path");
 const { writeFileSync } = require("fs");
 
@@ -38,8 +39,10 @@ compiler.run((err, stats) => {
   const assets = stats.compilation.assets;
   const bundle = {
     wasm: null,
+    wasm_size: 0,
     wasm_name: "",
     script: null,
+    script_size: 0,
     dist_to_clean: fullConfig.output.path,
   };
 
@@ -47,18 +50,21 @@ compiler.run((err, stats) => {
   const jsAssets = Object.keys(assets).filter(filterByExtension("js"));
   const hasWasmModule = wasmModuleAsset !== undefined;
 
-  bundle.script = jsAssets.reduce((acc, k) => {
-    const asset = assets[k];
-    return acc + asset.source();
-  }, "");
+  const script = jsAssets.reduce((acc, k) => {
+    acc.add(assets[k]);
+    return acc;
+  }, new ConcatSource(""));
+  bundle.script = script.source();
+  bundle.script_size = script.size();
 
   if (hasWasmModule === true) {
     bundle.wasm = Buffer.from(assets[wasmModuleAsset].source()).toString();
+    // TODO(sven): there is an issue in {Webpack} to retrive binary size
+    if (assets[wasmModuleAsset].size() !== undefined) {
+      bundle.wasm_size = assets[wasmModuleAsset].size();
+    }
     bundle.wasm_name = wasmModuleAsset;
   }
 
   writeFileSync(args["output-file"], JSON.stringify(bundle));
-
-  // FIXME(sven): stats could be printed in {wrangler}, avoiding any confusion.
-  console.log(stats.toString({ colors: true }));
 });
