@@ -24,6 +24,8 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             let wasm_pack_path =
                 install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
 
+            wranglerjs::run_npm_install().expect("could not run `npm install`");
+
             if !wranglerjs::is_installed() {
                 println!("missing deps; installing...");
                 wranglerjs::install().expect("could not install wranglerjs");

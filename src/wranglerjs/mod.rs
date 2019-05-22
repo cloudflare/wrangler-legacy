@@ -132,6 +132,15 @@ pub fn run_build(
     )
 }
 
+pub fn run_npm_install() -> Result<(), failure::Error> {
+    let mut command = Command::new("npm");
+    command.arg("install");
+    let output = command.output().expect("failed to execute process");
+    println!("{}", String::from_utf8_lossy(&output.stderr));
+    assert!(output.status.success());
+    Ok(())
+}
+
 pub fn is_installed() -> bool {
     executable_path().exists()
 }
