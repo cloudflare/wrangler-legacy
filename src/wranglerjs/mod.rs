@@ -86,7 +86,6 @@ impl Bundle {
     }
 
     pub fn get_wasm_binding(&self) -> String {
-        assert!(self.has_wasm());
         "wasmprogram".to_string()
     }
 
