@@ -12,7 +12,7 @@ use std::process::Command;
 // {wrangler}. It is send back after {wrangler-js} completion.
 // FIXME(sven): make this private
 #[derive(Deserialize, Debug)]
-pub struct WrangerjsOutput {
+pub struct WranglerjsOutput {
     wasm: Option<String>,
     wasm_name: String,
     script: String,
@@ -22,7 +22,7 @@ pub struct WrangerjsOutput {
     dist_to_clean: String,
 }
 
-impl WrangerjsOutput {}
+impl WranglerjsOutput {}
 
 // Directory where we should write the {Bundle}. It represents the built
 // artefact.
@@ -36,7 +36,7 @@ impl Bundle {
         Bundle {}
     }
 
-    pub fn write(&self, wranglerjs_output: WrangerjsOutput) -> Result<(), failure::Error> {
+    pub fn write(&self, wranglerjs_output: WranglerjsOutput) -> Result<(), failure::Error> {
         let mut metadata_file = File::create(self.metadata_path())?;
         metadata_file.write_all(create_metadata(self).as_bytes())?;
 
@@ -110,12 +110,12 @@ fn executable_path() -> PathBuf {
 //
 // In Rust we create a virtual file, pass the pass to {wrangler-js}, run the
 // executable and wait for completion. The file will receive the a serialized
-// {WrangerjsOutput} struct.
+// {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
 pub fn run_build(
     wasm_pack_path: PathBuf,
     bundle: &Bundle,
-) -> Result<WrangerjsOutput, failure::Error> {
+) -> Result<WranglerjsOutput, failure::Error> {
     if !Path::new(BUNDLE_OUT).exists() {
         fs::create_dir(BUNDLE_OUT)?;
     }
