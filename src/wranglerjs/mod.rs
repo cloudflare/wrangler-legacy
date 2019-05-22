@@ -41,7 +41,7 @@ impl Bundle {
         metadata_file.write_all(create_metadata(self).as_bytes())?;
 
         let mut script_file = File::create(self.script_path())?;
-        let mut script = create_prologue();
+        let mut script = "".to_string();
 
         match wranglerjs_output.wasm {
             Some(wasm) => {
@@ -190,15 +190,6 @@ pub fn install() -> Result<(), failure::Error> {
     } else {
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
-}
-
-// We inject some code at the top-level of the Worker; called {prologue}.
-// This aims to provide additional support, for instance providing {window}.
-pub fn create_prologue() -> String {
-    r#"
-        const window = this;
-    "#
-    .to_string()
 }
 
 // Same idea as the {prologue} above, {Wasm} in {Webpack} requires to polyfill
