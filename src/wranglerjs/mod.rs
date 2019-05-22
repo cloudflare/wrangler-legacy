@@ -226,6 +226,7 @@ pub fn create_wasm_prologue(name: String, binding: String) -> String {
 
 // This metadata describe the bindings on the Worker.
 fn create_metadata(bundle: &Bundle) -> String {
+    info!("create metadata; wasm={}", bundle.has_wasm());
     if bundle.has_wasm() {
         format!(
             r#"

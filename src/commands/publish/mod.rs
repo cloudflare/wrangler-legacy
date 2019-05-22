@@ -143,7 +143,6 @@ fn build_webpack_form() -> Result<Form, failure::Error> {
         });
 
     if bundle.has_wasm() {
-        println!("add wasm bindinds");
         Ok(form
             .file(bundle.get_wasm_binding(), bundle.wasm_path())
             .unwrap_or_else(|_| {
