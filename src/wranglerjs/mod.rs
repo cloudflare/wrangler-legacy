@@ -41,20 +41,17 @@ impl Bundle {
         metadata_file.write_all(create_metadata(self).as_bytes())?;
 
         let mut script_file = File::create(self.script_path())?;
-        let mut script = "".to_string();
+        let mut script = create_prologue();
+        script += &wranglerjs_output.script;
 
         match wranglerjs_output.wasm {
             Some(wasm) => {
                 let mut wasm_file = File::create(self.wasm_path())?;
                 wasm_file.write_all(wasm.as_bytes())?;
-
-                script +=
-                    &create_wasm_prologue(wranglerjs_output.wasm_name, self.get_wasm_binding());
             }
             None => {}
         }
 
-        script += &wranglerjs_output.script;
         script_file.write_all(script.as_bytes())?;
 
         // cleanup {Webpack} dist.
@@ -136,6 +133,7 @@ pub fn run_build(
         "--output-file={}",
         temp_file.clone().to_str().unwrap().to_string()
     ));
+    command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
     // if {webpack.config.js} is not present, we infer the entry based on the
     // {package.json} file and pass it to {wrangler-js}.
@@ -192,26 +190,12 @@ pub fn install() -> Result<(), failure::Error> {
     }
 }
 
-// Same idea as the {prologue} above, {Wasm} in {Webpack} requires to polyfill
-// the {Fetch} function.
-pub fn create_wasm_prologue(name: String, binding: String) -> String {
-    format!(
-        r#"
-            const oldFetch = fetch;
-            function fetch(name) {{
-              if (name === "{name}") {{
-                return Promise.resolve({{
-                  arrayBuffer() {{
-                    return {binding}; // defined in bindinds
-                  }}
-                }});
-              }}
-              return oldFetch(name);
-            }}
-        "#,
-        name = name,
-        binding = binding
-    )
+// We inject some code at the top-level of the Worker; called {prologue}.
+// This aims to provide additional support, for instance providing {window}.
+pub fn create_prologue() -> String {
+    r#"
+        const window = this;
+    "#
     .to_string()
 }
 

@@ -3,6 +3,7 @@
 const webpack = require("webpack");
 const { join } = require("path");
 const { writeFileSync } = require("fs");
+const WasmMainTemplatePlugin = require("webpack/lib/wasm/WasmMainTemplatePlugin");
 
 const rawArgs = process.argv.slice(2);
 const args = rawArgs.reduce((obj, e) => {
@@ -11,7 +12,7 @@ const args = rawArgs.reduce((obj, e) => {
   }
 
   const [name, value] = e.split("=");
-  const normalizedName = name.replace("--", '');
+  const normalizedName = name.replace("--", "");
   obj[normalizedName] = value;
   return obj;
 }, {});
@@ -23,17 +24,34 @@ if (args["no-webpack-config"] === "1") {
   config = require(join(process.cwd(), "./webpack.config.js"));
 }
 
-if (config.target !== "webworker") {
-  if (config.target !== undefined) {
-    console.warn("Unsupported Webpack target; webworker has been set.");
-  }
-  config.target = "webworker";
-}
 const compiler = webpack(config);
 
 function filterByExtension(ext) {
   return v => v.indexOf("." + ext) !== -1;
 }
+
+// Override the {FetchCompileWasmTemplatePlugin} and inject our new runtime.
+const [
+  fetchCompileWasmTemplatePlugin
+] = compiler.hooks.thisCompilation.taps.filter(
+  tap => tap.name === "FetchCompileWasmTemplatePlugin"
+);
+fetchCompileWasmTemplatePlugin.fn = function(compilation) {
+  const mainTemplate = compilation.mainTemplate;
+  const generateLoadBinaryCode = () => `
+      // Fake fetch response
+      Promise.resolve({
+        arrayBuffer() { return Promise.resolve(${args["wasm-binding"]}); }
+      });
+    `;
+
+  const plugin = new WasmMainTemplatePlugin({
+    generateLoadBinaryCode,
+    mangleImports: false,
+    supportsStreaming: false
+  });
+  plugin.apply(mainTemplate);
+};
 
 compiler.run((err, stats) => {
   if (err) {
@@ -46,7 +64,7 @@ compiler.run((err, stats) => {
     wasm: null,
     wasm_name: "",
     script: null,
-    dist_to_clean: fullConfig.output.path,
+    dist_to_clean: fullConfig.output.path
   };
 
   const wasmModuleAsset = Object.keys(assets).find(filterByExtension("wasm"));
