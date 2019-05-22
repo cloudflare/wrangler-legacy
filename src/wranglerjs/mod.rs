@@ -1,4 +1,5 @@
 use crate::commands::publish::package::Package;
+use log::info;
 use serde::Deserialize;
 use std::env;
 use std::fs;
@@ -13,14 +14,9 @@ pub struct WrangerjsOutput {
     wasm: Option<String>,
     wasm_name: String,
     script: String,
-    compiler_output: String,
 }
 
-impl WrangerjsOutput {
-    pub fn compiler_output(&self) -> String {
-        self.compiler_output.clone()
-    }
-}
+impl WrangerjsOutput {}
 
 const BUNDLE_OUT: &str = "./worker";
 pub struct Bundle {}
@@ -99,6 +95,12 @@ fn executable_path() -> PathBuf {
         .join("wrangler-js")
 }
 
+// Run the underlying {wrangler-js} executable.
+//
+// In Rust we create a virtual file, pass the pass to {wrangler-js}, run the
+// executable and wait for completion. The file will receive the a serialized
+// {WrangerjsOutput} struct.
+// Note that the ability to pass a fd is platform-specific
 pub fn run_build(
     wasm_pack_path: PathBuf,
     bundle: &Bundle,
@@ -109,6 +111,16 @@ pub fn run_build(
 
     let mut command = Command::new(executable_path());
     command.env("WASM_PACK_PATH", wasm_pack_path);
+
+    // create temp file for special {wrangler-js} IPC.
+    let mut temp_file = env::temp_dir();
+    temp_file.push(".wranglerjs_output");
+    File::create(temp_file.clone())?;
+
+    command.arg(format!(
+        "--output-file={}",
+        temp_file.clone().to_str().unwrap().to_string()
+    ));
 
     // if {webpack.config.js} is not present, we infer the entry based on the
     // {package.json} file and pass it to {wrangler-js}.
@@ -121,24 +133,30 @@ pub fn run_build(
         command.arg(format!("--use-entry={}", package_main));
     }
 
-    let output = command.output().expect("failed to execute process");
-    println!("{}", String::from_utf8_lossy(&output.stderr));
-    assert!(output.status.success());
-    // println!("{}", String::from_utf8_lossy(&output.stdout));
+    info!("Running {:?}", command);
 
-    Ok(
-        serde_json::from_str(&String::from_utf8_lossy(&output.stdout))
-            .expect("could not parse wranglerjs output"),
-    )
+    let status = command.status()?;
+    let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
+    fs::remove_file(temp_file)?;
+
+    if status.success() {
+        Ok(serde_json::from_str(&output).expect("could not parse wranglerjs output"))
+    } else {
+        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+    }
 }
 
 pub fn run_npm_install() -> Result<(), failure::Error> {
     let mut command = Command::new("npm");
     command.arg("install");
-    let output = command.output().expect("failed to execute process");
-    println!("{}", String::from_utf8_lossy(&output.stderr));
-    assert!(output.status.success());
-    Ok(())
+    info!("Running {:?}", command);
+
+    let status = command.status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+    }
 }
 
 pub fn is_installed() -> bool {
@@ -146,14 +164,16 @@ pub fn is_installed() -> bool {
 }
 
 pub fn install() -> Result<(), failure::Error> {
-    let output = Command::new("npm")
-        .arg("install")
-        .arg("wrangler-js")
-        .output()
-        .expect("failed to execute process");
-    assert!(output.status.success());
-    println!("{}", String::from_utf8_lossy(&output.stdout));
-    Ok(())
+    let mut command = Command::new("npm");
+    command.arg("install").arg("wrangler-js");
+    info!("Running {:?}", command);
+
+    let status = command.status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+    }
 }
 
 pub fn create_prologue() -> String {

@@ -2,6 +2,7 @@
 
 const webpack = require("webpack");
 const { join } = require("path");
+const { writeFileSync } = require("fs");
 
 const rawArgs = process.argv.slice(2);
 const args = rawArgs.reduce((obj, e) => {
@@ -22,10 +23,6 @@ if (args["no-webpack-config"] === "1") {
   config = require(join(process.cwd(), "./webpack.config.js"));
 }
 
-let compilerOutput = "";
-const oldConsoleLog = console.log;
-console.log = (...msg) => (compilerOutput += msg.join(" "));
-
 const compiler = webpack(config);
 
 function filterByExtension(ext) {
@@ -37,7 +34,6 @@ function emitForWrangler(assets) {
     wasm: null,
     wasm_name: "",
     script: null,
-    compiler_output: compilerOutput
   };
 
   const wasmModuleAsset = Object.keys(assets).find(filterByExtension("wasm"));
@@ -54,7 +50,7 @@ function emitForWrangler(assets) {
     bundle.wasm_name = wasmModuleAsset;
   }
 
-  console.log(JSON.stringify(bundle));
+  writeFileSync(args["output-file"], JSON.stringify(bundle));
 }
 
 compiler.run((err, stats) => {
@@ -62,7 +58,7 @@ compiler.run((err, stats) => {
     throw err;
   }
 
-  console.log = oldConsoleLog;
   emitForWrangler(stats.compilation.assets);
-  // console.log(stats.toString({ colors: true }));
+  // FIXME(sven): stats could be printed in {wrangler}, avoiding any confusion.
+  console.log(stats.toString({ colors: true }));
 });

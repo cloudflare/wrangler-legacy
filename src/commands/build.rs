@@ -34,13 +34,10 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             let bundle = wranglerjs::Bundle::new();
             let wranglerjs_output =
                 wranglerjs::run_build(wasm_pack_path, &bundle).expect("could not run wranglerjs");
-            let out = wranglerjs_output.compiler_output();
 
             bundle
                 .write(wranglerjs_output)
                 .expect("could not write bundle to disk");
-
-            println!("{}", out);
         }
     }
 
