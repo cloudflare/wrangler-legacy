@@ -8,6 +8,8 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+// This structure represents the communication between {wrangler-js} and
+// {wrangler}. It is send back after {wrangler-js} completion.
 // FIXME(sven): make this private
 #[derive(Deserialize, Debug)]
 pub struct WrangerjsOutput {
@@ -22,9 +24,13 @@ pub struct WrangerjsOutput {
 
 impl WrangerjsOutput {}
 
+// Directory where we should write the {Bundle}. It represents the built
+// artefact.
 const BUNDLE_OUT: &str = "./worker";
 pub struct Bundle {}
 
+// We call a {Bundle} the output of a {Bundler}; representing what {Webpack}
+// produces.
 impl Bundle {
     pub fn new() -> Bundle {
         Bundle {}
@@ -96,6 +102,7 @@ impl Bundle {
     }
 }
 
+// Path to {wrangler-js}, which should be executable.
 fn executable_path() -> PathBuf {
     Path::new(".")
         .join("node_modules")
@@ -167,6 +174,7 @@ pub fn run_npm_install() -> Result<(), failure::Error> {
     }
 }
 
+// check if {wrangler-js} is present are a known location.
 pub fn is_installed() -> bool {
     executable_path().exists()
 }
@@ -184,6 +192,8 @@ pub fn install() -> Result<(), failure::Error> {
     }
 }
 
+// We inject some code at the top-level of the Worker; called {prologue}.
+// This aims to provide additional support, for instance providing {window}.
 pub fn create_prologue() -> String {
     r#"
         const window = this;
@@ -191,6 +201,8 @@ pub fn create_prologue() -> String {
     .to_string()
 }
 
+// Same idea as the {prologue} above, {Wasm} in {Webpack} requires to polyfill
+// the {Fetch} function.
 pub fn create_wasm_prologue(name: String, binding: String) -> String {
     format!(
         r#"
@@ -212,6 +224,7 @@ pub fn create_wasm_prologue(name: String, binding: String) -> String {
     .to_string()
 }
 
+// This metadata describe the bindings on the Worker.
 fn create_metadata(bundle: &Bundle) -> String {
     if bundle.has_wasm() {
         format!(
