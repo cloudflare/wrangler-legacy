@@ -23,12 +23,6 @@ if (args["no-webpack-config"] === "1") {
   config = require(join(process.cwd(), "./webpack.config.js"));
 }
 
-if (config.target !== "webworker") {
-  if (config.target !== undefined) {
-    console.warn("Unsupported Webpack target; webworker has been set.");
-  }
-  config.target = "webworker";
-}
 const compiler = webpack(config);
 
 function filterByExtension(ext) {
