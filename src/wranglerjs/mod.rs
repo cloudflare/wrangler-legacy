@@ -14,6 +14,10 @@ pub struct WrangerjsOutput {
     wasm: Option<String>,
     wasm_name: String,
     script: String,
+    // {wrangler-js} will send us the path to the {dist} directory that {Webpack}
+    // used; it's tedious to remove a directory with content in JavaScript so
+    // let's do it in Rust!
+    dist_to_clean: String,
 }
 
 impl WrangerjsOutput {}
@@ -46,6 +50,10 @@ impl Bundle {
 
         script += &wranglerjs_output.script;
         script_file.write_all(script.as_bytes())?;
+
+        // cleanup {Webpack} dist.
+        info!("Remove {}", wranglerjs_output.dist_to_clean);
+        fs::remove_dir_all(wranglerjs_output.dist_to_clean).expect("could not clean Webpack dist.");
 
         Ok(())
     }

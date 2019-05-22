@@ -29,11 +29,18 @@ function filterByExtension(ext) {
   return v => v.indexOf("." + ext) !== -1;
 }
 
-function emitForWrangler(assets) {
+compiler.run((err, stats) => {
+  if (err) {
+    throw err;
+  }
+
+  const fullConfig = compiler.options;
+  const assets = stats.compilation.assets;
   const bundle = {
     wasm: null,
     wasm_name: "",
     script: null,
+    dist_to_clean: fullConfig.output.path,
   };
 
   const wasmModuleAsset = Object.keys(assets).find(filterByExtension("wasm"));
@@ -51,14 +58,7 @@ function emitForWrangler(assets) {
   }
 
   writeFileSync(args["output-file"], JSON.stringify(bundle));
-}
 
-compiler.run((err, stats) => {
-  if (err) {
-    throw err;
-  }
-
-  emitForWrangler(stats.compilation.assets);
   // FIXME(sven): stats could be printed in {wrangler}, avoiding any confusion.
   console.log(stats.toString({ colors: true }));
 });
