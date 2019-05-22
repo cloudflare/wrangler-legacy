@@ -3,17 +3,21 @@
 const webpack = require("webpack");
 const { join } = require("path");
 
-function hasFlag(name) {
-  return process.argv.indexOf("--" + name) !== -1;
-}
+const rawArgs = process.argv.slice(2);
+const args = rawArgs.reduce((obj, e) => {
+  if (e.indexOf("--") === -1 && e.indexOf("=") === -1) {
+    throw new Error("malformed arguments");
+  }
+
+  const [name, value] = e.split("=");
+  const normalizedName = name.replace("--", '');
+  obj[normalizedName] = value;
+  return obj;
+}, {});
 
 let config;
-if (hasFlag("auto-webpack-config") === true) {
-  const entry = join(
-    process.cwd(),
-    require(join(process.cwd(), "package.json")).main
-  );
-  config = { entry };
+if (args["no-webpack-config"] === "1") {
+  config = { entry: args["use-entry"] };
 } else {
   config = require(join(process.cwd(), "./webpack.config.js"));
 }

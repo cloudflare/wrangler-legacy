@@ -1,4 +1,6 @@
+use crate::commands::publish::package::Package;
 use serde::Deserialize;
+use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
@@ -108,11 +110,15 @@ pub fn run_build(
     let mut command = Command::new(executable_path());
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
-    // if {webpack.config.js} is not present, we can let wrangler-js determine
-    // the entry file, based on the {package.json} file.
+    // if {webpack.config.js} is not present, we infer the entry based on the
+    // {package.json} file and pass it to {wrangler-js}.
     // https://github.com/cloudflare/wrangler/issues/98
     if !bundle.has_webpack_config() {
-        command.arg("--auto-webpack-config");
+        let package = Package::new("./")?;
+        let current_dir = env::current_dir()?;
+        let package_main = current_dir.join(package.main).to_str().unwrap().to_string();
+        command.arg("--no-webpack-config=1");
+        command.arg(format!("--use-entry={}", package_main));
     }
 
     let output = command.output().expect("failed to execute process");

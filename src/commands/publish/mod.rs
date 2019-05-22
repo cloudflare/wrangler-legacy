@@ -3,7 +3,7 @@ pub mod preview;
 mod route;
 use route::Route;
 
-mod package;
+pub mod package;
 use package::Package;
 
 use log::info;
