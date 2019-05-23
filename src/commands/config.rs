@@ -12,7 +12,7 @@ pub fn global_config(email: &str, api_key: &str) -> Result<(), failure::Error> {
 
     let toml = toml::to_string(&s)?;
 
-    let config_dir = Path::new(&dirs::home_dir().expect(&format!(
+    let config_dir = Path::new(&dirs::home_dir().unwrap_or_else(|| panic!(
         "{0} could not determine home directory. {0}",
         emoji::CONSTRUCTION
     )))

@@ -43,12 +43,9 @@ impl Bundle {
         let mut script = create_prologue();
         script += &wranglerjs_output.script;
 
-        match wranglerjs_output.wasm {
-            Some(wasm) => {
-                let mut wasm_file = File::create(self.wasm_path())?;
-                wasm_file.write_all(wasm.as_bytes())?;
-            }
-            None => {}
+        if let Some(wasm) = wranglerjs_output.wasm {
+            let mut wasm_file = File::create(self.wasm_path())?;
+            wasm_file.write_all(wasm.as_bytes())?;
         }
 
         script_file.write_all(script.as_bytes())?;
@@ -164,7 +161,7 @@ pub fn run_build(
 }
 
 pub fn run_npm_install() -> Result<(), failure::Error> {
-    for tool in vec!["node", "npm"] {
+    for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
     let mut command = Command::new("npm");
@@ -180,7 +177,7 @@ pub fn run_npm_install() -> Result<(), failure::Error> {
 }
 
 fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
-    if !which::which(tool).is_ok() {
+    if which::which(tool).is_err() {
         failure::bail!("You need to install {}", tool)
     }
     Ok(())
