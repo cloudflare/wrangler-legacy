@@ -14,14 +14,10 @@ pub struct GlobalUserSettings {
     pub api_key: String,
 }
 
-fn default_project_type() -> ProjectType {
-    ProjectType::Webpack
-}
-
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ProjectSettings {
     pub name: String,
-    #[serde(rename = "type", default = "default_project_type")]
+    #[serde(rename = "type")]
     pub project_type: ProjectType,
     pub zone_id: String,
     pub route: Option<String>,
