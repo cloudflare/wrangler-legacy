@@ -159,6 +159,9 @@ pub fn run_build(
 }
 
 pub fn run_npm_install() -> Result<(), failure::Error> {
+    for tool in vec!["node", "npm"] {
+        env_dep_installed(tool)?;
+    }
     let mut command = Command::new("npm");
     command.arg("install");
     info!("Running {:?}", command);
@@ -169,6 +172,13 @@ pub fn run_npm_install() -> Result<(), failure::Error> {
     } else {
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
+}
+
+fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
+    if !which::which(tool).is_ok() {
+        failure::bail!("You need to install {}", tool) 
+    }
+    Ok(())
 }
 
 // check if {wrangler-js} is present are a known location.
