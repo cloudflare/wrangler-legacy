@@ -24,7 +24,7 @@ pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure
 fn command(name: &str, binary_path: PathBuf, args: &[&str], project_type: &ProjectType) -> Command {
     println!(
         "{} Generating a new {} worker project with name '{}'...",
-        emoji::GOAT,
+        emoji::SHEEP,
         project_type,
         name
     );
