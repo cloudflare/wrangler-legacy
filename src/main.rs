@@ -20,6 +20,19 @@ fn main() -> Result<(), failure::Error> {
     env_logger::init();
     let cache = get_wrangler_cache()?;
 
+    if let Ok(me) = env::current_exe() {
+        // If we're actually running as the installer then execute our
+        // self-installation, otherwise just continue as usual.
+        if me
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .expect("executable should have a filename")
+            .starts_with("wrangler-init")
+        {
+            installer::install();
+        }
+    }
+
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("ashley g williams <ashley666ashley@gmail.com>")
