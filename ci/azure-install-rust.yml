@@ -20,6 +20,8 @@ steps:
   - script: |
         rustup component add rustfmt
         rustup component add clippy
+    displayName: Add rustfmt and clippy components
+  - script: |
         rustc -Vv
         cargo -V
     displayName: Query rust and cargo versions
