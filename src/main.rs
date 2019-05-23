@@ -10,6 +10,7 @@ mod cache;
 mod commands;
 mod emoji;
 mod install;
+mod installer;
 mod user;
 mod wranglerjs;
 
