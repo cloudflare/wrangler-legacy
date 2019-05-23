@@ -9,6 +9,8 @@ jobs:
     displayName: "Run wrangler tests, fmt, and clippy"
     steps:
       - template: ci/azure-install-rust.yml
+      - script: cargo install cargo-generate
+        displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
       - script: rustup component add rustfmt
