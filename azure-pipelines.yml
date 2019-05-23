@@ -11,8 +11,12 @@ jobs:
       - template: ci/azure-install-rust.yml
       - script: cargo test --locked
         displayName: "cargo test --locked"
+      - script: rustup component add rustfmt
+        displayName: rustup component add rustfmt
       - script: cargo fmt --all -- --check
         displayName: "cargo fmt"
+      - script: rustup component add clippy
+        displayName: rustup component add clippy
       - script: cargo clippy
         displayName: "cargo clippy"
 
