@@ -32,9 +32,9 @@ fn it_generates_with_arguments() {
 fn generate(name: Option<&str>, template: Option<&str>) {
     let mut wrangler = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     if name.is_none() && template.is_none() {
-        wrangler.arg("generate").assert();
+        wrangler.arg("generate").assert().success();
     } else if name.is_some() && template.is_some() {
-        wrangler.arg("generate").arg(name.unwrap()).arg(template.unwrap()).assert();
+        wrangler.arg("generate").arg(name.unwrap()).arg(template.unwrap()).assert().success();
     }
 }
 
