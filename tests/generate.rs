@@ -34,7 +34,12 @@ fn generate(name: Option<&str>, template: Option<&str>) {
     if name.is_none() && template.is_none() {
         wrangler.arg("generate").assert().success();
     } else if name.is_some() && template.is_some() {
-        wrangler.arg("generate").arg(name.unwrap()).arg(template.unwrap()).assert().success();
+        wrangler
+            .arg("generate")
+            .arg(name.unwrap())
+            .arg(template.unwrap())
+            .assert()
+            .success();
     }
 }
 
