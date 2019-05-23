@@ -24,4 +24,3 @@ pub static CONSTRUCTION: Emoji = Emoji("🚧 ", "");
 pub static UP: Emoji = Emoji("🆙 ", "");
 pub static GOAT: Emoji = Emoji("🐑 ", "");
 pub static WAVING: Emoji = Emoji("👋 ", "");
-

@@ -23,7 +23,10 @@ fn main() -> Result<(), failure::Error> {
         .author("ashley g williams <ashley666ashley@gmail.com>")
         .subcommand(
             SubCommand::with_name("generate")
-                .about(&*format!("{} Generate a new wasm worker project", emoji::DANCERS))
+                .about(&*format!(
+                    "{} Generate a new wasm worker project",
+                    emoji::DANCERS
+                ))
                 .arg(
                     Arg::with_name("name")
                         .help("the name of your worker! defaults to 'wasm-worker'")
@@ -37,7 +40,10 @@ fn main() -> Result<(), failure::Error> {
         )
         .subcommand(
             SubCommand::with_name("preview")
-                .about(&*format!("{} Publish your code temporarily on cloudflareworkers.com", emoji::MICROSCOPE))
+                .about(&*format!(
+                    "{} Publish your code temporarily on cloudflareworkers.com",
+                    emoji::MICROSCOPE
+                ))
                 .arg(
                     Arg::with_name("method")
                         .help("Type of request to preview your worker with (get, post)")
@@ -53,13 +59,16 @@ fn main() -> Result<(), failure::Error> {
             SubCommand::with_name("build")
                 .about(&*format!("{} Build your wasm with wasm-pack", emoji::CRAB)),
         )
-        .subcommand(
-            SubCommand::with_name("publish")
-                .about(&*format!("{} Push your worker to the orange cloud", emoji::UP)),
-        )
+        .subcommand(SubCommand::with_name("publish").about(&*format!(
+            "{} Push your worker to the orange cloud",
+            emoji::UP
+        )))
         .subcommand(
             SubCommand::with_name("config")
-                .about(&*format!("{} Setup wrangler with your Cloudflare account", emoji::SLEUTH))
+                .about(&*format!(
+                    "{} Setup wrangler with your Cloudflare account",
+                    emoji::SLEUTH
+                ))
                 .arg(
                     Arg::with_name("email")
                         .help("the email address associated with your Cloudflare account")
@@ -73,10 +82,10 @@ fn main() -> Result<(), failure::Error> {
                         .required(true),
                 ),
         )
-        .subcommand(
-            SubCommand::with_name("whoami")
-                .about(&*format!("{} Retrieve your user info and test your auth config", emoji::SLEUTH))
-        )
+        .subcommand(SubCommand::with_name("whoami").about(&*format!(
+            "{} Retrieve your user info and test your auth config",
+            emoji::SLEUTH
+        )))
         .get_matches();
 
     if matches.subcommand_matches("config").is_some()
