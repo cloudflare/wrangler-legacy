@@ -19,7 +19,7 @@ steps:
       TOOLCHAIN: ${{ parameters.toolchain }}
   - script: |
         rustup component add rustfmt
-        rustup component add clippy-preview
+        rustup component add clippy
         rustc -Vv
         cargo -V
     displayName: Query rust and cargo versions
