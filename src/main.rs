@@ -30,7 +30,7 @@ fn main() -> Result<(), failure::Error> {
                 ))
                 .arg(
                     Arg::with_name("name")
-                        .help("the name of your worker! defaults to 'wasm-worker'")
+                        .help("the name of your worker! defaults to 'worker'")
                         .index(1),
                 )
                 .arg(
@@ -103,7 +103,7 @@ fn main() -> Result<(), failure::Error> {
         }
 
         if let Some(matches) = matches.subcommand_matches("generate") {
-            let name = matches.value_of("name").unwrap_or("wasm-worker");
+            let name = matches.value_of("name").unwrap_or("worker");
             let template = matches
                 .value_of("template")
                 .unwrap_or("https://github.com/cloudflare/worker-template");
