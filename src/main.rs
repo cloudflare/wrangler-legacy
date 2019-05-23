@@ -113,7 +113,11 @@ fn main() -> Result<(), failure::Error> {
             );
             commands::generate(name, template, &cache)?;
         }
-    } else {
+    } else if matches.subcommand_matches("whoami").is_some()
+        || matches.subcommand_matches("build").is_some()
+        || matches.subcommand_matches("preview").is_some()
+        || matches.subcommand_matches("publish").is_some()
+    {
         info!("Getting user and project settings");
         let user = User::new()?;
 
