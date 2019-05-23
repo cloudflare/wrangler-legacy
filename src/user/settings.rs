@@ -28,6 +28,7 @@ pub struct ProjectSettings {
 pub enum ProjectType {
     JavaScript,
     Rust,
+    Webpack,
 }
 
 impl fmt::Display for ProjectType {
@@ -35,6 +36,7 @@ impl fmt::Display for ProjectType {
         let printable = match *self {
             ProjectType::JavaScript => "js",
             ProjectType::Rust => "rust",
+            ProjectType::Webpack => "webpack",
         };
         write!(f, "{}", printable)
     }

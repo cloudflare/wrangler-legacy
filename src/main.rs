@@ -11,6 +11,7 @@ mod commands;
 mod emoji;
 mod install;
 mod user;
+mod wranglerjs;
 
 use user::User;
 

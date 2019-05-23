@@ -1,0 +1,12 @@
+{
+  "name": "wrangler-js",
+  "version": "0.1.9",
+  "author": "Sven Sauleau <sven@sauleau.com>",
+  "license": "MIT",
+  "bin": {
+    "wrangler-js": "./index.js"
+  },
+  "dependencies": {
+    "webpack": "^4.29.6"
+  }
+}
