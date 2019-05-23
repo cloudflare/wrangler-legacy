@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use std::env;
+use std::str::FromStr;
 
 use cache::get_wrangler_cache;
 use clap::{App, Arg, SubCommand};

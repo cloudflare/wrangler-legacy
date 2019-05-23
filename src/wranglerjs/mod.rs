@@ -176,7 +176,7 @@ pub fn run_npm_install() -> Result<(), failure::Error> {
 
 fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
     if !which::which(tool).is_ok() {
-        failure::bail!("You need to install {}", tool) 
+        failure::bail!("You need to install {}", tool)
     }
     Ok(())
 }
