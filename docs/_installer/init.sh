@@ -10,12 +10,12 @@
 # except according to those terms.
 
 # This is just a little script that can be downloaded from the internet to
-# install wasm-pack. It just does platform detection, downloads the installer
+# install wrangler. It just does platform detection, downloads the installer
 # and runs it.
 
 set -u
 
-UPDATE_ROOT="https://github.com/rustwasm/wasm-pack/releases/download/$VERSION"
+UPDATE_ROOT="https://github.com/cloudflare/wrangler/releases/download/$VERSION"
 
 main() {
     downloader --check
@@ -43,21 +43,21 @@ main() {
     which rustup > /dev/null 2>&1
     need_ok "failed to find Rust installation, is rustup installed?"
     local _rustup=`which rustup`
-    local _tardir="wasm-pack-$VERSION-${_arch}"
+    local _tardir="wrangler-$VERSION-${_arch}"
     local _url="$UPDATE_ROOT/${_tardir}.tar.gz"
-    local _dir="$(mktemp -d 2>/dev/null || ensure mktemp -d -t wasm-pack)"
+    local _dir="$(mktemp -d 2>/dev/null || ensure mktemp -d -t wrangler)"
     local _file="$_dir/input.tar.gz"
-    local _wasmpack="$_dir/wasm-pack$_ext"
-    local _wasmpackinit="$_dir/wasm-pack-init$_ext"
+    local _wasmpack="$_dir/wrangler$_ext"
+    local _wasmpackinit="$_dir/wrangler-init$_ext"
 
-    printf '%s\n' 'info: downloading wasm-pack' 1>&2
+    printf '%s\n' 'info: downloading wrangler' 1>&2
 
     ensure mkdir -p "$_dir"
     downloader "$_url" "$_file"
     if [ $? != 0 ]; then
       say "failed to download $_url"
       say "this may be a standard network error, but it may also indicate"
-      say "that wasm-pack's release process is not working. When in doubt"
+      say "that wrangler's release process is not working. When in doubt"
       say "please feel free to open an issue!"
       exit 1
     fi
@@ -125,7 +125,7 @@ get_architecture() {
 }
 
 say() {
-    echo "wasm-pack-init: $1"
+    echo "wrangler-init: $1"
 }
 
 err() {
