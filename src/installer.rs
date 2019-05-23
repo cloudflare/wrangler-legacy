@@ -23,7 +23,7 @@ use std::path::Path;
 use std::process;
 
 use atty;
-use failure::{self, ResultExt};
+use failure::{self, ResultExt, bail};
 use which;
 
 pub fn install() -> ! {
