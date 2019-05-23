@@ -19,7 +19,8 @@ use crate::wranglerjs::Bundle;
 pub fn publish(user: User) -> Result<(), failure::Error> {
     let name = &user.settings.project.name;
     publish_script(&user, name)?;
-    Route::create(&user, Some(name.to_string()))?;
+    let route = Route::new(&user)?;
+    Route::publish(&user, route)?;
     println!(
         "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
         user.settings

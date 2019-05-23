@@ -4,6 +4,8 @@ use binary_install::Cache;
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::emoji;
+
 pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure::Error> {
     let tool_name = "cargo-generate";
     let binary_path = install::install(tool_name, "ashleygwilliams", cache)?.binary(tool_name)?;
@@ -21,8 +23,10 @@ pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure
 
 fn command(name: &str, binary_path: PathBuf, args: &[&str], project_type: &ProjectType) -> Command {
     println!(
-        "🐑 Generating a new {} worker project with name '{}'...",
-        project_type, name
+        "{} Generating a new {} worker project with name '{}'...",
+        emoji::SHEEP,
+        project_type,
+        name
     );
 
     let mut c = if cfg!(target_os = "windows") {
