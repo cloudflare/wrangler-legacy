@@ -12,43 +12,37 @@ use reqwest::multipart::Form;
 use std::fs;
 use std::path::Path;
 
-use crate::user::settings::ProjectType;
-use crate::user::User;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::project::{Project, ProjectType};
 use crate::wranglerjs::Bundle;
 
-pub fn publish(user: User) -> Result<(), failure::Error> {
-    let name = &user.settings.project.name;
-    publish_script(&user, name)?;
-    let route = Route::new(&user)?;
-    Route::publish(&user, route)?;
+pub fn publish(user: GlobalUser, project: Project) -> Result<(), failure::Error> {
+    publish_script(&user, &project)?;
+    let route = Route::new(&project)?;
+    Route::publish(&user, &project, route)?;
     println!(
         "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
-        user.settings
-            .project
-            .route
-            .expect("⚠️ There should be a route")
+        project.route.expect("⚠️ There should be a route")
     );
     Ok(())
 }
 
-fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
-    let zone_id = &user.settings.project.zone_id;
-    let project_type = &user.settings.project.project_type;
+fn publish_script(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/zones/{}/workers/scripts/{}",
-        zone_id, name,
+        project.zone_id, project.name,
     );
 
     let client = reqwest::Client::new();
-    let settings = user.settings.clone();
 
+    let project_type = &project.project_type;
     let mut res = match project_type {
         ProjectType::Rust => {
             info!("Rust project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", settings.global_user.api_key)
-                .header("X-Auth-Email", settings.global_user.email)
+                .header("X-Auth-Key", &*user.api_key)
+                .header("X-Auth-Email", &*user.email)
                 .multipart(build_multipart_script()?)
                 .send()?
         }
@@ -56,8 +50,8 @@ fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
             info!("JavaScript project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", settings.global_user.api_key)
-                .header("X-Auth-Email", settings.global_user.email)
+                .header("X-Auth-Key", &*user.api_key)
+                .header("X-Auth-Email", &*user.email)
                 .header("Content-Type", "application/javascript")
                 .body(build_js_script()?)
                 .send()?
@@ -66,8 +60,8 @@ fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
             info!("Webpack project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", settings.global_user.api_key)
-                .header("X-Auth-Email", settings.global_user.email)
+                .header("X-Auth-Key", &*user.api_key)
+                .header("X-Auth-Email", &*user.email)
                 .multipart(build_webpack_form()?)
                 .send()?
         }

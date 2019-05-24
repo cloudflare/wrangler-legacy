@@ -1,4 +1,5 @@
-use crate::user::User;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::project::Project;
 use reqwest::header::CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
 
@@ -16,26 +17,26 @@ struct RoutesResponse {
 }
 
 impl Route {
-    pub fn new(user: &User) -> Result<Route, failure::Error> {
-        let pattern = &user.settings.clone().project.route.expect(
-            "⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.",
-        );
-        let script = &user.settings.clone().project.name;
+    pub fn new(project: &Project) -> Result<Route, failure::Error> {
         Ok(Route {
-            script: script.to_string(),
-            pattern: pattern.to_string(),
+            script: project.name.to_string(),
+            pattern: project.route.clone().expect("⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.").to_string(),
         })
     }
 
-    pub fn publish(user: &User, route: Route) -> Result<(), failure::Error> {
-        if route.exists(user)? {
+    pub fn publish(
+        user: &GlobalUser,
+        project: &Project,
+        route: Route,
+    ) -> Result<(), failure::Error> {
+        if route.exists(user, project)? {
             return Ok(());
         }
-        create(user, route)
+        create(user, project, route)
     }
 
-    pub fn exists(&self, user: &User) -> Result<bool, failure::Error> {
-        let routes = get_routes(user)?;
+    pub fn exists(&self, user: &GlobalUser, project: &Project) -> Result<bool, failure::Error> {
+        let routes = get_routes(user, project)?;
 
         for route in routes {
             if route.matches(self) {
@@ -50,16 +51,15 @@ impl Route {
     }
 }
 
-fn get_routes(user: &User) -> Result<Vec<Route>, failure::Error> {
-    let routes_addr = get_routes_addr(user)?;
+fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failure::Error> {
+    let routes_addr = get_routes_addr(project)?;
 
     let client = reqwest::Client::new();
-    let settings = user.settings.to_owned();
 
     let mut res = client
         .get(&routes_addr)
-        .header("X-Auth-Key", settings.global_user.api_key)
-        .header("X-Auth-Email", settings.global_user.email)
+        .header("X-Auth-Key", &*user.api_key)
+        .header("X-Auth-Email", &*user.email)
         .send()?;
 
     if !res.status().is_success() {
@@ -76,12 +76,11 @@ fn get_routes(user: &User) -> Result<Vec<Route>, failure::Error> {
     Ok(routes_response.result)
 }
 
-fn create(user: &User, route: Route) -> Result<(), failure::Error> {
+fn create(user: &GlobalUser, project: &Project, route: Route) -> Result<(), failure::Error> {
     let client = reqwest::Client::new();
-    let settings = user.settings.to_owned();
     let body = serde_json::to_string(&route)?;
 
-    let routes_addr = get_routes_addr(user)?;
+    let routes_addr = get_routes_addr(project)?;
 
     info!(
         "Creating your route {} for script {}",
@@ -89,8 +88,8 @@ fn create(user: &User, route: Route) -> Result<(), failure::Error> {
     );
     let mut res = client
         .post(&routes_addr)
-        .header("X-Auth-Key", settings.global_user.api_key)
-        .header("X-Auth-Email", settings.global_user.email)
+        .header("X-Auth-Key", &*user.api_key)
+        .header("X-Auth-Email", &*user.email)
         .header(CONTENT_TYPE, "application/json")
         .body(body)
         .send()?;
@@ -106,13 +105,12 @@ fn create(user: &User, route: Route) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn get_routes_addr(user: &User) -> Result<String, failure::Error> {
-    let zone_id = &user.settings.project.zone_id;
-    if zone_id.is_empty() {
+fn get_routes_addr(project: &Project) -> Result<String, failure::Error> {
+    if project.zone_id.is_empty() {
         failure::bail!("You much provide a zone_id in your wrangler.toml.")
     }
     Ok(format!(
         "https://api.cloudflare.com/client/v4/zones/{}/workers/routes",
-        zone_id
+        project.zone_id
     ))
 }

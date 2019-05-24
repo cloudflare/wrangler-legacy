@@ -1,4 +1,4 @@
-use crate::user::settings::{ProjectSettings, ProjectType};
+use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
 use binary_install::Cache;
 use std::path::PathBuf;
@@ -17,7 +17,7 @@ pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure
     let command_name = format!("{:?}", command);
 
     commands::run(command, &command_name)?;
-    ProjectSettings::generate(name.to_string(), project_type)?;
+    Project::generate(name.to_string(), project_type)?;
     Ok(())
 }
 

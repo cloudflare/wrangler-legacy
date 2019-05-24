@@ -12,10 +12,8 @@ mod commands;
 mod emoji;
 mod install;
 mod installer;
-mod user;
+mod settings;
 mod wranglerjs;
-
-use user::User;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
@@ -133,15 +131,18 @@ fn main() -> Result<(), failure::Error> {
         || matches.subcommand_matches("preview").is_some()
         || matches.subcommand_matches("publish").is_some()
     {
-        info!("Getting user and project settings");
-        let user = User::new()?;
+        info!("Getting project settings");
+        let project = settings::project::Project::new()?;
+
+        info!("Getting user settings");
+        let user = settings::global_user::GlobalUser::new()?;
 
         if matches.subcommand_matches("whoami").is_some() {
             commands::whoami(&user);
         }
 
         if matches.subcommand_matches("build").is_some() {
-            commands::build(&cache, &user.settings.project.project_type)?;
+            commands::build(&cache, &project.project_type)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("preview") {
@@ -152,13 +153,13 @@ fn main() -> Result<(), failure::Error> {
                 None => None,
             };
 
-            commands::build(&cache, &user.settings.project.project_type)?;
+            commands::build(&cache, &project.project_type)?;
             commands::preview(method, body)?;
         }
 
         if matches.subcommand_matches("publish").is_some() {
-            commands::build(&cache, &user.settings.project.project_type)?;
-            commands::publish(user)?;
+            commands::build(&cache, &project.project_type)?;
+            commands::publish(user, project)?;
         }
     }
     Ok(())
