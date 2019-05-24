@@ -15,7 +15,14 @@ impl Package {
                 "The `main` key in your `package.json` file is required; please specified the entrypoint of your Worker.",
             )
         } else {
-            Ok(self.main.clone())
+            if !Path::new(&self.main).exists() {
+                failure::bail!(
+                    "The entrypoint of your Worker ({}) could not be found.",
+                    self.main
+                )
+            } else {
+                Ok(self.main.clone())
+            }
         }
     }
 }
