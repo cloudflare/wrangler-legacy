@@ -11,7 +11,7 @@ use crate::emoji;
 pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
     match project_type {
         ProjectType::JavaScript => {
-            println!("⚠️ JavaScript project found. Skipping unecessary build!")
+            println!("⚠️ JavaScript project found. Skipping unnecessary build!")
         }
         ProjectType::Rust => {
             let tool_name = "wasm-pack";
