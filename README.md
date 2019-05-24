@@ -61,6 +61,10 @@ There are two types of configuration that `wrangler` uses: global user and per p
     edit this file to add these values before you can publish.
 
     - `name`: This is the name of your project. It will be the name of your script.
+    - `type`: The type of project this is. Can be one of the following:
+        - `javascript`: this is the default: assumes a javascript worker that does not need a build step
+        - `webpack`: this is a javascript worker that uses a webpack build step
+        - `rust`: this is a Rust/WASM worker-- will compile Rust to WebAssembly and package worker on build step
     - `zone_id`: This is the ID of the "zone" or domain you want to run your script on.
     - `account_id`: This is the ID of the account associated with your zone. You might have more than one account,
         so make sure to use the ID of the account associated with the `zone_id` you provide.
