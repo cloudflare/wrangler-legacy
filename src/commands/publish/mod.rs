@@ -88,7 +88,7 @@ fn publish_script(user: &User, name: &str) -> Result<(), failure::Error> {
 
 fn build_js_script() -> Result<String, failure::Error> {
     let package = Package::new("./")?;
-    Ok(fs::read_to_string(package.main)?)
+    Ok(fs::read_to_string(package.main()?)?)
 }
 
 fn build_multipart_script() -> Result<Form, failure::Error> {
