@@ -24,7 +24,7 @@ pub struct WranglerjsOutput {
 impl WranglerjsOutput {}
 
 // Directory where we should write the {Bundle}. It represents the built
-// artefact.
+// artifact.
 const BUNDLE_OUT: &str = "./worker";
 pub struct Bundle {}
 
