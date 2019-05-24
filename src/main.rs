@@ -50,6 +50,13 @@ fn main() -> Result<(), failure::Error> {
                     Arg::with_name("template")
                         .help("a link to a github template! defaults to cloudflare/worker-template")
                         .index(2),
+                )
+                .arg(
+                    Arg::with_name("type")
+                        .short("t")
+                        .long("type")
+                        .takes_value(true)
+                        .help("the type of project you want generated"),
                 ),
         )
         .subcommand(
@@ -70,8 +77,7 @@ fn main() -> Result<(), failure::Error> {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("build")
-                .about(&*format!("{} Build your worker", emoji::CRAB)),
+            SubCommand::with_name("build").about(&*format!("{} Build your worker", emoji::CRAB)),
         )
         .subcommand(SubCommand::with_name("publish").about(&*format!(
             "{} Push your worker to the orange cloud",
@@ -117,6 +123,10 @@ fn main() -> Result<(), failure::Error> {
 
         if let Some(matches) = matches.subcommand_matches("generate") {
             let name = matches.value_of("name").unwrap_or("worker");
+            let project_type = match matches.value_of("type") {
+                Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
+                None => None,
+            };
             let template = matches
                 .value_of("template")
                 .unwrap_or("https://github.com/cloudflare/worker-template");
@@ -124,7 +134,7 @@ fn main() -> Result<(), failure::Error> {
                 "Generate command called with template {}, and name {}",
                 template, name
             );
-            commands::generate(name, template, &cache)?;
+            commands::generate(name, template, project_type, &cache)?;
         }
     } else if matches.subcommand_matches("build").is_some()
         || matches.subcommand_matches("preview").is_some()

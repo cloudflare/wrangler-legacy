@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fs;
 use std::path::Path;
+use std::str::FromStr;
 
 use log::info;
 
@@ -33,6 +34,19 @@ impl fmt::Display for ProjectType {
             ProjectType::Webpack => "webpack",
         };
         write!(f, "{}", printable)
+    }
+}
+
+impl FromStr for ProjectType {
+    type Err = failure::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "javascript" => Ok(ProjectType::JavaScript),
+            "rust" => Ok(ProjectType::Rust),
+            "webpack" => Ok(ProjectType::Webpack),
+            _ => failure::bail!("{} is not a valid wrangler project type!", s),
+        }
     }
 }
 
