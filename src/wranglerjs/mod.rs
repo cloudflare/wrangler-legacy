@@ -137,7 +137,11 @@ pub fn run_build(
     if !bundle.has_webpack_config() {
         let package = Package::new("./")?;
         let current_dir = env::current_dir()?;
-        let package_main = current_dir.join(package.main).to_str().unwrap().to_string();
+        let package_main = current_dir
+            .join(package.main()?)
+            .to_str()
+            .unwrap()
+            .to_string();
         command.arg("--no-webpack-config=1");
         command.arg(format!("--use-entry={}", package_main));
     }

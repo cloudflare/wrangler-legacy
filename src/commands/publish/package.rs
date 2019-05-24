@@ -5,7 +5,26 @@ use serde::{self, Deserialize};
 
 #[derive(Debug, Deserialize)]
 pub struct Package {
-    pub main: String,
+    #[serde(default)]
+    main: String,
+}
+impl Package {
+    pub fn main(&self) -> Result<String, failure::Error> {
+        if self.main == "" {
+            failure::bail!(
+                "The `main` key in your `package.json` file is required; please specified the entrypoint of your Worker.",
+            )
+        } else {
+            if !Path::new(&self.main).exists() {
+                failure::bail!(
+                    "The entrypoint of your Worker ({}) could not be found.",
+                    self.main
+                )
+            } else {
+                Ok(self.main.clone())
+            }
+        }
+    }
 }
 
 impl Package {
