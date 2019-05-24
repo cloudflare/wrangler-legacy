@@ -62,8 +62,7 @@ compiler.run((err, stats) => {
   const assets = stats.compilation.assets;
   const bundle = {
     wasm: null,
-    wasm_name: "",
-    script: null,
+    script: "",
     dist_to_clean: fullConfig.output.path
   };
 
@@ -78,7 +77,6 @@ compiler.run((err, stats) => {
 
   if (hasWasmModule === true) {
     bundle.wasm = Buffer.from(assets[wasmModuleAsset].source()).toString();
-    bundle.wasm_name = wasmModuleAsset;
   }
 
   writeFileSync(args["output-file"], JSON.stringify(bundle));
