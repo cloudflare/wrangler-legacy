@@ -38,7 +38,7 @@ fn main() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
-                    "{} Generate a new wasm worker project",
+                    "{} Generates a new worker project",
                     emoji::DANCERS
                 ))
                 .arg(
@@ -71,7 +71,7 @@ fn main() -> Result<(), failure::Error> {
         )
         .subcommand(
             SubCommand::with_name("build")
-                .about(&*format!("{} Build your wasm with wasm-pack", emoji::CRAB)),
+                .about(&*format!("{} Build your worker", emoji::CRAB)),
         )
         .subcommand(SubCommand::with_name("publish").about(&*format!(
             "{} Push your worker to the orange cloud",
