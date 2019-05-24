@@ -2,6 +2,7 @@ use crate::user::settings::ProjectType;
 use crate::wranglerjs;
 use crate::{commands, install};
 use binary_install::Cache;
+use log::info;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -29,7 +30,7 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             wranglerjs::run_npm_install().expect("could not run `npm install`");
 
             if !wranglerjs::is_installed() {
-                println!("missing deps; installing...");
+                info!("missing deps; installing...");
                 wranglerjs::install().expect("could not install wranglerjs");
             }
 
