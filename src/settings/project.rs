@@ -9,13 +9,7 @@ use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct GlobalUserSettings {
-    pub email: String,
-    pub api_key: String,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ProjectSettings {
+pub struct Project {
     pub name: String,
     #[serde(rename = "type")]
     pub project_type: ProjectType,
@@ -42,12 +36,9 @@ impl fmt::Display for ProjectType {
     }
 }
 
-impl ProjectSettings {
-    pub fn generate(
-        name: String,
-        project_type: ProjectType,
-    ) -> Result<ProjectSettings, failure::Error> {
-        let project_settings = ProjectSettings {
+impl Project {
+    pub fn generate(name: String, project_type: ProjectType) -> Result<Project, failure::Error> {
+        let project = Project {
             name: name.clone(),
             project_type: project_type.clone(),
             zone_id: String::new(),
@@ -55,62 +46,21 @@ impl ProjectSettings {
             routes: None,
         };
 
-        let toml = toml::to_string(&project_settings)?;
+        let toml = toml::to_string(&project)?;
         let config_path = Path::new("./").join(&name);
         let config_file = config_path.join("wrangler.toml");
 
         info!("Writing a wrangler.toml file at {}", config_file.display());
         fs::write(&config_file, &toml)?;
-        Ok(project_settings)
+        Ok(project)
     }
-}
 
-#[derive(Clone, Serialize)]
-pub struct Settings {
-    pub global_user: GlobalUserSettings,
-    pub project: ProjectSettings,
-}
-
-impl Settings {
     pub fn new() -> Result<Self, failure::Error> {
-        let global_user = get_global_config()?;
-        let project = get_project_config()?;
-
-        Ok(Settings {
-            global_user,
-            project,
-        })
+        get_project_config()
     }
 }
 
-fn get_global_config() -> Result<GlobalUserSettings, failure::Error> {
-    let mut s = Config::new();
-
-    let config_path = dirs::home_dir()
-        .expect("oops no home dir")
-        .join(".wrangler/config/default");
-    let config_str = config_path
-        .to_str()
-        .expect("global config path should be a string");
-    s.merge(File::with_name(config_str))?;
-
-    // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
-    s.merge(Environment::with_prefix("CF"))?;
-
-    let settings: Result<GlobalUserSettings, config::ConfigError> = s.try_into();
-    match settings {
-        Ok(s) => Ok(s),
-        Err(e) => {
-            let msg = format!(
-                "⚠️ Your global config has an error, run `wrangler config`: {}",
-                e
-            );
-            Err(failure::err_msg(msg))
-        }
-    }
-}
-
-pub fn get_project_config() -> Result<ProjectSettings, failure::Error> {
+pub fn get_project_config() -> Result<Project, failure::Error> {
     let mut s = Config::new();
 
     let config_path = Path::new("./wrangler.toml");
@@ -122,8 +72,8 @@ pub fn get_project_config() -> Result<ProjectSettings, failure::Error> {
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
     s.merge(Environment::with_prefix("CF"))?;
 
-    let settings: Result<ProjectSettings, config::ConfigError> = s.try_into();
-    match settings {
+    let project: Result<Project, config::ConfigError> = s.try_into();
+    match project {
         Ok(s) => Ok(s),
         Err(e) => {
             let msg = format!(

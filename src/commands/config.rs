@@ -2,20 +2,22 @@ use std::fs;
 use std::path::Path;
 
 use crate::emoji;
-use crate::user::settings::GlobalUserSettings;
+use crate::settings::global_user::GlobalUser;
 
 pub fn global_config(email: &str, api_key: &str) -> Result<(), failure::Error> {
-    let s = GlobalUserSettings {
+    let s = GlobalUser {
         email: email.to_string(),
         api_key: api_key.to_string(),
     };
 
     let toml = toml::to_string(&s)?;
 
-    let config_dir = Path::new(&dirs::home_dir().expect(&format!(
-        "{0} could not determine home directory. {0}",
-        emoji::CONSTRUCTION
-    )))
+    let config_dir = Path::new(&dirs::home_dir().unwrap_or_else(|| {
+        panic!(
+            "{0} could not determine home directory. {0}",
+            emoji::CONSTRUCTION
+        )
+    }))
     .join(".wrangler")
     .join("config");
     fs::create_dir_all(&config_dir)?;

@@ -1,9 +1,7 @@
 use crate::emoji;
-use crate::user::User;
+use crate::settings::global_user::GlobalUser;
 
-pub fn whoami(user: &User) {
-    let user = &user.data;
-
+pub fn whoami(user: &GlobalUser) {
     println!(
         "{} You are logged with the email '{}'.",
         emoji::WAVING,

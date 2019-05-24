@@ -8,7 +8,7 @@ use crate::commands::publish;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::user::settings::{get_project_config, ProjectType};
+use crate::settings::project::{get_project_config, ProjectType};
 
 #[derive(Debug, Deserialize)]
 struct Preview {

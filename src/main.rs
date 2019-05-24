@@ -12,10 +12,8 @@ mod commands;
 mod emoji;
 mod install;
 mod installer;
-mod user;
+mod settings;
 mod wranglerjs;
-
-use user::User;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
@@ -45,7 +43,7 @@ fn main() -> Result<(), failure::Error> {
                 ))
                 .arg(
                     Arg::with_name("name")
-                        .help("the name of your worker! defaults to 'wasm-worker'")
+                        .help("the name of your worker! defaults to 'worker'")
                         .index(1),
                 )
                 .arg(
@@ -118,7 +116,7 @@ fn main() -> Result<(), failure::Error> {
         }
 
         if let Some(matches) = matches.subcommand_matches("generate") {
-            let name = matches.value_of("name").unwrap_or("wasm-worker");
+            let name = matches.value_of("name").unwrap_or("worker");
             let template = matches
                 .value_of("template")
                 .unwrap_or("https://github.com/cloudflare/worker-template");
@@ -128,16 +126,14 @@ fn main() -> Result<(), failure::Error> {
             );
             commands::generate(name, template, &cache)?;
         }
-    } else {
-        info!("Getting user and project settings");
-        let user = User::new()?;
-
-        if matches.subcommand_matches("whoami").is_some() {
-            commands::whoami(&user);
-        }
+    } else if matches.subcommand_matches("build").is_some()
+        || matches.subcommand_matches("preview").is_some()
+    {
+        info!("Getting project settings");
+        let project = settings::project::Project::new()?;
 
         if matches.subcommand_matches("build").is_some() {
-            commands::build(&cache, &user.settings.project.project_type)?;
+            commands::build(&cache, &project.project_type)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("preview") {
@@ -148,14 +144,23 @@ fn main() -> Result<(), failure::Error> {
                 None => None,
             };
 
-            commands::build(&cache, &user.settings.project.project_type)?;
+            commands::build(&cache, &project.project_type)?;
             commands::preview(method, body)?;
         }
+    } else if matches.subcommand_matches("whoami").is_some() {
+        info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
 
-        if matches.subcommand_matches("publish").is_some() {
-            commands::build(&cache, &user.settings.project.project_type)?;
-            commands::publish(user)?;
-        }
+        commands::whoami(&user);
+    } else if matches.subcommand_matches("publish").is_some() {
+        info!("Getting project settings");
+        let project = settings::project::Project::new()?;
+
+        info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
+
+        commands::build(&cache, &project.project_type)?;
+        commands::publish(user, project)?;
     }
     Ok(())
 }

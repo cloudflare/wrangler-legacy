@@ -24,7 +24,7 @@ pub struct WranglerjsOutput {
 impl WranglerjsOutput {}
 
 // Directory where we should write the {Bundle}. It represents the built
-// artefact.
+// artifact.
 const BUNDLE_OUT: &str = "./worker";
 pub struct Bundle {}
 
@@ -36,6 +36,11 @@ impl Bundle {
     }
 
     pub fn write(&self, wranglerjs_output: WranglerjsOutput) -> Result<(), failure::Error> {
+        let bundle_path = Path::new(BUNDLE_OUT);
+        if !bundle_path.exists() {
+            fs::create_dir(bundle_path)?;
+        }
+
         let mut metadata_file = File::create(self.metadata_path())?;
         metadata_file.write_all(create_metadata(self).as_bytes())?;
 
@@ -43,12 +48,9 @@ impl Bundle {
         let mut script = create_prologue();
         script += &wranglerjs_output.script;
 
-        match wranglerjs_output.wasm {
-            Some(wasm) => {
-                let mut wasm_file = File::create(self.wasm_path())?;
-                wasm_file.write_all(wasm.as_bytes())?;
-            }
-            None => {}
+        if let Some(wasm) = wranglerjs_output.wasm {
+            let mut wasm_file = File::create(self.wasm_path())?;
+            wasm_file.write_all(wasm.as_bytes())?;
         }
 
         script_file.write_all(script.as_bytes())?;
@@ -117,10 +119,6 @@ pub fn run_build(
     wasm_pack_path: PathBuf,
     bundle: &Bundle,
 ) -> Result<WranglerjsOutput, failure::Error> {
-    if !Path::new(BUNDLE_OUT).exists() {
-        fs::create_dir(BUNDLE_OUT)?;
-    }
-
     let mut command = Command::new(executable_path());
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
@@ -164,7 +162,7 @@ pub fn run_build(
 }
 
 pub fn run_npm_install() -> Result<(), failure::Error> {
-    for tool in vec!["node", "npm"] {
+    for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
     let mut command = Command::new("npm");
@@ -180,7 +178,7 @@ pub fn run_npm_install() -> Result<(), failure::Error> {
 }
 
 fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
-    if !which::which(tool).is_ok() {
+    if which::which(tool).is_err() {
         failure::bail!("You need to install {}", tool)
     }
     Ok(())
@@ -242,3 +240,64 @@ fn create_metadata(bundle: &Bundle) -> String {
         .to_string()
     }
 }
+
+// FIXME(sven): doesn't work because they have a race for the BUNDLE_OUT,
+// make it configurable
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+
+//     #[test]
+//     fn it_writes_the_bundle_metadata() {
+//         let wranglerjs_output = WranglerjsOutput {
+//             script: "".to_string(),
+//             dist_to_clean: None,
+//             wasm: None,
+//         };
+//         let bundle = Bundle::new();
+
+//         bundle.write(wranglerjs_output).unwrap();
+//         assert!(Path::new(&bundle.metadata_path()).exists());
+
+//         cleanup(BUNDLE_OUT);
+//     }
+
+//     #[test]
+//     fn it_writes_the_bundle_script() {
+//         let wranglerjs_output = WranglerjsOutput {
+//             script: "foo".to_string(),
+//             dist_to_clean: None,
+//             wasm: None,
+//         };
+//         let bundle = Bundle::new();
+
+//         bundle.write(wranglerjs_output).unwrap();
+//         assert!(Path::new(&bundle.script_path()).exists());
+//         assert!(!Path::new(&bundle.wasm_path()).exists());
+
+//         cleanup(BUNDLE_OUT);
+//     }
+
+//     #[test]
+//     fn it_writes_the_bundle_wasm() {
+//         let wranglerjs_output = WranglerjsOutput {
+//             script: "".to_string(),
+//             wasm: Some("abc".to_string()),
+//             dist_to_clean: None,
+//         };
+//         let bundle = Bundle::new();
+
+//         bundle.write(wranglerjs_output).unwrap();
+//         assert!(Path::new(&bundle.wasm_path()).exists());
+//         assert!(bundle.has_wasm());
+
+//         cleanup(BUNDLE_OUT);
+//     }
+
+//     fn cleanup(name: &str) {
+//         let current_dir = env::current_dir().unwrap();
+//         let path = Path::new(&current_dir).join(name);
+//         println!("p: {:?}", path);
+//         fs::remove_dir_all(path).unwrap();
+//     }
+// }
