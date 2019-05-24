@@ -14,12 +14,11 @@ use std::process::Command;
 #[derive(Deserialize, Debug)]
 pub struct WranglerjsOutput {
     wasm: Option<String>,
-    wasm_name: String,
     script: String,
     // {wrangler-js} will send us the path to the {dist} directory that {Webpack}
     // used; it's tedious to remove a directory with content in JavaScript so
     // let's do it in Rust!
-    dist_to_clean: String,
+    dist_to_clean: Option<String>,
 }
 
 impl WranglerjsOutput {}
@@ -54,9 +53,11 @@ impl Bundle {
 
         script_file.write_all(script.as_bytes())?;
 
-        // cleanup {Webpack} dist.
-        info!("Remove {}", wranglerjs_output.dist_to_clean);
-        fs::remove_dir_all(wranglerjs_output.dist_to_clean).expect("could not clean Webpack dist.");
+        // cleanup {Webpack} dist, if specified.
+        if let Some(dist_to_clean) = wranglerjs_output.dist_to_clean {
+            info!("Remove {}", dist_to_clean);
+            fs::remove_dir_all(dist_to_clean).expect("could not clean Webpack dist.");
+        }
 
         Ok(())
     }
