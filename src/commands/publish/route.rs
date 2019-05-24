@@ -7,7 +7,7 @@ use log::info;
 
 #[derive(Deserialize, Serialize)]
 pub struct Route {
-    script: String,
+    script: Option<String>,
     pattern: String,
 }
 
@@ -19,7 +19,7 @@ struct RoutesResponse {
 impl Route {
     pub fn new(project: &Project) -> Result<Route, failure::Error> {
         Ok(Route {
-            script: project.name.to_string(),
+            script: Some(project.name.to_string()),
             pattern: project.route.clone().expect("⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.").to_string(),
         })
     }
@@ -84,7 +84,8 @@ fn create(user: &GlobalUser, project: &Project, route: Route) -> Result<(), fail
 
     info!(
         "Creating your route {} for script {}",
-        route.pattern, route.script
+        route.pattern,
+        route.script.unwrap()
     );
     let mut res = client
         .post(&routes_addr)
