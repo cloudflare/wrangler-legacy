@@ -6,7 +6,7 @@ use log::info;
 
 #[derive(Deserialize, Serialize)]
 pub struct Route {
-    script: String,
+    script: Option<String>,
     pattern: String,
 }
 
@@ -22,7 +22,7 @@ impl Route {
         );
         let script = &user.settings.clone().project.name;
         Ok(Route {
-            script: script.to_string(),
+            script: Some(script.to_string()),
             pattern: pattern.to_string(),
         })
     }
@@ -85,7 +85,8 @@ fn create(user: &User, route: Route) -> Result<(), failure::Error> {
 
     info!(
         "Creating your route {} for script {}",
-        route.pattern, route.script
+        route.pattern,
+        route.script.unwrap()
     );
     let mut res = client
         .post(&routes_addr)
