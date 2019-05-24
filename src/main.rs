@@ -12,7 +12,7 @@ mod commands;
 mod emoji;
 mod install;
 mod installer;
-pub mod user;
+mod user;
 mod wranglerjs;
 
 use user::User;
