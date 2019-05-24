@@ -36,8 +36,9 @@ impl Bundle {
     }
 
     pub fn write(&self, wranglerjs_output: WranglerjsOutput) -> Result<(), failure::Error> {
-        if !Path::new(BUNDLE_OUT).exists() {
-            fs::create_dir(BUNDLE_OUT)?;
+        let bundle_path = Path::new(BUNDLE_OUT);
+        if !bundle_path.exists() {
+            fs::create_dir(bundle_path)?;
         }
 
         let mut metadata_file = File::create(self.metadata_path())?;
