@@ -126,20 +126,11 @@ fn main() -> Result<(), failure::Error> {
             );
             commands::generate(name, template, &cache)?;
         }
-    } else if matches.subcommand_matches("whoami").is_some()
-        || matches.subcommand_matches("build").is_some()
+    } else if matches.subcommand_matches("build").is_some()
         || matches.subcommand_matches("preview").is_some()
-        || matches.subcommand_matches("publish").is_some()
     {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
-
-        info!("Getting user settings");
-        let user = settings::global_user::GlobalUser::new()?;
-
-        if matches.subcommand_matches("whoami").is_some() {
-            commands::whoami(&user);
-        }
 
         if matches.subcommand_matches("build").is_some() {
             commands::build(&cache, &project.project_type)?;
@@ -156,11 +147,20 @@ fn main() -> Result<(), failure::Error> {
             commands::build(&cache, &project.project_type)?;
             commands::preview(method, body)?;
         }
+    } else if matches.subcommand_matches("whoami").is_some() {
+        info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
 
-        if matches.subcommand_matches("publish").is_some() {
-            commands::build(&cache, &project.project_type)?;
-            commands::publish(user, project)?;
-        }
+        commands::whoami(&user);
+    } else if matches.subcommand_matches("publish").is_some() {
+        info!("Getting project settings");
+        let project = settings::project::Project::new()?;
+
+        info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
+
+        commands::build(&cache, &project.project_type)?;
+        commands::publish(user, project)?;
     }
     Ok(())
 }
