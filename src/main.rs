@@ -4,7 +4,7 @@ use std::env;
 use std::str::FromStr;
 
 use cache::get_wrangler_cache;
-use clap::{App, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
 use commands::HTTPMethod;
 
 use log::info;
@@ -37,6 +37,7 @@ fn main() -> Result<(), failure::Error> {
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("ashley g williams <ashley666ashley@gmail.com>")
+        .setting(AppSettings::ArgRequiredElseHelp)
         .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
