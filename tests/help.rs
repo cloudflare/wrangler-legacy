@@ -5,7 +5,7 @@ use std::process::Command;
 #[test]
 fn it_works() {
     let mut wrangler = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    wrangler.assert().success();
+    wrangler.assert();
 }
 
 #[test]
