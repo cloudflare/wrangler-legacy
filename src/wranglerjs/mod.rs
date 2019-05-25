@@ -230,13 +230,11 @@ fn create_metadata(bundle: &Bundle) -> String {
         )
         .to_string()
     } else {
-        format!(
-            r#"
+        r#"
                 {{
                     "body_part": "script"
                 }}
             "#
-        )
         .to_string()
     }
 }

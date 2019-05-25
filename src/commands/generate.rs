@@ -17,7 +17,7 @@ pub fn generate(
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
 
-    let pt = pt.unwrap_or(project_type(template));
+    let pt = pt.unwrap_or_else(|| project_type(template));
     let command = command(name, binary_path, &args, &pt);
     let command_name = format!("{:?}", command);
 
@@ -51,5 +51,5 @@ fn project_type(template: &str) -> ProjectType {
     if template.contains("rust") {
         return ProjectType::Rust;
     }
-    ProjectType::JavaScript
+    ProjectType::default()
 }

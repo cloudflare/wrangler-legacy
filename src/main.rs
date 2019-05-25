@@ -1,3 +1,5 @@
+#![allow(clippy::redundant_closure)]
+
 use std::env;
 use std::str::FromStr;
 

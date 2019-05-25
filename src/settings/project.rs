@@ -27,6 +27,12 @@ pub enum ProjectType {
     Webpack,
 }
 
+impl Default for ProjectType {
+    fn default() -> Self {
+        ProjectType::Webpack
+    }
+}
+
 impl fmt::Display for ProjectType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let printable = match *self {
