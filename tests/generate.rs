@@ -20,7 +20,7 @@ fn it_generates_with_defaults() {
 fn it_generates_with_arguments() {
     let name = "example";
     let template = "https://github.com/cloudflare/rustwasm-worker-template";
-    let project_type = "Webpack";
+    let project_type = "webpack";
     generate(Some(name), Some(template), Some(project_type));
 
     assert_eq!(Path::new(name).exists(), true);
