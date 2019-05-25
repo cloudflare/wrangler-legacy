@@ -16,21 +16,21 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::{Project, ProjectType};
 use crate::wranglerjs::Bundle;
 
-pub fn publish(user: GlobalUser, project: Project) -> Result<(), failure::Error> {
+pub fn publish(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
     publish_script(&user, &project)?;
     let route = Route::new(&project)?;
-    Route::publish(&user, &project, route)?;
+    Route::publish(&user, &project, &route)?;
     println!(
         "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
-        project.route.expect("⚠️ There should be a route")
+        &route.pattern
     );
     Ok(())
 }
 
 fn publish_script(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
     let worker_addr = format!(
-        "https://api.cloudflare.com/client/v4/zones/{}/workers/scripts/{}",
-        project.zone_id, project.name,
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
+        project.account_id, project.name,
     );
 
     let client = reqwest::Client::new();

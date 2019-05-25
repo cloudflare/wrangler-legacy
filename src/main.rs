@@ -105,6 +105,19 @@ fn main() -> Result<(), failure::Error> {
                         .required(true),
                 ),
         )
+        .subcommand(
+            SubCommand::with_name("subdomain")
+                .about(&*format!(
+                    "{} Configure your workers.dev subdomain",
+                    emoji::WORKER
+                ))
+                .arg(
+                    Arg::with_name("name")
+                        .help("the subdomain on workers.dev you'd like to reserve")
+                        .index(1)
+                        .required(true),
+                ),
+        )
         .subcommand(SubCommand::with_name("whoami").about(&*format!(
             "{} Retrieve your user info and test your auth config",
             emoji::SLEUTH
@@ -164,16 +177,29 @@ fn main() -> Result<(), failure::Error> {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        commands::whoami(&user);
-    } else if matches.subcommand_matches("publish").is_some() {
+        if matches.subcommand_matches("whoami").is_some() {
+            commands::whoami(&user);
+        }
+    } else if matches.subcommand_matches("publish").is_some()
+        || matches.subcommand_matches("subdomain").is_some()
+    {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        commands::build(&cache, &project.project_type)?;
-        commands::publish(user, project)?;
+        if matches.subcommand_matches("publish").is_some() {
+            commands::build(&cache, &project.project_type)?;
+            commands::publish(&user, &project)?;
+        }
+
+        if let Some(matches) = matches.subcommand_matches("subdomain") {
+            let name = matches
+                .value_of("name")
+                .expect("The subdomain name you are requesting must be provided.");
+            commands::subdomain(name, &user, &project)?;
+        }
     }
     Ok(())
 }
