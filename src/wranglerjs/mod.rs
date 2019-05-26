@@ -165,7 +165,9 @@ pub fn run_npm_install() -> Result<(), failure::Error> {
     for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
-    let mut command = Command::new("npm");
+
+    let mut command = build_npm_command();
+
     command.arg("install");
     info!("Running {:?}", command);
 
@@ -190,7 +192,7 @@ pub fn is_installed() -> bool {
 }
 
 pub fn install() -> Result<(), failure::Error> {
-    let mut command = Command::new("npm");
+    let mut command = build_npm_command();
     command.arg("install").arg("wrangler-js");
     info!("Running {:?}", command);
 
@@ -237,6 +239,24 @@ fn create_metadata(bundle: &Bundle) -> String {
             "#
         .to_string()
     }
+}
+
+/// build a Command for npm
+///
+/// Here's the deal: on Windows, `npm` isn't a binary, it's a shell script.
+/// This means that we can't invoke it via `Command` directly on Windows,
+/// we need to invoke `cmd /C npm`, to run it within the cmd environment.
+fn build_npm_command() -> Command {
+    #[cfg(not(windows))]
+    let mut command = Command::new("npm");
+
+    #[cfg(windows)]
+    let mut command = Command::new("cmd");
+    #[cfg(windows)]
+    command.arg("/C");
+    command.arg("npm");
+
+    command
 }
 
 // FIXME(sven): doesn't work because they have a race for the BUNDLE_OUT,
