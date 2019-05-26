@@ -119,7 +119,8 @@ pub fn run_build(
     wasm_pack_path: PathBuf,
     bundle: &Bundle,
 ) -> Result<WranglerjsOutput, failure::Error> {
-    let mut command = Command::new(executable_path());
+    let mut command = Command::new("node");
+    command.arg(executable_path());
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
     // create temp file for special {wrangler-js} IPC.
