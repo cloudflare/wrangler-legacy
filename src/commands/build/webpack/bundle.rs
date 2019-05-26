@@ -69,6 +69,7 @@ impl Bundle {
     }
 
     pub fn has_webpack_config(&self) -> bool {
+        info!("Checking for webpack config...");
         Path::new("webpack.config.js").exists()
     }
 

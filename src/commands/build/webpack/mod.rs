@@ -97,7 +97,7 @@ pub fn install() -> Result<(), failure::Error> {
         let mut command = build_npm_command();
         command
             .arg("install")
-            .arg("https://github.com/xtuc/wrangler-js")
+            .arg("https://github.com/ashleygwilliams/wrangler-js")
             .arg("-g");
         info!("Running {:?}", command);
 
