@@ -25,3 +25,4 @@ pub static UP: Emoji = Emoji("🆙 ", "");
 pub static SHEEP: Emoji = Emoji("🐑 ", "");
 pub static WAVING: Emoji = Emoji("👋 ", "");
 pub static SNAIL: Emoji = Emoji("🐌 ", "");
+pub static FILE_FOLDER: Emoji = Emoji("📁 ", "");

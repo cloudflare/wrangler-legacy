@@ -149,6 +149,23 @@ fn main() -> Result<(), failure::Error> {
             "{} Retrieve your user info and test your auth config",
             emoji::SLEUTH
         )))
+        .subcommand(
+            SubCommand::with_name("upload-static-files")
+                .about(&*format!(
+                    "{} Uploads a directory to Workers KV",
+                    emoji::FILE_FOLDER,
+                ))
+                .arg(
+                    Arg::with_name("namespace")
+                        .help("the namespace to store the static files in")
+                        .index(1),
+                )
+                .arg(
+                    Arg::with_name("directory")
+                        .help("the directory where your static files are stored locally")
+                        .index(2),
+                )
+        )
         .get_matches();
 
     if matches.subcommand_matches("config").is_some()
@@ -242,6 +259,24 @@ fn main() -> Result<(), failure::Error> {
                 .expect("The subdomain name you are requesting must be provided.");
             commands::subdomain(name, &user, &project)?;
         }
+    } else if let Some(matches) = matches.subcommand_matches("upload-static-files") {
+        info!("Uploading static files");
+        let user = settings::global_user::GlobalUser::new()?;
+
+
+        let namespace = matches.value_of("namespace");
+        let directory = matches.value_of("directory");
+        println!("{:?} {:?}", namespace, directory);
+
+        let (namespace, directory) = match (namespace, directory) {
+            (Some(namespace), Some(directory)) => (namespace, directory),
+            _ => {
+                eprintln!("You must provide both a namespace and a directory");
+                std::process::exit(1);
+            }
+        };
+
+        commands::upload_static_files(&user, &namespace, &directory);
     }
     Ok(())
 }
