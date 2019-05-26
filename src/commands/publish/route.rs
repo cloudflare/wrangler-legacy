@@ -8,7 +8,7 @@ use log::info;
 #[derive(Deserialize, Serialize)]
 pub struct Route {
     script: Option<String>,
-    pattern: String,
+    pub pattern: String,
 }
 
 #[derive(Deserialize)]
@@ -27,7 +27,7 @@ impl Route {
     pub fn publish(
         user: &GlobalUser,
         project: &Project,
-        route: Route,
+        route: &Route,
     ) -> Result<(), failure::Error> {
         if route.exists(user, project)? {
             return Ok(());
@@ -76,17 +76,13 @@ fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failur
     Ok(routes_response.result)
 }
 
-fn create(user: &GlobalUser, project: &Project, route: Route) -> Result<(), failure::Error> {
+fn create(user: &GlobalUser, project: &Project, route: &Route) -> Result<(), failure::Error> {
     let client = reqwest::Client::new();
     let body = serde_json::to_string(&route)?;
 
     let routes_addr = get_routes_addr(project)?;
 
-    info!(
-        "Creating your route {} for script {}",
-        route.pattern,
-        route.script.unwrap()
-    );
+    info!("Creating your route {:#?}", &route.pattern,);
     let mut res = client
         .post(&routes_addr)
         .header("X-Auth-Key", &*user.api_key)
@@ -107,11 +103,11 @@ fn create(user: &GlobalUser, project: &Project, route: Route) -> Result<(), fail
 }
 
 fn get_routes_addr(project: &Project) -> Result<String, failure::Error> {
-    if project.zone_id.is_empty() {
-        failure::bail!("You much provide a zone_id in your wrangler.toml.")
+    if let Some(zone_id) = &project.zone_id {
+        return Ok(format!(
+            "https://api.cloudflare.com/client/v4/zones/{}/workers/routes",
+            zone_id
+        ));
     }
-    Ok(format!(
-        "https://api.cloudflare.com/client/v4/zones/{}/workers/routes",
-        project.zone_id
-    ))
+    failure::bail!("You much provide a zone_id in your wrangler.toml.")
 }

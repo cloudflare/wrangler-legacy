@@ -17,6 +17,7 @@ macro_rules! settings {
             r#"
             name = "test"
             zone_id = ""
+            account_id = ""
             {}
         "#,
             $x

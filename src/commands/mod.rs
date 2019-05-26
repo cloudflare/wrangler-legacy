@@ -6,6 +6,7 @@ pub mod build;
 pub mod config;
 pub mod generate;
 pub mod publish;
+pub mod subdomain;
 pub mod whoami;
 
 pub use self::config::global_config;
@@ -14,6 +15,7 @@ pub use generate::generate;
 pub use publish::preview::preview;
 pub use publish::preview::HTTPMethod;
 pub use publish::publish;
+pub use subdomain::subdomain;
 pub use whoami::whoami;
 
 /// Run the given command and return its stdout.
