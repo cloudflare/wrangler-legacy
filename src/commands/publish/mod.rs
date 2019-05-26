@@ -12,9 +12,9 @@ use reqwest::multipart::Form;
 use std::fs;
 use std::path::Path;
 
+use crate::commands::build::webpack::Bundle;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::{Project, ProjectType};
-use crate::wranglerjs::Bundle;
 
 pub fn publish(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
     publish_script(&user, &project)?;

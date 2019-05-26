@@ -1,12 +1,11 @@
+use crate::emoji;
 use crate::settings::project::ProjectType;
-use crate::wranglerjs;
 use crate::{commands, install};
 use binary_install::Cache;
-use log::info;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::emoji;
+pub mod webpack;
 
 pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
     match project_type {
@@ -27,19 +26,16 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             let wasm_pack_path =
                 install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
 
-            wranglerjs::run_npm_install().expect("could not run `npm install`");
+            webpack::run_npm_install().expect("could not run `npm install`");
 
-            if !wranglerjs::is_installed() {
-                info!("missing deps; installing...");
-                wranglerjs::install().expect("could not install wranglerjs");
-            }
+            webpack::install().expect("could not install wranglerjs");
 
-            let bundle = wranglerjs::Bundle::new();
-            let wranglerjs_output =
-                wranglerjs::run_build(wasm_pack_path, &bundle).expect("could not run wranglerjs");
+            let bundle = webpack::Bundle::new();
+            let webpack_output =
+                webpack::run_build(wasm_pack_path, &bundle).expect("could not run wranglerjs");
 
             bundle
-                .write(wranglerjs_output)
+                .write(webpack_output)
                 .expect("could not write bundle to disk");
         }
     }

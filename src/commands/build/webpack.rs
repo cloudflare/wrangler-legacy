@@ -101,14 +101,6 @@ impl Bundle {
     }
 }
 
-// Path to {wrangler-js}, which should be executable.
-fn executable_path() -> PathBuf {
-    Path::new(".")
-        .join("node_modules")
-        .join(".bin")
-        .join("wrangler-js")
-}
-
 // Run the underlying {wrangler-js} executable.
 //
 // In Rust we create a virtual file, pass the pass to {wrangler-js}, run the
@@ -119,8 +111,8 @@ pub fn run_build(
     wasm_pack_path: PathBuf,
     bundle: &Bundle,
 ) -> Result<WranglerjsOutput, failure::Error> {
-    let mut command = Command::new("node");
-    command.arg(executable_path());
+    install()?;
+    let mut command = Command::new("wrangler-js");
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
     // create temp file for special {wrangler-js} IPC.
@@ -163,10 +155,6 @@ pub fn run_build(
 }
 
 pub fn run_npm_install() -> Result<(), failure::Error> {
-    for tool in &["node", "npm"] {
-        env_dep_installed(tool)?;
-    }
-
     let mut command = build_npm_command();
 
     command.arg("install");
@@ -187,22 +175,25 @@ fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-// check if {wrangler-js} is present are a known location.
-pub fn is_installed() -> bool {
-    executable_path().exists()
-}
-
 pub fn install() -> Result<(), failure::Error> {
-    let mut command = build_npm_command();
-    command.arg("install").arg("wrangler-js");
-    info!("Running {:?}", command);
-
-    let status = command.status()?;
-    if status.success() {
-        Ok(())
-    } else {
-        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+    for tool in &["node", "npm"] {
+        env_dep_installed(tool)?;
     }
+
+    if which::which("wrangler-js").is_err() {
+        let mut command = build_npm_command();
+        command
+            .arg("install")
+            .arg("https://github.com/xtuc/wrangler-js")
+            .arg("-g");
+        info!("Running {:?}", command);
+
+        let status = command.status()?;
+        if !status.success() {
+            failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+        }
+    }
+    Ok(())
 }
 
 // We inject some code at the top-level of the Worker; called {prologue}.
@@ -249,12 +240,13 @@ fn create_metadata(bundle: &Bundle) -> String {
 /// we need to invoke `cmd /C npm`, to run it within the cmd environment.
 fn build_npm_command() -> Command {
     #[cfg(not(windows))]
-    let mut command = Command::new("npm");
+    let command = Command::new("npm");
 
     #[cfg(windows)]
     let mut command = Command::new("cmd");
     #[cfg(windows)]
     command.arg("/C");
+    #[cfg(windows)]
     command.arg("npm");
 
     command

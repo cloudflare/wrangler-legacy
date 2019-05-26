@@ -15,7 +15,6 @@ mod emoji;
 mod install;
 mod installer;
 mod settings;
-mod wranglerjs;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
