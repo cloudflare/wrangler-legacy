@@ -34,7 +34,10 @@ pub fn preview(
             .post(create_address)
             .body(publish::build_js_script()?)
             .send(),
-        ProjectType::Webpack => panic!("unimplemented"),
+        ProjectType::Webpack => client
+            .post(create_address)
+            .multipart(publish::build_webpack_form()?)
+            .send(),
     };
 
     let p: Preview = serde_json::from_str(&res?.text()?)?;
