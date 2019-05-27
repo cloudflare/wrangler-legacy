@@ -9,6 +9,7 @@ use package::Package;
 use log::info;
 
 use reqwest::multipart::Form;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -19,6 +20,7 @@ use crate::wranglerjs::Bundle;
 
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
+    create_kv_namespaces(user, project)?;
     publish_script(&user, &project, release)?;
     if release {
         info!("release mode detected, making a route...");
@@ -30,6 +32,48 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
         );
     } else {
         println!("✨ Success! Your worker was successfully published. ✨");
+    }
+    Ok(())
+}
+
+pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
+    let kv_addr = format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces",
+        project.account_id,
+    );
+
+    let client = reqwest::Client::new();
+
+    if let Some(namespaces) = &project.kv_namespaces {
+        for namespace in namespaces {
+            info!("Attempting to create namesapce '{}'", namespace);
+
+            let mut map = HashMap::new();
+            map.insert("title", namespace);
+
+            let request = client
+                .post(&kv_addr)
+                .header("X-Auth-Key", &*user.api_key)
+                .header("X-Auth-Email", &*user.email)
+                .json(&map)
+                .send();
+
+            if let Err(error) = request {
+                // A 400 is returned if the account already owns a namespace with this title.
+                //
+                // https://api.cloudflare.com/#workers-kv-namespace-create-a-namespace
+                match error.status() {
+                    Some(code) if code == 400 => {
+                        info!("Namespace '{}' already exists, continuing.", namespace)
+                    }
+                    _ => {
+                        info!("Error when creating namespace '{}'", namespace);
+                        failure::bail!("⛔ Something went wrong! Error: {}", error)
+                    }
+                }
+            }
+            info!("Namespace '{}' exists now", namespace)
+        }
     }
     Ok(())
 }

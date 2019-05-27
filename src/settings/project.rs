@@ -19,6 +19,8 @@ pub struct Project {
     pub account_id: String,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -69,6 +71,7 @@ impl Project {
             account_id: String::new(),
             route: Some(String::new()),
             routes: None,
+            kv_namespaces: None,
         };
 
         let toml = toml::to_string(&project)?;
