@@ -82,10 +82,18 @@ fn main() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("build").about(&*format!("{} Build your worker", emoji::CRAB)),
         )
-        .subcommand(SubCommand::with_name("publish").about(&*format!(
-            "{} Push your worker to the orange cloud",
-            emoji::UP
-        )))
+        .subcommand(
+            SubCommand::with_name("publish").about(&*format!(
+                "{} Push your worker to the orange cloud",
+                emoji::UP
+            ))
+            .arg(
+                Arg::with_name("release")
+                    .long("release")
+                    .takes_value(false)
+                    .help("should this be published to a workers.dev subdomain or a domain name you have registered"),
+             ),
+        )
         .subcommand(
             SubCommand::with_name("config")
                 .about(&*format!(
@@ -189,9 +197,14 @@ fn main() -> Result<(), failure::Error> {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        if matches.subcommand_matches("publish").is_some() {
+        if let Some(matches) = matches.subcommand_matches("publish") {
+            info!("{}", matches.occurrences_of("release"));
+            let release = match matches.occurrences_of("release") {
+                1 => true,
+                _ => false,
+            };
             commands::build(&cache, &project.project_type)?;
-            commands::publish(&user, &project)?;
+            commands::publish(&user, &project, release)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("subdomain") {
