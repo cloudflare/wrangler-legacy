@@ -15,6 +15,7 @@ pub struct Project {
     #[serde(rename = "type")]
     pub project_type: ProjectType,
     pub zone_id: Option<String>,
+    pub private: Option<bool>,
     pub account_id: String,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
@@ -63,6 +64,7 @@ impl Project {
         let project = Project {
             name: name.clone(),
             project_type: project_type.clone(),
+            private: Some(false),
             zone_id: Some(String::new()),
             account_id: String::new(),
             route: Some(String::new()),

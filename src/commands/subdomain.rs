@@ -5,12 +5,12 @@ use crate::settings::project::Project;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
-struct Subdomain {
+pub struct Subdomain {
     subdomain: String,
 }
 
 impl Subdomain {
-    fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
+    pub fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
         let addr = subdomain_addr(account_id);
 
         let client = reqwest::Client::new();

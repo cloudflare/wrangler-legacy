@@ -12,22 +12,33 @@ use reqwest::multipart::Form;
 use std::fs;
 use std::path::Path;
 
+use crate::commands::subdomain::Subdomain;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::{Project, ProjectType};
 use crate::wranglerjs::Bundle;
 
-pub fn publish(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
-    publish_script(&user, &project)?;
-    let route = Route::new(&project)?;
-    Route::publish(&user, &project, &route)?;
-    println!(
-        "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
-        &route.pattern
-    );
+pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
+    info!("release = {}", release);
+    publish_script(&user, &project, release)?;
+    if release {
+        info!("release mode detected, making a route...");
+        let route = Route::new(&project)?;
+        Route::publish(&user, &project, &route)?;
+        println!(
+            "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
+            &route.pattern
+        );
+    } else {
+        println!("✨ Success! Your worker was successfully published. ✨");
+    }
     Ok(())
 }
 
-fn publish_script(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
+fn publish_script(
+    user: &GlobalUser,
+    project: &Project,
+    release: bool,
+) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         project.account_id, project.name,
@@ -68,7 +79,7 @@ fn publish_script(user: &GlobalUser, project: &Project) -> Result<(), failure::E
     };
 
     if res.status().is_success() {
-        println!("🥳 Successfully published your script.")
+        println!("🥳 Successfully published your script.");
     } else {
         failure::bail!(
             "⛔ Something went wrong! Status: {}, Details {}",
@@ -77,6 +88,53 @@ fn publish_script(user: &GlobalUser, project: &Project) -> Result<(), failure::E
         )
     }
 
+    if !release {
+        let private = project.private.unwrap_or(false);
+        if !private {
+            info!("--release not passed, publishing to subdomain");
+            make_public_on_subdomain(project, user)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn build_subdomain_request() -> String {
+    serde_json::json!({ "enabled":true}).to_string()
+}
+
+fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), failure::Error> {
+    info!("checking that subdomain is registered");
+    let subdomain = Subdomain::get(&project.account_id, user)?;
+
+    let sd_worker_addr = format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
+        project.account_id, project.name,
+    );
+
+    let client = reqwest::Client::new();
+
+    info!("Making public on subdomain...");
+    let mut res = client
+        .post(&sd_worker_addr)
+        .header("X-Auth-Key", &*user.api_key)
+        .header("X-Auth-Email", &*user.email)
+        .header("Content-type", "application/json")
+        .body(build_subdomain_request())
+        .send()?;
+
+    if res.status().is_success() {
+        println!(
+            "🥳 Successfully made your script available at {}.{}.workers.dev",
+            project.name, subdomain
+        );
+    } else {
+        failure::bail!(
+            "⛔ Something went wrong! Status: {}, Details {}",
+            res.status(),
+            res.text()?
+        )
+    }
     Ok(())
 }
 
