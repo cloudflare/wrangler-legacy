@@ -86,8 +86,11 @@ jobs:
     steps:
       - task: ArchiveFiles@2
         inputs:
+          rootFolderOrFile: wrangler-js
+          includeRootFolder: false
           archiveType: tar
           tarCompression: gz
+          archiveFile: wrangler-js.tar.gz
           verbose: true
       - template: ci/azure-create-tarball.yml
         parameters:
