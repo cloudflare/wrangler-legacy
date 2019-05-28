@@ -170,7 +170,8 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
         return Ok(());
     }
 
-    let mut command = Command::new("npm");
+    let npm = which::which("npm").unwrap();
+    let mut command = Command::new(npm);
     command.current_dir(dir.clone());
     command.arg("install");
     info!("Running {:?} in directory {:?}", command, dir);
