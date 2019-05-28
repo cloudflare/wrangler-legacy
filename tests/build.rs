@@ -52,7 +52,7 @@ fn cleanup(fixture: &str) {
         command.arg("/s");
         command.arg(&path);
     } else {
-        fs::remove_dir_all(path.clone()).unwrap();
+        fs::remove_dir_all(&path).unwrap();
     }
 }
 
