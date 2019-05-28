@@ -43,13 +43,21 @@ fn it_builds_with_webpack_single_js() {
 
 fn cleanup(fixture: &str) {
     let path = fixture_path(fixture);
-    assert!(path.exists());
-    fs::remove_dir_all(path.clone()).unwrap();
+    assert!(path.exists(), format!("{:?} does not exists", path));
+
+    // Workaround https://github.com/rust-lang/rust/issues/29497
+    if cfg!(target_os = "windows") {
+        let mut command = Command::new("cmd");
+        command.arg("rmdir");
+        command.arg("/s");
+        command.arg(path.clone());
+    } else {
+        fs::remove_dir_all(path.clone()).unwrap();
+    }
 }
 
 fn build(fixture: &str) {
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    println!("dir: {:?}", fixture_path(fixture));
     build.current_dir(fixture_path(fixture));
     build.arg("build").assert().success();
 }
