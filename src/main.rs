@@ -164,7 +164,7 @@ fn main() -> Result<(), failure::Error> {
                     Arg::with_name("directory")
                         .help("the directory where your static files are stored locally")
                         .index(2),
-                )
+                ),
         )
         .get_matches();
 
@@ -263,7 +263,6 @@ fn main() -> Result<(), failure::Error> {
         info!("Uploading static files");
         let user = settings::global_user::GlobalUser::new()?;
 
-
         let namespace = matches.value_of("namespace");
         let directory = matches.value_of("directory");
         println!("{:?} {:?}", namespace, directory);
@@ -276,7 +275,7 @@ fn main() -> Result<(), failure::Error> {
             }
         };
 
-        commands::upload_static_files(&user, &namespace, &directory);
+        commands::upload_static_files(&user, &namespace, &directory)?;
     }
     Ok(())
 }

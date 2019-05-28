@@ -8,8 +8,8 @@ pub mod generate;
 pub mod init;
 pub mod publish;
 pub mod subdomain;
-pub mod whoami;
 pub mod upload_static_files;
+pub mod whoami;
 
 pub use self::config::global_config;
 pub use build::build;
@@ -19,8 +19,8 @@ pub use publish::preview::preview;
 pub use publish::preview::HTTPMethod;
 pub use publish::publish;
 pub use subdomain::subdomain;
-pub use whoami::whoami;
 pub use upload_static_files::upload_static_files;
+pub use whoami::whoami;
 
 /// Run the given command and return its stdout.
 pub fn run(mut command: Command, command_name: &str) -> Result<(), failure::Error> {
