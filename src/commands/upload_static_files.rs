@@ -68,14 +68,18 @@ pub fn generate_key(path: &Path, directory: &str) -> Result<String, failure::Err
     Ok(percent_encode(path_bytes, PATH_SEGMENT_ENCODE_SET).to_string())
 }
 
-fn upload_to_kv(user: &GlobalUser, account_id: &str, namespace_name: &str, key: &str, value: Vec<u8>) -> Result<(), failure::Error> {
+fn upload_to_kv(
+    user: &GlobalUser,
+    account_id: &str,
+    namespace_name: &str,
+    key: &str,
+    value: Vec<u8>,
+) -> Result<(), failure::Error> {
     let namespace_id = fetch_namespace_id(user, account_id, namespace_name)?;
 
     let kv_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        account_id,
-        namespace_id,
-        key,
+        account_id, namespace_id, key,
     );
 
     let client = reqwest::Client::new();
@@ -92,7 +96,11 @@ fn upload_to_kv(user: &GlobalUser, account_id: &str, namespace_name: &str, key: 
     Ok(())
 }
 
-fn fetch_namespace_id(user: &GlobalUser, account_id: &str, namespace_name: &str) -> Result<String, failure::Error> {
+fn fetch_namespace_id(
+    user: &GlobalUser,
+    account_id: &str,
+    namespace_name: &str,
+) -> Result<String, failure::Error> {
     let kv_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces",
         account_id,
@@ -119,9 +127,15 @@ fn fetch_namespace_id(user: &GlobalUser, account_id: &str, namespace_name: &str)
         .header("X-Auth-Email", &*user.email)
         .send()?;
 
-    let response: ApiResponse = request.json()?; 
+    let response: ApiResponse = request.json()?;
 
-    let id = response.result.iter().find(|&result| result.title == namespace_name).unwrap().id.clone();
+    let id = response
+        .result
+        .iter()
+        .find(|&result| result.title == namespace_name)
+        .unwrap()
+        .id
+        .clone();
 
     Ok(id)
 }
