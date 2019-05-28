@@ -1,4 +1,6 @@
 use crate::commands::publish::package::Package;
+use crate::install;
+use binary_install::Cache;
 use log::info;
 use serde::Deserialize;
 use std::env;
@@ -8,14 +10,14 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-// This structure represents the communication between {wrangler-js} and
-// {wrangler}. It is send back after {wrangler-js} completion.
+// This structure represents the communication between {wranglerjs} and
+// {wrangler}. It is send back after {wranglerjs} completion.
 // FIXME(sven): make this private
 #[derive(Deserialize, Debug)]
 pub struct WranglerjsOutput {
     wasm: Option<String>,
     script: String,
-    // {wrangler-js} will send us the path to the {dist} directory that {Webpack}
+    // {wranglerjs} will send us the path to the {dist} directory that {Webpack}
     // used; it's tedious to remove a directory with content in JavaScript so
     // let's do it in Rust!
     dist_to_clean: Option<String>,
@@ -101,28 +103,27 @@ impl Bundle {
     }
 }
 
-// Path to {wrangler-js}, which should be executable.
-fn executable_path() -> PathBuf {
-    Path::new(".")
-        .join("node_modules")
-        .join(".bin")
-        .join("wrangler-js")
-}
-
-// Run the underlying {wrangler-js} executable.
+// Run the underlying {wranglerjs} executable.
 //
-// In Rust we create a virtual file, pass the pass to {wrangler-js}, run the
+// In Rust we create a virtual file, pass the pass to {wranglerjs}, run the
 // executable and wait for completion. The file will receive the a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
 pub fn run_build(
+    wranglerjs_path: PathBuf,
     wasm_pack_path: PathBuf,
     bundle: &Bundle,
 ) -> Result<WranglerjsOutput, failure::Error> {
-    let mut command = Command::new(executable_path());
+    if !Path::new(BUNDLE_OUT).exists() {
+        fs::create_dir(BUNDLE_OUT)?;
+    }
+
+    let node = which::which("node").unwrap();
+    let mut command = Command::new(node);
+    command.arg(wranglerjs_path);
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
-    // create temp file for special {wrangler-js} IPC.
+    // create temp file for special {wranglerjs} IPC.
     let mut temp_file = env::temp_dir();
     temp_file.push(".wranglerjs_output");
     File::create(temp_file.clone())?;
@@ -134,7 +135,7 @@ pub fn run_build(
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
     // if {webpack.config.js} is not present, we infer the entry based on the
-    // {package.json} file and pass it to {wrangler-js}.
+    // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
     if !bundle.has_webpack_config() {
         let package = Package::new("./")?;
@@ -161,11 +162,16 @@ pub fn run_build(
     }
 }
 
-pub fn run_npm_install() -> Result<(), failure::Error> {
-    for tool in &["node", "npm"] {
-        env_dep_installed(tool)?;
+// Run {npm install} in the specified directory. Skips the install if a
+// {node_modules} is found in the directory.
+pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
+    if dir.join("node_modules").exists() {
+        info!("skipping npm install because node_modules exists");
+        return Ok(());
     }
+
     let mut command = Command::new("npm");
+    command.current_dir(dir);
     command.arg("install");
     info!("Running {:?}", command);
 
@@ -177,29 +183,23 @@ pub fn run_npm_install() -> Result<(), failure::Error> {
     }
 }
 
-fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
+// Ensures the specified tool is available in our env.
+pub fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
     if which::which(tool).is_err() {
         failure::bail!("You need to install {}", tool)
     }
     Ok(())
 }
 
-// check if {wrangler-js} is present are a known location.
-pub fn is_installed() -> bool {
-    executable_path().exists()
-}
+// Install {wranglerjs} from our GitHub releases
+pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
+    let tool_name = "wranglerjs";
+    let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache)?;
+    info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
 
-pub fn install() -> Result<(), failure::Error> {
-    let mut command = Command::new("npm");
-    command.arg("install").arg("wrangler-js");
-    info!("Running {:?}", command);
+    run_npm_install(wranglerjs_path.path()).expect("could not install wranglerjs dependecies");
 
-    let status = command.status()?;
-    if status.success() {
-        Ok(())
-    } else {
-        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
-    }
+    Ok(wranglerjs_path.path())
 }
 
 // We inject some code at the top-level of the Worker; called {prologue}.
