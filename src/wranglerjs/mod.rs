@@ -214,7 +214,7 @@ pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
         wranglerjs_path.path()
     };
 
-    run_npm_install(wranglerjs_path.clone()).expect("could not install wranglerjs dependecies");
+    run_npm_install(wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
     Ok(wranglerjs_path)
 }
 
