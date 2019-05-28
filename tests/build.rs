@@ -50,7 +50,7 @@ fn cleanup(fixture: &str) {
         let mut command = Command::new("cmd");
         command.arg("rmdir");
         command.arg("/s");
-        command.arg(path.clone());
+        command.arg(&path);
     } else {
         fs::remove_dir_all(path.clone()).unwrap();
     }
