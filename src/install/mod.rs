@@ -26,14 +26,13 @@ pub fn install_artifact(
     tool_name: &str,
     owner: &str,
     cache: &Cache,
+    version: &str,
 ) -> Result<Download, failure::Error> {
     if let Some(download) = tool_exists(tool_name) {
         return Ok(download);
     }
 
-    // FIXME: get Wrangler's version
-    let latest_version = "0.1.2";
-    let download = download_prebuilt(cache, tool_name, owner, &latest_version, &[]);
+    let download = download_prebuilt(cache, tool_name, owner, version, &[]);
     match download {
         Ok(download) => Ok(download),
         Err(e) => {

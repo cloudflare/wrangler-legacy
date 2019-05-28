@@ -171,9 +171,9 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
     }
 
     let mut command = Command::new("npm");
-    command.current_dir(dir);
+    command.current_dir(dir.clone());
     command.arg("install");
-    info!("Running {:?}", command);
+    info!("Running {:?} in directory {:?}", command, dir);
 
     let status = command.status()?;
     if status.success() {
@@ -191,19 +191,25 @@ pub fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
+// Use the env-provided source directory and remove the quotes
+fn get_source_dir() -> PathBuf {
+    let mut dir = install::target::SOURCE_DIR.to_string();
+    dir.remove(0);
+    dir.remove(dir.len() - 1);
+    Path::new(&dir).to_path_buf()
+}
+
 // Install {wranglerjs} from our GitHub releases
 pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
     let wranglerjs_path = if install::target::DEBUG {
-        let exec_path = std::env::current_exe()?;
-        // FIXME: better way to dirname()?
-        let exec_path_dir = exec_path.with_file_name("");
-        let root_project = exec_path_dir.join("..").join("..");
-        let wranglerjs_path = root_project.join("wranglerjs");
+        let source_path = get_source_dir();
+        let wranglerjs_path = source_path.join("wranglerjs");
         info!("wranglerjs at: {:?}", wranglerjs_path);
         wranglerjs_path
     } else {
         let tool_name = "wranglerjs";
-        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache)?;
+        let version = env!("CARGO_PKG_VERSION");
+        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache, version)?;
         info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
         wranglerjs_path.path()
     };
