@@ -1,12 +1,12 @@
 parameters:
-  artifacts: 'target/release'
+  artifacts: 'target/release/wrangler'
   name: ''
 
 steps:
   - bash: |
       set -ex
       dst=$BUILD_ARTIFACTSTAGINGDIRECTORY
-      cp ${{ parameters.artifacts }}/wrangler $dst/
+      cp ${{ parameters.artifacts }} $dst/
     displayName: Create distribution tarball
   - task: PublishPipelineArtifact@0
     inputs:

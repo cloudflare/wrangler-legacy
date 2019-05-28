@@ -61,7 +61,7 @@ jobs:
           cargo build --target x86_64-unknown-linux-musl --features vendored-openssl --release
       - template: ci/azure-create-tarball.yml
         parameters:
-          artifacts: target/x86_64-unknown-linux-musl/release
+          artifacts: target/x86_64-unknown-linux-musl/release/wrangler
           name: dist_linux
 
   - job: dist_darwin
@@ -90,11 +90,28 @@ jobs:
         parameters:
           name: dist_windows
 
+  - job: dist_wranglerjs
+    displayName: "Dist wranglerjs"
+    steps:
+      - task: ArchiveFiles@2
+        inputs:
+          rootFolderOrFile: wranglerjs
+          includeRootFolder: false
+          archiveType: tar
+          tarCompression: gz
+          archiveFile: wranglerjs.tar.gz
+          verbose: true
+      - template: ci/azure-create-tarball.yml
+        parameters:
+          artifacts: wranglerjs.tar.gz
+          name: dist_wranglerjs
+
   - job: deploy
     dependsOn:
       - dist_linux
       - dist_darwin
       - dist_windows
+      - dist_wranglerjs
     displayName: "Deploy release binaries"
     steps:
       - template: ci/azure-install-rust.yml
@@ -103,6 +120,11 @@ jobs:
         inputs:
           artifactName: dist_windows
           targetPath: tmp/windows
+      - task: DownloadPipelineArtifact@0
+        displayName: "Download dist - wranglerjs"
+        inputs:
+          artifactName: dist_wranglerjs
+          targetPath: tmp/wranglerjs
       - task: DownloadPipelineArtifact@0
         displayName: "Download dist - linux"
         inputs:
@@ -134,6 +156,7 @@ jobs:
           mk x86_64-unknown-linux-musl linux
           mk x86_64-apple-darwin darwin
           mk x86_64-pc-windows-msvc windows
+          mv -v tmp/wranglerjs/* gh-release/wranglerjs-$tag.tar.gz
         displayName: "prepare the github releases tarball artifacts"
       - task: PublishPipelineArtifact@0
         displayName: "publish gh_release artifact"
