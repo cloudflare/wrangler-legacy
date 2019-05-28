@@ -193,13 +193,23 @@ pub fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
 
 // Install {wranglerjs} from our GitHub releases
 pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
-    let tool_name = "wranglerjs";
-    let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache)?;
-    info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
+    let wranglerjs_path = if install::target::DEBUG {
+        let exec_path = std::env::current_exe()?;
+        // FIXME: better way to dirname()?
+        let exec_path_dir = exec_path.with_file_name("");
+        let root_project = exec_path_dir.join("..").join("..");
+        let wranglerjs_path = root_project.join("wranglerjs");
+        info!("wranglerjs at: {:?}", wranglerjs_path);
+        wranglerjs_path
+    } else {
+        let tool_name = "wranglerjs";
+        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache)?;
+        info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
+        wranglerjs_path.path()
+    };
 
-    run_npm_install(wranglerjs_path.path()).expect("could not install wranglerjs dependecies");
-
-    Ok(wranglerjs_path.path())
+    run_npm_install(wranglerjs_path.clone()).expect("could not install wranglerjs dependecies");
+    Ok(wranglerjs_path)
 }
 
 // We inject some code at the top-level of the Worker; called {prologue}.
