@@ -114,10 +114,6 @@ pub fn run_build(
     wasm_pack_path: PathBuf,
     bundle: &Bundle,
 ) -> Result<WranglerjsOutput, failure::Error> {
-    if !Path::new(BUNDLE_OUT).exists() {
-        fs::create_dir(BUNDLE_OUT)?;
-    }
-
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
     command.arg(wranglerjs_path);
