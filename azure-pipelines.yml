@@ -82,19 +82,19 @@ jobs:
           name: dist_windows
 
   - job: dist_wranglerjs
-    displayName: "Dist wrangler-js"
+    displayName: "Dist wranglerjs"
     steps:
       - task: ArchiveFiles@2
         inputs:
-          rootFolderOrFile: wrangler-js
+          rootFolderOrFile: wranglerjs
           includeRootFolder: false
           archiveType: tar
           tarCompression: gz
-          archiveFile: wrangler-js.tar.gz
+          archiveFile: wranglerjs.tar.gz
           verbose: true
       - template: ci/azure-create-tarball.yml
         parameters:
-          artifacts: wrangler-js.tar.gz
+          artifacts: wranglerjs.tar.gz
           name: dist_wranglerjs
 
   - job: deploy
@@ -112,7 +112,7 @@ jobs:
           artifactName: dist_windows
           targetPath: tmp/windows
       - task: DownloadPipelineArtifact@0
-        displayName: "Download dist - wrangler-js"
+        displayName: "Download dist - wranglerjs"
         inputs:
           artifactName: dist_wranglerjs
           targetPath: tmp/wranglerjs
