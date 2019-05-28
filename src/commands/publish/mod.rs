@@ -46,7 +46,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
 
     if let Some(namespaces) = &project.kv_namespaces {
         for namespace in namespaces {
-            info!("Attempting to create namesapce '{}'", namespace);
+            info!("Attempting to create namespace '{}'", namespace);
 
             let mut map = HashMap::new();
             map.insert("title", namespace);
