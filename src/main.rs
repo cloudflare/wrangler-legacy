@@ -265,7 +265,6 @@ fn main() -> Result<(), failure::Error> {
 
         let namespace = matches.value_of("namespace");
         let directory = matches.value_of("directory");
-        println!("{:?} {:?}", namespace, directory);
 
         let (namespace, directory) = match (namespace, directory) {
             (Some(namespace), Some(directory)) => (namespace, directory),
@@ -275,7 +274,9 @@ fn main() -> Result<(), failure::Error> {
             }
         };
 
-        commands::upload_static_files(&user, &namespace, &directory)?;
+        let project = settings::project::Project::new()?;
+
+        commands::upload_static_files(&user, &project, &namespace, &directory)?;
     }
     Ok(())
 }

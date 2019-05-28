@@ -2,12 +2,18 @@ use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 use walkdir::WalkDir;
 
 use crate::settings::global_user::GlobalUser;
+use crate::settings::project::Project;
 
 use std::ffi::OsString;
 use std::path::Path;
 
+use serde::Deserialize;
+
+use log::info;
+
 pub fn upload_static_files(
     user: &GlobalUser,
+    project: &Project,
     namespace: &str,
     directory: &str,
 ) -> Result<(), failure::Error> {
@@ -27,7 +33,7 @@ pub fn upload_static_files(
 
             info!("Uploading '{}'", path.display());
 
-            upload_to_kv(key, value)?;
+            upload_to_kv(user, &project.account_id, namespace, &key, value)?;
         }
     }
 
@@ -62,27 +68,60 @@ pub fn generate_key(path: &Path, directory: &str) -> Result<String, failure::Err
     Ok(percent_encode(path_bytes, PATH_SEGMENT_ENCODE_SET).to_string())
 }
 
-fn upload_to_kv(key: &str, value: &[u8]) {
+fn upload_to_kv(user: &GlobalUser, account_id: &str, namespace_name: &str, key: &str, value: Vec<u8>) -> Result<(), failure::Error> {
+    let namespace_id = fetch_namespace_id(user, account_id, namespace_name)?;
+
     let kv_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces",
-        project.account_id,
+        "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
+        account_id,
+        namespace_id,
+        key,
     );
 
     let client = reqwest::Client::new();
 
-    if let Some(namespaces) = &project.kv_namespaces {
-        for namespace in namespaces {
-            info!("Attempting to create namespace '{}'", namespace);
+    info!("Attempting to upload '{}'", key);
 
-            let mut map = HashMap::new();
-            map.insert("title", namespace);
+    client
+        .put(&kv_addr)
+        .header("X-Auth-Key", &*user.api_key)
+        .header("X-Auth-Email", &*user.email)
+        .body(value)
+        .send()?;
 
-            let request = client
-                .post(&kv_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
-                .json(&map)
-                .send();
-        }
+    Ok(())
+}
+
+fn fetch_namespace_id(user: &GlobalUser, account_id: &str, namespace_name: &str) -> Result<String, failure::Error> {
+    let kv_addr = format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces",
+        account_id,
+    );
+
+    #[derive(Debug, Deserialize)]
+    struct ApiResult {
+        id: String,
+        title: String,
     }
+
+    #[derive(Debug, Deserialize)]
+    struct ApiResponse {
+        result: Vec<ApiResult>,
+    }
+
+    let client = reqwest::Client::new();
+
+    info!("Attempting to find namespace '{}'", namespace_name);
+
+    let mut request = client
+        .get(&kv_addr)
+        .header("X-Auth-Key", &*user.api_key)
+        .header("X-Auth-Email", &*user.email)
+        .send()?;
+
+    let response: ApiResponse = request.json()?; 
+
+    let id = response.result.iter().find(|&result| result.title == namespace_name).unwrap().id.clone();
+
+    Ok(id)
 }
