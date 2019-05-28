@@ -43,7 +43,7 @@ fn it_builds_with_webpack_single_js() {
 
 fn cleanup(fixture: &str) {
     let path = fixture_path(fixture);
-    assert!(path.exists(), format!("{:?} does not exists", path));
+    assert!(path.exists(), format!("{:?} does not exist", path));
 
     // Workaround https://github.com/rust-lang/rust/issues/29497
     if cfg!(target_os = "windows") {
