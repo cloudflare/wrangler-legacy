@@ -34,8 +34,6 @@ jobs:
         displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
-        env:
-          RUST_BACKTRACE: 1
 
   - job: test_wrangler_nightly
     displayName: "Run wrangler tests (nightly)"
