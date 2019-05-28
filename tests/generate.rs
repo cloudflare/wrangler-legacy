@@ -32,7 +32,7 @@ fn it_generates_with_arguments() {
     cleanup(name);
 }
 
-fn generate(name: Option<&str>, template: Option<&str>, project_type: Option<&str>) {
+pub fn generate(name: Option<&str>, template: Option<&str>, project_type: Option<&str>) {
     let mut wrangler = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     if name.is_none() && template.is_none() && project_type.is_none() {
         wrangler.arg("generate").assert().success();
