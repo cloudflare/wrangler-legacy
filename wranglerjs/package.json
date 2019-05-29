@@ -4,7 +4,7 @@
   "author": "Sven Sauleau <sven@sauleau.com>",
   "license": "MIT",
   "bin": {
-    "wrangler-js": "./index.js"
+    "wranglerjs": "./index.js"
   },
   "dependencies": {
     "webpack": "^4.29.6"
