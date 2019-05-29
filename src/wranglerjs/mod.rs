@@ -201,7 +201,7 @@ pub fn is_installed() -> bool {
 
 pub fn install() -> Result<(), failure::Error> {
     let mut command = Command::new("npm");
-    command.arg("install").arg("wranglerjs");
+    command.arg("install").arg("wrangler-js");
     info!("Running {:?}", command);
 
     let status = command.status()?;
