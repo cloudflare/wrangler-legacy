@@ -22,7 +22,7 @@ pub fn generate(
     let command_name = format!("{:?}", command);
 
     commands::run(command, &command_name)?;
-    Project::generate(name.to_string(), pt)?;
+    Project::generate(name.to_string(), pt, false)?;
     Ok(())
 }
 
