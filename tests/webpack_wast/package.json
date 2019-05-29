@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "wast-loader": "^1.8.5"
+  }
+}
