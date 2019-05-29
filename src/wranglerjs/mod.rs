@@ -187,15 +187,31 @@ pub fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
+// Use the env-provided source directory and remove the quotes
+fn get_source_dir() -> PathBuf {
+    let mut dir = install::target::SOURCE_DIR.to_string();
+    dir.remove(0);
+    dir.remove(dir.len() - 1);
+    Path::new(&dir).to_path_buf()
+}
+
 // Install {wranglerjs} from our GitHub releases
 pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
-    let tool_name = "wranglerjs";
-    let version = env!("CARGO_PKG_VERSION");
-    let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache, version)?;
-    info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
+    let wranglerjs_path = if install::target::DEBUG {
+        let source_path = get_source_dir();
+        let wranglerjs_path = source_path.join("wranglerjs");
+        info!("wranglerjs at: {:?}", wranglerjs_path);
+        wranglerjs_path
+    } else {
+        let tool_name = "wranglerjs";
+        let version = env!("CARGO_PKG_VERSION");
+        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache, version)?;
+        info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
+        wranglerjs_path.path()
+    };
 
-    run_npm_install(wranglerjs_path.path()).expect("could not install wranglerjs dependencies");
-    Ok(wranglerjs_path.path())
+    run_npm_install(wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
+    Ok(wranglerjs_path)
 }
 
 // We inject some code at the top-level of the Worker; called {prologue}.
