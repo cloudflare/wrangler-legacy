@@ -8,14 +8,14 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-// This structure represents the communication between {wrangler-js} and
-// {wrangler}. It is send back after {wrangler-js} completion.
+// This structure represents the communication between {wranglerjs} and
+// {wrangler}. It is send back after {wranglerjs} completion.
 // FIXME(sven): make this private
 #[derive(Deserialize, Debug)]
 pub struct WranglerjsOutput {
     wasm: Option<String>,
     script: String,
-    // {wrangler-js} will send us the path to the {dist} directory that {Webpack}
+    // {wranglerjs} will send us the path to the {dist} directory that {Webpack}
     // used; it's tedious to remove a directory with content in JavaScript so
     // let's do it in Rust!
     dist_to_clean: Option<String>,
@@ -101,17 +101,17 @@ impl Bundle {
     }
 }
 
-// Path to {wrangler-js}, which should be executable.
+// Path to {wranglerjs}, which should be executable.
 fn executable_path() -> PathBuf {
     Path::new(".")
         .join("node_modules")
         .join(".bin")
-        .join("wrangler-js")
+        .join("wranglerjs")
 }
 
-// Run the underlying {wrangler-js} executable.
+// Run the underlying {wranglerjs} executable.
 //
-// In Rust we create a virtual file, pass the pass to {wrangler-js}, run the
+// In Rust we create a virtual file, pass the pass to {wranglerjs}, run the
 // executable and wait for completion. The file will receive the a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
@@ -122,7 +122,7 @@ pub fn run_build(
     let mut command = Command::new(executable_path());
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
-    // create temp file for special {wrangler-js} IPC.
+    // create temp file for special {wranglerjs} IPC.
     let mut temp_file = env::temp_dir();
     temp_file.push(".wranglerjs_output");
     File::create(temp_file.clone())?;
@@ -134,7 +134,7 @@ pub fn run_build(
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
     // if {webpack.config.js} is not present, we infer the entry based on the
-    // {package.json} file and pass it to {wrangler-js}.
+    // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
     if !bundle.has_webpack_config() {
         let package = Package::new("./")?;
@@ -184,14 +184,14 @@ fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-// check if {wrangler-js} is present are a known location.
+// check if {wranglerjs} is present are a known location.
 pub fn is_installed() -> bool {
     executable_path().exists()
 }
 
 pub fn install() -> Result<(), failure::Error> {
     let mut command = Command::new("npm");
-    command.arg("install").arg("wrangler-js");
+    command.arg("install").arg("wranglerjs");
     info!("Running {:?}", command);
 
     let status = command.status()?;
