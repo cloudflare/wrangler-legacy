@@ -259,10 +259,10 @@ fn create_metadata(bundle: &Bundle) -> String {
         .to_string()
     } else {
         r#"
-                {
-                    "body_part": "script"
-                }
-            "#
+            {
+                "body_part": "script"
+            }
+        "#
         .to_string()
     }
 }
