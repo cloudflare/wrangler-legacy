@@ -80,7 +80,4 @@ compiler.run((err, stats) => {
   }
 
   writeFileSync(args["output-file"], JSON.stringify(bundle));
-
-  // FIXME(sven): stats could be printed in {wrangler}, avoiding any confusion.
-  console.log(stats.toString({ colors: true }));
 });
