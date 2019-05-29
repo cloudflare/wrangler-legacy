@@ -36,17 +36,24 @@ impl WranglerjsOutput {
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
 const BUNDLE_OUT: &str = "./worker";
-pub struct Bundle {}
+pub struct Bundle {
+    out: String,
+}
 
 // We call a {Bundle} the output of a {Bundler}; representing what {Webpack}
 // produces.
 impl Bundle {
     pub fn new() -> Bundle {
-        Bundle {}
+        Bundle {
+            out: BUNDLE_OUT.to_string(),
+        }
+    }
+    fn new_at(out: String) -> Bundle {
+        Bundle { out: out }
     }
 
     pub fn write(&self, wranglerjs_output: WranglerjsOutput) -> Result<(), failure::Error> {
-        let bundle_path = Path::new(BUNDLE_OUT);
+        let bundle_path = Path::new(&self.out);
         if !bundle_path.exists() {
             fs::create_dir(bundle_path)?;
         }
@@ -75,7 +82,7 @@ impl Bundle {
     }
 
     pub fn metadata_path(&self) -> String {
-        Path::new(BUNDLE_OUT)
+        Path::new(&self.out)
             .join("metadata.json".to_string())
             .to_str()
             .unwrap()
@@ -83,7 +90,7 @@ impl Bundle {
     }
 
     pub fn wasm_path(&self) -> String {
-        Path::new(BUNDLE_OUT)
+        Path::new(&self.out)
             .join("module.wasm".to_string())
             .to_str()
             .unwrap()
@@ -103,7 +110,7 @@ impl Bundle {
     }
 
     pub fn script_path(&self) -> String {
-        Path::new(BUNDLE_OUT)
+        Path::new(&self.out)
             .join("script.js".to_string())
             .to_str()
             .unwrap()
@@ -249,63 +256,87 @@ fn create_metadata(bundle: &Bundle) -> String {
     }
 }
 
-// FIXME(sven): doesn't work because they have a race for the BUNDLE_OUT,
-// make it configurable
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-//     #[test]
-//     fn it_writes_the_bundle_metadata() {
-//         let wranglerjs_output = WranglerjsOutput {
-//             script: "".to_string(),
-//             dist_to_clean: None,
-//             wasm: None,
-//         };
-//         let bundle = Bundle::new();
+    fn create_temp_dir(name: &str) -> String {
+        let mut dir = env::temp_dir();
+        dir.push(name);
+        fs::create_dir(&dir).expect("could not create temp dir");
 
-//         bundle.write(wranglerjs_output).unwrap();
-//         assert!(Path::new(&bundle.metadata_path()).exists());
+        dir.to_str().unwrap().to_string()
+    }
 
-//         cleanup(BUNDLE_OUT);
-//     }
+    #[test]
+    fn it_writes_the_bundle_metadata() {
+        let out = create_temp_dir("it_writes_the_bundle_metadata");
+        let wranglerjs_output = WranglerjsOutput {
+            errors: vec![],
+            script: "".to_string(),
+            dist_to_clean: None,
+            wasm: None,
+        };
+        let bundle = Bundle::new_at(out.clone());
 
-//     #[test]
-//     fn it_writes_the_bundle_script() {
-//         let wranglerjs_output = WranglerjsOutput {
-//             script: "foo".to_string(),
-//             dist_to_clean: None,
-//             wasm: None,
-//         };
-//         let bundle = Bundle::new();
+        bundle.write(wranglerjs_output).unwrap();
+        assert!(Path::new(&bundle.metadata_path()).exists());
 
-//         bundle.write(wranglerjs_output).unwrap();
-//         assert!(Path::new(&bundle.script_path()).exists());
-//         assert!(!Path::new(&bundle.wasm_path()).exists());
+        cleanup(out);
+    }
 
-//         cleanup(BUNDLE_OUT);
-//     }
+    #[test]
+    fn it_writes_the_bundle_script() {
+        let out = create_temp_dir("it_writes_the_bundle_script");
+        let wranglerjs_output = WranglerjsOutput {
+            errors: vec![],
+            script: "foo".to_string(),
+            dist_to_clean: None,
+            wasm: None,
+        };
+        let bundle = Bundle::new_at(out.clone());
 
-//     #[test]
-//     fn it_writes_the_bundle_wasm() {
-//         let wranglerjs_output = WranglerjsOutput {
-//             script: "".to_string(),
-//             wasm: Some("abc".to_string()),
-//             dist_to_clean: None,
-//         };
-//         let bundle = Bundle::new();
+        bundle.write(wranglerjs_output).unwrap();
+        assert!(Path::new(&bundle.script_path()).exists());
+        assert!(!Path::new(&bundle.wasm_path()).exists());
 
-//         bundle.write(wranglerjs_output).unwrap();
-//         assert!(Path::new(&bundle.wasm_path()).exists());
-//         assert!(bundle.has_wasm());
+        cleanup(out);
+    }
 
-//         cleanup(BUNDLE_OUT);
-//     }
+    #[test]
+    fn it_writes_the_bundle_wasm() {
+        let out = create_temp_dir("it_writes_the_bundle_wasm");
+        let wranglerjs_output = WranglerjsOutput {
+            errors: vec![],
+            script: "".to_string(),
+            wasm: Some("abc".to_string()),
+            dist_to_clean: None,
+        };
+        let bundle = Bundle::new_at(out.clone());
 
-//     fn cleanup(name: &str) {
-//         let current_dir = env::current_dir().unwrap();
-//         let path = Path::new(&current_dir).join(name);
-//         println!("p: {:?}", path);
-//         fs::remove_dir_all(path).unwrap();
-//     }
-// }
+        bundle.write(wranglerjs_output).unwrap();
+        assert!(Path::new(&bundle.wasm_path()).exists());
+        assert!(bundle.has_wasm());
+
+        cleanup(out);
+    }
+
+    #[test]
+    fn it_has_errors() {
+        let wranglerjs_output = WranglerjsOutput {
+            errors: vec!["a".to_string(), "b".to_string()],
+            script: "".to_string(),
+            wasm: None,
+            dist_to_clean: None,
+        };
+        assert!(wranglerjs_output.has_errors());
+        assert!(wranglerjs_output.get_errors() == "a\nb");
+    }
+
+    fn cleanup(name: String) {
+        let current_dir = env::current_dir().unwrap();
+        let path = Path::new(&current_dir).join(name);
+        println!("p: {:?}", path);
+        fs::remove_dir_all(path).unwrap();
+    }
+}
