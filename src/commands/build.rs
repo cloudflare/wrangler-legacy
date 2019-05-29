@@ -38,6 +38,11 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             let wranglerjs_output =
                 wranglerjs::run_build(wasm_pack_path, &bundle).expect("could not run wranglerjs");
 
+            if wranglerjs_output.has_errors() {
+                println!("{}", wranglerjs_output.get_errors());
+                failure::bail!("Webpack returned an error");
+            }
+
             bundle
                 .write(wranglerjs_output)
                 .expect("could not write bundle to disk");

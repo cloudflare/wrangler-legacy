@@ -19,9 +19,19 @@ pub struct WranglerjsOutput {
     // used; it's tedious to remove a directory with content in JavaScript so
     // let's do it in Rust!
     dist_to_clean: Option<String>,
+    // Errors emited by {wranglerjs}, if any
+    errors: Vec<String>,
 }
 
-impl WranglerjsOutput {}
+impl WranglerjsOutput {
+    pub fn has_errors(&self) -> bool {
+        self.errors.len() != 0
+    }
+
+    pub fn get_errors(&self) -> String {
+        self.errors.join("\n")
+    }
+}
 
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
@@ -191,7 +201,7 @@ pub fn is_installed() -> bool {
 
 pub fn install() -> Result<(), failure::Error> {
     let mut command = Command::new("npm");
-    command.arg("install").arg("wranglerjs");
+    command.arg("install").arg("wrangler-js");
     info!("Running {:?}", command);
 
     let status = command.status()?;
