@@ -1,13 +1,10 @@
 use crate::commands::publish::package::Package;
 use log::info;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
 use serde::Deserialize;
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -61,6 +58,9 @@ impl Bundle {
             fs::create_dir(bundle_path)?;
         }
 
+        let mut metadata_file = File::create(self.metadata_path())?;
+        metadata_file.write_all(create_metadata(self).as_bytes())?;
+
         let mut script_file = File::create(self.script_path())?;
         let mut script = create_prologue();
         script += &wranglerjs_output.script;
@@ -71,9 +71,6 @@ impl Bundle {
         }
 
         script_file.write_all(script.as_bytes())?;
-
-        let mut metadata_file = File::create(self.metadata_path())?;
-        metadata_file.write_all(create_metadata(self).as_bytes())?;
 
         // cleanup {Webpack} dist, if specified.
         if let Some(dist_to_clean) = wranglerjs_output.dist_to_clean {
@@ -129,14 +126,6 @@ fn executable_path() -> PathBuf {
         .join("wranglerjs")
 }
 
-fn random_chars(n: usize) -> String {
-    let mut rng = thread_rng();
-    iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
-        .take(n)
-        .collect()
-}
-
 // Run the underlying {wranglerjs} executable.
 //
 // In Rust we create a virtual file, pass the pass to {wranglerjs}, run the
@@ -152,7 +141,7 @@ pub fn run_build(
 
     // create temp file for special {wranglerjs} IPC.
     let mut temp_file = env::temp_dir();
-    temp_file.push(format!(".wranglerjs_output{}", random_chars(5)));
+    temp_file.push(".wranglerjs_output");
     File::create(temp_file.clone())?;
 
     command.arg(format!(
