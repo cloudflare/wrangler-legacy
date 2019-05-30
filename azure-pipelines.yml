@@ -12,8 +12,8 @@ jobs:
       - template: ci/azure-install-node.yml
       - script: cargo install cargo-generate
         displayName: "cargo install cargo-generate"
-      - script: cargo test --locked
-        displayName: "cargo test --locked"
+      - script: cargo test
+        displayName: "cargo test"
       - script: rustup component add rustfmt
         displayName: rustup component add rustfmt
       - script: cargo fmt --all -- --check
@@ -32,8 +32,8 @@ jobs:
       - template: ci/azure-install-node.yml
       - script: cargo install cargo-generate
         displayName: "cargo install cargo-generate"
-      - script: cargo test --locked
-        displayName: "cargo test --locked"
+      - script: cargo test
+        displayName: "cargo test"
 
   - job: test_wrangler_nightly
     displayName: "Run wrangler tests (nightly)"
@@ -44,8 +44,8 @@ jobs:
       - template: ci/azure-install-node.yml
       - script: cargo install cargo-generate
         displayName: "cargo install cargo-generate"
-      - script: cargo test --locked
-        displayName: "cargo test --locked"
+      - script: cargo test
+        displayName: "cargo test"
 
   - job: dist_linux
     displayName: "Dist Linux binary"
