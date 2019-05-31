@@ -35,7 +35,7 @@ jobs:
       - script: cargo test --locked
         displayName: "cargo test --locked"
         env:
-          RUST_LOG: info
+          RUST_LOG: warn,wrangler=info
 
   - job: test_wrangler_nightly
     displayName: "Run wrangler tests (nightly)"
@@ -49,7 +49,7 @@ jobs:
       - script: cargo test --locked
         displayName: "cargo test --locked"
         env:
-          RUST_LOG: info
+          RUST_LOG: warn,wrangler=info
 
   - job: dist_linux
     displayName: "Dist Linux binary"
