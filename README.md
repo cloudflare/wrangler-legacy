@@ -17,7 +17,7 @@
     wrangler generate <name> <template> --type=["webpack", "javascript", "rust"]
     ```
 
-    All of the arguments and flads to this command are optional:
+    All of the arguments and flags to this command are optional:
         - `name`: defaults to `worker`
         - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
         - `type`: defaults to "webpack"
@@ -26,15 +26,11 @@
     Build your project. This command looks at your `wrangler.toml` file and runs the build steps associated
     with the `"type"` declared there.
 
-  - ### 🔬 `preview`
-    Preview your project using the cloudflareworkers.com API.
-
-    You can optionally pass `get` or `post` and a `body` to this command. This will send a request to your
-    worker on the preview service and return the response in your terminal. For example:
+  - ### 🔧 `config`
+    Configure your global Cloudflare user. You will need to pass your email and API key:
 
     ```
-    wrangler preview post hello=hello
-    wrangler preview get // this is the default
+    wrangler config <email> <api_key>
     ```
 
   - ### ☁️ 🆙 `publish`
@@ -46,11 +42,12 @@
     wrangler publish
     ```
 
-    This command will publish your worker to your workers.dev subdomain. If you have set `private: true` in
-    your `wrangler.toml` it will not make it publicly available. If you have set `private: false` or not
-    set the `private` key, `publish` will make your worker available at `<project-name>.<subdomain>.workers.dev`.
+    By default, `publish` will make your worker available at `<project-name>.<subdomain>.workers.dev`.
+    To disable publishing to your workers.dev subdomain, set `private = true` in your `wrangler.toml`.
+    This setting prevents the `publish` command from making your worker publicly available. To
+    explicitly enable deployment to `<project-name>.<subdomain>.workers.dev`, you can set `private = false`. 
 
-    To use this, you'll need to have the following keys in your `wrangler.toml`:
+    To use this command, you'll need to have the following keys in your `wrangler.toml`:
 
     - `name`
     - `type`
@@ -71,12 +68,17 @@
     - `zone_id`
     - `route`
 
-  - ### 🔧 `config`
-    Configure your global Cloudflare user. You will need to pass your email and API key:
+  - ### 🔬 `preview`
+    Preview your project using the cloudflareworkers.com API.
+
+    You can optionally pass `get` or `post` and a `body` to this command. This will send a request to your
+    worker on the preview service and return the response in your terminal. For example:
 
     ```
-    wrangler config <email> <api_key>
+    wrangler preview post hello=hello
+    wrangler preview get // this is the default
     ```
+
 
 ## 🔩 Configuration
 
@@ -123,7 +125,6 @@ There are two types of configuration that `wrangler` uses: global user and per p
     - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
         - `*example.com/*`
         - `http://example.com/hello`
-        - `https://example.com/*/world`
         This key is optional if you are using a workers.dev subdomain and is only required for `publish --release`.
 
 ## ⚓ Installation
