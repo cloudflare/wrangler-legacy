@@ -70,7 +70,7 @@ fn download_prebuilt(
     info!("prebuilt artifact {}", url);
 
     // no binaries are expected; downloading it as an artifact
-    let res = if binaries.len() > 0 {
+    let res = if !binaries.is_empty() {
         cache.download(true, tool_name, binaries, &url)?
     } else {
         cache.download_artifact(tool_name, &url)?
