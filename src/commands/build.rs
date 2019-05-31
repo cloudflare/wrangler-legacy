@@ -2,7 +2,7 @@ use crate::settings::project::ProjectType;
 use crate::wranglerjs;
 use crate::{commands, install};
 use binary_install::Cache;
-use log::info;
+use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -24,19 +24,20 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             commands::run(command, &command_name)?;
         }
         ProjectType::Webpack => {
-            let wasm_pack_path =
-                install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
-
-            wranglerjs::run_npm_install().expect("could not run `npm install`");
-
-            if !wranglerjs::is_installed() {
-                info!("missing deps; installing...");
-                wranglerjs::install().expect("could not install wranglerjs");
+            for tool in vec!["node", "npm"] {
+                wranglerjs::env_dep_installed(tool)?;
             }
 
+            let wasm_pack_path =
+                install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
+            let wranglerjs_path = wranglerjs::install(cache).expect("could not install wranglerjs");
+
+            let current_dir = env::current_dir()?;
+            wranglerjs::run_npm_install(current_dir).expect("could not run `npm install`");
+
             let bundle = wranglerjs::Bundle::new();
-            let wranglerjs_output =
-                wranglerjs::run_build(wasm_pack_path, &bundle).expect("could not run wranglerjs");
+            let wranglerjs_output = wranglerjs::run_build(wranglerjs_path, wasm_pack_path, &bundle)
+                .expect("could not run wranglerjs");
 
             if wranglerjs_output.has_errors() {
                 println!("{}", wranglerjs_output.get_errors());

@@ -1,4 +1,6 @@
 use crate::commands::publish::package::Package;
+use crate::install;
+use binary_install::Cache;
 use log::info;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -121,14 +123,6 @@ impl Bundle {
     }
 }
 
-// Path to {wranglerjs}, which should be executable.
-fn executable_path() -> PathBuf {
-    Path::new(".")
-        .join("node_modules")
-        .join(".bin")
-        .join("wranglerjs")
-}
-
 fn random_chars(n: usize) -> String {
     let mut rng = thread_rng();
     iter::repeat(())
@@ -144,10 +138,13 @@ fn random_chars(n: usize) -> String {
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
 pub fn run_build(
+    wranglerjs_path: PathBuf,
     wasm_pack_path: PathBuf,
     bundle: &Bundle,
 ) -> Result<WranglerjsOutput, failure::Error> {
-    let mut command = Command::new(executable_path());
+    let node = which::which("node").unwrap();
+    let mut command = Command::new(node);
+    command.arg(wranglerjs_path);
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
     // create temp file for special {wranglerjs} IPC.
@@ -189,13 +186,18 @@ pub fn run_build(
     }
 }
 
-pub fn run_npm_install() -> Result<(), failure::Error> {
-    for tool in &["node", "npm"] {
-        env_dep_installed(tool)?;
+// Run {npm install} in the specified directory. Skips the install if a
+// {node_modules} is found in the directory.
+pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
+    if dir.join("node_modules").exists() {
+        info!("skipping npm install because node_modules exists");
+        return Ok(());
     }
+
     let mut command = Command::new("npm");
+    command.current_dir(dir.clone());
     command.arg("install");
-    info!("Running {:?}", command);
+    info!("Running {:?} in directory {:?}", command, dir);
 
     let status = command.status()?;
     if status.success() {
@@ -205,29 +207,23 @@ pub fn run_npm_install() -> Result<(), failure::Error> {
     }
 }
 
-fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
+// Ensures the specified tool is available in our env.
+pub fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
     if which::which(tool).is_err() {
         failure::bail!("You need to install {}", tool)
     }
     Ok(())
 }
 
-// check if {wranglerjs} is present are a known location.
-pub fn is_installed() -> bool {
-    executable_path().exists()
-}
+// Install {wranglerjs} from our GitHub releases
+pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
+    let tool_name = "wranglerjs";
+    let version = env!("CARGO_PKG_VERSION");
+    let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache, version)?;
+    info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
 
-pub fn install() -> Result<(), failure::Error> {
-    let mut command = Command::new("npm");
-    command.arg("install").arg("wrangler-js");
-    info!("Running {:?}", command);
-
-    let status = command.status()?;
-    if status.success() {
-        Ok(())
-    } else {
-        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
-    }
+    run_npm_install(wranglerjs_path.path()).expect("could not install wranglerjs dependencies");
+    Ok(wranglerjs_path.path())
 }
 
 // We inject some code at the top-level of the Worker; called {prologue}.
