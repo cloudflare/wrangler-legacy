@@ -9,4 +9,4 @@ pub const x86_64: bool = cfg!(target_arch = "x86_64");
 pub const DEBUG: bool = cfg!(feature = "debug");
 
 // Capture source location, only in debug mode.
-pub const SOURCE_DIR: &'static str = env!("SOURCE_DIR");
+pub const SOURCE_DIR: &str = env!("SOURCE_DIR");

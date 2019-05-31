@@ -30,7 +30,7 @@ pub struct WranglerjsOutput {
 
 impl WranglerjsOutput {
     pub fn has_errors(&self) -> bool {
-        self.errors.len() != 0
+        !self.errors.is_empty()
     }
 
     pub fn get_errors(&self) -> String {
@@ -53,8 +53,10 @@ impl Bundle {
             out: BUNDLE_OUT.to_string(),
         }
     }
+
+    #[cfg(test)]
     fn new_at(out: String) -> Bundle {
-        Bundle { out: out }
+        Bundle { out }
     }
 
     pub fn write(&self, wranglerjs_output: WranglerjsOutput) -> Result<(), failure::Error> {

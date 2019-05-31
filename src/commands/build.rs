@@ -24,7 +24,7 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             commands::run(command, &command_name)?;
         }
         ProjectType::Webpack => {
-            for tool in vec!["node", "npm"] {
+            for tool in &["node", "npm"] {
                 wranglerjs::env_dep_installed(tool)?;
             }
 
