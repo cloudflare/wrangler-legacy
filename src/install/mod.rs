@@ -1,5 +1,5 @@
 mod krate;
-mod target;
+pub mod target;
 
 use binary_install::{Cache, Download};
 use krate::Krate;
