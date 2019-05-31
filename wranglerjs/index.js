@@ -23,6 +23,7 @@ if (args["no-webpack-config"] === "1") {
 }
 
 const compiler = webpack(config);
+const fullConfig = compiler.options;
 
 function filterByExtension(ext) {
   return v => v.indexOf("." + ext) !== -1;
@@ -56,12 +57,13 @@ compiler.run((err, stats) => {
     throw err;
   }
 
-  const fullConfig = compiler.options;
   const assets = stats.compilation.assets;
+  const jsonStats = stats.toJson();
   const bundle = {
     wasm: null,
     script: "",
-    dist_to_clean: fullConfig.output.path
+    dist_to_clean: fullConfig.output.path,
+    errors: jsonStats.errors
   };
 
   const wasmModuleAsset = Object.keys(assets).find(filterByExtension("wasm"));
@@ -78,7 +80,4 @@ compiler.run((err, stats) => {
   }
 
   writeFileSync(args["output-file"], JSON.stringify(bundle));
-
-  // FIXME(sven): stats could be printed in {wrangler}, avoiding any confusion.
-  console.log(stats.toString({ colors: true }));
 });

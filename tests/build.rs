@@ -6,6 +6,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::str;
 
 const BUNDLE_OUT: &str = "./worker";
 
@@ -41,6 +42,58 @@ fn it_builds_with_webpack_single_js() {
     cleanup(fixture);
 }
 
+#[test]
+fn it_builds_with_webpack_single_js_use_package_main() {
+    let fixture = "webpack_single_js_use_package_main";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+    "#};
+
+    build(fixture);
+    assert!(fixture_out_path(fixture).join("script.js").exists());
+    assert!(fixture_out_path(fixture).join("metadata.json").exists());
+    cleanup(fixture);
+}
+
+#[test]
+fn it_builds_with_webpack_single_js_missing_package_main() {
+    let fixture = "webpack_single_js_missing_package_main";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+    "#};
+
+    build_fails_with(
+        fixture,
+        "The `main` key in your `package.json` file is required",
+    );
+    cleanup(fixture);
+}
+
+#[test]
+fn it_builds_with_webpack_wast() {
+    let fixture = "webpack_wast";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+    "#};
+
+    build(fixture);
+    assert!(fixture_out_path(fixture).join("script.js").exists());
+    assert!(fixture_out_path(fixture).join("metadata.json").exists());
+    assert!(fixture_out_path(fixture).join("module.wasm").exists());
+
+    let metadata = fs::read_to_string(fixture_out_path(fixture).join("metadata.json"))
+        .expect("could not read metadata");
+    assert!(metadata.contains("wasm_module"));
+
+    cleanup(fixture);
+}
+
 fn cleanup(fixture: &str) {
     let path = fixture_path(fixture);
     assert!(path.exists(), format!("{:?} does not exist", path));
@@ -62,6 +115,25 @@ fn build(fixture: &str) {
     build.arg("build").assert().success();
 }
 
+fn build_fails_with(fixture: &str, expected_message: &str) {
+    let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    build.current_dir(fixture_path(fixture));
+    build.arg("build");
+
+    let output = build.output().expect("failed to execute process");
+    assert!(!output.status.success());
+    assert!(
+        str::from_utf8(&output.stderr)
+            .unwrap()
+            .contains(expected_message),
+        format!(
+            "expected {:?} not found, given: {:?}",
+            expected_message,
+            str::from_utf8(&output.stderr)
+        )
+    );
+}
+
 fn fixture_path(fixture: &str) -> PathBuf {
     let mut dest = env::temp_dir();
     dest.push(fixture);
@@ -77,6 +149,10 @@ fn create_temporary_copy(fixture: &str) {
     let src = Path::new(&current_dir).join("tests").join(fixture);
 
     let dest = env::temp_dir();
+
+    if dest.join(fixture).exists() {
+        cleanup(fixture);
+    }
 
     fs::create_dir_all(dest.clone()).unwrap();
     let mut options = CopyOptions::new();

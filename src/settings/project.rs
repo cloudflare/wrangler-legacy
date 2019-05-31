@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use log::info;
@@ -19,6 +19,8 @@ pub struct Project {
     pub account_id: String,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -60,7 +62,11 @@ impl FromStr for ProjectType {
 }
 
 impl Project {
-    pub fn generate(name: String, project_type: ProjectType) -> Result<Project, failure::Error> {
+    pub fn generate(
+        name: String,
+        project_type: ProjectType,
+        init: bool,
+    ) -> Result<Project, failure::Error> {
         let project = Project {
             name: name.clone(),
             project_type: project_type.clone(),
@@ -69,10 +75,15 @@ impl Project {
             account_id: String::new(),
             route: Some(String::new()),
             routes: None,
+            kv_namespaces: None,
         };
 
         let toml = toml::to_string(&project)?;
-        let config_path = Path::new("./").join(&name);
+        let config_path = if init {
+            PathBuf::from("./")
+        } else {
+            Path::new("./").join(&name)
+        };
         let config_file = config_path.join("wrangler.toml");
 
         info!("Writing a wrangler.toml file at {}", config_file.display());

@@ -1,0 +1,28 @@
+{
+  "name": "@cloudflare/wrangler",
+  "version": "0.0.1",
+  "description": "Wrangle your Cloudflare Workers",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "node ./install-wrangler.js"
+  },
+  "bin": {
+    "wrangler": "./out/wrangler"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cloudflare/wrangler.git"
+  },
+  "author": "sven@cloudflare.com",
+  "license": "MIT OR Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/cloudflare/wrangler/issues"
+  },
+  "homepage": "https://github.com/cloudflare/wrangler#readme",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "rimraf": "^2.6.3",
+    "tar": "^4.4.8"
+  }
+}
