@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "node ./install-wrangler.js"
+    "postinstall": "node install-wrangler.js"
   },
   "bin": {
-    "wrangler": "./out/wrangler"
+    "wrangler": "./run-wrangler.js"
   },
   "repository": {
     "type": "git",
