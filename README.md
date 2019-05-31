@@ -5,35 +5,80 @@
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler)
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 
-✨ CHECK OUT THE [TUTORIAL](https://developers.cloudflare.com/workers/webassembly/tutorial/) ✨
-
 ## 🎙️ Commands
 
-`wrangler` is a CLI tool designed for folks who are interested in using Rust-generated WebAssembly on
-Cloudflare Workers. This tool gives you the following commands:
+`wrangler` is a CLI tool designed for folks who are interested in using Cloudflare workers.
 
   - ### 👯 `generate` 
     Scaffold a project, including boilerplate for a Rust library and a Cloudflare Worker.
     You can pass a name and template to this command optionally. 
 
     ```
-    wrangler generate <name> <template>
+    wrangler generate <name> <template> --type=["webpack", "javascript", "rust"]
     ```
 
-    It will default to the name `wasm-worker` and the [`rustwasm-worker-template`](https://github.com/cloudflare/rustwasm-worker-template).
+    All of the arguments and flags to this command are optional:
+        - `name`: defaults to `worker`
+        - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
+        - `type`: defaults to "webpack"
+
   - ### 🦀⚙️ `build`
-    Build your project using `wasm-pack`.
-  - ### 🔬 `preview`
-    Preview your project using the cloudflareworkers.com API.
-  - ### ☁️ 🆙 `publish`
-    Publish your Worker and WebAssembly to Cloudflare. This uses the `account_id` and `zone_id`
-    from the `wrangler.toml`.
+    Build your project. This command looks at your `wrangler.toml` file and runs the build steps associated
+    with the `"type"` declared there.
+
   - ### 🔧 `config`
     Configure your global Cloudflare user. You will need to pass your email and API key:
 
     ```
     wrangler config <email> <api_key>
     ```
+
+  - ### ☁️ 🆙 `publish`
+
+    Publish your Worker to Cloudflare. This uses several keys in your `wrangler.toml` depending on whether
+    you are publishing to a workers.dev subdomain or your own domain, registered with Cloudflare.
+
+    ```
+    wrangler publish
+    ```
+
+    By default, `publish` will make your worker available at `<project-name>.<subdomain>.workers.dev`.
+    To disable publishing to your workers.dev subdomain, set `private = true` in your `wrangler.toml`.
+    This setting prevents the `publish` command from making your worker publicly available. To
+    explicitly enable deployment to `<project-name>.<subdomain>.workers.dev`, you can set `private = false`. 
+
+    To use this command, you'll need to have the following keys in your `wrangler.toml`:
+
+    - `name`
+    - `type`
+    - `account_id`
+
+    You'll also need to have a workers.dev subdomain registered. You can register a subdomain by using:
+
+    ```
+    wrangler subdomain <name>
+    ```
+
+    A `--release` can be optionally passed to publish your worker to a domain you have registered with
+    Cloudflare. To use `--release` your `wrangler.toml` must include:
+
+    - `name`
+    - `type`
+    - `account_id`
+    - `zone_id`
+    - `route`
+
+  - ### 🔬 `preview`
+    Preview your project using the cloudflareworkers.com API.
+
+    You can optionally pass `get` or `post` and a `body` to this command. This will send a request to your
+    worker on the preview service and return the response in your terminal. For example:
+
+    ```
+    wrangler preview post hello=hello
+    wrangler preview get // this is the default
+    ```
+
 
 ## 🔩 Configuration
 
@@ -62,21 +107,25 @@ There are two types of configuration that `wrangler` uses: global user and per p
     edit this file to add these values before you can publish.
 
     - `name`: This is the name of your project. It will be the name of your script.
-    - `type`: The type of project this is. Can be one of the following:
-        - `javascript`: this is the default: assumes a javascript worker that does not need a build step
-        - `webpack`: this is a javascript worker that uses a webpack build step
-        - `rust`: this is a Rust/WASM worker-- will compile Rust to WebAssembly and package worker on build step
-    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on.
+    - `private`: This is a boolean. If set to `true`, when using `wrangler publish`, it will push your script but
+        not make it publically available. This does not affect publishing in `--release` mode to a registered
+        domain. Those pushes are *always* public. If this is not in your `wrangler.toml` it is assumed your
+        project is public.
+    - `type`: This key tells `wrangler build` how to build your project. There are currently 3 options, but we
+        expect there to be more as the community grows.
+        - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
+        - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
+        - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
+            WebAssembly. Rust files will be built with `wasm-pack`. `C/C++` files will be build with `emscripten`.
+            This project type uses webpack and webpack plugins in the background to build your worker.
+    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you
+        are using a workers.dev subdomain and is only reuqired for `publish --release`.
     - `account_id`: This is the ID of the account associated with your zone. You might have more than one account,
-        so make sure to use the ID of the account associated with the `zone_id` you provide.
+        so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
     - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
         - `*example.com/*`
         - `http://example.com/hello`
-        - `https://example.com/*/world`
-
-    Cloudflare templates automatically add the `wrangler.toml` file to `.gitignore`.
-    
-    ⚠️ NEVER PUBLISH CREDENTIALS TO VERSION CONTROL! ⚠️
+        This key is optional if you are using a workers.dev subdomain and is only required for `publish --release`.
 
 ## ⚓ Installation
 
@@ -115,7 +164,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
 1. Move into the new project directory:
 
     ```
-    cd wasm-worker
+    cd worker
     ```
 
 1. Build your project:
@@ -140,6 +189,12 @@ There are two types of configuration that `wrangler` uses: global user and per p
     Cloudflare edge. If you don't configure, you can still use `wrangler` to generate, build, and preview
     a Worker.
 
+    Optionally, create a workers.dev subdomain:
+
+    ```
+    wrangler subdomain <name>
+    ```
+
 1. Check your configuration:
 
     ```
@@ -148,6 +203,14 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
 1. Publish your project:
 
+    To publish to a workers.dev subdomain:
     ```
     wrangler publish
+    ```
+
+    To publish to a domain you have registered with Cloudflare, add a `route` and a `zone_id` to your
+    `wrangler.toml`. Then run:
+
+    ```
+    wrangler publish --release
     ```
