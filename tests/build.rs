@@ -111,12 +111,14 @@ fn cleanup(fixture: &str) {
 
 fn build(fixture: &str) {
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    build.env("RUST_LOG", env!("RUST_LOG"));
     build.current_dir(fixture_path(fixture));
     build.arg("build").assert().success();
 }
 
 fn build_fails_with(fixture: &str, expected_message: &str) {
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    build.env("RUST_LOG", env!("RUST_LOG"));
     build.current_dir(fixture_path(fixture));
     build.arg("build");
 
