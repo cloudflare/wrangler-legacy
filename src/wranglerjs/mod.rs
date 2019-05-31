@@ -194,7 +194,7 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
         return Ok(());
     }
 
-    let mut command = Command::new("npm");
+    let mut command = build_npm_command();
     command.current_dir(dir.clone());
     command.arg("install");
     info!("Running {:?} in directory {:?}", command, dir);
@@ -204,6 +204,23 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
         Ok(())
     } else {
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+    }
+}
+
+// build a Command for npm
+//
+// Here's the deal: on Windows, `npm` isn't a binary, it's a shell script.
+// This means that we can't invoke it via `Command` directly on Windows,
+// we need to invoke `cmd /C npm`, to run it within the cmd environment.
+fn build_npm_command() -> Command {
+    if install::target::WINDOWS {
+        let mut command = Command::new("cmd");
+        command.arg("/C");
+        command.arg("npm");
+
+        command
+    } else {
+        Command::new("npm")
     }
 }
 

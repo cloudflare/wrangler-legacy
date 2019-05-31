@@ -96,8 +96,17 @@ fn it_builds_with_webpack_wast() {
 
 fn cleanup(fixture: &str) {
     let path = fixture_path(fixture);
-    assert!(path.exists());
-    fs::remove_dir_all(path.clone()).unwrap();
+    assert!(path.exists(), format!("{:?} does not exist", path));
+
+    // Workaround https://github.com/rust-lang/rust/issues/29497
+    if cfg!(target_os = "windows") {
+        let mut command = Command::new("cmd");
+        command.arg("rmdir");
+        command.arg("/s");
+        command.arg(&path);
+    } else {
+        fs::remove_dir_all(&path).unwrap();
+    }
 }
 
 fn build(fixture: &str) {
