@@ -34,6 +34,8 @@ jobs:
         displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
+        env:
+          RUST_LOG: info
 
   - job: test_wrangler_nightly
     displayName: "Run wrangler tests (nightly)"
@@ -46,6 +48,8 @@ jobs:
         displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
+        env:
+          RUST_LOG: info
 
   - job: dist_linux
     displayName: "Dist Linux binary"
