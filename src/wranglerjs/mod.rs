@@ -197,26 +197,26 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
     // avoid running multiple {npm install} at the same time (eg. in tests)
     flock.lock_exclusive()?;
 
-    if dir.join("node_modules").exists() {
+    if !dir.join("node_modules").exists() {
+        let mut command = build_npm_command();
+        command.current_dir(dir.clone());
+        command.arg("install");
+        info!("Running {:?} in directory {:?}", command, dir);
+
+        let status = command.status()?;
+
+        if !status.success() {
+        } else {
+            failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+        }
+    } else {
         info!("skipping npm install because node_modules exists");
-        return Ok(());
     }
-
-    let mut command = build_npm_command();
-    command.current_dir(dir.clone());
-    command.arg("install");
-    info!("Running {:?} in directory {:?}", command, dir);
-
-    let status = command.status()?;
 
     flock.unlock()?;
     fs::remove_file(&flock_path)?;
 
-    if status.success() {
-        Ok(())
-    } else {
-        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
-    }
+    Ok(())
 }
 
 // build a Command for npm
