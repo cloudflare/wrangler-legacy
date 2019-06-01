@@ -197,26 +197,29 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
     // avoid running multiple {npm install} at the same time (eg. in tests)
     flock.lock_exclusive()?;
 
-    if dir.join("node_modules").exists() {
-        info!("skipping npm install because node_modules exists");
-        return Ok(());
-    }
+    if !dir.join("node_modules").exists() {
+        let mut command = build_npm_command();
+        command.current_dir(dir.clone());
+        command.arg("install");
+        info!("Running {:?} in directory {:?}", command, dir);
 
-    let mut command = build_npm_command();
-    command.current_dir(dir.clone());
-    command.arg("install");
-    info!("Running {:?} in directory {:?}", command, dir);
+        let status = command.status()?;
 
-    let status = command.status()?;
-
-    flock.unlock()?;
-    fs::remove_file(&flock_path)?;
-
-    if status.success() {
-        Ok(())
+        if !status.success() {
+            failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+        }
     } else {
-        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+        info!("skipping npm install because node_modules exists");
     }
+
+    // TODO(sven): figure out why the file doesn't exits in some cases? Even if
+    // the thread should have locked it.
+    if flock_path.exists() {
+        fs::remove_file(&flock_path)?;
+    }
+    flock.unlock()?;
+
+    Ok(())
 }
 
 // build a Command for npm
