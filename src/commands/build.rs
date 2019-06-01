@@ -48,7 +48,7 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
                 .write(wranglerjs_output)
                 .expect("could not write bundle to disk");
 
-            println!("{} Build successfully.", emoji::SPARKLES);
+            println!("{} Built successfully.", emoji::SPARKLES);
         }
     }
 
