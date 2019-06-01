@@ -2,8 +2,9 @@
 
 const { join, resolve } = require("path");
 const { spawnSync } = require("child_process");
+const { homedir } = require('os');
 
-const cwd = join(process.cwd(), "node_modules", "@cloudflare", "wrangler");
+const cwd = join(homedir(), ".wrangler");
 const bin = join(cwd, "out", "wrangler");
 const [, , ...args] = process.argv;
 
