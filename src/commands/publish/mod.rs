@@ -83,6 +83,9 @@ fn publish_script(
     project: &Project,
     release: bool,
 ) -> Result<(), failure::Error> {
+    if project.account_id.is_empty() {
+        failure::bail!("You must provide an account_id in your wrangler.toml before you publish!")
+    }
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         project.account_id, project.name,
