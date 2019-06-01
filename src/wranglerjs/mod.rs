@@ -1,6 +1,7 @@
 use crate::commands::publish::package::Package;
 use crate::install;
 use binary_install::Cache;
+use fs2::FileExt;
 use log::info;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -191,6 +192,11 @@ pub fn run_build(
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
 pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
+    let flock_path = dir.join(&".install.lock");
+    let flock = File::create(&flock_path)?;
+    // avoid running multiple {npm install} at the same time (eg. in tests)
+    flock.lock_exclusive()?;
+
     if dir.join("node_modules").exists() {
         info!("skipping npm install because node_modules exists");
         return Ok(());
@@ -202,6 +208,10 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
     info!("Running {:?} in directory {:?}", command, dir);
 
     let status = command.status()?;
+
+    flock.unlock()?;
+    fs::remove_file(&flock_path)?;
+
     if status.success() {
         Ok(())
     } else {

@@ -40,6 +40,8 @@ function downloadAsset(asset) {
   }
   mkdirSync(dest);
 
+  console.log("Downloading release", asset.browser_download_url);
+
   return axios({
     url: asset.browser_download_url,
     responseType: "stream"
@@ -66,7 +68,7 @@ getLatestRelease()
     return downloadAsset(compatibleAssets);
   })
   .then(() => {
-    console.log("wrangler was installed.");
+    console.log("Wrangler has been installed!");
   })
   .catch(err => {
     throw err;
