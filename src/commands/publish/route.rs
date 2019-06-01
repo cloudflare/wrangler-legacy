@@ -18,6 +18,15 @@ struct RoutesResponse {
 
 impl Route {
     pub fn new(project: &Project) -> Result<Route, failure::Error> {
+        if project
+            .route
+            .clone()
+            .expect("You must provide a zone_id in your wrangler.toml before publishing!")
+            .is_empty()
+        {
+            failure::bail!("You must provide a zone_id in your wrangler.toml before publishing!");
+        }
+
         Ok(Route {
             script: Some(project.name.to_string()),
             pattern: project.route.clone().expect("⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.").to_string(),
