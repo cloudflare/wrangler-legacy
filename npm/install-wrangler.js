@@ -6,8 +6,9 @@ const { mkdirSync, existsSync } = require("fs");
 const rimraf = require("rimraf");
 const tar = require("tar");
 const { get } = axios;
+const { homedir } = require('os');
 
-const cwd = join(process.env.INIT_CWD, "node_modules", "@cloudflare", "wrangler");
+const cwd = join(homedir(), ".wrangler");
 
 function getLatestRelease() {
   return get("https://api.github.com/repos/cloudflare/wrangler/releases/latest")
@@ -53,6 +54,10 @@ function downloadAsset(asset) {
       })
     );
   });
+}
+
+if (!existsSync(cwd)) {
+  mkdirSync(cwd);
 }
 
 getLatestRelease()
