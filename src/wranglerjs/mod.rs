@@ -212,8 +212,12 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
         info!("skipping npm install because node_modules exists");
     }
 
+    // TODO(sven): figure out why the file doesn't exits in some cases? Even if
+    // the thread should have locked it.
+    if flock_path.exists() {
+        fs::remove_file(&flock_path)?;
+    }
     flock.unlock()?;
-    fs::remove_file(&flock_path)?;
 
     Ok(())
 }
