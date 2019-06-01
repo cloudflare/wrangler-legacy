@@ -206,7 +206,6 @@ pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
         let status = command.status()?;
 
         if !status.success() {
-        } else {
             failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
         }
     } else {
