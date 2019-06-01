@@ -5,6 +5,24 @@
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler)
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 
+Get started with Cloudflare Workers and Wrangler by reading the [documentation](https://workers.cloudflare.com/).
+
+## Installation
+
+You have many options to install wrangler!
+
+### Using `npm`
+
+```
+npm i @cloudflare/wrangler -g
+```
+
+### Using `cargo`
+
+```
+cargo install wrangler
+```
+
 ## 🎙️ Commands
 
 `wrangler` is a CLI tool designed for folks who are interested in using Cloudflare workers.
