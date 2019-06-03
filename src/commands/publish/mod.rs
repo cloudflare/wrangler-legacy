@@ -13,10 +13,10 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use crate::commands::build::wranglerjs::Bundle;
 use crate::commands::subdomain::Subdomain;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::{Project, ProjectType};
-use crate::wranglerjs::Bundle;
 
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
