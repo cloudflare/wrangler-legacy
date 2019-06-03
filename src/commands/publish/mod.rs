@@ -172,7 +172,7 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
 
     if res.status().is_success() {
         println!(
-            "🥳 Successfully made your script available at {}.{}.workers.dev",
+            "🥳 Successfully made your script available at https://{}.{}.workers.dev",
             project.name, subdomain
         );
     } else {
