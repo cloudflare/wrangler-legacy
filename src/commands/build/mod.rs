@@ -1,5 +1,6 @@
+pub mod wranglerjs;
+
 use crate::settings::project::ProjectType;
-use crate::wranglerjs;
 use crate::{commands, install};
 use binary_install::Cache;
 use std::env;
