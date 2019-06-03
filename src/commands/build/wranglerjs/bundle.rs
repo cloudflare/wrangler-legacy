@@ -30,7 +30,7 @@ impl Bundle {
         Bundle { out }
     }
 
-    pub fn write(&self, wranglerjs_output: WranglerjsOutput) -> Result<(), failure::Error> {
+    pub fn write(&self, wranglerjs_output: &WranglerjsOutput) -> Result<(), failure::Error> {
         let bundle_path = Path::new(&self.out);
         if !bundle_path.exists() {
             fs::create_dir(bundle_path)?;
@@ -40,7 +40,7 @@ impl Bundle {
         let mut script = create_prologue();
         script += &wranglerjs_output.script;
 
-        if let Some(wasm) = wranglerjs_output.wasm {
+        if let Some(wasm) = &wranglerjs_output.wasm {
             let mut wasm_file = File::create(self.wasm_path())?;
             wasm_file.write_all(wasm.as_bytes())?;
         }
@@ -51,7 +51,7 @@ impl Bundle {
         metadata_file.write_all(create_metadata(self).as_bytes())?;
 
         // cleanup {Webpack} dist, if specified.
-        if let Some(dist_to_clean) = wranglerjs_output.dist_to_clean {
+        if let Some(dist_to_clean) = &wranglerjs_output.dist_to_clean {
             info!("Remove {}", dist_to_clean);
             fs::remove_dir_all(dist_to_clean).expect("could not clean Webpack dist.");
         }
@@ -156,7 +156,7 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output).unwrap();
         assert!(Path::new(&bundle.metadata_path()).exists());
 
         cleanup(out);
@@ -173,7 +173,7 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output).unwrap();
         assert!(Path::new(&bundle.script_path()).exists());
         assert!(!Path::new(&bundle.wasm_path()).exists());
 
@@ -191,7 +191,7 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output).unwrap();
         assert!(Path::new(&bundle.wasm_path()).exists());
         assert!(bundle.has_wasm());
 
