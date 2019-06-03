@@ -73,7 +73,7 @@ fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failur
 
     if !res.status().is_success() {
         let msg = format!(
-            "⛔ There was an error featching your project's routes.\n Status Code: {}\n Msg: {}",
+            "⛔ There was an error fetching your project's routes.\n Status Code: {}\n Msg: {}",
             res.status(),
             res.text()?
         );
