@@ -157,4 +157,3 @@ There are two types of configuration that `wrangler` uses: global user and per p
     wrangler publish
     ```
     
- 
