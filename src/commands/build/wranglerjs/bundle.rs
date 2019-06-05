@@ -6,12 +6,13 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
+use crate::terminal::message;
 use log::info;
 
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
 use crate::settings::binding::Binding;
 use crate::settings::metadata;
-use crate::terminal::message;
+use crate::settings::project::KvNamespace;
 
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
@@ -34,7 +35,11 @@ impl Bundle {
         Bundle { out }
     }
 
-    pub fn write(&self, wranglerjs_output: &WranglerjsOutput) -> Result<(), failure::Error> {
+    pub fn write(
+        &self,
+        wranglerjs_output: &WranglerjsOutput,
+        kv_namespaces: Vec<KvNamespace>,
+    ) -> Result<(), failure::Error> {
         let bundle_path = Path::new(&self.out);
         if !bundle_path.exists() {
             fs::create_dir(bundle_path)?;
@@ -52,7 +57,7 @@ impl Bundle {
 
         script_file.write_all(script.as_bytes())?;
 
-        let metadata = create_metadata(self).expect("could not create metadata");
+        let metadata = create_metadata(self, &kv_namespaces).expect("could not create metadata");
         let mut metadata_file = File::create(self.metadata_path())?;
         metadata_file.write_all(metadata.as_bytes())?;
 
@@ -112,13 +117,23 @@ pub fn create_prologue() -> String {
 }
 
 // This metadata describe the bindings on the Worker.
-fn create_metadata(bundle: &Bundle) -> Result<String, serde_json::error::Error> {
+fn create_metadata(
+    bundle: &Bundle,
+    kv_namespaces: &Vec<KvNamespace>,
+) -> Result<String, serde_json::error::Error> {
     let mut bindings = vec![];
 
     if bundle.has_wasm() {
         bindings.push(Binding::new_wasm_module(
-            bundle.get_wasm_binding(),
-            bundle.get_wasm_binding(),
+            bundle.get_wasm_binding(), // name
+            bundle.get_wasm_binding(), // part
+        ));
+    }
+
+    for namespace in kv_namespaces {
+        bindings.push(Binding::new_kv_namespace(
+            namespace.binding.clone(), // local_binding
+            namespace.id.clone(),      // namespace_id
         ));
     }
 
@@ -154,7 +169,7 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(&wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output, vec![]).unwrap();
         assert!(Path::new(&bundle.metadata_path()).exists());
         let contents =
             fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
@@ -175,7 +190,7 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(&wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output, vec![]).unwrap();
         assert!(Path::new(&bundle.script_path()).exists());
         assert!(!Path::new(&bundle.wasm_path()).exists());
 
@@ -193,7 +208,7 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(&wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output, vec![]).unwrap();
         assert!(Path::new(&bundle.wasm_path()).exists());
         assert!(bundle.has_wasm());
 
@@ -211,7 +226,7 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(&wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output, vec![]).unwrap();
         assert!(Path::new(&bundle.metadata_path()).exists());
         let contents =
             fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
@@ -220,6 +235,32 @@ mod tests {
             contents,
             r#"{"body_part":"script","bindings":[{"type":"wasm_module","name":"wasmprogram","part":"wasmprogram"}]}"#
         );
+
+        cleanup(out);
+    }
+
+    #[test]
+    fn it_writes_the_bundle_kv_metadata() {
+        let out = create_temp_dir("it_writes_the_bundle_kv_metadata");
+        let wranglerjs_output = WranglerjsOutput {
+            errors: vec![],
+            script: "".to_string(),
+            wasm: None,
+            dist_to_clean: None,
+        };
+        let bundle = Bundle::new_at(out.clone());
+
+        let kv_namespaces = vec![KvNamespace {
+            binding: "binding".to_string(),
+            id: "id".to_string(),
+        }];
+
+        bundle.write(&wranglerjs_output, kv_namespaces).unwrap();
+        assert!(Path::new(&bundle.metadata_path()).exists());
+        let contents =
+            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
+
+        assert_eq!(contents, r#"{"body_part":"script","bindings":[{"type":"kv_namespace","name":"binding","namespace_id":"id"}]}"#);
 
         cleanup(out);
     }
