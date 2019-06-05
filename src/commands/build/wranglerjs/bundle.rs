@@ -140,6 +140,9 @@ mod tests {
     fn create_temp_dir(name: &str) -> String {
         let mut dir = env::temp_dir();
         dir.push(name);
+        if dir.exists() {
+            fs::remove_dir_all(&dir).unwrap();
+        }
         fs::create_dir(&dir).expect("could not create temp dir");
 
         dir.to_str().unwrap().to_string()
@@ -158,6 +161,17 @@ mod tests {
 
         bundle.write(wranglerjs_output).unwrap();
         assert!(Path::new(&bundle.metadata_path()).exists());
+        let contents =
+            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
+
+        assert_eq!(
+            contents,
+            r#"
+            {
+                "body_part": "script"
+            }
+        "#
+        );
 
         cleanup(out);
     }
@@ -194,6 +208,39 @@ mod tests {
         bundle.write(wranglerjs_output).unwrap();
         assert!(Path::new(&bundle.wasm_path()).exists());
         assert!(bundle.has_wasm());
+
+        cleanup(out);
+    }
+
+    #[test]
+    fn it_writes_the_bundle_wasm_metadata() {
+        let out = create_temp_dir("it_writes_the_bundle_wasm_metadata");
+        let wranglerjs_output = WranglerjsOutput {
+            errors: vec![],
+            script: "".to_string(),
+            wasm: Some("abc".to_string()),
+            dist_to_clean: None,
+        };
+        let bundle = Bundle::new_at(out.clone());
+
+        bundle.write(wranglerjs_output).unwrap();
+        assert!(Path::new(&bundle.metadata_path()).exists());
+        let contents =
+            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
+
+        assert_eq!(
+            contents,
+            r#"
+                {
+                    "body_part": "script",
+                    "binding": {
+                        "name": "wasmprogram",
+                        "type": "wasm_module",
+                        "part": "wasmprogram"
+                    }
+                }
+            "#
+        );
 
         cleanup(out);
     }
