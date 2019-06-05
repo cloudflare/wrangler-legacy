@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 
 use log::info;
 
+use crate::commands::build::wranglerjs::metadata;
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
 
 // Directory where we should write the {Bundle}. It represents the built
@@ -105,30 +106,23 @@ pub fn create_prologue() -> String {
 }
 
 // This metadata describe the bindings on the Worker.
-pub fn create_metadata(bundle: &Bundle) -> String {
+fn create_metadata(bundle: &Bundle) -> Result<String, serde_json::error::Error> {
+    info!("create metadata; wasm={}", bundle.has_wasm(),);
+
+    let mut bindings = vec![];
+
     if bundle.has_wasm() {
-        format!(
-            r#"
-                {{
-                    "body_part": "script",
-                    "bindings": [{{
-                        "name": "{name}",
-                        "type": "wasm_module",
-                        "part": "{name}"
-                    }}]
-                }}
-            "#,
-            name = bundle.get_wasm_binding(),
-        )
-        .to_string()
-    } else {
-        r#"
-            {
-                "body_part": "script"
-            }
-        "#
-        .to_string()
+        bindings.push(metadata::Bindings {
+            binding_type: "wasm_module".to_string(),
+            name: bundle.get_wasm_binding(),
+            part: Some(bundle.get_wasm_binding()),
+        })
     }
+
+    serde_json::to_string(&metadata::Metadata {
+        body_part: "script".to_string(),
+        bindings,
+    })
 }
 
 #[cfg(test)]
@@ -159,14 +153,9 @@ mod tests {
 
         bundle.write(&wranglerjs_output).unwrap();
         assert_eq!(Path::new(&bundle.metadata_path()).exists(), false);
-
         assert_eq!(
             create_metadata(&bundle),
-            r#"
-            {
-                "body_part": "script"
-            }
-        "#
+            r#"{"body_part":"script","bindings":[]}"#
         );
 
         cleanup(out);
@@ -224,16 +213,7 @@ mod tests {
 
         assert_eq!(
             create_metadata(&bundle),
-            r#"
-                {
-                    "body_part": "script",
-                    "bindings": [{
-                        "name": "wasmprogram",
-                        "type": "wasm_module",
-                        "part": "wasmprogram"
-                    }]
-                }
-            "#
+            r#"{"body_part":"script","bindings":[{"name":"wasmprogram","type":"wasm_module","part":"wasmprogram"}]}"#
         );
 
         cleanup(out);
