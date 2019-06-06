@@ -1,6 +1,7 @@
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use log::info;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GlobalUser {
@@ -26,8 +27,10 @@ fn get_global_config_directory() -> Option<PathBuf> {
     let directory;
     if legacy_directory.exists() {
         directory = Some(legacy_directory);
+        info!("using legacy config directory {:?}", directory);
     } else {
         directory = dirs::config_dir().map(|p| p.join("wrangler"));
+        info!("using standard config directory {:?}", directory);
     }
 
     directory
