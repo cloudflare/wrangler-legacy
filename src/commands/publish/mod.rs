@@ -1,7 +1,7 @@
 mod krate;
 pub mod preview;
 mod route;
-use route::Route;
+use route::ProjectRoutes;
 
 pub mod package;
 use package::Package;
@@ -29,12 +29,12 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     create_kv_namespaces(user, &project)?;
     publish_script(&user, &project, release)?;
     if release {
-        info!("release mode detected, making a route...");
-        let route = Route::new(&project)?;
-        Route::publish(&user, &project, &route)?;
-        let msg = format!(
-            "Success! Your worker was successfully published. You can view it at {}.",
-            &route.pattern
+        info!("release mode detected, publishing routes...");
+        let routes = ProjectRoutes::new(&project)?;
+        routes.publish(&user, &project)?;
+        println!(
+            "✨ Success! Your worker was successfully published. You can view it at:\n - {}\n✨",
+            routes.patterns().join("\n - ")
         );
         message::success(&msg);
     } else {
