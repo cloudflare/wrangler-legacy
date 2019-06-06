@@ -106,8 +106,8 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
     In Cloudflare's system, you have a User that can have multiple Accounts and Zones. As a result, your User
     is configured globally on your machine. Your Account(s) and Zone(s) will be configured per project, but
-    will use your User credentials to authenticate all API calls. This config file is created in a `.wrangler`
-    directory in your computer's home directory.
+    will use your User credentials to authenticate all API calls. This config file is created in the `wrangler`
+    directory under the [standard configuration location of your operating system](https://docs.rs/dirs/2.0.1/dirs/fn.config_dir.html).
 
     To set up `wrangler` to work with your Cloudflare user, use the following commands:
 

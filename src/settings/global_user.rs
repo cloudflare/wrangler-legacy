@@ -1,5 +1,6 @@
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GlobalUser {
@@ -11,18 +12,37 @@ impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
         get_global_config()
     }
+    pub fn config_directory() -> Option<PathBuf> {
+        get_global_config_directory()
+    }
+}
+
+fn get_global_config_directory() -> Option<PathBuf> {
+    let deprecated_directory = dirs::home_dir()
+        .expect("oops no home dir")
+        .join(".wrangler")
+        .join("config");
+
+    let directory;
+    if deprecated_directory.exists() {
+        directory = Some(deprecated_directory);
+    } else {
+        directory = dirs::config_dir().map(|p| p.join("wrangler"));
+    }
+
+    directory
 }
 
 fn get_global_config() -> Result<GlobalUser, failure::Error> {
     let mut s = Config::new();
 
-    let config_path = dirs::home_dir()
-        .expect("oops no home dir")
-        .join(".wrangler/config/default");
-    let config_str = config_path
+    let config_str = get_global_config_directory()
+        .expect("oops no config dir")
+        .join("default")
         .to_str()
-        .expect("global config path should be a string");
-    s.merge(File::with_name(config_str))?;
+        .expect("global config path should be a string")
+        .to_owned();
+    s.merge(File::with_name(&config_str))?;
 
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
     s.merge(Environment::with_prefix("CF"))?;
