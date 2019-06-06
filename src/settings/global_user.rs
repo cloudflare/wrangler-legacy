@@ -18,14 +18,14 @@ impl GlobalUser {
 }
 
 fn get_global_config_directory() -> Option<PathBuf> {
-    let deprecated_directory = dirs::home_dir()
+    let legacy_directory = dirs::home_dir()
         .expect("oops no home dir")
         .join(".wrangler")
         .join("config");
 
     let directory;
-    if deprecated_directory.exists() {
-        directory = Some(deprecated_directory);
+    if legacy_directory.exists() {
+        directory = Some(legacy_directory);
     } else {
         directory = dirs::config_dir().map(|p| p.join("wrangler"));
     }
