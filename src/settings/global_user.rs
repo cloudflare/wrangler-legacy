@@ -20,7 +20,7 @@ impl GlobalUser {
 
 fn get_global_config_directory() -> Option<PathBuf> {
     let legacy_directory = dirs::home_dir()
-        .expect("oops no home dir")
+        .unwrap_or(PathBuf::from("/"))
         .join(".wrangler")
         .join("config");
 
