@@ -223,7 +223,7 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output).unwrap();
         assert!(Path::new(&bundle.metadata_path()).exists());
         let contents =
             fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
