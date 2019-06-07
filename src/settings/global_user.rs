@@ -1,7 +1,7 @@
 use config::{Config, Environment, File};
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use log::info;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GlobalUser {
@@ -20,7 +20,7 @@ impl GlobalUser {
 
 fn get_global_config_directory() -> Option<PathBuf> {
     let legacy_directory = dirs::home_dir()
-        .unwrap_or(PathBuf::from("/"))
+        .unwrap_or_else(|| PathBuf::from("/"))
         .join(".wrangler")
         .join("config");
 
