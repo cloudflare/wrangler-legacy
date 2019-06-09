@@ -37,10 +37,11 @@ fn main() -> Result<(), failure::Error> {
         .version(env!("CARGO_PKG_VERSION"))
         .author("ashley g williams <ashley666ashley@gmail.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
+        .setting(AppSettings::DeriveDisplayOrder)
         .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
-                    "{} Generates a new worker project",
+                    "{} Generate a new workers project",
                     emoji::DANCERS
                 ))
                 .arg(
@@ -64,8 +65,8 @@ fn main() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("init")
                 .about(&*format!(
-                    "{} Generates a wrangler.toml for an existing project",
-                    emoji::DANCERS
+                    "{} Create a wrangler.toml for an existing project",
+                    emoji::INBOX
                 ))
                 .arg(
                     Arg::with_name("name")
@@ -81,9 +82,17 @@ fn main() -> Result<(), failure::Error> {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("build")
+                .about(&*format!(
+                    "{} Build your worker",
+                    emoji::CRAB
+                )
+            ),
+        )
+        .subcommand(
             SubCommand::with_name("preview")
                 .about(&*format!(
-                    "{} Publish your code temporarily on cloudflareworkers.com",
+                    "{} Preview your code temporarily on cloudflareworkers.com",
                     emoji::MICROSCOPE
                 ))
                 .arg(
@@ -98,11 +107,8 @@ fn main() -> Result<(), failure::Error> {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("build").about(&*format!("{} Build your worker", emoji::CRAB)),
-        )
-        .subcommand(
             SubCommand::with_name("publish").about(&*format!(
-                "{} Push your worker to the orange cloud",
+                "{} Publish your worker to the orange cloud",
                 emoji::UP
             ))
             .arg(
