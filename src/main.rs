@@ -41,7 +41,7 @@ fn main() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
-                    "{} Generate a new workers project",
+                    "{} Generate a new worker project",
                     emoji::DANCERS
                 ))
                 .arg(
