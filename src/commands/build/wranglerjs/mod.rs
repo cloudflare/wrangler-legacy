@@ -1,4 +1,4 @@
-mod bundle;
+pub mod bundle;
 pub mod output;
 
 use crate::commands::publish::package::Package;
