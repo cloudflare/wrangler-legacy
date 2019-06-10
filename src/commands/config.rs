@@ -1,9 +1,7 @@
 use crate::terminal::message;
 use std::fs;
-use std::path::Path;
 
-use crate::emoji;
-use crate::settings::global_user::GlobalUser;
+use crate::settings::global_user::{get_global_config_dir, GlobalUser};
 
 pub fn global_config(email: &str, api_key: &str) -> Result<(), failure::Error> {
     let s = GlobalUser {
@@ -13,14 +11,7 @@ pub fn global_config(email: &str, api_key: &str) -> Result<(), failure::Error> {
 
     let toml = toml::to_string(&s)?;
 
-    let config_dir = Path::new(&dirs::home_dir().unwrap_or_else(|| {
-        panic!(
-            "{0} could not determine home directory. {0}",
-            emoji::CONSTRUCTION
-        )
-    }))
-    .join(".wrangler")
-    .join("config");
+    let config_dir = get_global_config_dir().expect("could not find global config directory");
     fs::create_dir_all(&config_dir)?;
 
     let config_file = config_dir.join("default.toml");
