@@ -1,4 +1,4 @@
-mod bundle;
+pub mod bundle;
 mod metadata;
 pub mod output;
 

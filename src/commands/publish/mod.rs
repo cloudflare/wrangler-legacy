@@ -123,7 +123,7 @@ fn publish_script(
             // FIXME(sven): shouldn't new
             let bundle = Bundle::new();
 
-            let metadata = bundle::create_metadata(&bundle);
+            let metadata = bundle::create_metadata(&bundle).expect("could not create metadata");
             info!("generate metadata {:?}", metadata);
             let mut metadata_file = File::create(bundle.metadata_path())?;
             metadata_file.write_all(metadata.as_bytes())?;
