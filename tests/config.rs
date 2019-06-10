@@ -21,7 +21,6 @@ fn it_generates_the_config() {
         .read_to_string(&mut buffer)
         .expect("could not read output");
     assert!(buffer.contains("Enter email: \nEnter api key: \n Successfully configured."));
-    eprintln!("{}", buffer);
 
     let config_file = fake_home_dir.join("config").join("default.toml");
 
