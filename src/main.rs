@@ -12,6 +12,7 @@ use log::info;
 mod cache;
 mod commands;
 mod emoji;
+mod http;
 mod install;
 mod installer;
 mod settings;

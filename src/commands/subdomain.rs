@@ -1,4 +1,5 @@
 use crate::emoji;
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 
@@ -13,7 +14,7 @@ impl Subdomain {
     pub fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
         let addr = subdomain_addr(account_id);
 
-        let client = reqwest::Client::new();
+        let client = http::client();
 
         let mut res = client
             .get(&addr)
@@ -73,7 +74,7 @@ pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(),
     };
     let sd_request = serde_json::to_string(&sd)?;
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     let mut res = client
         .put(&addr)

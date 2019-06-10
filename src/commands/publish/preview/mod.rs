@@ -8,6 +8,7 @@ use crate::commands::publish;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::http;
 use crate::settings::project::{get_project_config, ProjectType};
 
 #[derive(Debug, Deserialize)]
@@ -21,7 +22,7 @@ pub fn preview(
 ) -> Result<(), failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     let project_type = get_project_config()?.project_type;
 
