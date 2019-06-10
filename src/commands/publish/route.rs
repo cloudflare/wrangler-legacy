@@ -1,3 +1,4 @@
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use reqwest::header::CONTENT_TYPE;
@@ -63,7 +64,7 @@ impl Route {
 fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failure::Error> {
     let routes_addr = get_routes_addr(project)?;
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     let mut res = client
         .get(&routes_addr)
@@ -86,7 +87,7 @@ fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failur
 }
 
 fn create(user: &GlobalUser, project: &Project, route: &Route) -> Result<(), failure::Error> {
-    let client = reqwest::Client::new();
+    let client = http::client();
     let body = serde_json::to_string(&route)?;
 
     let routes_addr = get_routes_addr(project)?;

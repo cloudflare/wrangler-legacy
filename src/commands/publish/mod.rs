@@ -17,6 +17,7 @@ use reqwest::multipart::Form;
 
 use crate::commands::build::wranglerjs::{bundle, Bundle};
 use crate::commands::subdomain::Subdomain;
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::{Project, ProjectType};
 
@@ -44,7 +45,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
         project.account_id,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     if let Some(namespaces) = &project.kv_namespaces {
         for namespace in namespaces {
@@ -93,7 +94,7 @@ fn publish_script(
         project.account_id, project.name,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     let project_type = &project.project_type;
     let mut res = match project_type {
@@ -170,7 +171,7 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
         project.account_id, project.name,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
     info!("Making public on subdomain...");
     let mut res = client
