@@ -147,9 +147,27 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
 ## ⚓ Installation
 
+Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and through Rust's package manager, [Cargo](https://github.com/rust-lang/cargo).
+
+### Using `npm`:
+
+1. If you don't already have npm on your machine, install it. On OSX with [Homebrew](https://brew.sh/) that looks like:
+
+    ```
+    $ brew install nodejs
+    ```
+    
+1. Install Wrangler by running:
+
+    ```
+    npm i @cloudflare/wrangler -g
+    ```
+
+### Using `cargo`:
+
 1. Install `cargo`:
 
-    Wrangler is installed through [Cargo](https://github.com/rust-lang/cargo#compiling-from-source), a Rust package manager. Rustup, a tool for installing Rust, will also install Cargo. On Linux and macOS systems, `rustup` can be installed as follows:
+    Rustup, a tool for installing Rust, will also install Cargo. On Linux and macOS systems, `rustup` can be installed as follows:
 
     ```
     curl https://sh.rustup.rs -sSf | sh
@@ -170,6 +188,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
     ```
     $ brew install openssl@1.1
     ```
+    
 
 ## ⚡ Quick Start
 
