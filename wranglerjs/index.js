@@ -3,10 +3,16 @@ const { join } = require("path");
 const { writeFileSync } = require("fs");
 const WasmMainTemplatePlugin = require("webpack/lib/wasm/WasmMainTemplatePlugin");
 
+function error(msg) {
+  console.error("Error: " + msg);
+  process.exit(1);
+  return new Error("error");
+}
+
 const rawArgs = process.argv.slice(2);
 const args = rawArgs.reduce((obj, e) => {
   if (e.indexOf("--") === -1 && e.indexOf("=") === -1) {
-    throw new Error("malformed arguments");
+    throw error("malformed arguments");
   }
 
   const [name, value] = e.split("=");
@@ -20,6 +26,13 @@ if (args["no-webpack-config"] === "1") {
   config = { entry: args["use-entry"] };
 } else {
   config = require(join(process.cwd(), "./webpack.config.js"));
+}
+
+if (Array.isArray(config)) {
+  throw error(
+    "multiple webpack configurations is not supported.\n"
+    + "Please make sure that your webpack configuration exports an Object."
+  );
 }
 
 const compiler = webpack(config);
