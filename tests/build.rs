@@ -72,6 +72,19 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
 }
 
 #[test]
+fn it_fails_with_multiple_webpack_configs() {
+    let fixture = "webpack_multiple_config";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+    "#};
+
+    build_fails_with(fixture, "multiple webpack configurations is not supported.");
+    cleanup(fixture);
+}
+
+#[test]
 fn it_builds_with_webpack_wast() {
     let fixture = "webpack_wast";
     create_temporary_copy(fixture);
