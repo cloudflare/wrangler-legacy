@@ -3,7 +3,7 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use log::info;
 
@@ -76,8 +76,8 @@ impl Bundle {
         Path::new(&self.wasm_path()).exists()
     }
 
-    pub fn has_webpack_config(&self) -> bool {
-        Path::new("webpack.config.js").exists()
+    pub fn has_webpack_config(&self, webpack_config_path: &PathBuf) -> bool {
+        webpack_config_path.exists()
     }
 
     pub fn get_wasm_binding(&self) -> String {
