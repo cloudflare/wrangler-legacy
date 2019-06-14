@@ -127,14 +127,16 @@ fn post(
 //so support other message types
 #[derive(Debug, Serialize)]
 enum FiddleMessage {
-    LiveReload { session: String, id: String },
+    LiveReload { old_id: String, new_id: String },
 }
 
-fn watch_for_changes(session: String) -> Result<(), failure::Error> {
+fn watch_for_changes(
+    original_id: String,
+) -> Result<(), failure::Error> {
     let (tx, rx) = channel();
 
     let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2))?;
-    //TODO supporting more complex setups is blocked by https://github.com/cloudflare/wrangler/issues/251
+
     watcher.watch("./index.js", RecursiveMode::Recursive)?;
 
     //start up the websocket server.
@@ -142,6 +144,8 @@ fn watch_for_changes(session: String) -> Result<(), failure::Error> {
     let server = WebSocket::new(|_out| |_msg| Ok(()))?.bind("localhost:8025")?;
     let broadcaster = server.broadcaster();
     thread::spawn(move || server.run());
+
+    let mut old_id = original_id;
 
     while let Ok(_e) = rx.recv() {
         println!("Detected a file change, building now...");
@@ -152,14 +156,17 @@ fn watch_for_changes(session: String) -> Result<(), failure::Error> {
             Err(_) => println!("Build failed"),
         }
 
-        if let Ok(id) = upload_and_get_id() {
+        if let Ok(new_id) = upload_and_get_id() {
             let msg = FiddleMessage::LiveReload {
-                session: session.clone(),
-                id,
+                old_id: old_id.clone(),
+                new_id: new_id.clone(),
             };
 
             match broadcaster.send(serde_json::to_string(&msg)?) {
-                Ok(_) => println!("Sent new id to preview!"),
+                Ok(_) => {
+                    println!("Sent new id to preview!");
+                    old_id = new_id;
+                }
                 Err(_e) => println!("communication with preview failed"),
             }
         }
