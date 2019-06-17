@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -19,7 +18,10 @@ pub struct Project {
     pub webpack_config: Option<String>,
     pub account_id: String,
     pub route: Option<String>,
-    pub routes: Option<HashMap<String, String>>,
+    #[serde(rename = "on")]
+    pub routes_on: Option<Vec<String>>,
+    #[serde(rename = "off")]
+    pub routes_off: Option<Vec<String>>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<String>>,
 }
@@ -75,7 +77,8 @@ impl Project {
             zone_id: Some(String::new()),
             account_id: String::new(),
             route: Some(String::new()),
-            routes: None,
+            routes_on: None,
+            routes_off: None,
             kv_namespaces: None,
             webpack_config: None,
         };
