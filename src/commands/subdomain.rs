@@ -63,6 +63,11 @@ fn subdomain_addr(account_id: &str) -> String {
 }
 
 pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
+    if project.account_id.is_empty() {
+        failure::bail!(
+            "⛔ You must provide an account_id in your wrangler.toml before creating a subdomain!"
+        )
+    }
     let msg = format!(
         "Registering your subdomain, {}.workers.dev, this could take up to a minute.",
         name
@@ -90,13 +95,23 @@ pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(),
         let res_json: Response = serde_json::from_str(&res_text)?;
         if already_has_subdomain(res_json.errors) {
             let sd = Subdomain::get(account_id, user)?;
-            msg = format!(
-                "{} This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev \n Status Code: {}\n Msg: {}",
-                emoji::WARN,
-                sd,
-                res.status(),
-                res_text,
-            );
+            if sd == name {
+                msg = format!(
+                    "{} You have previously registered {}.workers.dev \n Status Code: {}\n Msg: {}",
+                    emoji::WARN,
+                    sd,
+                    res.status(),
+                    res_text,
+                )
+            } else {
+                msg = format!(
+                    "{} This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev \n Status Code: {}\n Msg: {}",
+                    emoji::WARN,
+                    sd,
+                    res.status(),
+                    res_text,
+                )
+            }
         } else if res.status() == 409 {
             msg = format!(
                 "{} Your requested subdomain is not available. Please pick another one.\n Status Code: {}\n Msg: {}",
