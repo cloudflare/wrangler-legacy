@@ -109,11 +109,11 @@ pub fn create_metadata(bundle: &Bundle) -> String {
             r#"
                 {{
                     "body_part": "script",
-                    "binding": {{
+                    "bindings": [{{
                         "name": "{name}",
                         "type": "wasm_module",
                         "part": "{name}"
-                    }}
+                    }}]
                 }}
             "#,
             name = bundle.get_wasm_binding(),
@@ -225,11 +225,11 @@ mod tests {
             r#"
                 {
                     "body_part": "script",
-                    "binding": {
+                    "bindings": [{
                         "name": "wasmprogram",
                         "type": "wasm_module",
                         "part": "wasmprogram"
-                    }
+                    }]
                 }
             "#
         );
