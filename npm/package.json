@@ -22,6 +22,7 @@
   "homepage": "https://github.com/cloudflare/wrangler#readme",
   "dependencies": {
     "axios": "^0.18.0",
+    "env-paths": "^2.2.0",
     "rimraf": "^2.6.3",
     "tar": "^4.4.8"
   }

@@ -7,8 +7,11 @@ const rimraf = require("rimraf");
 const tar = require("tar");
 const { get } = axios;
 const { homedir } = require('os');
+const envPaths = require('env-paths');
 
-const cwd = join(homedir(), ".wrangler");
+let cwd;
+const legacyCwd = join(homedir(), ".wrangler");
+const newCwd = envPaths('wrangler', { suffix: '' }).config;
 
 function getLatestRelease() {
   return get("https://api.github.com/repos/cloudflare/wrangler/releases/latest")
@@ -56,8 +59,14 @@ function downloadAsset(asset) {
   });
 }
 
-if (!existsSync(cwd)) {
-  mkdirSync(cwd);
+if (existsSync(legacyCwd)) {
+  cwd = legacyCwd;
+} else {
+  cwd = newCwd;
+
+  if (!existsSync(cwd)) {
+    mkdirSync(cwd);
+  }
 }
 
 getLatestRelease()
