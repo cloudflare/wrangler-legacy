@@ -1,3 +1,4 @@
+use base64::decode;
 #[cfg(test)]
 use std::env;
 use std::fs;
@@ -40,9 +41,10 @@ impl Bundle {
         let mut script = create_prologue();
         script += &wranglerjs_output.script;
 
-        if let Some(wasm) = &wranglerjs_output.wasm {
+        if let Some(encoded_wasm) = &wranglerjs_output.wasm {
+            let wasm = decode(encoded_wasm).expect("could not decode Wasm in base64");
             let mut wasm_file = File::create(self.wasm_path())?;
-            wasm_file.write_all(wasm.as_bytes())?;
+            wasm_file.write_all(&wasm)?;
         }
 
         script_file.write_all(script.as_bytes())?;
@@ -109,11 +111,11 @@ pub fn create_metadata(bundle: &Bundle) -> String {
             r#"
                 {{
                     "body_part": "script",
-                    "binding": {{
+                    "bindings": [{{
                         "name": "{name}",
                         "type": "wasm_module",
                         "part": "{name}"
-                    }}
+                    }}]
                 }}
             "#,
             name = bundle.get_wasm_binding(),
@@ -225,11 +227,11 @@ mod tests {
             r#"
                 {
                     "body_part": "script",
-                    "binding": {
+                    "bindings": [{
                         "name": "wasmprogram",
                         "type": "wasm_module",
                         "part": "wasmprogram"
-                    }
+                    }]
                 }
             "#
         );

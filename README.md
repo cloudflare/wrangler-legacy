@@ -2,10 +2,10 @@
 
 ![Banner](/banner.png)
 
-[![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler)
+[![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 
-Get started with Cloudflare Workers and Wrangler by reading the [documentation](https://workers.cloudflare.com/).
+`wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare workers](https://workers.cloudflare.com/).
 
 ## Installation
 
@@ -24,8 +24,6 @@ cargo install wrangler
 ```
 
 ## 🎙️ Commands
-
-`wrangler` is a CLI tool designed for folks who are interested in using Cloudflare workers.
 
   - ### 👯 `generate` 
     Scaffold a project, including boilerplate for a Rust library and a Cloudflare Worker.

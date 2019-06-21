@@ -89,7 +89,7 @@ compiler.run((err, stats) => {
   }, "");
 
   if (hasWasmModule === true) {
-    bundle.wasm = Buffer.from(assets[wasmModuleAsset].source()).toString();
+    bundle.wasm = Buffer.from(assets[wasmModuleAsset].source()).toString("base64");
   }
 
   writeFileSync(args["output-file"], JSON.stringify(bundle));
