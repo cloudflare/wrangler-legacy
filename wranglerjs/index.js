@@ -65,7 +65,7 @@ fetchCompileWasmTemplatePlugin.fn = function(compilation) {
   plugin.apply(mainTemplate);
 };
 
-compiler.run((err, stats) => {
+const compilerCallback = (err, stats) => {
   if (err) {
     throw err;
   }
@@ -92,4 +92,10 @@ compiler.run((err, stats) => {
   }
 
   writeFileSync(args["output-file"], JSON.stringify(bundle));
-});
+};
+
+if (args["watch"] === "1") {
+  compiler.watch(fullConfig.watchOptions, compilerCallback);
+} else {
+  compiler.run(compilerCallback);
+}
