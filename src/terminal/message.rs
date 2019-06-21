@@ -2,7 +2,7 @@ use super::emoji;
 use console::Emoji;
 
 fn message(label: Emoji, msg: &str) {
-    println!("{}", format!("{0} {1} {0}", label, msg));
+    println!("{0} {1} {0}", label, msg);
 }
 
 pub fn info(msg: &str) {
