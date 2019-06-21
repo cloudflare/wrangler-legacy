@@ -202,7 +202,7 @@ fn main() -> Result<(), failure::Error> {
         let project = settings::project::Project::new()?;
 
         if matches.subcommand_matches("build").is_some() {
-            commands::build(&cache, &project.project_type)?;
+            commands::build(&cache, &project)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("preview") {
@@ -213,7 +213,7 @@ fn main() -> Result<(), failure::Error> {
                 None => None,
             };
 
-            commands::build(&cache, &project.project_type)?;
+            commands::build(&cache, &project)?;
             commands::preview(method, body)?;
         }
     } else if matches.subcommand_matches("whoami").is_some() {
@@ -238,7 +238,7 @@ fn main() -> Result<(), failure::Error> {
                 1 => true,
                 _ => false,
             };
-            commands::build(&cache, &project.project_type)?;
+            commands::build(&cache, &project)?;
             commands::publish(&user, &project, release)?;
         }
 

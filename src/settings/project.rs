@@ -16,6 +16,7 @@ pub struct Project {
     pub project_type: ProjectType,
     pub zone_id: Option<String>,
     pub private: Option<bool>,
+    pub webpack_config: Option<String>,
     pub account_id: String,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
@@ -76,6 +77,7 @@ impl Project {
             route: Some(String::new()),
             routes: None,
             kv_namespaces: None,
+            webpack_config: None,
         };
 
         let toml = toml::to_string(&project)?;

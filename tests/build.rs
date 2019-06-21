@@ -56,6 +56,21 @@ fn it_builds_with_webpack_single_js_use_package_main() {
 }
 
 #[test]
+fn it_builds_with_webpack_specify_configs() {
+    let fixture = "webpack_specify_config";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+        webpack_config = "webpack.worker.js"
+    "#};
+
+    build(fixture);
+    assert!(fixture_out_path(fixture).join("script.js").exists());
+    cleanup(fixture);
+}
+
+#[test]
 fn it_builds_with_webpack_single_js_missing_package_main() {
     let fixture = "webpack_single_js_missing_package_main";
     create_temporary_copy(fixture);
@@ -80,7 +95,21 @@ fn it_fails_with_multiple_webpack_configs() {
         type = "Webpack"
     "#};
 
-    build_fails_with(fixture, "multiple webpack configurations is not supported.");
+    build_fails_with(fixture, "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field");
+    cleanup(fixture);
+}
+
+#[test]
+fn it_fails_with_multiple_specify_webpack_configs() {
+    let fixture = "webpack_multiple_specify_config";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+        webpack_config = "webpack.worker.js"
+    "#};
+
+    build_fails_with(fixture, "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field");
     cleanup(fixture);
 }
 

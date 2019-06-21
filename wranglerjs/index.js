@@ -25,13 +25,13 @@ let config;
 if (args["no-webpack-config"] === "1") {
   config = { entry: args["use-entry"] };
 } else {
-  config = require(join(process.cwd(), "./webpack.config.js"));
+  config = require(join(process.cwd(), args["webpack-config"]));
 }
 
 if (Array.isArray(config)) {
   throw error(
-    "multiple webpack configurations is not supported.\n"
-    + "Please make sure that your webpack configuration exports an Object."
+    "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field\n" +
+      "Please make sure that your webpack configuration exports an Object."
   );
 }
 

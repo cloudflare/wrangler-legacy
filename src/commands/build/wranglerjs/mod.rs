@@ -34,6 +34,7 @@ fn random_chars(n: usize) -> String {
 pub fn run_build(
     wranglerjs_path: PathBuf,
     wasm_pack_path: PathBuf,
+    webpack_config_path: PathBuf,
     bundle: &Bundle,
 ) -> Result<WranglerjsOutput, failure::Error> {
     let node = which::which("node").unwrap();
@@ -55,7 +56,7 @@ pub fn run_build(
     // if {webpack.config.js} is not present, we infer the entry based on the
     // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
-    if !bundle.has_webpack_config() {
+    if !bundle.has_webpack_config(&webpack_config_path) {
         let package = Package::new("./")?;
         let current_dir = env::current_dir()?;
         let package_main = current_dir
@@ -65,6 +66,11 @@ pub fn run_build(
             .to_string();
         command.arg("--no-webpack-config=1");
         command.arg(format!("--use-entry={}", package_main));
+    } else {
+        command.arg(format!(
+            "--webpack-config={}",
+            &webpack_config_path.to_str().unwrap().to_string()
+        ));
     }
 
     info!("Running {:?}", command);

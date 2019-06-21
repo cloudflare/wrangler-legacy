@@ -142,6 +142,8 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `*example.com/*`
         - `http://example.com/hello`
         This key is optional if you are using a workers.dev subdomain and is only required for `publish --release`.
+    - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and
+        defaults to `webpack.config.js`
 
 ## ⚓ Installation
 
