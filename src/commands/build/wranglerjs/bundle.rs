@@ -254,7 +254,7 @@ mod tests {
     fn cleanup(name: String) {
         let current_dir = env::current_dir().unwrap();
         let path = Path::new(&current_dir).join(name);
-        println!("p: {:?}", path);
+        message::info(format!("p: {:?}", path));
         fs::remove_dir_all(path).unwrap();
     }
 }

@@ -7,12 +7,12 @@ use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::emoji;
+use crate::terminal::message;
 
 pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
     match project_type {
         ProjectType::JavaScript => {
-            println!("⚠️ JavaScript project found. Skipping unnecessary build!")
+            message::info("JavaScript project found. Skipping unnecessary build!")
         }
         ProjectType::Rust => {
             let tool_name = "wasm-pack";
@@ -41,7 +41,7 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
                 .expect("could not run wranglerjs");
 
             if wranglerjs_output.has_errors() {
-                println!("{}", wranglerjs_output.get_errors());
+                message::user_error(&format!("{}", wranglerjs_output.get_errors()));
                 failure::bail!("Webpack returned an error");
             }
 
@@ -49,15 +49,14 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
                 .write(&wranglerjs_output)
                 .expect("could not write bundle to disk");
 
-            print!(
-                "{} Built successfully, script size is {}",
-                emoji::SPARKLES,
+            let mut msg = format!(
+                "Built successfully, script size is {}",
                 wranglerjs_output.script_size()
             );
             if bundle.has_wasm() {
-                print!(" and Wasm size is {}", wranglerjs_output.wasm_size());
+                msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
             }
-            println!(".");
+            message::success(&msg);
         }
     }
 
@@ -65,7 +64,7 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
 }
 
 fn command(args: &[&str], binary_path: PathBuf) -> Command {
-    println!("{} Compiling your project to WebAssembly...", emoji::SWIRL);
+    message::working("Compiling your project to WebAssembly...");
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
