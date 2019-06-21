@@ -23,7 +23,6 @@ pub static INFO: Emoji = Emoji("💁‍ ", "");
 pub static MICROSCOPE: Emoji = Emoji("🔬 ", "");
 pub static SHEEP: Emoji = Emoji("🐑 ", "");
 pub static SLEUTH: Emoji = Emoji("🕵️‍♂️", "");
-pub static SNAIL: Emoji = Emoji("🐌 ", "");
 pub static SPARKLES: Emoji = Emoji("✨  ", "");
 pub static SWIRL: Emoji = Emoji("🌀 ", "");
 pub static UP: Emoji = Emoji("🆙 ", "");

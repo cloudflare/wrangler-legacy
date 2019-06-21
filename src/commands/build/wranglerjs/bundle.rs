@@ -9,6 +9,7 @@ use std::path::Path;
 use log::info;
 
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
+use crate::terminal::message;
 
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
@@ -254,7 +255,7 @@ mod tests {
     fn cleanup(name: String) {
         let current_dir = env::current_dir().unwrap();
         let path = Path::new(&current_dir).join(name);
-        message::info(format!("p: {:?}", path));
+        message::info(&format!("p: {:?}", path));
         fs::remove_dir_all(path).unwrap();
     }
 }
