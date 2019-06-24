@@ -22,6 +22,36 @@ use crate::terminal::message;
 
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
+
+    let missing_fields = match (project.account_id.is_empty(), project.name.is_empty()) {
+        (true, true) => Some("an account_id and name"),
+        (true, false) => Some("an account_id"),
+        (false, true) => Some("a name"),
+        (false, false) => None,
+    };
+
+    //perform extra checks for route and zone_id for a publish --release
+    let missing_fields_release = match (release, &project.zone_id, &project.route) {
+        (true, None, None) => Some("a zone_id and route"),
+        (true, None, Some(_)) => Some("a zone_id"),
+        (true, Some(_), None) => Some("a route"),
+        (_, _, _) => None,
+    };
+
+    if let Some(mf) = missing_fields {
+        failure::bail!(
+            "Check your wrangler.toml, it is missing {} which is required to publish!",
+            mf
+        )
+    }
+
+    if let Some(mf) = missing_fields_release {
+        failure::bail!(
+            "Check your wrangler.toml, it is missing {} which is required to publish a release!",
+            mf
+        )
+    }
+
     create_kv_namespaces(user, project)?;
     publish_script(&user, &project, release)?;
     if release {
@@ -86,9 +116,6 @@ fn publish_script(
     project: &Project,
     release: bool,
 ) -> Result<(), failure::Error> {
-    if project.account_id.is_empty() {
-        failure::bail!("You must provide an account_id in your wrangler.toml before you publish!")
-    }
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         project.account_id, project.name,
