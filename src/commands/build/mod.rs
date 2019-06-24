@@ -1,6 +1,6 @@
 pub mod wranglerjs;
 
-use crate::settings::project::ProjectType;
+use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
 use binary_install::Cache;
 use std::env;
@@ -9,7 +9,14 @@ use std::process::Command;
 
 use crate::terminal::message;
 
-pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
+pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
+    let project_type = &project.project_type;
+    let webpack_config_path = PathBuf::from(
+        &project
+            .webpack_config
+            .clone()
+            .unwrap_or_else(|| "webpack.config.js".to_string()),
+    );
     match project_type {
         ProjectType::JavaScript => {
             message::info("JavaScript project found. Skipping unnecessary build!")
@@ -37,8 +44,13 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             wranglerjs::run_npm_install(current_dir).expect("could not run `npm install`");
 
             let bundle = wranglerjs::Bundle::new();
-            let wranglerjs_output = wranglerjs::run_build(wranglerjs_path, wasm_pack_path, &bundle)
-                .expect("could not run wranglerjs");
+            let wranglerjs_output = wranglerjs::run_build(
+                wranglerjs_path,
+                wasm_pack_path,
+                webpack_config_path,
+                &bundle,
+            )
+            .expect("could not run wranglerjs");
 
             if wranglerjs_output.has_errors() {
                 message::user_error(&format!("{}", wranglerjs_output.get_errors()));
