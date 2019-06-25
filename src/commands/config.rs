@@ -1,3 +1,4 @@
+use crate::terminal::message;
 use std::fs;
 use std::path::Path;
 
@@ -25,10 +26,10 @@ pub fn global_config(email: &str, api_key: &str) -> Result<(), failure::Error> {
     let config_file = config_dir.join("default.toml");
     fs::write(&config_file, &toml)?;
 
-    println!(
-        "{1} Successfully configured. You can find your configuration file at: {0}. {1}",
-        &config_file.to_string_lossy(),
-        emoji::SPARKLES,
-    );
+    message::success(&format!(
+        "Successfully configured. You can find your configuration file at: {}",
+        &config_file.to_string_lossy()
+    ));
+
     Ok(())
 }

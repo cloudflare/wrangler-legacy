@@ -10,6 +10,7 @@ use uuid::Uuid;
 
 use crate::http;
 use crate::settings::project::{get_project_config, ProjectType};
+use crate::terminal::message;
 
 #[derive(Debug, Deserialize)]
 struct Preview {
@@ -61,7 +62,8 @@ pub fn preview(
         HTTPMethod::Get => get(preview_address, cookie, client)?,
         HTTPMethod::Post => post(preview_address, cookie, client, body)?,
     };
-    println!("👷‍♀️ Your worker responded with: {}", worker_res);
+    let msg = format!("Your worker responded with: {}", worker_res);
+    message::preview(&msg);
 
     open(preview_host, https, script_id)?;
 
@@ -101,7 +103,8 @@ fn get(
     client: reqwest::Client,
 ) -> Result<String, failure::Error> {
     let res = client.get(preview_address).header("Cookie", cookie).send();
-    println!("👷‍♀️ GET {}", preview_address);
+    let msg = format!("GET {}", preview_address);
+    message::preview(&msg);
     Ok(res?.text()?)
 }
 
@@ -119,6 +122,7 @@ fn post(
             .send(),
         None => client.post(preview_address).header("Cookie", cookie).send(),
     };
-    println!("👷‍♀️ POST {}", preview_address,);
+    let msg = format!("POST {}", preview_address);
+    message::preview(&msg);
     Ok(res?.text()?)
 }

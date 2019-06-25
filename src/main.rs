@@ -11,11 +11,13 @@ use log::info;
 
 mod cache;
 mod commands;
-mod emoji;
 mod http;
 mod install;
 mod installer;
 mod settings;
+mod terminal;
+
+use terminal::emoji;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();

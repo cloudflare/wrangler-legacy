@@ -4,7 +4,7 @@ use binary_install::Cache;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::emoji;
+use crate::terminal::{emoji, message};
 
 pub fn generate(
     name: &str,
@@ -27,12 +27,14 @@ pub fn generate(
 }
 
 fn command(name: &str, binary_path: PathBuf, args: &[&str], project_type: &ProjectType) -> Command {
-    println!(
+    let msg = format!(
         "{} Generating a new {} worker project with name '{}'...",
         emoji::SHEEP,
         project_type,
         name
     );
+
+    message::working(&msg);
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");

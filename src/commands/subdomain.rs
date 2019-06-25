@@ -1,7 +1,7 @@
-use crate::emoji;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
+use crate::terminal::{emoji, message};
 
 use serde::{Deserialize, Serialize};
 
@@ -24,7 +24,8 @@ impl Subdomain {
 
         if !res.status().is_success() {
             failure::bail!(
-                "⛔ There was an error fetching your subdomain.\n Status Code: {}\n Msg: {}",
+                "{} There was an error fetching your subdomain.\n Status Code: {}\n Msg: {}",
+                emoji::WARN,
                 res.status(),
                 res.text()?,
             )
@@ -62,11 +63,11 @@ fn subdomain_addr(account_id: &str) -> String {
 }
 
 pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
-    println!(
-        "{} Registering your subdomain, {}.workers.dev, this could take up to a minute.",
-        emoji::SNAIL,
+    let msg = format!(
+        "Registering your subdomain, {}.workers.dev, this could take up to a minute.",
         name
     );
+    message::working(&msg);
     let account_id = &project.account_id;
     let addr = subdomain_addr(account_id);
     let sd = Subdomain {
@@ -90,27 +91,31 @@ pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(),
         if already_has_subdomain(res_json.errors) {
             let sd = Subdomain::get(account_id, user)?;
             msg = format!(
-                "⛔ This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev \n Status Code: {}\n Msg: {}",
+                "{} This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev \n Status Code: {}\n Msg: {}",
+                emoji::WARN,
                 sd,
                 res.status(),
                 res_text,
             );
         } else if res.status() == 409 {
             msg = format!(
-                "⛔ Your requested subdomain is not available. Please pick another one.\n Status Code: {}\n Msg: {}",
+                "{} Your requested subdomain is not available. Please pick another one.\n Status Code: {}\n Msg: {}",
+                emoji::WARN,
                 res.status(),
                 res_text
             );
         } else {
             msg = format!(
-                "⛔ There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
+                "{} There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
+                emoji::WARN,
                 res.status(),
                 res_text
             );
         }
         failure::bail!(msg)
     }
-    println!("{} Success! You've registered {}.", emoji::SPARKLES, name);
+    let msg = format!("Success! You've registered {}.", name);
+    message::success(&msg);
     Ok(())
 }
 
