@@ -33,7 +33,6 @@ pub fn run_build(cache: &Cache, project: &Project) -> Result<(), failure::Error>
     info!("Running {:?}", command);
 
     let status = command.status()?;
-    info!("it ran");
     let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
     fs::remove_file(temp_file)?;
 
