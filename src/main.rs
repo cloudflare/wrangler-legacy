@@ -3,13 +3,11 @@
 use std::env;
 use std::str::FromStr;
 
-use cache::get_wrangler_cache;
 use clap::{App, AppSettings, Arg, SubCommand};
 use commands::HTTPMethod;
 
 use log::info;
 
-mod cache;
 mod commands;
 mod http;
 mod install;
@@ -21,8 +19,6 @@ use terminal::emoji;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
-    let cache = get_wrangler_cache()?;
-
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
         // self-installation, otherwise just continue as usual.
@@ -186,7 +182,7 @@ fn main() -> Result<(), failure::Error> {
                 "Generate command called with template {}, and name {}",
                 template, name
             );
-            commands::generate(name, template, project_type, &cache)?;
+            commands::generate(name, template, project_type)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("init") {
@@ -204,7 +200,7 @@ fn main() -> Result<(), failure::Error> {
         let project = settings::project::Project::new()?;
 
         if matches.subcommand_matches("build").is_some() {
-            commands::build(&cache, &project)?;
+            commands::build(&project)?;
         }
 
         if let Some(matches) = matches.subcommand_matches("preview") {
@@ -215,7 +211,7 @@ fn main() -> Result<(), failure::Error> {
                 None => None,
             };
 
-            commands::build(&cache, &project)?;
+            commands::build(&project)?;
             commands::preview(method, body)?;
         }
     } else if matches.subcommand_matches("whoami").is_some() {
@@ -240,7 +236,7 @@ fn main() -> Result<(), failure::Error> {
                 1 => true,
                 _ => false,
             };
-            commands::build(&cache, &project)?;
+            commands::build(&project)?;
             commands::publish(&user, &project, release)?;
         }
 

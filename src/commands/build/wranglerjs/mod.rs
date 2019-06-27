@@ -3,7 +3,6 @@ pub mod output;
 
 use crate::commands::publish::package::Package;
 use crate::install;
-use binary_install::Cache;
 pub use bundle::Bundle;
 use fs2::FileExt;
 use log::info;
@@ -153,7 +152,7 @@ fn get_source_dir() -> PathBuf {
 }
 
 // Install {wranglerjs} from our GitHub releases
-pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
+pub fn install() -> Result<PathBuf, failure::Error> {
     let wranglerjs_path = if install::target::DEBUG {
         let source_path = get_source_dir();
         let wranglerjs_path = source_path.join("wranglerjs");
@@ -162,7 +161,7 @@ pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
     } else {
         let tool_name = "wranglerjs";
         let version = env!("CARGO_PKG_VERSION");
-        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache, version)?;
+        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", version)?;
         info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
         wranglerjs_path.path()
     };

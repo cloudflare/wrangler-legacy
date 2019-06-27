@@ -2,14 +2,13 @@ pub mod wranglerjs;
 
 use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
-use binary_install::Cache;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
 use crate::terminal::message;
 
-pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
+pub fn build(project: &Project) -> Result<(), failure::Error> {
     let project_type = &project.project_type;
     let webpack_config_path = PathBuf::from(
         &project
@@ -23,7 +22,7 @@ pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
         }
         ProjectType::Rust => {
             let tool_name = "wasm-pack";
-            let binary_path = install::install(tool_name, "rustwasm", cache)?.binary(tool_name)?;
+            let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
             let command = command(&args, binary_path);
@@ -37,8 +36,8 @@ pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
             }
 
             let wasm_pack_path =
-                install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
-            let wranglerjs_path = wranglerjs::install(cache).expect("could not install wranglerjs");
+                install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
+            let wranglerjs_path = wranglerjs::install().expect("could not install wranglerjs");
 
             let current_dir = env::current_dir()?;
             wranglerjs::run_npm_install(current_dir).expect("could not run `npm install`");

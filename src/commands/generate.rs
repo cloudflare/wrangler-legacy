@@ -1,6 +1,5 @@
 use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
-use binary_install::Cache;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -10,10 +9,9 @@ pub fn generate(
     name: &str,
     template: &str,
     pt: Option<ProjectType>,
-    cache: &Cache,
 ) -> Result<(), failure::Error> {
     let tool_name = "cargo-generate";
-    let binary_path = install::install(tool_name, "ashleygwilliams", cache)?.binary(tool_name)?;
+    let binary_path = install::install(tool_name, "ashleygwilliams")?.binary(tool_name)?;
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
 
