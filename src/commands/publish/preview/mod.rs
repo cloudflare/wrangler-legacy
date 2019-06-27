@@ -8,8 +8,8 @@ use crate::commands::publish;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::http;
 use crate::commands;
+use crate::http;
 use crate::settings::project::{Project, ProjectType};
 use crate::terminal::message;
 

@@ -24,7 +24,7 @@ use crate::terminal::message;
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
 
-    validate_project(project)?;
+    validate_project(project, release)?;
     commands::build(&project)?;
     create_kv_namespaces(user, &project)?;
     publish_script(&user, &project, release)?;
@@ -261,7 +261,7 @@ fn build_webpack_form() -> Result<Form, failure::Error> {
     }
 }
 
-fn validate_project(project: &Project) -> Result<(), failure::Error> {
+fn validate_project(project: &Project, release: bool) -> Result<(), failure::Error> {
     let mut missing_fields = Vec::new();
 
     if project.account_id.is_empty() {
@@ -269,7 +269,7 @@ fn validate_project(project: &Project) -> Result<(), failure::Error> {
     };
     if project.name.is_empty() {
         missing_fields.push("name")
-    }
+    };
 
     let destination = if release {
         //check required fields for release
@@ -292,7 +292,7 @@ fn validate_project(project: &Project) -> Result<(), failure::Error> {
         _ => ("", ""),
     };
 
-    if missing_fields.len() > 0 {
+    if !missing_fields.is_empty() {
         failure::bail!(
             "Your wrangler.toml is missing the {} {:?} which {} to publish to {}!",
             field_pluralization,
@@ -300,7 +300,7 @@ fn validate_project(project: &Project) -> Result<(), failure::Error> {
             is_are,
             destination
         );
-    }
+    };
 
     Ok(())
 }

@@ -35,8 +35,7 @@ pub fn build(project: &Project) -> Result<(), failure::Error> {
                 wranglerjs::env_dep_installed(tool)?;
             }
 
-            let wasm_pack_path =
-                install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
+            let wasm_pack_path = install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
             let wranglerjs_path = wranglerjs::install().expect("could not install wranglerjs");
 
             let current_dir = env::current_dir()?;
