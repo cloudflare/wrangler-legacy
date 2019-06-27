@@ -273,10 +273,15 @@ fn validate_project(project: &Project, release: bool) -> Result<(), failure::Err
 
     let destination = if release {
         //check required fields for release
-        if project.zone_id.is_none() {
+        if project
+            .zone_id
+            .as_ref()
+            .unwrap_or(&"".to_string())
+            .is_empty()
+        {
             missing_fields.push("zone_id")
         };
-        if project.route.is_none() {
+        if project.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
             missing_fields.push("route")
         };
         //zoned deploy destination
