@@ -24,46 +24,7 @@ use crate::terminal::message;
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
 
-    let mut missing_fields = Vec::new();
-
-    if project.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
-    if project.name.is_empty() {
-        missing_fields.push("name")
-    }
-
-    let destination = if release {
-        //check required fields for release
-        if project.zone_id.is_none() {
-            missing_fields.push("zone_id")
-        };
-        if project.route.is_none() {
-            missing_fields.push("route")
-        };
-        //zoned deploy destination
-        "a route"
-    } else {
-        //zoneless deploy destination
-        "your subdomain"
-    };
-
-    let (field_pluralization, is_are) = match missing_fields.len() {
-        n if n >= 2 => ("fields", "are"),
-        1 => ("field", "is"),
-        _ => ("", ""),
-    };
-
-    if missing_fields.len() > 0 {
-        failure::bail!(
-            "Your wrangler.toml is missing the {} {:?} which {} to publish to {}!",
-            field_pluralization,
-            missing_fields,
-            is_are,
-            destination
-        );
-    }
-    
+    validate_project(project)?;
     commands::build(&project)?;
     create_kv_namespaces(user, &project)?;
     publish_script(&user, &project, release)?;
@@ -298,4 +259,48 @@ fn build_webpack_form() -> Result<Form, failure::Error> {
     } else {
         Ok(form)
     }
+}
+
+fn validate_project(project: &Project) -> Result<(), failure::Error> {
+    let mut missing_fields = Vec::new();
+
+    if project.account_id.is_empty() {
+        missing_fields.push("account_id")
+    };
+    if project.name.is_empty() {
+        missing_fields.push("name")
+    }
+
+    let destination = if release {
+        //check required fields for release
+        if project.zone_id.is_none() {
+            missing_fields.push("zone_id")
+        };
+        if project.route.is_none() {
+            missing_fields.push("route")
+        };
+        //zoned deploy destination
+        "a route"
+    } else {
+        //zoneless deploy destination
+        "your subdomain"
+    };
+
+    let (field_pluralization, is_are) = match missing_fields.len() {
+        n if n >= 2 => ("fields", "are"),
+        1 => ("field", "is"),
+        _ => ("", ""),
+    };
+
+    if missing_fields.len() > 0 {
+        failure::bail!(
+            "Your wrangler.toml is missing the {} {:?} which {} to publish to {}!",
+            field_pluralization,
+            missing_fields,
+            is_are,
+            destination
+        );
+    }
+
+    Ok(())
 }
