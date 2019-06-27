@@ -38,6 +38,7 @@ fn it_builds_with_webpack_single_js() {
 
     build(fixture);
     assert!(fixture_out_path(fixture).join("script.js").exists());
+    assert!(fixture_out_path(fixture).join("metadata.json").exists());
     cleanup(fixture);
 }
 
@@ -52,6 +53,7 @@ fn it_builds_with_webpack_single_js_use_package_main() {
 
     build(fixture);
     assert!(fixture_out_path(fixture).join("script.js").exists());
+    assert!(fixture_out_path(fixture).join("metadata.json").exists());
     cleanup(fixture);
 }
 
@@ -124,7 +126,12 @@ fn it_builds_with_webpack_wast() {
 
     build(fixture);
     assert!(fixture_out_path(fixture).join("script.js").exists());
+    assert!(fixture_out_path(fixture).join("metadata.json").exists());
     assert!(fixture_out_path(fixture).join("module.wasm").exists());
+
+    let metadata = fs::read_to_string(fixture_out_path(fixture).join("metadata.json"))
+        .expect("could not read metadata");
+    assert!(metadata.contains("wasm_module"));
 
     cleanup(fixture);
 }

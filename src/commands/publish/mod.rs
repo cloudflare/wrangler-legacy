@@ -7,15 +7,13 @@ pub mod package;
 use package::Package;
 
 use log::info;
-use std::collections::HashMap;
-use std::fs;
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::Path;
 
 use reqwest::multipart::Form;
+use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
 
-use crate::commands::build::wranglerjs::{bundle, Bundle};
+use crate::commands::build::wranglerjs::Bundle;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -121,15 +119,6 @@ fn publish_script(
         }
         ProjectType::Webpack => {
             info!("Webpack project detected. Publishing...");
-
-            // FIXME(sven): shouldn't new
-            let bundle = Bundle::new();
-
-            let metadata = bundle::create_metadata(&bundle);
-            info!("generate metadata {:?}", metadata);
-            let mut metadata_file = File::create(bundle.metadata_path())?;
-            metadata_file.write_all(metadata.as_bytes())?;
-
             client
                 .put(&worker_addr)
                 .header("X-Auth-Key", &*user.api_key)
