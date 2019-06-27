@@ -251,5 +251,6 @@ fn main() -> Result<(), failure::Error> {
             commands::subdomain(name, &user, &project)?;
         }
     }
+
     Ok(())
 }
