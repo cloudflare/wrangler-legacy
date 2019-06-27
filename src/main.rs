@@ -211,8 +211,7 @@ fn main() -> Result<(), failure::Error> {
                 None => None,
             };
 
-            commands::build(&project)?;
-            commands::preview(method, body)?;
+            commands::preview(&project, method, body)?;
         }
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
@@ -236,7 +235,6 @@ fn main() -> Result<(), failure::Error> {
                 1 => true,
                 _ => false,
             };
-            commands::build(&project)?;
             commands::publish(&user, &project, release)?;
         }
 

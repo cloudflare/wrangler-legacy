@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use crate::commands;
 use crate::commands::build::wranglerjs::Bundle;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
@@ -62,8 +63,9 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
             destination
         );
     }
-
-    create_kv_namespaces(user, project)?;
+    
+    commands::build(&project)?;
+    create_kv_namespaces(user, &project)?;
     publish_script(&user, &project, release)?;
     if release {
         info!("release mode detected, making a route...");

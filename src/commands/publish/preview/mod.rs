@@ -9,7 +9,8 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::http;
-use crate::settings::project::{get_project_config, ProjectType};
+use crate::commands;
+use crate::settings::project::{Project, ProjectType};
 use crate::terminal::message;
 
 #[derive(Debug, Deserialize)]
@@ -18,6 +19,7 @@ struct Preview {
 }
 
 pub fn preview(
+    project: &Project,
     method: Result<HTTPMethod, failure::Error>,
     body: Option<String>,
 ) -> Result<(), failure::Error> {
@@ -25,7 +27,9 @@ pub fn preview(
 
     let client = http::client();
 
-    let project_type = get_project_config()?.project_type;
+    let project_type = &project.project_type;
+
+    commands::build(&project)?;
 
     let res = match project_type {
         ProjectType::Rust => client
