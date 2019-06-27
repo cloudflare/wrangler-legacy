@@ -294,7 +294,7 @@ fn validate_project(project: &Project, release: bool) -> Result<(), failure::Err
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "Your wrangler.toml is missing the {} {:?} which {} to publish to {}!",
+            "Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
             field_pluralization,
             missing_fields,
             is_are,
