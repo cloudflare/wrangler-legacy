@@ -84,7 +84,7 @@ fn setup_build(
     let wasm_pack_path = install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
-    //create a temp file to communicate with wranglerjs
+    // create a temp file for IPC with the wranglerjs process
     let mut temp_file = env::temp_dir();
     temp_file.push(format!(".wranglerjs_output{}", random_chars(5)));
     File::create(temp_file.clone())?;
