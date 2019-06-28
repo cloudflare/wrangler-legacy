@@ -151,11 +151,9 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
 
 ### Using `npm`:
 
-1. If you don't already have npm on your machine, install it. On OSX with [Homebrew](https://brew.sh/) that looks like:
+1. If you don't already have npm on your machine, install it using npm's recommended method: [a version manager](https://www.npmjs.com/get-npm).
+    If you have already installed npm with `brew` or `apt`, it is possible you will run into an `EACCES` error (related to how many system packagers install node) while installing wrangler. You can either uninstall that version of node and use the npm recommended install method, or use `cargo` instead.
 
-    ```
-    $ brew install nodejs
-    ```
     
 1. Install Wrangler by running:
 
