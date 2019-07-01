@@ -153,7 +153,7 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
 
 1. If you don't already have npm on your machine, install it using [npm's recommended method](https://www.npmjs.com/get-npm).
 
-    If you have already installed npm with `brew` or `apt`, it is possible you will run into an `EACCES` error (related to how many system packagers install node) while installing wrangler. You can either uninstall that version of node and use the npm recommended install method, or use `cargo` instead.
+    If you have already installed npm with a package manager, it is possible you will run into an `EACCES` error (related to how many system packagers install npm) while installing wrangler. You can either uninstall npm and reinstall using the npm recommended install method (a version manager), or one of our other install methods.
 
 1. Install Wrangler by running:
 
@@ -186,7 +186,13 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     ```
     $ brew install openssl@1.1
     ```
-    
+
+### Manual Install:
+
+1. Download the binary tarball for your platform from our [releases page](https://github.com/cloudflare/wrangler/releases). You don't need to download wranglerjs, wrangler will install that for you.
+
+2. Unpack the tarball and place the binary `wrangler` somewhere on your `PATH`, preferably `/usr/local/bin` for linux/macOS or `Program Files` for windows.
+
 
 ## ⚡ Quick Start
 
