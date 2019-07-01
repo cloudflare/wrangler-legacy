@@ -50,6 +50,9 @@ impl Bundle {
 
         script_file.write_all(script.as_bytes())?;
 
+        let mut metadata_file = File::create(self.metadata_path())?;
+        metadata_file.write_all(create_metadata(self).as_bytes())?;
+
         // cleanup {Webpack} dist, if specified.
         if let Some(dist_to_clean) = &wranglerjs_output.dist_to_clean {
             info!("Remove {}", dist_to_clean);
@@ -106,7 +109,8 @@ pub fn create_prologue() -> String {
 }
 
 // This metadata describe the bindings on the Worker.
-pub fn create_metadata(bundle: &Bundle) -> String {
+fn create_metadata(bundle: &Bundle) -> String {
+    info!("create metadata; wasm={}", bundle.has_wasm());
     if bundle.has_wasm() {
         format!(
             r#"
@@ -148,8 +152,8 @@ mod tests {
     }
 
     #[test]
-    fn it_creates_the_bundle_metadata() {
-        let out = create_temp_dir("it_creates_the_bundle_metadata");
+    fn it_writes_the_bundle_metadata() {
+        let out = create_temp_dir("it_writes_the_bundle_metadata");
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
             script: "".to_string(),
@@ -159,10 +163,12 @@ mod tests {
         let bundle = Bundle::new_at(out.clone());
 
         bundle.write(&wranglerjs_output).unwrap();
-        assert_eq!(Path::new(&bundle.metadata_path()).exists(), false);
+        assert!(Path::new(&bundle.metadata_path()).exists());
+        let contents =
+            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
 
         assert_eq!(
-            create_metadata(&bundle),
+            contents,
             r#"
             {
                 "body_part": "script"
@@ -210,8 +216,8 @@ mod tests {
     }
 
     #[test]
-    fn it_creates_the_bundle_wasm_metadata() {
-        let out = create_temp_dir("it_creates_the_bundle_wasm_metadata");
+    fn it_writes_the_bundle_wasm_metadata() {
+        let out = create_temp_dir("it_writes_the_bundle_wasm_metadata");
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
             script: "".to_string(),
@@ -221,10 +227,12 @@ mod tests {
         let bundle = Bundle::new_at(out.clone());
 
         bundle.write(&wranglerjs_output).unwrap();
-        assert_eq!(Path::new(&bundle.metadata_path()).exists(), false);
+        assert!(Path::new(&bundle.metadata_path()).exists());
+        let contents =
+            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
 
         assert_eq!(
-            create_metadata(&bundle),
+            contents,
             r#"
                 {
                     "body_part": "script",
