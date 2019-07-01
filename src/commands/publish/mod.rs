@@ -45,7 +45,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
         project.account_id,
     );
 
-    let client = http::client();
+    let client = http::auth_client(user);
 
     if let Some(namespaces) = &project.kv_namespaces {
         for namespace in namespaces {
@@ -54,12 +54,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
             let mut map = HashMap::new();
             map.insert("title", namespace);
 
-            let request = client
-                .post(&kv_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
-                .json(&map)
-                .send();
+            let request = client.post(&kv_addr).json(&map).send();
 
             if let Err(error) = request {
                 // A 400 is returned if the account already owns a namespace with this title.
@@ -94,7 +89,7 @@ fn publish_script(
         project.account_id, project.name,
     );
 
-    let client = http::client();
+    let client = http::auth_client(user);
 
     let project_type = &project.project_type;
     let mut res = match project_type {
@@ -102,8 +97,6 @@ fn publish_script(
             info!("Rust project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
                 .multipart(build_multipart_script()?)
                 .send()?
         }
@@ -111,8 +104,6 @@ fn publish_script(
             info!("JavaScript project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
                 .header("Content-Type", "application/javascript")
                 .body(build_js_script()?)
                 .send()?
@@ -121,8 +112,6 @@ fn publish_script(
             info!("Webpack project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
                 .multipart(build_webpack_form()?)
                 .send()?
         }
@@ -162,13 +151,11 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
         project.account_id, project.name,
     );
 
-    let client = http::client();
+    let client = http::auth_client(user);
 
     info!("Making public on subdomain...");
     let mut res = client
         .post(&sd_worker_addr)
-        .header("X-Auth-Key", &*user.api_key)
-        .header("X-Auth-Email", &*user.email)
         .header("Content-type", "application/json")
         .body(build_subdomain_request())
         .send()?;
