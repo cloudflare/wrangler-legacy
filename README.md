@@ -109,8 +109,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
     To set up `wrangler` to work with your Cloudflare user, use the following commands:
 
-    - 🔧 `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, 
-       you can use the flags `--email` and `--api-key` to the command to skip the interactive part.
+    - 🔧 `config`: a command that prompts you to enter your `email` and `api` key.
     - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is appropriately set up.
        When successful, this command will print out your user information, including the type of plan you
        are currently on.
@@ -132,7 +131,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
         - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
         - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
-            WebAssembly. Rust files will be built with `wasm-pack`. `C/C++` files will be build with `emscripten`.
+            WebAssembly. Rust files will be built with `wasm-pack`.
             This project type uses webpack and webpack plugins in the background to build your worker.
     - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you
         are using a workers.dev subdomain and is only reuqired for `publish --release`.
@@ -193,6 +192,20 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
 
 2. Unpack the tarball and place the binary `wrangler` somewhere on your `PATH`, preferably `/usr/local/bin` for linux/macOS or `Program Files` for windows.
 
+
+## Updating `wrangler`:
+
+    To get the latest version of Wrangler, using Cargo, run:
+
+    ```sh
+    cargo install wrangler --force
+    ```
+
+   To get the latest version of Wrangler, using NPM, run:
+
+   ```sh
+   npm install @cloudflare/wrangler
+   ```
 
 ## ⚡ Quick Start
 
