@@ -1,5 +1,11 @@
 # Changelog
 
+## 🔎 1.1.0
+
+Wrangler 1.1.0 includes a number of improvements to documentation and project stability, including: 
+
+WIP WIP WIP WIP 👷‍♀️
+
 ## 👷‍♀️ 1.0.0
 
 Wrangler 1.0.0 has been released! The first major version of Wrangler makes the tool the preferred development and deployment tool for JavaScript and Rust projects to the Cloudflare Workers platform.
