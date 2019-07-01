@@ -2,14 +2,13 @@ pub mod wranglerjs;
 
 use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
-use binary_install::Cache;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
 use crate::terminal::message;
 
-pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
+pub fn build(project: &Project) -> Result<(), failure::Error> {
     let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
@@ -17,7 +16,7 @@ pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
         }
         ProjectType::Rust => {
             let tool_name = "wasm-pack";
-            let binary_path = install::install(tool_name, "rustwasm", cache)?.binary(tool_name)?;
+            let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
             let command = command(&args, binary_path);
@@ -26,7 +25,7 @@ pub fn build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
             commands::run(command, &command_name)?;
         }
         ProjectType::Webpack => {
-            wranglerjs::run_build(cache, project)?;
+            wranglerjs::run_build(project)?;
         }
     }
 
