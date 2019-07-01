@@ -8,7 +8,10 @@ use crate::commands::publish;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::settings::project::{get_project_config, ProjectType};
+use crate::commands;
+use crate::http;
+use crate::settings::project::{Project, ProjectType};
+use crate::terminal::message;
 
 #[derive(Debug, Deserialize)]
 struct Preview {
@@ -16,14 +19,17 @@ struct Preview {
 }
 
 pub fn preview(
+    project: &Project,
     method: Result<HTTPMethod, failure::Error>,
     body: Option<String>,
 ) -> Result<(), failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
 
-    let client = reqwest::Client::new();
+    let client = http::client();
 
-    let project_type = get_project_config()?.project_type;
+    let project_type = &project.project_type;
+
+    commands::build(&project)?;
 
     let res = match project_type {
         ProjectType::Rust => client
@@ -60,7 +66,8 @@ pub fn preview(
         HTTPMethod::Get => get(preview_address, cookie, client)?,
         HTTPMethod::Post => post(preview_address, cookie, client, body)?,
     };
-    println!("👷‍♀️ Your worker responded with: {}", worker_res);
+    let msg = format!("Your worker responded with: {}", worker_res);
+    message::preview(&msg);
 
     open(preview_host, https, script_id)?;
 
@@ -100,7 +107,8 @@ fn get(
     client: reqwest::Client,
 ) -> Result<String, failure::Error> {
     let res = client.get(preview_address).header("Cookie", cookie).send();
-    println!("👷‍♀️ GET {}", preview_address);
+    let msg = format!("GET {}", preview_address);
+    message::preview(&msg);
     Ok(res?.text()?)
 }
 
@@ -118,6 +126,7 @@ fn post(
             .send(),
         None => client.post(preview_address).header("Cookie", cookie).send(),
     };
-    println!("👷‍♀️ POST {}", preview_address,);
+    let msg = format!("POST {}", preview_address);
+    message::preview(&msg);
     Ok(res?.text()?)
 }

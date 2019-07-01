@@ -3,10 +3,16 @@ const { join } = require("path");
 const { writeFileSync } = require("fs");
 const WasmMainTemplatePlugin = require("webpack/lib/wasm/WasmMainTemplatePlugin");
 
+function error(msg) {
+  console.error("Error: " + msg);
+  process.exit(1);
+  return new Error("error");
+}
+
 const rawArgs = process.argv.slice(2);
 const args = rawArgs.reduce((obj, e) => {
   if (e.indexOf("--") === -1 && e.indexOf("=") === -1) {
-    throw new Error("malformed arguments");
+    throw error("malformed arguments");
   }
 
   const [name, value] = e.split("=");
@@ -19,7 +25,14 @@ let config;
 if (args["no-webpack-config"] === "1") {
   config = { entry: args["use-entry"] };
 } else {
-  config = require(join(process.cwd(), "./webpack.config.js"));
+  config = require(join(process.cwd(), args["webpack-config"]));
+}
+
+if (Array.isArray(config)) {
+  throw error(
+    "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field\n" +
+      "Please make sure that your webpack configuration exports an Object."
+  );
 }
 
 const compiler = webpack(config);
@@ -76,7 +89,7 @@ compiler.run((err, stats) => {
   }, "");
 
   if (hasWasmModule === true) {
-    bundle.wasm = Buffer.from(assets[wasmModuleAsset].source()).toString();
+    bundle.wasm = Buffer.from(assets[wasmModuleAsset].source()).toString("base64");
   }
 
   writeFileSync(args["output-file"], JSON.stringify(bundle));

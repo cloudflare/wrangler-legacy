@@ -13,25 +13,32 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use crate::commands;
 use crate::commands::build::wranglerjs::Bundle;
 use crate::commands::subdomain::Subdomain;
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::{Project, ProjectType};
+use crate::terminal::message;
 
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
-    create_kv_namespaces(user, project)?;
+
+    validate_project(project, release)?;
+    commands::build(&project)?;
+    create_kv_namespaces(user, &project)?;
     publish_script(&user, &project, release)?;
     if release {
         info!("release mode detected, making a route...");
         let route = Route::new(&project)?;
         Route::publish(&user, &project, &route)?;
-        println!(
-            "✨ Success! Your worker was successfully published. You can view it at {}. ✨",
+        let msg = format!(
+            "Success! Your worker was successfully published. You can view it at {}.",
             &route.pattern
         );
+        message::success(&msg);
     } else {
-        println!("✨ Success! Your worker was successfully published. ✨");
+        message::success("Success! Your worker was successfully published.");
     }
     Ok(())
 }
@@ -42,7 +49,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
         project.account_id,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::auth_client(user);
 
     if let Some(namespaces) = &project.kv_namespaces {
         for namespace in namespaces {
@@ -51,12 +58,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
             let mut map = HashMap::new();
             map.insert("title", namespace);
 
-            let request = client
-                .post(&kv_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
-                .json(&map)
-                .send();
+            let request = client.post(&kv_addr).json(&map).send();
 
             if let Err(error) = request {
                 // A 400 is returned if the account already owns a namespace with this title.
@@ -83,15 +85,12 @@ fn publish_script(
     project: &Project,
     release: bool,
 ) -> Result<(), failure::Error> {
-    if project.account_id.is_empty() {
-        failure::bail!("You must provide an account_id in your wrangler.toml before you publish!")
-    }
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         project.account_id, project.name,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::auth_client(user);
 
     let project_type = &project.project_type;
     let mut res = match project_type {
@@ -99,8 +98,6 @@ fn publish_script(
             info!("Rust project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
                 .multipart(build_multipart_script()?)
                 .send()?
         }
@@ -108,8 +105,6 @@ fn publish_script(
             info!("JavaScript project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
                 .header("Content-Type", "application/javascript")
                 .body(build_js_script()?)
                 .send()?
@@ -118,18 +113,16 @@ fn publish_script(
             info!("Webpack project detected. Publishing...");
             client
                 .put(&worker_addr)
-                .header("X-Auth-Key", &*user.api_key)
-                .header("X-Auth-Email", &*user.email)
                 .multipart(build_webpack_form()?)
                 .send()?
         }
     };
 
     if res.status().is_success() {
-        println!("🥳 Successfully published your script.");
+        message::success("Successfully published your script.");
     } else {
         failure::bail!(
-            "⛔ Something went wrong! Status: {}, Details {}",
+            "Something went wrong! Status: {}, Details {}",
             res.status(),
             res.text()?
         )
@@ -159,25 +152,24 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
         project.account_id, project.name,
     );
 
-    let client = reqwest::Client::new();
+    let client = http::auth_client(user);
 
     info!("Making public on subdomain...");
     let mut res = client
         .post(&sd_worker_addr)
-        .header("X-Auth-Key", &*user.api_key)
-        .header("X-Auth-Email", &*user.email)
         .header("Content-type", "application/json")
         .body(build_subdomain_request())
         .send()?;
 
     if res.status().is_success() {
-        println!(
-            "🥳 Successfully made your script available at https://{}.{}.workers.dev",
+        let msg = format!(
+            "Successfully made your script available at https://{}.{}.workers.dev",
             project.name, subdomain
         );
+        message::success(&msg)
     } else {
         failure::bail!(
-            "⛔ Something went wrong! Status: {}, Details {}",
+            "Something went wrong! Status: {}, Details {}",
             res.status(),
             res.text()?
         )
@@ -254,4 +246,53 @@ fn build_webpack_form() -> Result<Form, failure::Error> {
     } else {
         Ok(form)
     }
+}
+
+fn validate_project(project: &Project, release: bool) -> Result<(), failure::Error> {
+    let mut missing_fields = Vec::new();
+
+    if project.account_id.is_empty() {
+        missing_fields.push("account_id")
+    };
+    if project.name.is_empty() {
+        missing_fields.push("name")
+    };
+
+    let destination = if release {
+        //check required fields for release
+        if project
+            .zone_id
+            .as_ref()
+            .unwrap_or(&"".to_string())
+            .is_empty()
+        {
+            missing_fields.push("zone_id")
+        };
+        if project.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
+            missing_fields.push("route")
+        };
+        //zoned deploy destination
+        "a route"
+    } else {
+        //zoneless deploy destination
+        "your subdomain"
+    };
+
+    let (field_pluralization, is_are) = match missing_fields.len() {
+        n if n >= 2 => ("fields", "are"),
+        1 => ("field", "is"),
+        _ => ("", ""),
+    };
+
+    if !missing_fields.is_empty() {
+        failure::bail!(
+            "Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
+            field_pluralization,
+            missing_fields,
+            is_are,
+            destination
+        );
+    };
+
+    Ok(())
 }

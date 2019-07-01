@@ -1,22 +1,22 @@
 pub mod wranglerjs;
 
-use crate::settings::project::ProjectType;
+use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
-use binary_install::Cache;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::emoji;
+use crate::terminal::message;
 
-pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::Error> {
+pub fn build(project: &Project) -> Result<(), failure::Error> {
+    let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
-            println!("⚠️ JavaScript project found. Skipping unnecessary build!")
+            message::info("JavaScript project found. Skipping unnecessary build!")
         }
         ProjectType::Rust => {
             let tool_name = "wasm-pack";
-            let binary_path = install::install(tool_name, "rustwasm", cache)?.binary(tool_name)?;
+            let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
             let command = command(&args, binary_path);
@@ -25,39 +25,7 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
             commands::run(command, &command_name)?;
         }
         ProjectType::Webpack => {
-            for tool in &["node", "npm"] {
-                wranglerjs::env_dep_installed(tool)?;
-            }
-
-            let wasm_pack_path =
-                install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
-            let wranglerjs_path = wranglerjs::install(cache).expect("could not install wranglerjs");
-
-            let current_dir = env::current_dir()?;
-            wranglerjs::run_npm_install(current_dir).expect("could not run `npm install`");
-
-            let bundle = wranglerjs::Bundle::new();
-            let wranglerjs_output = wranglerjs::run_build(wranglerjs_path, wasm_pack_path, &bundle)
-                .expect("could not run wranglerjs");
-
-            if wranglerjs_output.has_errors() {
-                println!("{}", wranglerjs_output.get_errors());
-                failure::bail!("Webpack returned an error");
-            }
-
-            bundle
-                .write(&wranglerjs_output)
-                .expect("could not write bundle to disk");
-
-            print!(
-                "{} Built successfully, script size is {}",
-                emoji::SPARKLES,
-                wranglerjs_output.script_size()
-            );
-            if bundle.has_wasm() {
-                print!(" and Wasm size is {}", wranglerjs_output.wasm_size());
-            }
-            println!(".");
+            wranglerjs::run_build(project)?;
         }
     }
 
@@ -65,7 +33,7 @@ pub fn build(cache: &Cache, project_type: &ProjectType) -> Result<(), failure::E
 }
 
 fn command(args: &[&str], binary_path: PathBuf) -> Command {
-    println!("{} Compiling your project to WebAssembly...", emoji::SWIRL);
+    message::working("Compiling your project to WebAssembly...");
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");

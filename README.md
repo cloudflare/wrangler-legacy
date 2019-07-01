@@ -2,10 +2,10 @@
 
 ![Banner](/banner.png)
 
-[![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler)
+[![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 
-Get started with Cloudflare Workers and Wrangler by reading the [documentation](https://workers.cloudflare.com/).
+`wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare workers](https://workers.cloudflare.com/).
 
 ## Installation
 
@@ -24,8 +24,6 @@ cargo install wrangler
 ```
 
 ## 🎙️ Commands
-
-`wrangler` is a CLI tool designed for folks who are interested in using Cloudflare workers.
 
   - ### 👯 `generate` 
     Scaffold a project, including boilerplate for a Rust library and a Cloudflare Worker.
@@ -111,8 +109,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
     To set up `wrangler` to work with your Cloudflare user, use the following commands:
 
-    - 🔧 `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, 
-       you can use the flags `--email` and `--api-key` to the command to skip the interactive part.
+    - 🔧 `config`: a command that prompts you to enter your `email` and `api` key.
     - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is appropriately set up.
        When successful, this command will print out your user information, including the type of plan you
        are currently on.
@@ -134,7 +131,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
         - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
         - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
-            WebAssembly. Rust files will be built with `wasm-pack`. `C/C++` files will be build with `emscripten`.
+            WebAssembly. Rust files will be built with `wasm-pack`.
             This project type uses webpack and webpack plugins in the background to build your worker.
     - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you
         are using a workers.dev subdomain and is only reuqired for `publish --release`.
@@ -144,12 +141,32 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `*example.com/*`
         - `http://example.com/hello`
         This key is optional if you are using a workers.dev subdomain and is only required for `publish --release`.
+    - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and
+        defaults to `webpack.config.js`
 
 ## ⚓ Installation
 
+Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and through Rust's package manager, [Cargo](https://github.com/rust-lang/cargo).
+
+### Using `npm`:
+
+1. If you don't already have npm on your machine, install it. On OSX with [Homebrew](https://brew.sh/) that looks like:
+
+    ```
+    $ brew install nodejs
+    ```
+    
+1. Install Wrangler by running:
+
+    ```
+    npm i @cloudflare/wrangler -g
+    ```
+
+### Using `cargo`:
+
 1. Install `cargo`:
 
-    Wrangler is installed through [Cargo](https://github.com/rust-lang/cargo#compiling-from-source), a Rust package manager. Rustup, a tool for installing Rust, will also install Cargo. On Linux and macOS systems, `rustup` can be installed as follows:
+    Rustup, a tool for installing Rust, will also install Cargo. On Linux and macOS systems, `rustup` can be installed as follows:
 
     ```
     curl https://sh.rustup.rs -sSf | sh
@@ -170,6 +187,20 @@ There are two types of configuration that `wrangler` uses: global user and per p
     ```
     $ brew install openssl@1.1
     ```
+
+1. Updating `wrangler`:
+
+    To get the latest version of Wrangler, using Cargo, run:
+
+    ```sh
+    cargo install wrangler --force
+    ```
+
+   To get the latest version of Wrangler, using NPM, run:
+
+   ```sh
+   npm install @cloudflare/wrangler
+   ```
 
 ## ⚡ Quick Start
 

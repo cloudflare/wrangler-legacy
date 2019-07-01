@@ -1,13 +1,17 @@
+use base64::decode;
 #[cfg(test)]
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use log::info;
 
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
+use crate::settings::binding::Binding;
+use crate::settings::metadata;
+use crate::terminal::message;
 
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
@@ -40,15 +44,17 @@ impl Bundle {
         let mut script = create_prologue();
         script += &wranglerjs_output.script;
 
-        if let Some(wasm) = &wranglerjs_output.wasm {
+        if let Some(encoded_wasm) = &wranglerjs_output.wasm {
+            let wasm = decode(encoded_wasm).expect("could not decode Wasm in base64");
             let mut wasm_file = File::create(self.wasm_path())?;
-            wasm_file.write_all(wasm.as_bytes())?;
+            wasm_file.write_all(&wasm)?;
         }
 
         script_file.write_all(script.as_bytes())?;
 
+        let metadata = create_metadata(self).expect("could not create metadata");
         let mut metadata_file = File::create(self.metadata_path())?;
-        metadata_file.write_all(create_metadata(self).as_bytes())?;
+        metadata_file.write_all(metadata.as_bytes())?;
 
         // cleanup {Webpack} dist, if specified.
         if let Some(dist_to_clean) = &wranglerjs_output.dist_to_clean {
@@ -79,8 +85,8 @@ impl Bundle {
         Path::new(&self.wasm_path()).exists()
     }
 
-    pub fn has_webpack_config(&self) -> bool {
-        Path::new("webpack.config.js").exists()
+    pub fn has_webpack_config(&self, webpack_config_path: &PathBuf) -> bool {
+        webpack_config_path.exists()
     }
 
     pub fn get_wasm_binding(&self) -> String {
@@ -106,31 +112,20 @@ pub fn create_prologue() -> String {
 }
 
 // This metadata describe the bindings on the Worker.
-fn create_metadata(bundle: &Bundle) -> String {
-    info!("create metadata; wasm={}", bundle.has_wasm());
+fn create_metadata(bundle: &Bundle) -> Result<String, serde_json::error::Error> {
+    let mut bindings = vec![];
+
     if bundle.has_wasm() {
-        format!(
-            r#"
-                {{
-                    "body_part": "script",
-                    "binding": {{
-                        "name": "{name}",
-                        "type": "wasm_module",
-                        "part": "{name}"
-                    }}
-                }}
-            "#,
-            name = bundle.get_wasm_binding(),
-        )
-        .to_string()
-    } else {
-        r#"
-            {
-                "body_part": "script"
-            }
-        "#
-        .to_string()
+        bindings.push(Binding::new_wasm_module(
+            bundle.get_wasm_binding(),
+            bundle.get_wasm_binding(),
+        ));
     }
+
+    serde_json::to_string(&metadata::Metadata {
+        body_part: "script".to_string(),
+        bindings,
+    })
 }
 
 #[cfg(test)]
@@ -164,14 +159,7 @@ mod tests {
         let contents =
             fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
 
-        assert_eq!(
-            contents,
-            r#"
-            {
-                "body_part": "script"
-            }
-        "#
-        );
+        assert_eq!(contents, r#"{"body_part":"script","bindings":[]}"#);
 
         cleanup(out);
     }
@@ -223,23 +211,14 @@ mod tests {
         };
         let bundle = Bundle::new_at(out.clone());
 
-        bundle.write(wranglerjs_output).unwrap();
+        bundle.write(&wranglerjs_output).unwrap();
         assert!(Path::new(&bundle.metadata_path()).exists());
         let contents =
             fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
 
         assert_eq!(
             contents,
-            r#"
-                {
-                    "body_part": "script",
-                    "binding": {
-                        "name": "wasmprogram",
-                        "type": "wasm_module",
-                        "part": "wasmprogram"
-                    }
-                }
-            "#
+            r#"{"body_part":"script","bindings":[{"type":"wasm_module","name":"wasmprogram","part":"wasmprogram"}]}"#
         );
 
         cleanup(out);
@@ -260,7 +239,7 @@ mod tests {
     fn cleanup(name: String) {
         let current_dir = env::current_dir().unwrap();
         let path = Path::new(&current_dir).join(name);
-        println!("p: {:?}", path);
+        message::info(&format!("p: {:?}", path));
         fs::remove_dir_all(path).unwrap();
     }
 }

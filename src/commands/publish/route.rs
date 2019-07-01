@@ -1,3 +1,4 @@
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use reqwest::header::CONTENT_TYPE;
@@ -63,13 +64,9 @@ impl Route {
 fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failure::Error> {
     let routes_addr = get_routes_addr(project)?;
 
-    let client = reqwest::Client::new();
+    let client = http::auth_client(user);
 
-    let mut res = client
-        .get(&routes_addr)
-        .header("X-Auth-Key", &*user.api_key)
-        .header("X-Auth-Email", &*user.email)
-        .send()?;
+    let mut res = client.get(&routes_addr).send()?;
 
     if !res.status().is_success() {
         let msg = format!(
@@ -86,7 +83,7 @@ fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failur
 }
 
 fn create(user: &GlobalUser, project: &Project, route: &Route) -> Result<(), failure::Error> {
-    let client = reqwest::Client::new();
+    let client = http::auth_client(user);
     let body = serde_json::to_string(&route)?;
 
     let routes_addr = get_routes_addr(project)?;
@@ -94,8 +91,6 @@ fn create(user: &GlobalUser, project: &Project, route: &Route) -> Result<(), fai
     info!("Creating your route {:#?}", &route.pattern,);
     let mut res = client
         .post(&routes_addr)
-        .header("X-Auth-Key", &*user.api_key)
-        .header("X-Auth-Email", &*user.email)
         .header(CONTENT_TYPE, "application/json")
         .body(body)
         .send()?;

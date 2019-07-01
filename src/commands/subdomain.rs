@@ -1,6 +1,7 @@
-use crate::emoji;
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
+use crate::terminal::{emoji, message};
 
 use serde::{Deserialize, Serialize};
 
@@ -13,17 +14,14 @@ impl Subdomain {
     pub fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
         let addr = subdomain_addr(account_id);
 
-        let client = reqwest::Client::new();
+        let client = http::auth_client(user);
 
-        let mut res = client
-            .get(&addr)
-            .header("X-Auth-Key", &*user.api_key)
-            .header("X-Auth-Email", &*user.email)
-            .send()?;
+        let mut res = client.get(&addr).send()?;
 
         if !res.status().is_success() {
             failure::bail!(
-                "⛔ There was an error fetching your subdomain.\n Status Code: {}\n Msg: {}",
+                "{} There was an error fetching your subdomain.\n Status Code: {}\n Msg: {}",
+                emoji::WARN,
                 res.status(),
                 res.text()?,
             )
@@ -61,11 +59,16 @@ fn subdomain_addr(account_id: &str) -> String {
 }
 
 pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
-    println!(
-        "{} Registering your subdomain, {}.workers.dev, this could take up to a minute.",
-        emoji::SNAIL,
+    if project.account_id.is_empty() {
+        failure::bail!(
+            "⛔ You must provide an account_id in your wrangler.toml before creating a subdomain!"
+        )
+    }
+    let msg = format!(
+        "Registering your subdomain, {}.workers.dev, this could take up to a minute.",
         name
     );
+    message::working(&msg);
     let account_id = &project.account_id;
     let addr = subdomain_addr(account_id);
     let sd = Subdomain {
@@ -73,14 +76,9 @@ pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(),
     };
     let sd_request = serde_json::to_string(&sd)?;
 
-    let client = reqwest::Client::new();
+    let client = http::auth_client(user);
 
-    let mut res = client
-        .put(&addr)
-        .header("X-Auth-Key", &*user.api_key)
-        .header("X-Auth-Email", &*user.email)
-        .body(sd_request)
-        .send()?;
+    let mut res = client.put(&addr).body(sd_request).send()?;
 
     let msg;
     if !res.status().is_success() {
@@ -88,28 +86,42 @@ pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(),
         let res_json: Response = serde_json::from_str(&res_text)?;
         if already_has_subdomain(res_json.errors) {
             let sd = Subdomain::get(account_id, user)?;
-            msg = format!(
-                "⛔ This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev \n Status Code: {}\n Msg: {}",
-                sd,
-                res.status(),
-                res_text,
-            );
+            if sd == name {
+                msg = format!(
+                    "{} You have previously registered {}.workers.dev \n Status Code: {}\n Msg: {}",
+                    emoji::WARN,
+                    sd,
+                    res.status(),
+                    res_text,
+                )
+            } else {
+                msg = format!(
+                    "{} This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev \n Status Code: {}\n Msg: {}",
+                    emoji::WARN,
+                    sd,
+                    res.status(),
+                    res_text,
+                )
+            }
         } else if res.status() == 409 {
             msg = format!(
-                "⛔ Your requested subdomain is not available. Please pick another one.\n Status Code: {}\n Msg: {}",
+                "{} Your requested subdomain is not available. Please pick another one.\n Status Code: {}\n Msg: {}",
+                emoji::WARN,
                 res.status(),
                 res_text
             );
         } else {
             msg = format!(
-                "⛔ There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
+                "{} There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
+                emoji::WARN,
                 res.status(),
                 res_text
             );
         }
         failure::bail!(msg)
     }
-    println!("{} Success! You've registered {}.", emoji::SPARKLES, name);
+    let msg = format!("Success! You've registered {}.", name);
+    message::success(&msg);
     Ok(())
 }
 
