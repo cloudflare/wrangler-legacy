@@ -6,14 +6,23 @@ use krate::Krate;
 use log::info;
 use which::which;
 
-pub fn install(tool_name: &str, owner: &str, cache: &Cache) -> Result<Download, failure::Error> {
+use std::env;
+use std::path::Path;
+
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref CACHE: Cache = get_wrangler_cache().expect("creating binary dependency cache");
+}
+
+pub fn install(tool_name: &str, owner: &str) -> Result<Download, failure::Error> {
     if let Some(download) = tool_exists(tool_name) {
         return Ok(download);
     }
 
     let binaries = &[tool_name];
     let latest_version = get_latest_version(tool_name)?;
-    let download = download_prebuilt(cache, tool_name, owner, &latest_version, binaries);
+    let download = download_prebuilt(tool_name, owner, &latest_version, binaries);
     match download {
         Ok(download) => Ok(download),
         Err(e) => {
@@ -25,14 +34,13 @@ pub fn install(tool_name: &str, owner: &str, cache: &Cache) -> Result<Download, 
 pub fn install_artifact(
     tool_name: &str,
     owner: &str,
-    cache: &Cache,
     version: &str,
 ) -> Result<Download, failure::Error> {
     if let Some(download) = tool_exists(tool_name) {
         return Ok(download);
     }
 
-    let download = download_prebuilt(cache, tool_name, owner, version, &[]);
+    let download = download_prebuilt(tool_name, owner, version, &[]);
     match download {
         Ok(download) => Ok(download),
         Err(e) => {
@@ -53,7 +61,6 @@ fn tool_exists(tool_name: &str) -> Option<Download> {
 }
 
 fn download_prebuilt(
-    cache: &Cache,
     tool_name: &str,
     owner: &str,
     version: &str,
@@ -71,9 +78,9 @@ fn download_prebuilt(
 
     // no binaries are expected; downloading it as an artifact
     let res = if !binaries.is_empty() {
-        cache.download(true, tool_name, binaries, &url)?
+        CACHE.download(true, tool_name, binaries, &url)?
     } else {
-        cache.download_artifact(tool_name, &url)?
+        CACHE.download_artifact(tool_name, &url)?
     };
 
     match res {
@@ -112,4 +119,12 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
 
 fn get_latest_version(tool_name: &str) -> Result<String, failure::Error> {
     Ok(Krate::new(tool_name)?.max_version)
+}
+
+fn get_wrangler_cache() -> Result<Cache, failure::Error> {
+    if let Ok(path) = env::var("WRANGLER_CACHE") {
+        Ok(Cache::at(Path::new(&path)))
+    } else {
+        Cache::new("wrangler")
+    }
 }
