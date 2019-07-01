@@ -17,13 +17,9 @@ use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-fn random_chars(n: usize) -> String {
-    let mut rng = thread_rng();
-    iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
-        .take(n)
-        .collect()
-}
+use crate::settings::project::Project;
+
+use crate::terminal::message;
 
 // Run the underlying {wranglerjs} executable.
 //
@@ -31,18 +27,66 @@ fn random_chars(n: usize) -> String {
 // executable and wait for completion. The file will receive the a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(
-    wranglerjs_path: PathBuf,
-    wasm_pack_path: PathBuf,
-    webpack_config_path: PathBuf,
-    bundle: &Bundle,
-) -> Result<WranglerjsOutput, failure::Error> {
+pub fn run_build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(cache, project)?;
+
+    info!("Running {:?}", command);
+
+    let status = command.status()?;
+
+    if status.success() {
+        let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
+        fs::remove_file(temp_file)?;
+
+        let wranglerjs_output: WranglerjsOutput =
+            serde_json::from_str(&output).expect("could not parse wranglerjs output");
+
+        if wranglerjs_output.has_errors() {
+            message::user_error(&format!("{}", wranglerjs_output.get_errors()));
+            failure::bail!("Webpack returned an error");
+        }
+
+        bundle
+            .write(&wranglerjs_output)
+            .expect("could not write bundle to disk");
+
+        let mut msg = format!(
+            "Built successfully, script size is {}",
+            wranglerjs_output.script_size()
+        );
+        if bundle.has_wasm() {
+            msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
+        }
+        message::success(&msg);
+        Ok(())
+    } else {
+        fs::remove_file(temp_file)?;
+        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+    }
+}
+
+//setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
+fn setup_build(
+    cache: &Cache,
+    project: &Project,
+) -> Result<(Command, PathBuf, Bundle), failure::Error> {
+    for tool in &["node", "npm"] {
+        env_dep_installed(tool)?;
+    }
+
+    let current_dir = env::current_dir()?;
+    run_npm_install(current_dir).expect("could not run `npm install`");
+
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
+    let wranglerjs_path = install(cache).expect("could not install wranglerjs");
     command.arg(wranglerjs_path);
+
+    //put path to our wasm_pack as env variable so wasm-pack-plugin can utilize it
+    let wasm_pack_path = install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
-    // create temp file for special {wranglerjs} IPC.
+    // create a temp file for IPC with the wranglerjs process
     let mut temp_file = env::temp_dir();
     temp_file.push(format!(".wranglerjs_output{}", random_chars(5)));
     File::create(temp_file.clone())?;
@@ -51,7 +95,17 @@ pub fn run_build(
         "--output-file={}",
         temp_file.clone().to_str().unwrap().to_string()
     ));
+
+    let bundle = Bundle::new();
+
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
+
+    let webpack_config_path = PathBuf::from(
+        &project
+            .webpack_config
+            .clone()
+            .unwrap_or_else(|| "webpack.config.js".to_string()),
+    );
 
     // if {webpack.config.js} is not present, we infer the entry based on the
     // {package.json} file and pass it to {wranglerjs}.
@@ -73,22 +127,12 @@ pub fn run_build(
         ));
     }
 
-    info!("Running {:?}", command);
-
-    let status = command.status()?;
-    let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
-    fs::remove_file(temp_file)?;
-
-    if status.success() {
-        Ok(serde_json::from_str(&output).expect("could not parse wranglerjs output"))
-    } else {
-        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
-    }
+    Ok((command, temp_file, bundle))
 }
 
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
-pub fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
+fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
     let flock_path = dir.join(&".install.lock");
     let flock = File::create(&flock_path)?;
     // avoid running multiple {npm install} at the same time (eg. in tests)
@@ -137,7 +181,7 @@ fn build_npm_command() -> Command {
 }
 
 // Ensures the specified tool is available in our env.
-pub fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
+fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
     if which::which(tool).is_err() {
         failure::bail!("You need to install {}", tool)
     }
@@ -153,7 +197,7 @@ fn get_source_dir() -> PathBuf {
 }
 
 // Install {wranglerjs} from our GitHub releases
-pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
+fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
     let wranglerjs_path = if install::target::DEBUG {
         let source_path = get_source_dir();
         let wranglerjs_path = source_path.join("wranglerjs");
@@ -169,4 +213,12 @@ pub fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
 
     run_npm_install(wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
     Ok(wranglerjs_path)
+}
+
+fn random_chars(n: usize) -> String {
+    let mut rng = thread_rng();
+    iter::repeat(())
+        .map(|()| rng.sample(Alphanumeric))
+        .take(n)
+        .collect()
 }
