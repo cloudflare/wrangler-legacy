@@ -188,12 +188,12 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     $ brew install openssl@1.1
     ```
 
-1. Updating `wrangler:
+1. Updating `wrangler`:
 
     To get the latest version of Wrangler, using Cargo, run:
 
     ```sh
-    cargo install --git https://github.com/cloudflare/wrangler --force
+    cargo install wrangler --force
     ```
 
    To get the latest version of Wrangler, using NPM, run:
