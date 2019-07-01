@@ -155,96 +155,83 @@ fn main() -> Result<(), failure::Error> {
         )))
         .get_matches();
 
-    if matches.subcommand_matches("config").is_some()
-        || matches.subcommand_matches("generate").is_some()
-        || matches.subcommand_matches("init").is_some()
-    {
-        if let Some(matches) = matches.subcommand_matches("config") {
-            let email = matches
-                .value_of("email")
-                .expect("An email address must be provided.");
-            let api_key = matches
-                .value_of("api-key")
-                .expect("An API key must be provided.");
-            commands::global_config(email, api_key)?;
-        }
+    if let Some(matches) = matches.subcommand_matches("config") {
+        let email = matches
+            .value_of("email")
+            .expect("An email address must be provided.");
+        let api_key = matches
+            .value_of("api-key")
+            .expect("An API key must be provided.");
 
-        if let Some(matches) = matches.subcommand_matches("generate") {
-            let name = matches.value_of("name").unwrap_or("worker");
-            let project_type = match matches.value_of("type") {
-                Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
-                None => None,
-            };
-            let template = matches
-                .value_of("template")
-                .unwrap_or("https://github.com/cloudflare/worker-template");
-            info!(
-                "Generate command called with template {}, and name {}",
-                template, name
-            );
-            commands::generate(name, template, project_type)?;
-        }
-
-        if let Some(matches) = matches.subcommand_matches("init") {
-            let name = matches.value_of("name");
-            let project_type = match matches.value_of("type") {
-                Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
-                None => None,
-            };
-            commands::init(name, project_type)?;
-        }
-    } else if matches.subcommand_matches("build").is_some()
-        || matches.subcommand_matches("preview").is_some()
-    {
+        commands::global_config(email, api_key)?;
+    } else if let Some(matches) = matches.subcommand_matches("generate") {
+        let name = matches.value_of("name").unwrap_or("worker");
+        let project_type = match matches.value_of("type") {
+            Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
+            None => None,
+        };
+        let template = matches
+            .value_of("template")
+            .unwrap_or("https://github.com/cloudflare/worker-template");
+        info!(
+            "Generate command called with template {}, and name {}",
+            template, name
+        );
+        commands::generate(name, template, project_type)?;
+    } else if let Some(matches) = matches.subcommand_matches("init") {
+        let name = matches.value_of("name");
+        let project_type = match matches.value_of("type") {
+            Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
+            None => None,
+        };
+        commands::init(name, project_type)?;
+    } else if matches.subcommand_matches("build").is_some() {
+        info!("Getting project settings");
+        let project = settings::project::Project::new()?;
+        commands::build(&project)?;
+    } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
 
-        if matches.subcommand_matches("build").is_some() {
-            commands::build(&project)?;
-        }
+        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
 
-        if let Some(matches) = matches.subcommand_matches("preview") {
-            let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
+        let body = match matches.value_of("body") {
+            Some(s) => Some(s.to_string()),
+            None => None,
+        };
 
-            let body = match matches.value_of("body") {
-                Some(s) => Some(s.to_string()),
-                None => None,
-            };
-
-            commands::preview(&project, method, body)?;
-        }
+        commands::preview(&project, method, body)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        if matches.subcommand_matches("whoami").is_some() {
-            commands::whoami(&user);
-        }
-    } else if matches.subcommand_matches("publish").is_some()
-        || matches.subcommand_matches("subdomain").is_some()
-    {
+        commands::whoami(&user);
+    } else if let Some(matches) = matches.subcommand_matches("publish") {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        if let Some(matches) = matches.subcommand_matches("publish") {
-            info!("{}", matches.occurrences_of("release"));
-            let release = match matches.occurrences_of("release") {
-                1 => true,
-                _ => false,
-            };
-            commands::publish(&user, &project, release)?;
-        }
+        info!("{}", matches.occurrences_of("release"));
+        let release = match matches.occurrences_of("release") {
+            1 => true,
+            _ => false,
+        };
 
-        if let Some(matches) = matches.subcommand_matches("subdomain") {
-            let name = matches
-                .value_of("name")
-                .expect("The subdomain name you are requesting must be provided.");
-            commands::subdomain(name, &user, &project)?;
-        }
+        commands::publish(&user, &project, release)?;
+    } else if let Some(matches) = matches.subcommand_matches("subdomain") {
+        info!("Getting project settings");
+        let project = settings::project::Project::new()?;
+
+        info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
+
+        let name = matches
+            .value_of("name")
+            .expect("The subdomain name you are requesting must be provided.");
+
+        commands::subdomain(name, &user, &project)?;
     }
-
     Ok(())
 }

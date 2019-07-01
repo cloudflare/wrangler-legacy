@@ -10,12 +10,6 @@ use crate::terminal::message;
 
 pub fn build(project: &Project) -> Result<(), failure::Error> {
     let project_type = &project.project_type;
-    let webpack_config_path = PathBuf::from(
-        &project
-            .webpack_config
-            .clone()
-            .unwrap_or_else(|| "webpack.config.js".to_string()),
-    );
     match project_type {
         ProjectType::JavaScript => {
             message::info("JavaScript project found. Skipping unnecessary build!")
@@ -31,42 +25,7 @@ pub fn build(project: &Project) -> Result<(), failure::Error> {
             commands::run(command, &command_name)?;
         }
         ProjectType::Webpack => {
-            for tool in &["node", "npm"] {
-                wranglerjs::env_dep_installed(tool)?;
-            }
-
-            let wasm_pack_path = install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
-            let wranglerjs_path = wranglerjs::install().expect("could not install wranglerjs");
-
-            let current_dir = env::current_dir()?;
-            wranglerjs::run_npm_install(current_dir).expect("could not run `npm install`");
-
-            let bundle = wranglerjs::Bundle::new();
-            let wranglerjs_output = wranglerjs::run_build(
-                wranglerjs_path,
-                wasm_pack_path,
-                webpack_config_path,
-                &bundle,
-            )
-            .expect("could not run wranglerjs");
-
-            if wranglerjs_output.has_errors() {
-                message::user_error(&format!("{}", wranglerjs_output.get_errors()));
-                failure::bail!("Webpack returned an error");
-            }
-
-            bundle
-                .write(&wranglerjs_output)
-                .expect("could not write bundle to disk");
-
-            let mut msg = format!(
-                "Built successfully, script size is {}",
-                wranglerjs_output.script_size()
-            );
-            if bundle.has_wasm() {
-                msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
-            }
-            message::success(&msg);
+            wranglerjs::run_build(project)?;
         }
     }
 
