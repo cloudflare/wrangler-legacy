@@ -14,13 +14,9 @@ impl Subdomain {
     pub fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
         let addr = subdomain_addr(account_id);
 
-        let client = http::client();
+        let client = http::auth_client(user);
 
-        let mut res = client
-            .get(&addr)
-            .header("X-Auth-Key", &*user.api_key)
-            .header("X-Auth-Email", &*user.email)
-            .send()?;
+        let mut res = client.get(&addr).send()?;
 
         if !res.status().is_success() {
             failure::bail!(
@@ -80,14 +76,9 @@ pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(),
     };
     let sd_request = serde_json::to_string(&sd)?;
 
-    let client = http::client();
+    let client = http::auth_client(user);
 
-    let mut res = client
-        .put(&addr)
-        .header("X-Auth-Key", &*user.api_key)
-        .header("X-Auth-Email", &*user.email)
-        .body(sd_request)
-        .send()?;
+    let mut res = client.put(&addr).body(sd_request).send()?;
 
     let msg;
     if !res.status().is_success() {
