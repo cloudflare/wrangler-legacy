@@ -109,7 +109,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
     To set up `wrangler` to work with your Cloudflare user, use the following commands:
 
-    - 🔧 `config`: a command that asks you to pass your `email` and `api` key.
+    - 🔧 `config`: a command that prompts you to enter your `email` and `api` key.
     - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is appropriately set up.
        When successful, this command will print out your user information, including the type of plan you
        are currently on.
@@ -131,7 +131,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
         - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
         - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
-            WebAssembly. Rust files will be built with `wasm-pack`. `C/C++` files will be build with `emscripten`.
+            WebAssembly. Rust files will be built with `wasm-pack`.
             This project type uses webpack and webpack plugins in the background to build your worker.
     - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you
         are using a workers.dev subdomain and is only reuqired for `publish --release`.
