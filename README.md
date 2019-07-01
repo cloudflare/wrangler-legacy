@@ -153,7 +153,7 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
 
 1. If you don't already have npm on your machine, install it using [npm's recommended method](https://www.npmjs.com/get-npm).
 
-    If you have already installed npm with a package manager, it is possible you will run into an `EACCES` error (related to how many system packagers install npm) while installing wrangler. You can either uninstall npm and reinstall using the npm recommended install method (a version manager), or one of our other install methods.
+    If you have already installed npm with a package manager, it is possible you will run into an `EACCES` error while installing wrangler. This is related to how many system packagers install npm. You can either uninstall npm and reinstall using the npm recommended install method (a version manager), or use one of our other install methods.
 
 1. Install Wrangler by running:
 
