@@ -109,8 +109,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
     To set up `wrangler` to work with your Cloudflare user, use the following commands:
 
-    - 🔧 `config`: an interactive command that asks you to pass your `email` and `api` key. Alternatively, 
-       you can use the flags `--email` and `--api-key` to the command to skip the interactive part.
+    - 🔧 `config`: a command that asks you to pass your `email` and `api` key.
     - 🕵️‍♀️ `whoami`: run this command to confirm that your configuration is appropriately set up.
        When successful, this command will print out your user information, including the type of plan you
        are currently on.
@@ -188,7 +187,20 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     ```
     $ brew install openssl@1.1
     ```
-    
+
+1. Updating `wrangler:
+
+    To get the latest version of Wrangler, using Cargo, run:
+
+    ```bash
+    cargo install --git https://github.com/cloudflare/wrangler --force
+    ```
+
+   To get the latest version of Wrangler, using NPM, run:
+
+   ```bash
+   npm install @cloudflare/wrangler
+   ```
 
 ## ⚡ Quick Start
 
