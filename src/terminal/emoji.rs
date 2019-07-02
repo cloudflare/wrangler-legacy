@@ -17,7 +17,6 @@ pub static CONSTRUCTION: Emoji = Emoji("🚧 ", "");
 pub static CRAB: Emoji = Emoji("🦀 ", "");
 pub static DANCERS: Emoji = Emoji("👯 ", "");
 pub static EYES: Emoji = Emoji("👀 ", "");
-pub static FACEPALM: Emoji = Emoji("🤦‍♀️ ", "");
 pub static INBOX: Emoji = Emoji("📥 ", "");
 pub static INFO: Emoji = Emoji("💁‍ ", "");
 pub static MICROSCOPE: Emoji = Emoji("🔬 ", "");
