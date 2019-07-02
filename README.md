@@ -11,10 +11,10 @@
 
 You have many options to install wrangler!
 
-### Using `npm`
+### Using [Homebrew](https://brew.sh/)
 
 ```
-npm i @cloudflare/wrangler -g
+brew install cf-wrangler
 ```
 
 ### Using `cargo`
@@ -146,18 +146,16 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
 ## ⚓ Installation
 
-Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and through Rust's package manager, [Cargo](https://github.com/rust-lang/cargo).
+Wrangler can be installed both through [Homebrew](https://brew.sh/) and through Rust's package manager, [Cargo](https://github.com/rust-lang/cargo).
 
-### Using `npm`:
+### Using [Homebrew](https://brew.sh/):
 
-1. If you don't already have npm on your machine, install it using [npm's recommended method](https://www.npmjs.com/get-npm), a node.js version manager.
-
-    If you have already installed npm with a package manager, it is possible you will run into an `EACCES` error while installing wrangler. This is related to how many system packagers install npm. You can either uninstall npm and reinstall using the npm recommended install method (a version manager), or use one of our other install methods.
+1. If you don't already have brew on your machine, [install](https://brew.sh/) it.
 
 1. Install Wrangler by running:
 
     ```
-    npm i @cloudflare/wrangler -g
+    brew install cf-wrangler
     ```
 
 ### Using `cargo`:
@@ -201,10 +199,10 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
    cargo install wrangler --force
    ```
 
-   To get the latest version of Wrangler, using NPM, run:
+   To get the latest version of Wrangler, using Homebrew, run:
 
    ```
-   npm install @cloudflare/wrangler
+   brew upgrade wrangler
    ```
 
 ## ⚡ Quick Start
