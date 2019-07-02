@@ -136,6 +136,28 @@ fn it_builds_with_webpack_wast() {
     cleanup(fixture);
 }
 
+#[test]
+fn it_builds_with_kv_metadata_webpack() {
+    let fixture = "kv_metadata_webpack";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "webpack"
+
+        [[kv-namespaces]]
+        binding = "bind"
+        id = "id"
+    "#};
+
+    build(fixture);
+    assert!(fixture_out_path(fixture).join("metadata.json").exists());
+
+    let metadata = fs::read_to_string(fixture_out_path(fixture).join("metadata.json"))
+        .expect("could not read metadata");
+    assert_eq!(metadata, r#"{"body_part":"script","bindings":[{"type":"kv_namespace","name":"bind","namespace_id":"id"}]}"#);
+    cleanup(fixture);
+}
+
 fn cleanup(fixture: &str) {
     let path = fixture_path(fixture);
     assert!(path.exists(), format!("{:?} does not exist", path));
