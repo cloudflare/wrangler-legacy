@@ -11,6 +11,7 @@ use log::info;
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
 use crate::settings::binding::Binding;
 use crate::settings::metadata;
+#[cfg(test)]
 use crate::terminal::message;
 
 // Directory where we should write the {Bundle}. It represents the built
