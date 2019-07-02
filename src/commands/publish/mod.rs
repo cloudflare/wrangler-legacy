@@ -32,7 +32,7 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
         info!("release mode detected, publishing routes...");
         let routes = ProjectRoutes::new(&project)?;
         routes.publish(&user, &project)?;
-        println!(
+        let msg = format!(
             "✨ Success! Your worker was successfully published. You can view it at:\n - {}\n✨",
             routes.patterns().join("\n - ")
         );
