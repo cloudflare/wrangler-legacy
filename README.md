@@ -150,12 +150,10 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
 
 ### Using `npm`:
 
-1. If you don't already have npm on your machine, install it. On OSX with [Homebrew](https://brew.sh/) that looks like:
+1. If you don't already have npm on your machine, install it using [npm's recommended method](https://www.npmjs.com/get-npm), a node.js version manager.
 
-    ```
-    $ brew install nodejs
-    ```
-    
+    If you have already installed npm with a package manager, it is possible you will run into an `EACCES` error while installing wrangler. This is related to how many system packagers install npm. You can either uninstall npm and reinstall using the npm recommended install method (a version manager), or use one of our other install methods.
+
 1. Install Wrangler by running:
 
     ```
@@ -188,17 +186,24 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     $ brew install openssl@1.1
     ```
 
-1. Updating `wrangler`:
+### Manual Install:
 
-    To get the latest version of Wrangler, using Cargo, run:
+1. Download the binary tarball for your platform from our [releases page](https://github.com/cloudflare/wrangler/releases). You don't need to download wranglerjs, wrangler will install that for you.
 
-    ```sh
-    cargo install wrangler --force
-    ```
+2. Unpack the tarball and place the binary `wrangler` somewhere on your `PATH`, preferably `/usr/local/bin` for linux/macOS or `Program Files` for windows.
+
+
+## Updating `wrangler`:
+
+   To get the latest version of Wrangler, using Cargo, run:
+
+   ```
+   cargo install wrangler --force
+   ```
 
    To get the latest version of Wrangler, using NPM, run:
 
-   ```sh
+   ```
    npm install @cloudflare/wrangler
    ```
 
