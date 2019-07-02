@@ -2,7 +2,6 @@ pub mod wranglerjs;
 
 use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
-use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
