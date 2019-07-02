@@ -14,6 +14,7 @@ mod install;
 mod installer;
 mod settings;
 mod terminal;
+mod worker;
 
 use terminal::emoji;
 

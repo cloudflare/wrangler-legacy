@@ -20,6 +20,7 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::{Project, ProjectType};
 use crate::terminal::message;
+use crate::worker::Worker;
 
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
@@ -77,6 +78,44 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
             info!("Namespace '{}' exists now", namespace)
         }
     }
+    Ok(())
+}
+
+fn publish_worker(
+    user: &GlobalUser,
+    project: &Project,
+    worker: &Worker,
+    release: bool,
+) -> Result<(), failure::Error> {
+    let worker_addr = format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
+        project.account_id, project.name,
+    );
+
+    let client = http::auth_client(user);
+    let mut res = client
+        .put(&worker_addr)
+        .multipart(worker.multipart()?)
+        .send()?;
+
+    if res.status().is_success() {
+        message::success("Successfully published your script.");
+    } else {
+        failure::bail!(
+            "Something went wrong! Status: {}, Details {}",
+            res.status(),
+            res.text()?
+        )
+    }
+
+    if !release {
+        let private = project.private.unwrap_or(false);
+        if !private {
+            info!("--release not passed, publishing to subdomain");
+            make_public_on_subdomain(project, user)?;
+        }
+    }
+
     Ok(())
 }
 
