@@ -64,14 +64,17 @@ pub fn preview(
 fn open(preview_host: &str, https: bool, script_id: &str) -> Result<(), failure::Error> {
     let https_str = if https { "https://" } else { "http://" };
 
-    let browser_preview = format!(
-        //TODO this relies on a local version of the fiddle-ui for testing livereload
-        //maybe we can mock out the preview service url to a config file for when we do similar
-        //things like this in the future
-        //for now, hardcoded url :)))))))
-        "http://localhost:3000/src/test/manual/#{}:{}{}",
-        script_id, https_str, preview_host
-    );
+    let browser_preview = if install::target::DEBUG {
+        format!(
+            "http://localhost:3000/src/test/manual/#{}:{}{}",
+            script_id, https_str, preview_host
+        )
+    } else {
+        format!(
+            "https://cloudflareworkers.com/#{}:{}{}",
+            script_id, https_str, preview_host
+        )
+    };
     let windows_cmd = format!("start {}", browser_preview);
     let mac_cmd = format!("open {}", browser_preview);
     let linux_cmd = format!("xdg-open {}", browser_preview);
@@ -125,9 +128,7 @@ enum FiddleMessage {
     LiveReload { old_id: String, new_id: String },
 }
 
-fn watch_for_changes(
-    original_id: String,
-) -> Result<(), failure::Error> {
+fn watch_for_changes(original_id: String) -> Result<(), failure::Error> {
     let (tx, rx) = channel();
     let project_type = &get_project_config()?.project_type;
 
@@ -136,15 +137,15 @@ fn watch_for_changes(
     match project_type {
         ProjectType::JavaScript => {
             //watch entry point in package.json
-        },
+        }
         ProjectType::Rust => {
             //watch "src/"
-        },
+        }
         ProjectType::Webpack => {
             //watch "src/"
             //watch "dist/"
             //start webpack in watch mode
-        }, 
+        }
     }
 
     //start up the websocket server.
@@ -165,7 +166,7 @@ fn watch_for_changes(
                     Ok(_) => println!("Build succeded, uploading bundle..."),
                     Err(_) => println!("Build failed"),
                 }
-            },
+            }
         }
 
         if let Ok(new_id) = upload_and_get_id() {

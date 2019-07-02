@@ -19,11 +19,10 @@ use std::process::Command;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-use std::time::Duration;
+use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
-use notify::{Watcher, watcher, DebouncedEvent, RecursiveMode};
-
+use std::time::Duration;
 
 // Run the underlying {wranglerjs} executable.
 //
@@ -67,9 +66,7 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
     }
 }
 
-pub fn run_build_watch(
-    tx: Sender<WranglerjsOutput>,
-) -> Result<(), failure::Error> {
+pub fn run_build_watch(tx: Sender<WranglerjsOutput>) -> Result<(), failure::Error> {
     let (command, temp_file) = setup_command(true)?;
 
     info!("Running {:?}", command);
@@ -82,16 +79,14 @@ pub fn run_build_watch(
 
     watcher.watch(temp_file, RecursiveMode::Recursive)?;
 
-    thread::spawn(move || {
-        loop {
-            if let Ok(DebouncedEvent::Write(path)) = watcher_rx.recv() {
-                println!("got new bundle from wranglerjs");
-                let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
-                fs::remove_file(temp_file);
+    thread::spawn(move || loop {
+        if let Ok(DebouncedEvent::Write(path)) = watcher_rx.recv() {
+            println!("got new bundle from wranglerjs");
+            let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
+            fs::remove_file(temp_file);
 
-                if let Ok(output) = serde_json::from_str(&output) {
-                    tx.send(output);
-                }
+            if let Ok(output) = serde_json::from_str(&output) {
+                tx.send(output);
             }
         }
     });
@@ -122,10 +117,7 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
     temp_file.push(format!(".wranglerjs_output{}", random_chars(5)));
     File::create(temp_file.clone())?;
 
-    command.arg(format!(
-        "--output-file={:?}",
-        ipc_temp_file_path,
-    ));
+    command.arg(format!("--output-file={:?}", ipc_temp_file_path,));
 
     let bundle = Bundle::new();
 
@@ -162,7 +154,6 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
 
     Ok((command, temp_file, bundle))
 }
-
 
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
