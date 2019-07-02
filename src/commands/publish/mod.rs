@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use crate::commands;
 use crate::commands::build::wranglerjs::Bundle;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
@@ -22,7 +23,10 @@ use crate::terminal::message;
 
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
-    create_kv_namespaces(user, project)?;
+
+    validate_project(project, release)?;
+    commands::build(&project)?;
+    create_kv_namespaces(user, &project)?;
     publish_script(&user, &project, release)?;
     if release {
         info!("release mode detected, making a route...");
@@ -81,9 +85,6 @@ fn publish_script(
     project: &Project,
     release: bool,
 ) -> Result<(), failure::Error> {
-    if project.account_id.is_empty() {
-        failure::bail!("You must provide an account_id in your wrangler.toml before you publish!")
-    }
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         project.account_id, project.name,
@@ -245,4 +246,53 @@ fn build_webpack_form() -> Result<Form, failure::Error> {
     } else {
         Ok(form)
     }
+}
+
+fn validate_project(project: &Project, release: bool) -> Result<(), failure::Error> {
+    let mut missing_fields = Vec::new();
+
+    if project.account_id.is_empty() {
+        missing_fields.push("account_id")
+    };
+    if project.name.is_empty() {
+        missing_fields.push("name")
+    };
+
+    let destination = if release {
+        //check required fields for release
+        if project
+            .zone_id
+            .as_ref()
+            .unwrap_or(&"".to_string())
+            .is_empty()
+        {
+            missing_fields.push("zone_id")
+        };
+        if project.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
+            missing_fields.push("route")
+        };
+        //zoned deploy destination
+        "a route"
+    } else {
+        //zoneless deploy destination
+        "your subdomain"
+    };
+
+    let (field_pluralization, is_are) = match missing_fields.len() {
+        n if n >= 2 => ("fields", "are"),
+        1 => ("field", "is"),
+        _ => ("", ""),
+    };
+
+    if !missing_fields.is_empty() {
+        failure::bail!(
+            "Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
+            field_pluralization,
+            missing_fields,
+            is_are,
+            destination
+        );
+    };
+
+    Ok(())
 }

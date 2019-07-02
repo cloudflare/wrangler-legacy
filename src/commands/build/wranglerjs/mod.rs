@@ -3,7 +3,6 @@ pub mod output;
 
 use crate::commands::publish::package::Package;
 use crate::install;
-use binary_install::Cache;
 pub use bundle::Bundle;
 use fs2::FileExt;
 use log::info;
@@ -27,8 +26,8 @@ use crate::terminal::message;
 // executable and wait for completion. The file will receive the a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(cache: &Cache, project: &Project) -> Result<(), failure::Error> {
-    let (mut command, temp_file, bundle) = setup_build(cache, project)?;
+pub fn run_build(project: &Project) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(project)?;
 
     info!("Running {:?}", command);
 
@@ -66,10 +65,7 @@ pub fn run_build(cache: &Cache, project: &Project) -> Result<(), failure::Error>
 }
 
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
-fn setup_build(
-    cache: &Cache,
-    project: &Project,
-) -> Result<(Command, PathBuf, Bundle), failure::Error> {
+fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure::Error> {
     for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
@@ -79,11 +75,11 @@ fn setup_build(
 
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
-    let wranglerjs_path = install(cache).expect("could not install wranglerjs");
+    let wranglerjs_path = install().expect("could not install wranglerjs");
     command.arg(wranglerjs_path);
 
     //put path to our wasm_pack as env variable so wasm-pack-plugin can utilize it
-    let wasm_pack_path = install::install("wasm-pack", "rustwasm", cache)?.binary("wasm-pack")?;
+    let wasm_pack_path = install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
     // create a temp file for IPC with the wranglerjs process
@@ -197,7 +193,7 @@ fn get_source_dir() -> PathBuf {
 }
 
 // Install {wranglerjs} from our GitHub releases
-fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
+fn install() -> Result<PathBuf, failure::Error> {
     let wranglerjs_path = if install::target::DEBUG {
         let source_path = get_source_dir();
         let wranglerjs_path = source_path.join("wranglerjs");
@@ -206,7 +202,7 @@ fn install(cache: &Cache) -> Result<PathBuf, failure::Error> {
     } else {
         let tool_name = "wranglerjs";
         let version = env!("CARGO_PKG_VERSION");
-        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", cache, version)?;
+        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", version)?;
         info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
         wranglerjs_path.path()
     };

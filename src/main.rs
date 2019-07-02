@@ -3,13 +3,11 @@
 use std::env;
 use std::str::FromStr;
 
-use cache::get_wrangler_cache;
 use clap::{App, AppSettings, Arg, SubCommand};
 use commands::HTTPMethod;
 
 use log::info;
 
-mod cache;
 mod commands;
 mod http;
 mod install;
@@ -21,8 +19,6 @@ use terminal::emoji;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
-    let cache = get_wrangler_cache()?;
-
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
         // self-installation, otherwise just continue as usual.
@@ -181,7 +177,7 @@ fn main() -> Result<(), failure::Error> {
             "Generate command called with template {}, and name {}",
             template, name
         );
-        commands::generate(name, template, project_type, &cache)?;
+        commands::generate(name, template, project_type)?;
     } else if let Some(matches) = matches.subcommand_matches("init") {
         let name = matches.value_of("name");
         let project_type = match matches.value_of("type") {
@@ -192,7 +188,7 @@ fn main() -> Result<(), failure::Error> {
     } else if matches.subcommand_matches("build").is_some() {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
-        commands::build(&cache, &project)?;
+        commands::build(&project)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
@@ -204,8 +200,7 @@ fn main() -> Result<(), failure::Error> {
             None => None,
         };
 
-        commands::build(&cache, &project)?;
-        commands::preview(method, body)?;
+        commands::preview(&project, method, body)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -224,7 +219,6 @@ fn main() -> Result<(), failure::Error> {
             _ => false,
         };
 
-        commands::build(&cache, &project)?;
         commands::publish(&user, &project, release)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
