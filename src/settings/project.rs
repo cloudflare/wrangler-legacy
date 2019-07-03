@@ -9,6 +9,14 @@ use log::info;
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct KvNamespace {
+    // name that will be used to bind the JavaScript value to the worker
+    pub binding: String,
+    // identifier of the KV namespace
+    pub id: String,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Project {
     pub name: String,
@@ -21,7 +29,7 @@ pub struct Project {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<String>>,
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

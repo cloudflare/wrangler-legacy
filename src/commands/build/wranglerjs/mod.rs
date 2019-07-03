@@ -45,8 +45,11 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
             failure::bail!("Webpack returned an error");
         }
 
+        let kv_namespaces = project.kv_namespaces.clone().unwrap_or(Vec::new());
+        let kv_namespaces_len = kv_namespaces.clone().len();
+
         bundle
-            .write(&wranglerjs_output)
+            .write(&wranglerjs_output, kv_namespaces)
             .expect("could not write bundle to disk");
 
         let mut msg = format!(
@@ -55,6 +58,9 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
         );
         if bundle.has_wasm() {
             msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
+        }
+        if kv_namespaces_len > 0 {
+            msg = format!("{} and has {} kv namespaces", msg, kv_namespaces_len);
         }
         message::success(&msg);
         Ok(())
