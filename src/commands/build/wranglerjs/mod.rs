@@ -1,9 +1,7 @@
-mod bundle;
 pub mod output;
 
 use crate::commands::publish::package::Package;
 use crate::install;
-pub use bundle::Bundle;
 use fs2::FileExt;
 use log::info;
 use output::WranglerjsOutput;
@@ -17,8 +15,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::settings::project::Project;
-
 use crate::terminal::message;
+use crate::worker_bundle::WorkerBundle;
 
 // Run the underlying {wranglerjs} executable.
 //
@@ -26,8 +24,8 @@ use crate::terminal::message;
 // executable and wait for completion. The file will receive the a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(project: &Project) -> Result<(), failure::Error> {
-    let (mut command, temp_file, bundle) = setup_build(project)?;
+pub fn run_build(project: &Project) -> Result<WorkerBundle, failure::Error> {
+    let (mut command, temp_file) = setup_build(project)?;
 
     info!("Running {:?}", command);
 
@@ -45,19 +43,10 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
             failure::bail!("Webpack returned an error");
         }
 
-        bundle
-            .write(&wranglerjs_output)
-            .expect("could not write bundle to disk");
-
-        let mut msg = format!(
-            "Built successfully, script size is {}",
-            wranglerjs_output.script_size()
-        );
-        if bundle.has_wasm() {
-            msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
-        }
-        message::success(&msg);
-        Ok(())
+        let worker_bundle = wranglerjs_output
+            .to_worker_bundle()
+            .expect("could not create worker bundle from output");
+        Ok(worker_bundle)
     } else {
         fs::remove_file(temp_file)?;
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
@@ -65,7 +54,7 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
 }
 
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
-fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure::Error> {
+fn setup_build(project: &Project) -> Result<(Command, PathBuf), failure::Error> {
     for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
@@ -92,9 +81,7 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
         temp_file.clone().to_str().unwrap().to_string()
     ));
 
-    let bundle = Bundle::new();
-
-    command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
+    command.arg(format!("--wasm-binding={}", output::WASM_BINDING));
 
     let webpack_config_path = PathBuf::from(
         &project
@@ -106,7 +93,7 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
     // if {webpack.config.js} is not present, we infer the entry based on the
     // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
-    if !bundle.has_webpack_config(&webpack_config_path) {
+    if !has_webpack_config(&webpack_config_path) {
         let package = Package::new("./")?;
         let current_dir = env::current_dir()?;
         let package_main = current_dir
@@ -123,7 +110,7 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
         ));
     }
 
-    Ok((command, temp_file, bundle))
+    Ok((command, temp_file))
 }
 
 // Run {npm install} in the specified directory. Skips the install if a
@@ -217,4 +204,8 @@ fn random_chars(n: usize) -> String {
         .map(|()| rng.sample(Alphanumeric))
         .take(n)
         .collect()
+}
+
+pub fn has_webpack_config(webpack_config_path: &PathBuf) -> bool {
+    webpack_config_path.exists()
 }

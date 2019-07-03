@@ -3,8 +3,6 @@ use std::process::Command;
 mod http_method;
 pub use http_method::HTTPMethod;
 
-use crate::commands::publish;
-
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -29,20 +27,20 @@ pub fn preview(
 
     let project_type = &project.project_type;
 
-    commands::build(&project)?;
+    let worker_bundle = commands::build(&project)?;
 
     let res = match project_type {
         ProjectType::Rust => client
             .post(create_address)
-            .multipart(publish::build_multipart_script()?)
+            .multipart(worker_bundle.multipart()?)
             .send(),
         ProjectType::JavaScript => client
             .post(create_address)
-            .body(publish::build_js_script()?)
+            .multipart(worker_bundle.multipart()?)
             .send(),
         ProjectType::Webpack => client
             .post(create_address)
-            .multipart(publish::build_webpack_form()?)
+            .multipart(worker_bundle.multipart()?)
             .send(),
     };
 
