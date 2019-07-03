@@ -142,7 +142,7 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
     File::create(temp_file.clone())?;
 
     command.arg(format!(
-        "--output-file={:?}",
+        "--output-file={}",
         temp_file.clone().to_str().unwrap().to_string()
     ));
 
