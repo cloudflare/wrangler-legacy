@@ -50,7 +50,7 @@ pub fn build_and_watch(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
             thread::spawn(move || loop {
                 if let Ok(DebouncedEvent::Write(_path)) = watcher_rx.recv() {
                     if let Some(tx) = tx.clone() {
-                        tx.send(());
+                        let _ = tx.send(());
                     }
                 }
             });
@@ -59,7 +59,6 @@ pub fn build_and_watch(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
             let tool_name = "wasm-pack";
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
-
 
             let (watcher_tx, watcher_rx) = channel();
             let mut watcher = watcher(watcher_tx, Duration::from_secs(1))?;
@@ -72,7 +71,7 @@ pub fn build_and_watch(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                     let command_name = format!("{:?}", command);
                     if let Ok(_) = commands::run(command, &command_name) {
                         if let Some(tx) = tx.clone() {
-                            tx.send(());
+                            let _ = tx.send(());
                         }
                     }
                 }

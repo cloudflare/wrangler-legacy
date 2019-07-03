@@ -10,7 +10,6 @@ use crate::commands::publish;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::commands;
 use crate::http;
 <<<<<<< HEAD
 use crate::settings::project::Project;
@@ -148,7 +147,7 @@ fn watch_for_changes(original_id: String) -> Result<(), failure::Error> {
 
     let mut old_id = original_id;
     let (tx, rx) = channel();
-    build_and_watch(&get_project_config()?, Some(tx));
+    build_and_watch(&get_project_config()?, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
         if let Ok(new_id) = upload_and_get_id() {

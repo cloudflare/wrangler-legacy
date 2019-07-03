@@ -84,7 +84,7 @@ pub fn run_build_and_watch(
     watcher.watch(&temp_file, RecursiveMode::Recursive)?;
 
     thread::spawn(move || loop {
-        if let Ok(DebouncedEvent::Write(path)) = watcher_rx.recv() {
+        if let Ok(DebouncedEvent::Write(_path)) = watcher_rx.recv() {
             println!("got new bundle from wranglerjs");
             let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
 
@@ -106,8 +106,10 @@ pub fn run_build_and_watch(
                     msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
                 }
 
+                message::success(&msg);
+
                 if let Some(tx) = tx.clone() {
-                    tx.send(());
+                    let _ = tx.send(());
                 }
             }
         }
