@@ -4,12 +4,20 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::str::FromStr;
 
 use log::info;
 
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
+
+use crate::commands::build::wranglerjs;
+use crate::commands::publish::krate;
+use crate::commands::publish::package::Package;
+use crate::terminal::message;
+use crate::worker::{Resource, Script, WasmModule, Worker};
+use crate::{commands, install};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Project {
@@ -98,6 +106,81 @@ impl Project {
     pub fn new() -> Result<Self, failure::Error> {
         get_project_config()
     }
+
+    pub fn build(&self) -> Result<(), failure::Error> {
+        match self.project_type {
+            ProjectType::JavaScript => {
+                message::info("JavaScript project found. Skipping unnecessary build!")
+            }
+            ProjectType::Rust => {
+                let tool_name = "wasm-pack";
+                let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
+                let args = ["build", "--target", "no-modules"];
+
+                let command = command(&args, binary_path);
+                let command_name = format!("{:?}", command);
+
+                commands::run(command, &command_name)?;
+            }
+            ProjectType::Webpack => {
+                wranglerjs::run_build(self)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn worker(&self) -> Result<Worker, failure::Error> {
+        self.build()?;
+        let worker = match self.project_type {
+            ProjectType::Rust => {
+                let name = krate::Krate::new("./")?.name.replace("-", "_");
+
+                build_generated_dir()?;
+                concat_js(&name)?;
+
+                let wasm_path = &format!("./pkg/{}_bg.wasm", name);
+                let script_path = "./worker/generated/script.js";
+
+                Worker {
+                    name: self.name.clone(),
+                    script: Script {
+                        name: "script".to_string(),
+                        path: script_path.to_string(),
+                    },
+                    resources: vec![Resource::WasmModule(WasmModule {
+                        path: wasm_path.to_string(),
+                        binding: "wasmprogram".to_string(),
+                    })],
+                }
+            }
+            ProjectType::Webpack => {
+                let script_path = "./worker/script.js";
+                Worker {
+                    name: self.name.clone(),
+                    script: Script {
+                        name: "script".to_string(),
+                        path: script_path.to_string(),
+                    },
+                    resources: Vec::new(),
+                }
+            }
+            ProjectType::JavaScript => {
+                let pkg = Package::new("./")?;
+                let script_path = pkg.main()?;
+                Worker {
+                    name: self.name.clone(),
+                    script: Script {
+                        name: "script".to_string(),
+                        path: script_path,
+                    },
+                    resources: Vec::new(),
+                }
+            }
+        };
+        // add other resoureces
+        Ok(worker)
+    }
 }
 
 pub fn get_project_config() -> Result<Project, failure::Error> {
@@ -125,4 +208,39 @@ pub fn get_project_config() -> Result<Project, failure::Error> {
             failure::bail!(msg)
         }
     }
+}
+
+fn command(args: &[&str], binary_path: PathBuf) -> Command {
+    message::working("Compiling your project to WebAssembly...");
+
+    let mut c = if cfg!(target_os = "windows") {
+        let mut c = Command::new("cmd");
+        c.arg("/C");
+        c.arg(binary_path);
+        c
+    } else {
+        Command::new(binary_path)
+    };
+
+    c.args(args);
+    c
+}
+
+fn build_generated_dir() -> Result<(), failure::Error> {
+    let dir = "./worker/generated";
+    if !Path::new(dir).is_dir() {
+        fs::create_dir("./worker/generated")?;
+    }
+    Ok(())
+}
+
+fn concat_js(name: &str) -> Result<(), failure::Error> {
+    let bindgen_js_path = format!("./pkg/{}.js", name);
+    let bindgen_js: String = fs::read_to_string(bindgen_js_path)?.parse()?;
+
+    let worker_js: String = fs::read_to_string("./worker/worker.js")?.parse()?;
+    let js = format!("{} {}", bindgen_js, worker_js);
+
+    fs::write("./worker/generated/script.js", js.as_bytes())?;
+    Ok(())
 }

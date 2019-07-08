@@ -1,6 +1,7 @@
-mod krate;
+pub mod krate;
 pub mod preview;
 mod route;
+pub mod worker_bundle;
 use route::Route;
 
 pub mod package;
@@ -13,7 +14,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-use crate::commands;
 use crate::commands::build::wranglerjs::Bundle;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
@@ -26,9 +26,11 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     info!("release = {}", release);
 
     validate_project(project, release)?;
-    commands::build(&project)?;
+
+    let worker = project.worker()?;
+
     create_kv_namespaces(user, &project)?;
-    publish_script(&user, &project, release)?;
+    publish_worker(&user, &project, worker, release)?;
     if release {
         info!("release mode detected, making a route...");
         let route = Route::new(&project)?;
@@ -84,7 +86,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
 fn publish_worker(
     user: &GlobalUser,
     project: &Project,
-    worker: &Worker,
+    worker: Worker,
     release: bool,
 ) -> Result<(), failure::Error> {
     let worker_addr = format!(
@@ -93,9 +95,11 @@ fn publish_worker(
     );
 
     let client = http::auth_client(user);
+
+    let bundle = worker_bundle::WorkerBundle::from(worker);
     let mut res = client
         .put(&worker_addr)
-        .multipart(worker.multipart()?)
+        .multipart(bundle.multipart()?)
         .send()?;
 
     if res.status().is_success() {
