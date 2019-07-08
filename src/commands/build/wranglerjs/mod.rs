@@ -76,13 +76,9 @@ pub fn run_build_and_watch(
     info!("Running {:?}", command);
 
     //start wranglerjs in a new thread
-    let command_handle = command.spawn()?;
+    let _command_handle = command.spawn()?;
 
-    println!("getting watcher ready");
-
-    let builder = thread::Builder::new().name("handler".into());
-
-    let handle = builder.spawn(move || {
+    let _thread_handle = thread::spawn(move || {
         let (watcher_tx, watcher_rx) = channel();
         let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
@@ -122,7 +118,7 @@ pub fn run_build_and_watch(
                 }
             }
         }
-    })?;
+    });
 
     Ok(())
 }

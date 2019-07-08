@@ -55,10 +55,18 @@ pub fn preview(
     let msg = format!("Your worker responded with: {}", worker_res);
     message::preview(&msg);
 
-    open(preview_host, https, script_id, &session.to_string())?;
+    let ws_port: u16 = 8025;
+
+    open(
+        preview_host,
+        https,
+        script_id,
+        &session.to_string(),
+        ws_port,
+    )?;
 
     if livereload {
-        watch_for_changes(session.to_string())?;
+        watch_for_changes()?;
     } else {
         println!("👷‍♀️ Your worker responded with: {}", worker_res);
     }
@@ -71,18 +79,19 @@ fn open(
     https: bool,
     script_id: &str,
     session_id: &str,
+    ws_port: u16,
 ) -> Result<(), failure::Error> {
     let https_str = if https { "https://" } else { "http://" };
 
     let browser_preview = if install::target::DEBUG {
         format!(
-            "http://localhost:3000/src/test/manual/#{}:{}{}?session_id={}&noeditor=true",
-            script_id, https_str, preview_host, session_id
+            "http://localhost:3000/src/test/manual/?session_id={}\\&ws_port={}\\&hide_editor=true#{}:{}{}",
+            session_id, ws_port, script_id, https_str, preview_host,
         )
     } else {
         format!(
-            "https://cloudflareworkers.com/#{}:{}{}?session_id={}&noeditor=true",
-            script_id, https_str, preview_host, session_id
+            "https://cloudflareworkers.com/?session_id={}\\&ws_port={}\\&hide_editor=true#{}:{}{}",
+            session_id, ws_port, script_id, https_str, preview_host,
         )
     };
     let windows_cmd = format!("start {}", browser_preview);
@@ -134,32 +143,28 @@ fn post(
 //in the future we may use this websocket for other things
 //so support other message types
 #[derive(Debug, Serialize)]
+#[serde(tag = "type")]
 enum FiddleMessage {
-    LiveReload { old_id: String, new_id: String },
+    LiveReload { new_id: String },
 }
 
-fn watch_for_changes(original_id: String) -> Result<(), failure::Error> {
+fn watch_for_changes() -> Result<(), failure::Error> {
     //start up the websocket server.
     //needs a bs handler factory closure, even though we never respond
     let server = WebSocket::new(|_out| |_msg| Ok(()))?.bind("localhost:8025")?;
     let broadcaster = server.broadcaster();
     thread::spawn(move || server.run());
 
-    let mut old_id = original_id;
     let (tx, rx) = channel();
     build_and_watch(&get_project_config()?, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
         if let Ok(new_id) = upload_and_get_id() {
-            let msg = FiddleMessage::LiveReload {
-                old_id: old_id.clone(),
-                new_id: new_id.clone(),
-            };
+            let msg = FiddleMessage::LiveReload { new_id: new_id };
 
             match broadcaster.send(serde_json::to_string(&msg)?) {
                 Ok(_) => {
                     println!("Sent new id to preview!");
-                    old_id = new_id;
                 }
                 Err(_e) => println!("communication with preview failed"),
             }
