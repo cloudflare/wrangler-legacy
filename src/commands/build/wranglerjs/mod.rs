@@ -41,7 +41,7 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
         if wranglerjs_output.has_errors() {
-            message::user_error(&format!("{}", wranglerjs_output.get_errors()));
+            message::user_error(wranglerjs_output.get_errors().as_str());
             failure::bail!("Webpack returned an error");
         }
 

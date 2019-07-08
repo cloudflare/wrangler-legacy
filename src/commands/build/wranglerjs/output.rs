@@ -11,10 +11,6 @@ use std::io::prelude::*;
 pub struct WranglerjsOutput {
     pub wasm: Option<String>,
     pub script: String,
-    // {wranglerjs} will send us the path to the {dist} directory that {Webpack}
-    // used; it's tedious to remove a directory with content in JavaScript so
-    // let's do it in Rust!
-    pub dist_to_clean: Option<String>,
     // Errors emited by {wranglerjs}, if any
     pub errors: Vec<String>,
 }
@@ -58,7 +54,6 @@ mod tests {
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
             script: "aaaa".to_string(),
-            dist_to_clean: None,
             wasm: None,
         };
 
@@ -70,7 +65,6 @@ mod tests {
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
             script: "".to_string(),
-            dist_to_clean: None,
             wasm: Some("abc".to_string()),
         };
 
