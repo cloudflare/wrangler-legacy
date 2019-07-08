@@ -41,7 +41,7 @@ pub fn preview(
     let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
     let cookie = format!(
         "__ew_fiddle_preview={}{}{}{}",
-        script_id, session, https, preview_host
+        script_id, session, https as u8, preview_host
     );
 
     let method = method.unwrap_or_default();
@@ -66,7 +66,7 @@ pub fn preview(
     )?;
 
     if livereload {
-        watch_for_changes()?;
+        watch_for_changes(session.to_string(), ws_port)?;
     } else {
         println!("👷‍♀️ Your worker responded with: {}", worker_res);
     }
@@ -143,15 +143,24 @@ fn post(
 //in the future we may use this websocket for other things
 //so support other message types
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FiddleMessage {
+    session_id: String,
+    #[serde(flatten)]
+    data: FiddleMessageData,
+}
+
+#[derive(Debug, Serialize)]
 #[serde(tag = "type")]
-enum FiddleMessage {
+enum FiddleMessageData {
+    #[serde(rename_all = "camelCase")]
     LiveReload { new_id: String },
 }
 
-fn watch_for_changes() -> Result<(), failure::Error> {
+fn watch_for_changes(session_id: String, ws_port: u16) -> Result<(), failure::Error> {
     //start up the websocket server.
     //needs a bs handler factory closure, even though we never respond
-    let server = WebSocket::new(|_out| |_msg| Ok(()))?.bind("localhost:8025")?;
+    let server = WebSocket::new(|_out| |_msg| Ok(()))?.bind(format!("localhost:{}", ws_port))?;
     let broadcaster = server.broadcaster();
     thread::spawn(move || server.run());
 
@@ -160,7 +169,12 @@ fn watch_for_changes() -> Result<(), failure::Error> {
 
     while let Ok(_e) = rx.recv() {
         if let Ok(new_id) = upload_and_get_id() {
-            let msg = FiddleMessage::LiveReload { new_id: new_id };
+            let msg = FiddleMessage { 
+                session_id: session_id.clone(),
+                data: FiddleMessageData::LiveReload {
+                    new_id,
+                }
+            };
 
             match broadcaster.send(serde_json::to_string(&msg)?) {
                 Ok(_) => {
@@ -178,7 +192,7 @@ fn watch_for_changes() -> Result<(), failure::Error> {
 
 #[derive(Debug, Deserialize)]
 struct Preview {
-    pub id: String,
+    id: String,
 }
 
 fn upload_and_get_id() -> Result<String, failure::Error> {
