@@ -71,9 +71,7 @@ const compilerCallback = (err, stats) => {
     throw err;
   }
 
-  console.log(lastHash + " : " + stats.hash);
   if (stats.hash != lastHash) {
-    console.log("build done")
     const assets = stats.compilation.assets;
     const jsonStats = stats.toJson();
     const bundle = {
@@ -101,9 +99,7 @@ const compilerCallback = (err, stats) => {
 };
 
 if (args["watch"] === "1") {
-  console.log("watch mode");
   compiler.watch(fullConfig.watchOptions, compilerCallback);
 } else {
-  console.log("run mode");
   compiler.run(compilerCallback);
 }
