@@ -168,16 +168,13 @@ fn main() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let project_type = match matches.value_of("type") {
-            Some(s) => Some(ProjectType::from_str(&s.to_lowercase())?),
-            None => None,
+            Some(s) => ProjectType::from_str(&s.to_lowercase())?,
+            None => ProjectType::default(),
         };
 
         let default_template = "https://github.com/cloudflare/worker-template";
         let template = matches.value_of("template").unwrap_or(match project_type {
-            Some(ref pt) => match pt {
-                ProjectType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
-                _ => default_template,
-            },
+            ProjectType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
             _ => default_template,
         });
 

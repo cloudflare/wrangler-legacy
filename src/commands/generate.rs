@@ -5,18 +5,21 @@ use std::process::Command;
 
 use crate::terminal::{emoji, message};
 
-pub fn generate(name: &str, template: &str, pt: Option<ProjectType>) -> Result<(), failure::Error> {
+pub fn generate(
+    name: &str,
+    template: &str,
+    project_type: ProjectType,
+) -> Result<(), failure::Error> {
     let tool_name = "cargo-generate";
     let binary_path = install::install(tool_name, "ashleygwilliams")?.binary(tool_name)?;
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
 
-    let pt = pt.unwrap_or_else(|| project_type(template));
-    let command = command(name, binary_path, &args, &pt);
+    let command = command(name, binary_path, &args, &project_type);
     let command_name = format!("{:?}", command);
 
     commands::run(command, &command_name)?;
-    Project::generate(name.to_string(), pt, false)?;
+    Project::generate(name.to_string(), project_type, false)?;
     Ok(())
 }
 
@@ -41,11 +44,4 @@ fn command(name: &str, binary_path: PathBuf, args: &[&str], project_type: &Proje
 
     c.args(args);
     c
-}
-
-fn project_type(template: &str) -> ProjectType {
-    if template.contains("rust") {
-        return ProjectType::Rust;
-    }
-    ProjectType::default()
 }
