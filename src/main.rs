@@ -202,7 +202,7 @@ fn run() -> Result<(), failure::Error> {
         let project = settings::project::Project::new()?;
         match matches.occurrences_of("watch") {
             1 => commands::build(&project)?,
-            _ => commands::build_and_watch(&project, None)?,
+            _ => commands::watch_and_build(&project, None)?,
         };
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");

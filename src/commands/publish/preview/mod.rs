@@ -4,7 +4,7 @@ mod http_method;
 pub use http_method::HTTPMethod;
 
 use crate::commands::build;
-use crate::commands::build_and_watch;
+use crate::commands::watch_and_build;
 use crate::commands::publish;
 
 use serde::{Deserialize, Serialize};
@@ -165,7 +165,7 @@ fn watch_for_changes(session_id: String, ws_port: u16) -> Result<(), failure::Er
     thread::spawn(move || server.run());
 
     let (tx, rx) = channel();
-    build_and_watch(&get_project_config()?, Some(tx))?;
+    watch_and_build(&get_project_config()?, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
         if let Ok(new_id) = upload_and_get_id() {
