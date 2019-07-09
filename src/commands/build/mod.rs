@@ -8,10 +8,12 @@ use std::process::Command;
 
 use crate::terminal::message;
 
-use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
+use notify::{watcher, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
+
+use std::env;
 
 pub fn build(project: &Project) -> Result<(), failure::Error> {
     let project_type = &project.project_type;
@@ -41,16 +43,24 @@ pub fn build_and_watch(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
     let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
-            let (watcher_tx, watcher_rx) = channel();
-            let mut watcher = watcher(watcher_tx, Duration::from_secs(1))?;
-
             let package = Package::new("./")?;
-            watcher.watch(package.main()?, RecursiveMode::Recursive)?;
+            let entry = package.main()?;
+            thread::spawn(move || {
+                let (watcher_tx, watcher_rx) = channel();
+                let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-            thread::spawn(move || loop {
-                if let Ok(DebouncedEvent::Write(_path)) = watcher_rx.recv() {
-                    if let Some(tx) = tx.clone() {
-                        let _ = tx.send(());
+                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
+                message::info(&format!("watching {:?}", &entry));
+
+                loop {
+                    match watcher_rx.recv() {
+                        Ok(_) => {
+                            message::working("Detected changes...");
+                            if let Some(tx) = tx.clone() {
+                                let _ = tx.send(());
+                            }
+                        },
+                        Err(_) => panic!("Something went wrong while watching.")
                     }
                 }
             });
@@ -60,19 +70,29 @@ pub fn build_and_watch(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
-            let (watcher_tx, watcher_rx) = channel();
-            let mut watcher = watcher(watcher_tx, Duration::from_secs(1))?;
+            thread::spawn(move || {
+                let (watcher_tx, watcher_rx) = channel();
+                let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-            watcher.watch("./src", RecursiveMode::Recursive)?;
+                let mut path = env::current_dir().expect("current dir");
+                path.push("src");
+ 
+                watcher.watch(&path, RecursiveMode::Recursive).unwrap();
+                message::info(&format!("watching {:?}", &path));
 
-            thread::spawn(move || loop {
-                if let Ok(DebouncedEvent::Write(_path)) = watcher_rx.recv() {
-                    let command = command(&args, &binary_path);
-                    let command_name = format!("{:?}", command);
-                    if let Ok(_) = commands::run(command, &command_name) {
-                        if let Some(tx) = tx.clone() {
-                            let _ = tx.send(());
-                        }
+                loop {
+                    match watcher_rx.recv() {
+                        Ok(_) => {
+                            message::working("Detected changes...");
+                            let command = command(&args, &binary_path);
+                            let command_name = format!("{:?}", command);
+                            if let Ok(_) = commands::run(command, &command_name) {
+                                if let Some(tx) = tx.clone() {
+                                    let _ = tx.send(());
+                                }
+                            }
+                        },
+                        Err(_) => panic!("Something went wrong while watching.")
                     }
                 }
             });

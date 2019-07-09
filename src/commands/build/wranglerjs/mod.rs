@@ -19,7 +19,7 @@ use std::process::Command;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-use notify::{watcher, DebouncedEvent, RecursiveMode, Watcher};
+use notify::{watcher, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
@@ -44,22 +44,7 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
         let wranglerjs_output: WranglerjsOutput =
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
-        if wranglerjs_output.has_errors() {
-            message::user_error(wranglerjs_output.get_errors().as_str());
-            failure::bail!("Webpack returned an error");
-        }
-
-        bundle
-            .write(&wranglerjs_output)
-            .expect("could not write bundle to disk");
-
-        let msg = format!(
-            "Built successfully, built project size is {}",
-            wranglerjs_output.project_size()
-        );
-
-        message::success(&msg);
-        Ok(())
+        write_wranglerjs_output(&bundle, &wranglerjs_output)
     } else {
         fs::remove_file(temp_file)?;
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
@@ -84,42 +69,47 @@ pub fn run_build_and_watch(
 
         watcher.watch(&temp_file, RecursiveMode::Recursive).unwrap();
 
-        println!("watching {:?}", &temp_file);
+        message::info(&format!("watching {:?}", &temp_file));
 
         loop {
-            let event = watcher_rx.recv();
-            if let Ok(DebouncedEvent::Write(_)) = event {
-                println!("got new bundle from wranglerjs");
-                let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
+            match watcher_rx.recv() {
+                Ok(_) => {
+                    message::working("Detected changes...");
+                    let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
 
-                let wranglerjs_output: WranglerjsOutput =
-                    serde_json::from_str(&output).expect("could not parse wranglerjs output");
+                    let wranglerjs_output: WranglerjsOutput =
+                        serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
-                if wranglerjs_output.has_errors() {
-                    message::user_error(&format!("{}", wranglerjs_output.get_errors()));
-                } else {
-                    bundle
-                        .write(&wranglerjs_output)
-                        .expect("could not write bundle to disk");
-
-                    let mut msg = format!(
-                        "Built successfully, script size is {}",
-                        wranglerjs_output.script_size()
-                    );
-                    if bundle.has_wasm() {
-                        msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
+                    if write_wranglerjs_output(&bundle, &wranglerjs_output).is_ok() {
+                        if let Some(tx) = tx.clone() {
+                            let _ = tx.send(());
+                        }
                     }
-
-                    message::success(&msg);
-
-                    if let Some(tx) = tx.clone() {
-                        let _ = tx.send(());
-                    }
-                }
+                },
+                Err(_) => panic!("Something went wrong while watching.")
             }
         }
     });
 
+    Ok(())
+}
+
+fn write_wranglerjs_output(bundle: &Bundle, output: &WranglerjsOutput) -> Result<(), failure::Error> {
+    if output.has_errors() {
+        message::user_error(output.get_errors().as_str());
+        failure::bail!("Webpack returned an error");
+    }
+
+    bundle
+        .write(output)
+        .expect("could not write bundle to disk");
+
+    let msg = format!(
+        "Built successfully, built project size is {}",
+        output.project_size()
+    );
+
+    message::success(&msg);
     Ok(())
 }
 
