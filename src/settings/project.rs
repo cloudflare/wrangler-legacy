@@ -156,14 +156,22 @@ impl Project {
             }
             ProjectType::Webpack => {
                 let script_path = "./worker/script.js";
-                Worker {
+                let mut worker = Worker {
                     name: self.name.clone(),
                     script: Script {
                         name: "script".to_string(),
                         path: script_path.to_string(),
                     },
                     resources: Vec::new(),
-                }
+                };
+                let wasm_path = "./worker/module.wasm";
+                if Path::new(wasm_path).exists() {
+                    worker.resources.push(Resource::WasmModule(WasmModule {
+                        path: wasm_path.to_string(),
+                        binding: "wasmprogram".to_string(),
+                    }));
+                };
+                worker
             }
             ProjectType::JavaScript => {
                 let pkg = Package::new("./")?;
