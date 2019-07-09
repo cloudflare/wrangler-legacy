@@ -97,9 +97,11 @@ fn publish_worker(
     let client = http::auth_client(user);
 
     let bundle = worker_bundle::WorkerBundle::from(worker);
+    let form = bundle.multipart()?;
+    dbg!(&form);
     let mut res = client
         .put(&worker_addr)
-        .multipart(bundle.multipart()?)
+        .multipart(form)
         .send()?;
 
     if res.status().is_success() {

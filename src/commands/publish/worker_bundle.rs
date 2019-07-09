@@ -27,8 +27,7 @@ impl WorkerBundle {
         for binding in &self.bindings {
             match binding {
                 Binding::wasm_module(ref wasm) => {
-                    let mut part = multipart::Part::file(wasm.path.to_string())?;
-                    part = part.file_name(wasm.name.to_string());
+                    let part = multipart::Part::file(wasm.path.to_string())?;
                     parts.push((wasm.name.to_string(), part));
                 }
                 Binding::kv_namespace(_) => {
@@ -44,7 +43,7 @@ impl WorkerBundle {
             body_part: self.script_name.clone(),
             bindings: &self.bindings,
         };
-        Ok(multipart::Part::bytes(serde_json::to_vec(&metadata)?).mime_str("application/json")?)
+        Ok(multipart::Part::bytes(serde_json::to_vec(&metadata)?).file_name("metadata.json").mime_str("application/json")?)
     }
 }
 
