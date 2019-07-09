@@ -1,6 +1,9 @@
 mod bundle;
 pub mod output;
 
+use crate::commands::build::watch::COOLDOWN_PERIOD;
+use crate::commands::build::watch::wait_for_changes;
+
 use crate::commands::publish::package::Package;
 use crate::install;
 use crate::util;
@@ -61,9 +64,9 @@ pub fn run_build_and_watch(
 
     info!("Running {:?}", command);
 
-    let _command_guard = util::GuardedCommand::spawn(command);
+    thread::spawn(move || {
+        let _command_guard = util::GuardedCommand::spawn(command);
 
-    let _watch_thread_handle = thread::spawn(move || {
         let (watcher_tx, watcher_rx) = channel();
         let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
@@ -71,12 +74,20 @@ pub fn run_build_and_watch(
 
         message::info(&format!("watching {:?}", &temp_file));
 
-        loop {
-            match watcher_rx.recv() {
-                Ok(_) => {
-                    message::working("Detected changes...");
-                    let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
+        let mut is_first = true;
 
+        loop {
+            match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
+                Ok(_) => {
+                    if is_first {
+                        is_first = false;
+                        //skip the first change event
+                        //so we don't do a refresh immediately
+                        continue;
+                    }
+
+                    let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
+                    println!("{}", output);
                     let wranglerjs_output: WranglerjsOutput =
                         serde_json::from_str(&output).expect("could not parse wranglerjs output");
 

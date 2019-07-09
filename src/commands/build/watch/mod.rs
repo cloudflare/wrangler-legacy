@@ -1,3 +1,6 @@
+mod watcher;
+pub use watcher::wait_for_changes;
+
 use crate::commands::build::{command, wranglerjs};
 use crate::commands::publish::Package;
 use crate::settings::project::{Project, ProjectType};
@@ -9,6 +12,8 @@ use std::env;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
+
+pub const COOLDOWN_PERIOD: Duration = Duration::from_millis(2000);
 
 /// watch a project for changes and re-build it when necessary,
 /// outputting a build event to tx.
@@ -26,9 +31,8 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                 message::info(&format!("watching {:?}", &entry));
 
                 loop {
-                    match watcher_rx.recv() {
-                        Ok(_) => {
-                            message::working("Detected changes...");
+                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
+                        Ok(_path) => {
                             if let Some(tx) = tx.clone() {
                                 let _ = tx.send(());
                             }
@@ -54,9 +58,8 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                 message::info(&format!("watching {:?}", &path));
 
                 loop {
-                    match watcher_rx.recv() {
-                        Ok(_) => {
-                            message::working("Detected changes...");
+                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
+                        Ok(_path) => {
                             let command = command(&args, &binary_path);
                             let command_name = format!("{:?}", command);
                             if commands::run(command, &command_name).is_ok() {
