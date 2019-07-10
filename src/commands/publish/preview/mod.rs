@@ -3,14 +3,12 @@ use std::process::Command;
 mod http_method;
 pub use http_method::HTTPMethod;
 
-use crate::commands::publish;
-
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::commands;
+use crate::commands::publish::worker_bundle;
 use crate::http;
-use crate::settings::project::{Project, ProjectType};
+use crate::settings::project::Project;
 use crate::terminal::message;
 
 #[derive(Debug, Deserialize)]
@@ -27,26 +25,15 @@ pub fn preview(
 
     let client = http::client();
 
-    let project_type = &project.project_type;
+    let worker = project.worker()?;
+    let bundle = worker_bundle::WorkerBundle::from(worker);
 
-    commands::build(&project)?;
+    let form = bundle.multipart()?;
 
-    let res = match project_type {
-        ProjectType::Rust => client
-            .post(create_address)
-            .multipart(publish::build_multipart_script()?)
-            .send(),
-        ProjectType::JavaScript => client
-            .post(create_address)
-            .body(publish::build_js_script()?)
-            .send(),
-        ProjectType::Webpack => client
-            .post(create_address)
-            .multipart(publish::build_webpack_form()?)
-            .send(),
-    };
+    let req = client.post(create_address).multipart(form);
+    let mut res = req.send()?;
 
-    let p: Preview = serde_json::from_str(&res?.text()?)?;
+    let p: Preview = serde_json::from_str(&res.text()?)?;
 
     let session = Uuid::new_v4().to_simple();
 

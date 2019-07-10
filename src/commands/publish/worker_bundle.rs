@@ -12,11 +12,12 @@ pub struct WorkerBundle {
 
 impl WorkerBundle {
     pub fn multipart(&self) -> Result<multipart::Form, failure::Error> {
-        let mut form = multipart::Form::new().file(self.script_name.clone(), &self.script_path)?;
+        let mut form = multipart::Form::new();
         let parts = self.binding_parts()?;
         for (name, part) in parts {
             form = form.part(name, part);
         }
+        form = form.file(self.script_name.clone(), &self.script_path)?;
         Ok(form)
     }
 
@@ -28,7 +29,7 @@ impl WorkerBundle {
             match binding {
                 Binding::wasm_module(ref wasm) => {
                     let part = multipart::Part::file(wasm.path.to_string())?;
-                    parts.push((wasm.name.to_string(), part));
+                    parts.push((wasm.name.clone(), part));
                 }
                 Binding::kv_namespace(_) => {
                     // kv bindings don't add their own part to the multipart form
@@ -43,7 +44,9 @@ impl WorkerBundle {
             body_part: self.script_name.clone(),
             bindings: &self.bindings,
         };
-        Ok(multipart::Part::bytes(serde_json::to_vec(&metadata)?).file_name("metadata.json").mime_str("application/json")?)
+        Ok(multipart::Part::bytes(serde_json::to_vec(&metadata)?)
+            .file_name("metadata.json")
+            .mime_str("application/json")?)
     }
 }
 
