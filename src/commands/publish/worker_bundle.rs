@@ -71,6 +71,8 @@ pub struct MetaData<'a> {
     bindings: &'a [Binding],
 }
 
+// setting the serde tag to type makes it so the "type" key in the resulting json object is the
+// same as the enum member name.
 #[derive(Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum Binding {
