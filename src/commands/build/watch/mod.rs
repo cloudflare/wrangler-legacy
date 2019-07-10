@@ -34,7 +34,7 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
                         Ok(_path) => {
                             if let Some(tx) = tx.clone() {
-                                let _ = tx.send(());
+                                tx.send(()).expect("--watch change message failed to send");
                             }
                         }
                         Err(_) => message::user_error("Something went wrong while watching."),
@@ -64,7 +64,7 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                             let command_name = format!("{:?}", command);
                             if commands::run(command, &command_name).is_ok() {
                                 if let Some(tx) = tx.clone() {
-                                    let _ = tx.send(());
+                                    tx.send(()).expect("--watch change message failed to send");
                                 }
                             }
                         }

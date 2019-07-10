@@ -93,7 +93,7 @@ pub fn run_build_and_watch(
 
                     if write_wranglerjs_output(&bundle, &wranglerjs_output).is_ok() {
                         if let Some(tx) = tx.clone() {
-                            let _ = tx.send(());
+                            tx.send(()).expect("--watch change message failed to send");
                         }
                     }
                 }
