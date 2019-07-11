@@ -1,3 +1,5 @@
+use crate::terminal::emoji;
+
 use std::collections::HashMap;
 use std::fmt;
 use std::fs;
@@ -115,10 +117,12 @@ pub fn get_project_config() -> Result<Project, failure::Error> {
         Ok(s) => Ok(s),
         Err(e) => {
             let msg = format!(
-                "⚠️ Your project config has an error, check your `wrangler.toml`: {}",
+                "{} Your project config has an error, check your `wrangler.toml`: {}",
+                emoji::WARN,
                 e
             );
-            Err(failure::err_msg(msg))
+
+            failure::bail!(msg)
         }
     }
 }
