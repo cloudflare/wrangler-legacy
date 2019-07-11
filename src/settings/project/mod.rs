@@ -213,7 +213,7 @@ fn wasm_resource(wasm_path: String) -> Result<Resource, failure::Error> {
     }))
 }
 
-pub fn get_project_config() -> Result<Project, failure::Error> {
+fn get_project_config() -> Result<Project, failure::Error> {
     let mut s = Config::new();
 
     let config_path = Path::new("./wrangler.toml");
