@@ -7,8 +7,6 @@ pub mod package;
 
 use log::info;
 
-use std::collections::HashMap;
-
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -22,7 +20,6 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     validate_project(project, release)?;
     let worker = workers::build(project)?;
 
-    create_kv_namespaces(user, &project)?;
     publish_worker(&user, &project, worker, release)?;
     if release {
         info!("release mode detected, making a route...");
@@ -35,43 +32,6 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
         message::success(&msg);
     } else {
         message::success("Success! Your worker was successfully published.");
-    }
-    Ok(())
-}
-
-pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
-    let kv_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces",
-        project.account_id,
-    );
-
-    let client = http::auth_client(user);
-
-    if let Some(namespaces) = &project.kv_namespaces {
-        for namespace in namespaces {
-            info!("Attempting to create namespace '{}'", namespace);
-
-            let mut map = HashMap::new();
-            map.insert("title", namespace);
-
-            let request = client.post(&kv_addr).json(&map).send();
-
-            if let Err(error) = request {
-                // A 400 is returned if the account already owns a namespace with this title.
-                //
-                // https://api.cloudflare.com/#workers-kv-namespace-create-a-namespace
-                match error.status() {
-                    Some(code) if code == 400 => {
-                        info!("Namespace '{}' already exists, continuing.", namespace)
-                    }
-                    _ => {
-                        info!("Error when creating namespace '{}'", namespace);
-                        failure::bail!("⛔ Something went wrong! Error: {}", error)
-                    }
-                }
-            }
-            info!("Namespace '{}' exists now", namespace)
-        }
     }
     Ok(())
 }
