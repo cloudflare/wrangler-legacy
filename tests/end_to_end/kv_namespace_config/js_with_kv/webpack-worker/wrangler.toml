@@ -1,0 +1,8 @@
+name = "js-worker"
+type = "js"
+private = false
+account_id = "43434f8d0d9f52a395a1472b35f23439"
+
+[[kv-namespaces]]
+binding = "TEST_KV_INTEGRATION"
+id = ""

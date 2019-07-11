@@ -1,0 +1,8 @@
+name = "wasm-worker"
+type = "rust"
+private = false
+account_id = ""
+
+[[kv-namespaces]]
+binding = "TEST_KV_INTEGRATION"
+id = ""

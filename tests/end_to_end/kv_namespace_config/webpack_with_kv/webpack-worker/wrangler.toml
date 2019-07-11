@@ -1,0 +1,8 @@
+name = "webpack-worker"
+type = "webpack"
+private = false
+account_id = ""
+
+[[kv-namespaces]]
+binding = "TEST_KV_INTEGRATION"
+id = ""
