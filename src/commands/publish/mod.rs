@@ -14,14 +14,13 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
-use crate::worker::Worker;
+use crate::workers;
 
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
 
     validate_project(project, release)?;
-
-    let worker = project.worker()?;
+    let worker = workers::build(project)?;
 
     create_kv_namespaces(user, &project)?;
     publish_worker(&user, &project, worker, release)?;
@@ -80,7 +79,7 @@ pub fn create_kv_namespaces(user: &GlobalUser, project: &Project) -> Result<(), 
 fn publish_worker(
     user: &GlobalUser,
     project: &Project,
-    worker: Worker,
+    worker: workers::Worker,
     release: bool,
 ) -> Result<(), failure::Error> {
     let worker_addr = format!(

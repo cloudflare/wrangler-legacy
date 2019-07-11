@@ -1,4 +1,4 @@
-use crate::worker::{Resource, Worker};
+use crate::workers::{Resource, Worker};
 use reqwest::multipart;
 use serde::Serialize;
 

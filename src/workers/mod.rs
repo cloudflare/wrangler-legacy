@@ -1,3 +1,6 @@
+mod build;
+pub use build::build;
+
 #[derive(Debug)]
 pub struct Worker {
     pub name: String,

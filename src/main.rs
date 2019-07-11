@@ -14,7 +14,7 @@ mod install;
 mod installer;
 mod settings;
 mod terminal;
-mod worker;
+mod workers;
 
 use crate::settings::project::ProjectType;
 use terminal::emoji;

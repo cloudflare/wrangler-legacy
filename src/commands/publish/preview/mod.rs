@@ -10,6 +10,7 @@ use crate::commands::publish::worker_bundle;
 use crate::http;
 use crate::settings::project::Project;
 use crate::terminal::message;
+use crate::workers;
 
 #[derive(Debug, Deserialize)]
 struct Preview {
@@ -25,7 +26,7 @@ pub fn preview(
 
     let client = http::client();
 
-    let worker = project.worker()?;
+    let worker = workers::build(project)?;
     let bundle = worker_bundle::WorkerBundle::from(worker);
 
     let form = bundle.multipart()?;
