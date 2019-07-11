@@ -2,7 +2,7 @@ use crate::workers::{Resource, Worker};
 use reqwest::multipart;
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct WorkerBundle {
     name: String,
     script_name: String,

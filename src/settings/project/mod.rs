@@ -4,9 +4,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use log::info;
 use config::{Config, Environment, File};
+use log::info;
 use serde::{Deserialize, Serialize};
+
+use crate::terminal::emoji;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Project {
