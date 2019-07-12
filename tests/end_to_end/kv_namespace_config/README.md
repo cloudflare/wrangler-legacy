@@ -80,10 +80,13 @@ This value will take about ten seconds to populate to the edge, so keep this in 
 
 ### Configure Wrangler
 
-[TODO: Outline how this is done in a dev env]
 Run `cargo run -- config` with your Cloudflare auth email and auth key.
 
-## Per project
+## Test
+
+### Best Case - Successful Namespace integration
+
+#### Step 1: Update wrangler.toml
 
 In each project, add your account id and the newly generated kv namespace id to the toml (both of these should be strings):
 
@@ -98,10 +101,19 @@ binding = "TEST_KV_INTEGRATION"
 id = "NEW KV NAMESPACE ID"
 ```
 
-From the project root:
+#### Step 2: Publish the Worker
 
-* Run `cargo run -- publish` and wait for the command to complete.
-* Run the following `curl` command, substituting your workers.dev subdomain:
+From the project root run the following Wrangler command and wait for it to complete:
+
+``` sh
+cargo run -- publish
+```
+
+The publish command should exit successfully and return the URL to use in Step 3.
+
+#### Step 3: Call the Worker
+
+Run the following `curl` command, substituting your workers.dev subdomain:
 
 ``` sh
 curl -X GET "https://test-worker.$YOUR_SUBDOMAIN.workers.dev"
@@ -109,9 +121,32 @@ curl -X GET "https://test-worker.$YOUR_SUBDOMAIN.workers.dev"
 
 The response should include the value you added to the KV store in the setup stage (in this case "bar").
 
+### Missing KV Namespace fields
+
+Follow step 1 and 2 with the following variations on the `wrangler.toml` configurations in Step 1. Step 2 should error out with the indicated error messages:
+
+* no binding value => "mis-configured KV Namespace: missing binding"
+* binding value of empty string => "mis-configured KV Namespace: missing binding"
+* no namespace id => "mis-configured KV Namespace: missing id"
+* namespace id of empty string => "mis-configured KV Namespace: missing id"
+
+### Invalid KV Namespace Binding
+
+Follow step 1 and 2 with the following variations on the `wrangler.toml` configurations in Step 1. Step 2 should error out with the indicated error messages:
+
+* invalid binding value => "mis-configured KV Namespace: binding must be a valid JavaScript symbol"
+
+### KV Namespace does not exist
+
+*Note* This last test is a stretch goal; the API does not currently return a specific error when this is the case, just a generic 400. This "feature" is blocked by https://jira.cfops.it/browse/EW-2087.
+
+Follow step 1 and 2 with the following variations on the `wrangler.toml` configurations in Step 1. Step 2 should error out with the indicated error messages:
+
+* invalid id value => "mis-configured KV Namespace: id not found"
+
 ## Clean up
 
-Run the following three `curl` commands to clean up your namespace and your worker:
+Run the following three `curl` commands to clean up your namespace and your worker once you've finished running tests:
 
 ``` sh
 curl -X DELETE "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces/$NAMESPACE_ID/values/foo" \
