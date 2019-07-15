@@ -87,7 +87,6 @@ pub fn run_build_and_watch(
                     }
 
                     let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
-                    println!("{}", output);
                     let wranglerjs_output: WranglerjsOutput =
                         serde_json::from_str(&output).expect("could not parse wranglerjs output");
 

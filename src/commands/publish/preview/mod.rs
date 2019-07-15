@@ -68,7 +68,8 @@ pub fn preview(
     if livereload {
         watch_for_changes(session.to_string(), ws_port)?;
     } else {
-        println!("👷‍♀️ Your worker responded with: {}", worker_res);
+        let msg = format!("👷‍♀️ Your worker responded with: {}", worker_res);
+        message::preview(&msg);
     }
 
     Ok(())
@@ -178,9 +179,9 @@ fn watch_for_changes(session_id: String, ws_port: u16) -> Result<(), failure::Er
 
             match broadcaster.send(serde_json::to_string(&msg)?) {
                 Ok(_) => {
-                    println!("Sent new id to preview!");
+                    message::preview("Sent new id to preview!");
                 }
-                Err(_e) => println!("communication with preview failed"),
+                Err(_e) => message::user_error("communication with preview failed"),
             }
         }
     }

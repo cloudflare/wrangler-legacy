@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use failure::{Error, format_err};
 
 use crate::terminal::message;
+use log::info;
 
 ///Add cooldown for all types of events to watching logic
 pub fn wait_for_changes(rx: &Receiver<DebouncedEvent>, cooldown: Duration) -> Result<PathBuf, Error> {
@@ -33,7 +34,7 @@ pub fn wait_for_changes(rx: &Receiver<DebouncedEvent>, cooldown: Duration) -> Re
 }
 
 fn get_changed_path_from_event(event: DebouncedEvent) -> Result<Option<PathBuf>, Error> {
-    println!("Detected Event {:?}", event);
+    info!("Detected Event {:?}", event);
     match event {
         DebouncedEvent::Error(error, _) => Err(format_err!("{:?}", error)),
         DebouncedEvent::NoticeWrite(path) => Ok(Some(path)),
