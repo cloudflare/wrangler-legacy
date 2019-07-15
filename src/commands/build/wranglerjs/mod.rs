@@ -81,6 +81,7 @@ pub fn run_build_and_watch(
                 Ok(_) => {
                     if is_first {
                         is_first = false;
+                        message::info("Ignoring stale first change");
                         //skip the first change event
                         //so we don't do a refresh immediately
                         continue;
