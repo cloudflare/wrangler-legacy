@@ -4,8 +4,8 @@ mod http_method;
 pub use http_method::HTTPMethod;
 
 use crate::commands::build;
-use crate::commands::watch_and_build;
 use crate::commands::publish;
+use crate::commands::watch_and_build;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -170,11 +170,9 @@ fn watch_for_changes(session_id: String, ws_port: u16) -> Result<(), failure::Er
 
     while let Ok(_e) = rx.recv() {
         if let Ok(new_id) = upload_and_get_id() {
-            let msg = FiddleMessage { 
+            let msg = FiddleMessage {
                 session_id: session_id.clone(),
-                data: FiddleMessageData::LiveReload {
-                    new_id,
-                }
+                data: FiddleMessageData::LiveReload { new_id },
             };
 
             match broadcaster.send(serde_json::to_string(&msg)?) {

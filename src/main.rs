@@ -13,11 +13,11 @@ use log::info;
 
 mod commands;
 mod http;
-mod util;
 mod install;
 mod installer;
 mod settings;
 mod terminal;
+mod util;
 
 use crate::settings::project::ProjectType;
 use exitfailure::ExitFailure;
@@ -210,8 +210,8 @@ fn run() -> Result<(), failure::Error> {
                     //watch_and_build has all the messaging we need
                     //so this loop doesn't actually need to do anything
                 }
-            },
-            _ => commands::build(&project)?
+            }
+            _ => commands::build(&project)?,
         };
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");

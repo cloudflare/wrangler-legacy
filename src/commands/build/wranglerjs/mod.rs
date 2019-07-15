@@ -1,8 +1,8 @@
 mod bundle;
 pub mod output;
 
-use crate::commands::build::watch::COOLDOWN_PERIOD;
 use crate::commands::build::watch::wait_for_changes;
+use crate::commands::build::watch::COOLDOWN_PERIOD;
 
 use crate::commands::publish::package::Package;
 use crate::install;

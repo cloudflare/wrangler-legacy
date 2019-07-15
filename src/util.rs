@@ -1,4 +1,4 @@
-use std::process::{Command,Child};
+use std::process::{Child, Command};
 
 /// wrapper around spawning child processes such that they
 /// have the same behavior as spawned threads i.e. a spawned
