@@ -27,11 +27,11 @@ impl WorkerBundle {
         parts.push(("metadata".to_string(), meta_part));
         for binding in &self.bindings {
             match binding {
-                Binding::wasm_module(ref wasm) => {
+                Binding::WasmModule(ref wasm) => {
                     let part = multipart::Part::file(wasm.path.to_string())?;
                     parts.push((wasm.name.clone(), part));
                 }
-                Binding::kv_namespace(_) => {
+                Binding::KVNamespace(_) => {
                     // kv bindings don't add their own part to the multipart form
                 }
             }
@@ -76,21 +76,21 @@ pub struct MetaData<'a> {
 #[derive(Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum Binding {
-    #[allow(non_camel_case_types)]
-    wasm_module(WasmBinding),
-    #[allow(non_camel_case_types)]
-    kv_namespace(KVBinding),
+    #[serde(rename = "wasm_module")]
+    WasmModule(WasmBinding),
+    #[serde(rename = "kv_namespace")]
+    KVNamespace(KVBinding),
 }
 
 impl From<Resource> for Binding {
     fn from(resource: Resource) -> Binding {
         match resource {
-            Resource::WasmModule(wasm) => Binding::wasm_module(WasmBinding {
-                path: wasm.path.clone(),
+            Resource::WasmModule(wasm) => Binding::WasmModule(WasmBinding {
+                path: wasm.path,
                 name: wasm.binding.clone(),
-                part: wasm.binding.clone(),
+                part: wasm.binding,
             }),
-            Resource::KVNamespace(kv) => Binding::kv_namespace(KVBinding {
+            Resource::KVNamespace(kv) => Binding::KVNamespace(KVBinding {
                 namespace_id: kv.namespace_id.clone(),
                 name: kv.binding.clone(),
             }),

@@ -2,8 +2,7 @@ mod krate;
 
 use std::fs;
 use std::io::BufReader;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::Path;
 
 use super::{Resource, Script, WasmModule, Worker};
 
@@ -11,6 +10,7 @@ use crate::commands::build::wranglerjs;
 use crate::commands::publish::package::Package;
 use crate::settings::project::{Project, ProjectType};
 use crate::terminal::message;
+use crate::utils::command;
 use crate::{commands, install};
 
 pub fn build(project: &Project) -> Result<Worker, failure::Error> {
@@ -132,20 +132,4 @@ fn build_generated_dir() -> Result<(), failure::Error> {
         fs::create_dir("./worker/generated")?;
     }
     Ok(())
-}
-
-fn command(args: &[&str], binary_path: PathBuf) -> Command {
-    message::working("Compiling your project to WebAssembly...");
-
-    let mut c = if cfg!(target_os = "windows") {
-        let mut c = Command::new("cmd");
-        c.arg("/C");
-        c.arg(binary_path);
-        c
-    } else {
-        Command::new(binary_path)
-    };
-
-    c.args(args);
-    c
 }

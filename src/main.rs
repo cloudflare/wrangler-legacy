@@ -14,6 +14,7 @@ mod install;
 mod installer;
 mod settings;
 mod terminal;
+mod utils;
 mod workers;
 
 use crate::settings::project::ProjectType;
