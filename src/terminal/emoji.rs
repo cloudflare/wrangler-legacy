@@ -1,4 +1,4 @@
-//! Emoji contants used by `wrangler`.
+//! Emoji constants used by `wrangler`.
 //!
 //! For the unfamiliar:
 //!
