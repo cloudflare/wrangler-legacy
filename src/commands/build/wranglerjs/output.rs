@@ -1,9 +1,9 @@
+use crate::terminal::emoji;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 use number_prefix::{NumberPrefix, Prefixed, Standalone};
 use serde::Deserialize;
 use std::io::prelude::*;
-use crate::terminal::emoji;
 
 // This structure represents the communication between {wranglerjs} and
 // {wrangler}. It is send back after {wranglerjs} completion.
@@ -50,7 +50,7 @@ impl WranglerjsOutput {
             Standalone(bytes) => format!("{} bytes", bytes),
             Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
         };
-        
+
         let human_leftover = if let Some(bytes_left) = bytes_left {
             let msg = match NumberPrefix::binary(bytes_left as f64) {
                 Standalone(bytes) => format!("{} bytes", bytes),
