@@ -1,28 +1,27 @@
 use std::process::Command;
 
+mod fiddle_messenger;
+use fiddle_messenger::*;
+
+
 mod http_method;
 pub use http_method::HTTPMethod;
 
 use crate::commands::build;
-use crate::commands::publish;
 use crate::commands::watch_and_build;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::http;
-<<<<<<< HEAD
-use crate::settings::project::Project;
-=======
 use crate::install;
-use crate::settings::project::get_project_config;
-use crate::settings::project::{Project, ProjectType};
->>>>>>> c35288a... add build_and_watch
+use crate::settings::project::Project;
 use crate::terminal::message;
+use super::upload_form::build_script_upload_form;
 
 use std::sync::mpsc::channel;
 use std::thread;
-use ws::{CloseCode, Handler, Handshake, Result as WSResult, Sender, WebSocket};
+use ws::{WebSocket, Sender};
 
 pub fn preview(
     project: &Project,
@@ -36,7 +35,7 @@ pub fn preview(
 
     let preview_host = "example.com";
     let https = true;
-    let script_id = &upload_and_get_id()?;
+    let script_id = &upload_and_get_id(project)?;
 
     let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
     let cookie = format!(
@@ -52,9 +51,6 @@ pub fn preview(
         HTTPMethod::Post => post(preview_address, cookie, client, body)?,
     };
 
-    let msg = format!("Your worker responded with: {}", worker_res);
-    message::preview(&msg);
-
     let ws_port: u16 = 8025;
 
     open(
@@ -66,9 +62,13 @@ pub fn preview(
     )?;
 
     if livereload {
-        watch_for_changes(session.to_string(), ws_port)?;
+        let server = WebSocket::new(|out| FiddleMessageServer { out })?
+                     .bind(format!("localhost:{}", ws_port))?;
+        let broadcaster = server.broadcaster();
+        thread::spawn(move || server.run());
+        watch_for_changes(project, session.to_string(), broadcaster)?;
     } else {
-        let msg = format!("👷‍♀️ Your worker responded with: {}", worker_res);
+        let msg = format!("Your worker responded with: {}", worker_res);
         message::preview(&msg);
     }
 
@@ -140,77 +140,12 @@ fn post(
     Ok(res?.text()?)
 }
 
-//for now, this is only used by livereloading.
-//in the future we may use this websocket for other things
-//so support other message types
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct FiddleMessage {
-    session_id: String,
-    #[serde(flatten)]
-    data: FiddleMessageData,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(tag = "type")]
-enum FiddleMessageData {
-    #[serde(rename_all = "camelCase")]
-    LiveReload { new_id: String },
-}
-
-struct FiddleMessageServer {
-    out: Sender,
-}
-
-impl Handler for FiddleMessageServer {
-    fn on_open(&mut self, handshake: Handshake) -> WSResult<()> {
-        #[cfg(not(debug_assertions))]
-        const SAFE_ORIGINS: &[&str] = &[
-            "https://cloudflareworkers.com/",
-        ];
-
-        #[cfg(debug_assertions)]
-        const SAFE_ORIGINS: &[&str] = &[
-            "https://cloudflareworkers.com/",
-            "https://localhost", //trailing slash ommitted to allow for any port
-        ];
-
-        let origin = handshake.request.origin()?.unwrap_or("unknown");
-
-        let is_safe = SAFE_ORIGINS.iter().fold(false, |is_safe, safe_origin| {
-            is_safe || origin.starts_with(safe_origin)
-        });
-
-        if is_safe {
-            message::info(&format!("Accepted connection from {}", origin));
-        } else {
-            message::user_error(&format!(
-                "Denied connection from {}. This is not a trusted origin",
-                origin
-            ));
-
-            let _ = self
-                .out
-                .close(CloseCode::Policy)
-                .expect("failed to close connection to unsafe origin");
-        }
-
-        Ok(())
-    }
-}
-
-fn watch_for_changes(session_id: String, ws_port: u16) -> Result<(), failure::Error> {
-    //start up the websocket server.
-    let server = WebSocket::new(|out| FiddleMessageServer { out })?
-        .bind(format!("localhost:{}", ws_port))?;
-    let broadcaster = server.broadcaster();
-    thread::spawn(move || server.run());
-
+fn watch_for_changes(project: &Project, session_id: String, broadcaster: Sender) -> Result<(), failure::Error> {
     let (tx, rx) = channel();
-    watch_and_build(&get_project_config()?, Some(tx))?;
+    watch_and_build(project, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        if let Ok(new_id) = upload_and_get_id() {
+        if let Ok(new_id) = upload_and_get_id(project) {
             let msg = FiddleMessage {
                 session_id: session_id.clone(),
                 data: FiddleMessageData::LiveReload { new_id },
@@ -235,24 +170,14 @@ struct Preview {
     id: String,
 }
 
-fn upload_and_get_id() -> Result<String, failure::Error> {
+fn upload_and_get_id(project: &Project) -> Result<String, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     let client = http::client();
 
-    let res = match get_project_config()?.project_type {
-        ProjectType::Rust => client
+    let res = client
             .post(create_address)
-            .multipart(publish::build_multipart_script()?)
-            .send(),
-        ProjectType::JavaScript => client
-            .post(create_address)
-            .body(publish::build_js_script()?)
-            .send(),
-        ProjectType::Webpack => client
-            .post(create_address)
-            .multipart(publish::build_webpack_form()?)
-            .send(),
-    };
+            .multipart(build_script_upload_form(project)?)
+            .send();
 
     let p: Preview = serde_json::from_str(&res?.text()?)?;
 
