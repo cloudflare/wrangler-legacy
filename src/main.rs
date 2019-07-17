@@ -1,7 +1,6 @@
 #![allow(clippy::redundant_closure)]
 
 use std::env;
-use std::process;
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
@@ -17,9 +16,10 @@ mod settings;
 mod terminal;
 
 use crate::settings::project::ProjectType;
+use exitfailure::ExitFailure;
 use terminal::emoji;
 
-fn main() {
+fn main() -> Result<(), ExitFailure> {
     env_logger::init();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
@@ -31,11 +31,9 @@ fn main() {
             .starts_with("wrangler-init")
         {
             installer::install();
-        } else if let Err(e) = run() {
-            eprintln!("{}", e);
-            process::exit(1);
         }
     }
+    Ok(run()?)
 }
 
 fn run() -> Result<(), failure::Error> {
