@@ -2,6 +2,7 @@
 
 use std::env;
 use std::str::FromStr;
+use std::process;
 
 use clap::{App, AppSettings, Arg, SubCommand};
 use commands::HTTPMethod;
@@ -31,7 +32,8 @@ fn main() {
         {
             installer::install();
         } else if let Err(e) = run() {
-            println!("{}", e);
+            eprintln!("{}", e);
+            process::exit(1);
         }
     }
 }
