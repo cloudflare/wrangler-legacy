@@ -18,7 +18,7 @@ mod terminal;
 use crate::settings::project::ProjectType;
 use terminal::emoji;
 
-fn main() -> Result<(), failure::Error> {
+fn main() {
     env_logger::init();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
@@ -30,9 +30,13 @@ fn main() -> Result<(), failure::Error> {
             .starts_with("wrangler-init")
         {
             installer::install();
+        } else if let Err(e) = run() {
+            println!("{}", e);
         }
     }
+}
 
+fn run() -> Result<(), failure::Error> {
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("ashley g williams <ashley666ashley@gmail.com>")
