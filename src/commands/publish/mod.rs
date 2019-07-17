@@ -8,7 +8,7 @@ use package::Package;
 
 use log::info;
 
-use reqwest::multipart::Form;
+use reqwest::multipart::{Form, Part};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -92,31 +92,12 @@ fn publish_script(
 
     let client = http::auth_client(user);
 
-    let project_type = &project.project_type;
-    let mut res = match project_type {
-        ProjectType::Rust => {
-            info!("Rust project detected. Publishing...");
-            client
-                .put(&worker_addr)
-                .multipart(build_multipart_script()?)
-                .send()?
-        }
-        ProjectType::JavaScript => {
-            info!("JavaScript project detected. Publishing...");
-            client
-                .put(&worker_addr)
-                .header("Content-Type", "application/javascript")
-                .body(build_js_script()?)
-                .send()?
-        }
-        ProjectType::Webpack => {
-            info!("Webpack project detected. Publishing...");
-            client
-                .put(&worker_addr)
-                .multipart(build_webpack_form()?)
-                .send()?
-        }
-    };
+    let script_upload_form = build_script_upload_form(project)?;
+
+    let mut res = client
+        .put(&worker_addr)
+        .multipart(script_upload_form)
+        .send()?;
 
     if res.status().is_success() {
         message::success("Successfully published your script.");
@@ -137,6 +118,26 @@ fn publish_script(
     }
 
     Ok(())
+}
+
+pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Error> {
+    let project_type = &project.project_type;
+    let script_upload_form = match project_type {
+        ProjectType::Rust => {
+            info!("Rust project detected. Publishing...");
+            build_multipart_script()?
+        }
+        ProjectType::JavaScript => {
+            info!("JavaScript project detected. Publishing...");
+            build_js_script()?
+        }
+        ProjectType::Webpack => {
+            info!("Webpack project detected. Publishing...");
+            build_webpack_form()?
+        }
+    };
+
+    Ok(script_upload_form)
 }
 
 fn build_subdomain_request() -> String {
@@ -177,9 +178,22 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
     Ok(())
 }
 
-fn build_js_script() -> Result<String, failure::Error> {
+fn build_js_script() -> Result<Form, failure::Error> {
     let package = Package::new("./")?;
-    Ok(fs::read_to_string(package.main()?)?)
+    let script_path = package.main()?;
+    let metadata_json = r#"{"body_part":"script","bindings":[]}"#;
+
+    let metadata = Part::text(metadata_json)
+        .file_name("metadata.json")
+        .mime_str("application/json")?;
+
+    let form = Form::new()
+        .file("script", script_path)
+        .unwrap_or_else(|_| panic!("{} not found. Did you rename your js files?", script_path));
+
+    form.part("metadata", metadata);
+
+    Ok(form)
 }
 
 fn build_multipart_script() -> Result<Form, failure::Error> {
