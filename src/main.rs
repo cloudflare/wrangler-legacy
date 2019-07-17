@@ -1,8 +1,8 @@
 #![allow(clippy::redundant_closure)]
 
 use std::env;
-use std::str::FromStr;
 use std::process;
+use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
 use commands::HTTPMethod;
