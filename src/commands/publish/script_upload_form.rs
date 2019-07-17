@@ -5,6 +5,8 @@ use std::fs;
 use std::path::Path;
 
 use crate::commands::build::wranglerjs::Bundle;
+use crate::settings::binding::Binding;
+use crate::settings::metadata::Metadata;
 use crate::settings::project::{Project, ProjectType};
 
 use super::{krate, Package};
@@ -108,5 +110,74 @@ fn build_webpack_form() -> Result<Form, failure::Error> {
             }))
     } else {
         Ok(form)
+    }
+}
+
+fn generate_metadata_json(bindings: Vec<Binding>) -> serde_json::value::Value {
+    serde_json::json!(&Metadata {
+        body_part: "script".to_string(),
+        bindings,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_json_diff::assert_json_eq;
+    use serde_json::json;
+
+    #[test]
+    fn rust_wasm_generates_same_metadata() {
+        let wasm_module = Binding::new_wasm_module("wasm".to_string(), "wasmprogram".to_string());
+        let bindings = vec![wasm_module];
+
+        let expected_json = json!({
+            "body_part": "script",
+            "bindings": [
+                {
+                    "name": "wasm",
+                    "type": "wasm_module",
+                    "part": "wasmprogram"
+                }
+            ]
+        });
+
+        let actual_json = generate_metadata_json(bindings);
+
+        assert_json_eq!(actual_json, expected_json);
+    }
+
+    #[test]
+    fn webpack_with_wasm_generates_same_metadata() {
+        let wasm_module =
+            Binding::new_wasm_module("wasmprogram".to_string(), "wasmprogram".to_string());
+        let bindings = vec![wasm_module];
+        let expected_json = json!({
+            "body_part": "script",
+            "bindings": [
+                {
+                    "type":"wasm_module",
+                    "name":"wasmprogram",
+                    "part":"wasmprogram"
+                }
+            ]
+        });
+
+        let actual_json = generate_metadata_json(bindings);
+
+        assert_json_eq!(actual_json, expected_json);
+    }
+
+    #[test]
+    fn webpack_without_wasm_generates_same_metadata() {
+        let bindings = Vec::new();
+        let expected_json = json!({
+            "body_part": "script",
+            "bindings": []
+        });
+
+        let actual_json = generate_metadata_json(bindings);
+
+        assert_json_eq!(actual_json, expected_json);
     }
 }
