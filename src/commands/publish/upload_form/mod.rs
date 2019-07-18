@@ -1,6 +1,5 @@
 mod file;
 mod project_assets;
-mod script;
 mod wasm_module;
 
 use log::info;
@@ -15,7 +14,6 @@ use crate::settings::metadata::Metadata;
 use crate::settings::project::{Project, ProjectType};
 
 use project_assets::ProjectAssets;
-use script::Script;
 use wasm_module::WasmModule;
 
 use super::{krate, Package};
@@ -36,12 +34,10 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
                 binding: "wasm".to_string(),
             };
 
-            let script = Script {
-                path: "./worker/generated/script.js".to_string(),
-            };
+            let script_path = "./worker/generated/script.js".to_string();
 
             let assets = ProjectAssets {
-                script,
+                script_path,
                 wasm_modules: vec![wasm_module],
             };
 
@@ -51,12 +47,10 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             info!("JavaScript project detected. Publishing...");
             let package = Package::new("./")?;
 
-            let script = Script {
-                path: package.main()?,
-            };
+            let script_path = package.main()?;
 
             let assets = ProjectAssets {
-                script,
+                script_path,
                 wasm_modules: Vec::new(),
             };
 
@@ -67,9 +61,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             // FIXME(sven): shouldn't new
             let bundle = Bundle::new();
 
-            let script = Script {
-                path: bundle.script_path(),
-            };
+            let script_path = bundle.script_path();
 
             let mut wasm_modules = Vec::new();
 
@@ -83,7 +75,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             }
 
             let assets = ProjectAssets {
-                script,
+                script_path,
                 wasm_modules,
             };
 
