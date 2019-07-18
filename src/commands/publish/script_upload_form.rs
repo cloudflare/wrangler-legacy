@@ -13,55 +13,47 @@ use super::{krate, Package};
 
 pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Error> {
     let project_type = &project.project_type;
-    let script_upload_form = match project_type {
+    match project_type {
         ProjectType::Rust => {
             info!("Rust project detected. Publishing...");
-            build_multipart_script()?
+            let name = krate::Krate::new("./")?.name.replace("-", "_");
+            // TODO: move into build?
+            build_generated_dir()?;
+            concat_js(&name)?;
+
+            let wasm_module = WasmModule {
+                path: format!("./pkg/{}_bg.wasm", name).to_string(),
+                filename: "wasm".to_string(),
+                binding: "wasmprogram".to_string(),
+            };
+
+            let script_path = "./worker/generated/script.js".to_string();
+
+            build_form(script_path, Some(wasm_module))
         }
         ProjectType::JavaScript => {
             info!("JavaScript project detected. Publishing...");
-            build_js_script()?
+            let package = Package::new("./")?;
+            let script_path = package.main()?;
+
+            build_form(script_path, None)
         }
         ProjectType::Webpack => {
             info!("Webpack project detected. Publishing...");
-            build_webpack_form()?
+            // FIXME(sven): shouldn't new
+            let bundle = Bundle::new();
+
+            let script_path = bundle.script_path();
+
+            let wasm_module = WasmModule {
+                path: bundle.wasm_path(),
+                filename: bundle.get_wasm_binding(),
+                binding: bundle.get_wasm_binding(),
+            };
+
+            build_form(script_path, Some(wasm_module))
         }
-    };
-
-    Ok(script_upload_form)
-}
-
-fn build_js_script() -> Result<Form, failure::Error> {
-    let package = Package::new("./")?;
-    let script_path = package.main()?;
-    let metadata_json = r#"{"body_part":"script","bindings":[]}"#;
-
-    let metadata = Part::text(metadata_json)
-        .file_name("metadata.json")
-        .mime_str("application/json")?;
-
-    Ok(Form::new()
-        .file("script", &script_path)
-        .unwrap_or_else(|_| panic!("{} not found. Did you rename your js files?", &script_path))
-        .part("metadata", metadata))
-}
-
-fn build_multipart_script() -> Result<Form, failure::Error> {
-    let name = krate::Krate::new("./")?.name.replace("-", "_");
-    build_generated_dir()?;
-    concat_js(&name)?;
-
-    let metadata_path = "./worker/metadata_wasm.json";
-    let wasm_path = &format!("./pkg/{}_bg.wasm", name);
-    let script_path = "./worker/generated/script.js";
-
-    Ok(Form::new()
-        .file("metadata", metadata_path)
-        .unwrap_or_else(|_| panic!("{} not found. Did you delete it?", metadata_path))
-        .file("wasmprogram", wasm_path)
-        .unwrap_or_else(|_| panic!("{} not found. Have you run wrangler build?", wasm_path))
-        .file("script", script_path)
-        .unwrap_or_else(|_| panic!("{} not found. Did you rename your js files?", script_path)))
+    }
 }
 
 fn build_generated_dir() -> Result<(), failure::Error> {
@@ -84,32 +76,66 @@ fn concat_js(name: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn build_webpack_form() -> Result<Form, failure::Error> {
-    // FIXME(sven): shouldn't new
-    let bundle = Bundle::new();
+#[derive(Debug)]
+struct WasmModule {
+    path: String,
+    filename: String,
+    binding: String,
+}
 
-    let form = Form::new()
-        .file("metadata", bundle.metadata_path())
-        .unwrap_or_else(|_| panic!("{} not found. Did you delete it?", bundle.metadata_path()))
-        .file("script", bundle.script_path())
-        .unwrap_or_else(|_| {
-            panic!(
-                "{} not found. Did you rename your js files?",
-                bundle.script_path()
-            )
-        });
+impl ToBinding for WasmModule {
+    fn to_binding(&self) -> Binding {
+        let name = self.filename.clone();
+        let part = self.binding.clone();
+        Binding::new_wasm_module(name, part)
+    }
+}
 
-    if bundle.has_wasm() {
-        Ok(form
-            .file(bundle.get_wasm_binding(), bundle.wasm_path())
-            .unwrap_or_else(|_| {
-                panic!(
-                    "{} not found. Have you run wrangler build?",
-                    bundle.wasm_path()
-                )
-            }))
-    } else {
-        Ok(form)
+trait ToBinding {
+    fn to_binding(&self) -> Binding;
+}
+
+fn build_form(
+    script_path: String,
+    wasm_module: Option<WasmModule>,
+) -> Result<Form, failure::Error> {
+    match wasm_module {
+        Some(wasm) => {
+            let bindings = vec![wasm.to_binding()];
+            let wasm_filename = wasm.filename.clone();
+
+            let metadata_json = generate_metadata_json(bindings);
+
+            let metadata = Part::text((metadata_json).to_string())
+                .file_name("metadata.json")
+                .mime_str("application/json")?;
+
+            Ok(Form::new()
+                .part("metadata", metadata)
+                .file("script", &script_path)
+                .unwrap_or_else(|_| {
+                    panic!("{} not found. Did you rename your js files?", &script_path)
+                })
+                .file(wasm_filename, &wasm.path)
+                .unwrap_or_else(|_| {
+                    panic!("{} not found. Have you run wrangler build?", &wasm.path)
+                }))
+        }
+        None => {
+            let bindings = vec![];
+            let metadata_json = generate_metadata_json(bindings);
+
+            let metadata = Part::text((metadata_json).to_string())
+                .file_name("metadata.json")
+                .mime_str("application/json")?;
+
+            Ok(Form::new()
+                .part("metadata", metadata)
+                .file("script", &script_path)
+                .unwrap_or_else(|_| {
+                    panic!("{} not found. Did you rename your js files?", &script_path)
+                }))
+        }
     }
 }
 
