@@ -12,3 +12,7 @@ impl Binding {
         Binding::wasm_module { name, part }
     }
 }
+
+pub trait ToBinding {
+    fn to_binding(&self) -> Binding;
+}

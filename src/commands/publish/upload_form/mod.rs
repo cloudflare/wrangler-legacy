@@ -1,3 +1,8 @@
+mod file;
+mod project_assets;
+mod script;
+mod wasm_module;
+
 use log::info;
 
 use reqwest::multipart::{Form, Part};
@@ -5,9 +10,13 @@ use std::fs;
 use std::path::Path;
 
 use crate::commands::build::wranglerjs::Bundle;
-use crate::settings::binding::Binding;
+use crate::settings::binding;
 use crate::settings::metadata::Metadata;
 use crate::settings::project::{Project, ProjectType};
+
+use project_assets::ProjectAssets;
+use script::Script;
+use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
@@ -128,87 +137,4 @@ fn concat_js(name: &str) -> Result<(), failure::Error> {
 
     fs::write("./worker/generated/script.js", js.as_bytes())?;
     Ok(())
-}
-
-#[derive(Debug)]
-struct File {
-    name: String,
-    path: String,
-}
-
-#[derive(Debug)]
-struct ProjectAssets {
-    script: Script,
-    wasm_modules: Vec<WasmModule>,
-}
-
-impl ProjectAssets {
-    fn files(&self) -> Vec<File> {
-        let mut files = Vec::new();
-        let script = self.script.to_file();
-        files.push(script);
-        for wm in &self.wasm_modules {
-            let wasm = wm.to_file();
-            files.push(wasm);
-        }
-
-        files
-    }
-
-    fn bindings(&self) -> Vec<Binding> {
-        let mut bindings = Vec::new();
-        for wm in &self.wasm_modules {
-            let wasm = wm.to_binding();
-            bindings.push(wasm);
-        }
-
-        bindings
-    }
-}
-
-#[derive(Debug)]
-struct WasmModule {
-    path: String,
-    filename: String,
-    binding: String,
-}
-
-trait ToBinding {
-    fn to_binding(&self) -> Binding;
-}
-
-impl ToBinding for WasmModule {
-    fn to_binding(&self) -> Binding {
-        let name = self.filename.clone();
-        let part = self.binding.clone();
-
-        Binding::new_wasm_module(name, part)
-    }
-}
-
-trait ToFile {
-    fn to_file(&self) -> File;
-}
-
-impl ToFile for WasmModule {
-    fn to_file(&self) -> File {
-        File {
-            name: self.filename.clone(),
-            path: self.path.clone(),
-        }
-    }
-}
-
-#[derive(Debug)]
-struct Script {
-    path: String,
-}
-
-impl ToFile for Script {
-    fn to_file(&self) -> File {
-        File {
-            name: "script".to_string(),
-            path: self.path.clone(),
-        }
-    }
 }
