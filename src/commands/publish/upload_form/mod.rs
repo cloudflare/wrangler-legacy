@@ -71,15 +71,20 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
                 path: bundle.script_path(),
             };
 
-            let wasm_module = WasmModule {
-                path: bundle.wasm_path(),
-                filename: bundle.get_wasm_binding(),
-                binding: bundle.get_wasm_binding(),
-            };
+            let mut wasm_modules = Vec::new();
+
+            if bundle.has_wasm() {
+                let wasm_module = WasmModule {
+                    path: bundle.wasm_path(),
+                    filename: bundle.get_wasm_binding(),
+                    binding: bundle.get_wasm_binding(),
+                };
+                wasm_modules.push(wasm_module)
+            }
 
             let assets = ProjectAssets {
                 script,
-                wasm_modules: vec![wasm_module],
+                wasm_modules,
             };
 
             build_form(&assets)
