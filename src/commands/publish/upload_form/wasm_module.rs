@@ -8,10 +8,12 @@ pub struct WasmModule {
     pub binding: String,
 }
 
+// `name` corresponds to the binding used in the worker js
+// `part` corresponds to the name given to the file in the upload form
 impl ToBinding for WasmModule {
     fn to_binding(&self) -> Binding {
-        let name = self.filename.clone();
-        let part = self.binding.clone();
+        let name = self.binding.clone();
+        let part = self.filename.clone();
 
         Binding::new_wasm_module(name, part)
     }
