@@ -32,8 +32,8 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
 
             let wasm_module = WasmModule {
                 path: format!("./pkg/{}_bg.wasm", name).to_string(),
-                filename: "wasm".to_string(),
-                binding: "wasmprogram".to_string(),
+                filename: "wasmprogram".to_string(),
+                binding: "wasm".to_string(),
             };
 
             let script = Script {
