@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::commands;
 use crate::http;
-use crate::settings::project::{Project, ProjectType};
+use crate::settings::project::Project;
 use crate::terminal::message;
 
 #[derive(Debug, Deserialize)]
@@ -27,24 +27,14 @@ pub fn preview(
 
     let client = http::client();
 
-    let project_type = &project.project_type;
-
     commands::build(&project)?;
 
-    let res = match project_type {
-        ProjectType::Rust => client
-            .post(create_address)
-            .multipart(publish::build_multipart_script()?)
-            .send(),
-        ProjectType::JavaScript => client
-            .post(create_address)
-            .body(publish::build_js_script()?)
-            .send(),
-        ProjectType::Webpack => client
-            .post(create_address)
-            .multipart(publish::build_webpack_form()?)
-            .send(),
-    };
+    let script_upload_form = publish::build_script_upload_form(project)?;
+
+    let res = client
+        .post(create_address)
+        .multipart(script_upload_form)
+        .send();
 
     let p: Preview = serde_json::from_str(&res?.text()?)?;
 
