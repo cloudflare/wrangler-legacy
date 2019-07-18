@@ -27,23 +27,40 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
                 binding: "wasmprogram".to_string(),
             };
 
-            let script_path = "./worker/generated/script.js".to_string();
+            let script = Script {
+                path: "./worker/generated/script.js".to_string(),
+            };
 
-            build_form(script_path, Some(wasm_module))
+            let assets = ProjectAssets {
+                script,
+                wasm_modules: vec![wasm_module],
+            };
+
+            build_form(&assets)
         }
         ProjectType::JavaScript => {
             info!("JavaScript project detected. Publishing...");
             let package = Package::new("./")?;
-            let script_path = package.main()?;
 
-            build_form(script_path, None)
+            let script = Script {
+                path: package.main()?,
+            };
+
+            let assets = ProjectAssets {
+                script,
+                wasm_modules: Vec::new(),
+            };
+
+            build_form(&assets)
         }
         ProjectType::Webpack => {
             info!("Webpack project detected. Publishing...");
             // FIXME(sven): shouldn't new
             let bundle = Bundle::new();
 
-            let script_path = bundle.script_path();
+            let script = Script {
+                path: bundle.script_path(),
+            };
 
             let wasm_module = WasmModule {
                 path: bundle.wasm_path(),
@@ -51,9 +68,46 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
                 binding: bundle.get_wasm_binding(),
             };
 
-            build_form(script_path, Some(wasm_module))
+            let assets = ProjectAssets {
+                script,
+                wasm_modules: vec![wasm_module],
+            };
+
+            build_form(&assets)
         }
     }
+}
+
+fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
+    let mut form = Form::new();
+
+    form = add_files(form, assets)?;
+    form = add_metadata(form, assets)?;
+
+    Ok(form)
+}
+
+fn add_files(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure::Error> {
+    for file in assets.files() {
+        form = form.file(file.name, file.path)?;
+    }
+
+    Ok(form)
+}
+
+fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure::Error> {
+    let metadata_json = serde_json::json!(&Metadata {
+        body_part: "script".to_string(),
+        bindings: assets.bindings(),
+    });
+
+    let metadata = Part::text((metadata_json).to_string())
+        .file_name("metadata.json")
+        .mime_str("application/json")?;
+
+    form = form.part("metadata", metadata);
+
+    Ok(form)
 }
 
 fn build_generated_dir() -> Result<(), failure::Error> {
@@ -77,133 +131,84 @@ fn concat_js(name: &str) -> Result<(), failure::Error> {
 }
 
 #[derive(Debug)]
+struct File {
+    name: String,
+    path: String,
+}
+
+#[derive(Debug)]
+struct ProjectAssets {
+    script: Script,
+    wasm_modules: Vec<WasmModule>,
+}
+
+impl ProjectAssets {
+    fn files(&self) -> Vec<File> {
+        let mut files = Vec::new();
+        let script = self.script.to_file();
+        files.push(script);
+        for wm in &self.wasm_modules {
+            let wasm = wm.to_file();
+            files.push(wasm);
+        }
+
+        files
+    }
+
+    fn bindings(&self) -> Vec<Binding> {
+        let mut bindings = Vec::new();
+        for wm in &self.wasm_modules {
+            let wasm = wm.to_binding();
+            bindings.push(wasm);
+        }
+
+        bindings
+    }
+}
+
+#[derive(Debug)]
 struct WasmModule {
     path: String,
     filename: String,
     binding: String,
 }
 
-impl ToBinding for WasmModule {
-    fn to_binding(&self) -> Binding {
-        let name = self.filename.clone();
-        let part = self.binding.clone();
-        Binding::new_wasm_module(name, part)
-    }
-}
-
 trait ToBinding {
     fn to_binding(&self) -> Binding;
 }
 
-fn build_form(
-    script_path: String,
-    wasm_module: Option<WasmModule>,
-) -> Result<Form, failure::Error> {
-    match wasm_module {
-        Some(wasm) => {
-            let bindings = vec![wasm.to_binding()];
-            let wasm_filename = wasm.filename.clone();
+impl ToBinding for WasmModule {
+    fn to_binding(&self) -> Binding {
+        let name = self.filename.clone();
+        let part = self.binding.clone();
 
-            let metadata_json = generate_metadata_json(bindings);
+        Binding::new_wasm_module(name, part)
+    }
+}
 
-            let metadata = Part::text((metadata_json).to_string())
-                .file_name("metadata.json")
-                .mime_str("application/json")?;
+trait ToFile {
+    fn to_file(&self) -> File;
+}
 
-            Ok(Form::new()
-                .part("metadata", metadata)
-                .file("script", &script_path)
-                .unwrap_or_else(|_| {
-                    panic!("{} not found. Did you rename your js files?", &script_path)
-                })
-                .file(wasm_filename, &wasm.path)
-                .unwrap_or_else(|_| {
-                    panic!("{} not found. Have you run wrangler build?", &wasm.path)
-                }))
-        }
-        None => {
-            let bindings = vec![];
-            let metadata_json = generate_metadata_json(bindings);
-
-            let metadata = Part::text((metadata_json).to_string())
-                .file_name("metadata.json")
-                .mime_str("application/json")?;
-
-            Ok(Form::new()
-                .part("metadata", metadata)
-                .file("script", &script_path)
-                .unwrap_or_else(|_| {
-                    panic!("{} not found. Did you rename your js files?", &script_path)
-                }))
+impl ToFile for WasmModule {
+    fn to_file(&self) -> File {
+        File {
+            name: self.filename.clone(),
+            path: self.path.clone(),
         }
     }
 }
 
-fn generate_metadata_json(bindings: Vec<Binding>) -> serde_json::value::Value {
-    serde_json::json!(&Metadata {
-        body_part: "script".to_string(),
-        bindings,
-    })
+#[derive(Debug)]
+struct Script {
+    path: String,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use assert_json_diff::assert_json_eq;
-    use serde_json::json;
-
-    #[test]
-    fn rust_wasm_generates_same_metadata() {
-        let wasm_module = Binding::new_wasm_module("wasm".to_string(), "wasmprogram".to_string());
-        let bindings = vec![wasm_module];
-
-        let expected_json = json!({
-            "body_part": "script",
-            "bindings": [
-                {
-                    "name": "wasm",
-                    "type": "wasm_module",
-                    "part": "wasmprogram"
-                }
-            ]
-        });
-
-        let actual_json = generate_metadata_json(bindings);
-
-        assert_json_eq!(actual_json, expected_json);
-    }
-
-    #[test]
-    fn webpack_with_wasm_generates_same_metadata() {
-        let wasm_module =
-            Binding::new_wasm_module("wasmprogram".to_string(), "wasmprogram".to_string());
-        let bindings = vec![wasm_module];
-        let expected_json = json!({
-            "body_part": "script",
-            "bindings": [
-                {
-                    "type":"wasm_module",
-                    "name":"wasmprogram",
-                    "part":"wasmprogram"
-                }
-            ]
-        });
-
-        let actual_json = generate_metadata_json(bindings);
-
-        assert_json_eq!(actual_json, expected_json);
-    }
-
-    #[test]
-    fn webpack_without_wasm_generates_same_metadata() {
-        let bindings = Vec::new();
-        let expected_json = json!({
-            "body_part": "script",
-            "bindings": []
-        });
-
-        let actual_json = generate_metadata_json(bindings);
-
-        assert_json_eq!(actual_json, expected_json);
+impl ToFile for Script {
+    fn to_file(&self) -> File {
+        File {
+            name: "script".to_string(),
+            path: self.path.clone(),
+        }
     }
 }
