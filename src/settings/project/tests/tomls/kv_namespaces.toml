@@ -1,0 +1,14 @@
+name = "worker"
+type = "webpack"
+zone_id = ""
+private = false
+account_id = ""
+route = ""
+
+[[kv-namespaces]]
+id = "somecrazylongidentifierstring"
+binding = "prodKV"
+
+[[kv-namespaces]]
+id = "anotherwaytoolongidstring"
+binding = "stagingKV"
