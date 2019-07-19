@@ -1,7 +1,7 @@
 mod kv_namespace;
 mod project_type;
 
-pub use kv_namespace::KVNamespace;
+pub use kv_namespace::KvNamespace;
 pub use project_type::ProjectType;
 
 use crate::terminal::emoji;
@@ -27,7 +27,7 @@ pub struct Project {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<KVNamespace>>,
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
 }
 
 impl Project {
