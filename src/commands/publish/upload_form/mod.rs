@@ -11,6 +11,7 @@ use std::path::Path;
 use crate::commands::build::wranglerjs::Bundle;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
+use crate::settings::project::kv_namespace;
 use crate::settings::project::{Project, ProjectType};
 
 use project_assets::ProjectAssets;
@@ -20,6 +21,7 @@ use super::{krate, Package};
 
 pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Error> {
     let project_type = &project.project_type;
+    let kv_namespaces = project.kv_namespaces();
     match project_type {
         ProjectType::Rust => {
             info!("Rust project detected. Publishing...");
@@ -39,6 +41,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             let assets = ProjectAssets {
                 script_path,
                 wasm_modules: vec![wasm_module],
+                kv_namespaces,
             };
 
             build_form(&assets)
@@ -52,6 +55,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             let assets = ProjectAssets {
                 script_path,
                 wasm_modules: Vec::new(),
+                kv_namespaces,
             };
 
             build_form(&assets)
@@ -77,6 +81,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             let assets = ProjectAssets {
                 script_path,
                 wasm_modules,
+                kv_namespaces,
             };
 
             build_form(&assets)
