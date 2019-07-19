@@ -7,6 +7,28 @@
 
 `wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare workers](https://workers.cloudflare.com/).
 
+## Docker
+
+### Configuration
+create a directory if it doesn't already exist where you can mount the wrangler global config (if you plan on publishing to your own domain).  
+``` bash
+mkdir -p /Users/me/.wrangler/config
+```
+
+### Commands
+
+#### generate
+Use the current directory to create a project called myproject (see generate command below for all options)
+
+`docker run --rm -ti -v /Users/me/.wrangler/config:/home/node/.wrangler/config -v $(pwd):/home/node/wrangler avatarnewyork/wrangler generate myproject`
+
+#### build / preview / publish
+move into your project directory and run any of the other commands (see commands below for all options)
+
+* `docker run --rm -ti -v /Users/me/.wrangler/config:/home/node/.wrangler/config -v $(pwd):/home/node/wrangler avatarnewyork/wrangler build`
+* `docker run --rm -ti -v /Users/me/.wrangler/config:/home/node/.wrangler/config -v $(pwd):/home/node/wrangler avatarnewyork/wrangler preview`
+* `docker run --rm -ti -v /Users/me/.wrangler/config:/home/node/.wrangler/config -v $(pwd):/home/node/wrangler avatarnewyork/wrangler publish`
+
 ## Installation
 
 You have many options to install wrangler!
@@ -268,3 +290,4 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     ```
     wrangler publish --release
     ```
+
