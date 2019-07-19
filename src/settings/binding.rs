@@ -5,6 +5,8 @@ use serde::Serialize;
 pub enum Binding {
     #[allow(non_camel_case_types)]
     wasm_module { name: String, part: String },
+    #[allow(non_camel_case_types)]
+    kv_namespace { name: String, namespace_id: String },
 }
 
 impl Binding {
@@ -13,5 +15,9 @@ impl Binding {
             name: name.to_string(),
             part: part.to_string(),
         }
+    }
+
+    pub fn new_kv_namespace(name: String, namespace_id: String) -> Binding {
+        Binding::kv_namespace { name, namespace_id }
     }
 }
