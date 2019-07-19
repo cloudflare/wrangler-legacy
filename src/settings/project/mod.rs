@@ -23,7 +23,7 @@ pub struct Project {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<String>>,
+    pub kv_namespaces: Option<Vec<KVNamespace>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -64,6 +64,24 @@ impl FromStr for ProjectType {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct KVNamespace {
+    id: String,
+    binding: String,
+}
+
+impl fmt::Display for KVNamespace {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "id: {}, binding: {}", self.id, self.binding)
+    }
+}
+
+impl std::cmp::PartialEq for KVNamespace {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.binding == other.binding
+    }
+}
+
 impl Project {
     pub fn generate(
         name: String,
@@ -96,14 +114,16 @@ impl Project {
     }
 
     pub fn new() -> Result<Self, failure::Error> {
-        get_project_config()
+        let mut config_path = PathBuf::new();
+        config_path.push("./wrangler.toml");
+
+        get_project_config(config_path)
     }
 }
 
-pub fn get_project_config() -> Result<Project, failure::Error> {
+fn get_project_config(config_path: PathBuf) -> Result<Project, failure::Error> {
     let mut s = Config::new();
 
-    let config_path = Path::new("./wrangler.toml");
     let config_str = config_path
         .to_str()
         .expect("project config path should be a string");
@@ -126,3 +146,6 @@ pub fn get_project_config() -> Result<Project, failure::Error> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
