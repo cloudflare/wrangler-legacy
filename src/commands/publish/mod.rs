@@ -126,6 +126,21 @@ fn validate_project(project: &Project, release: bool) -> Result<(), failure::Err
         missing_fields.push("name")
     };
 
+    match &project.kv_namespaces {
+        Some(kv_namespaces) => {
+            for kv in kv_namespaces {
+                if kv.binding.is_empty() {
+                    missing_fields.push("kv-namespace binding")
+                }
+
+                if kv.id.is_empty() {
+                    missing_fields.push("kv-namespace id")
+                }
+            }
+        }
+        None => {}
+    }
+
     let destination = if release {
         //check required fields for release
         if project
