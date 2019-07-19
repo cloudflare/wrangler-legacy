@@ -1,4 +1,4 @@
-mod kv_namespace;
+pub mod kv_namespace;
 mod project_type;
 
 pub use kv_namespace::KvNamespace;
@@ -66,6 +66,13 @@ impl Project {
         config_path.push("./wrangler.toml");
 
         get_project_config(config_path)
+    }
+
+    pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
+        match &self.kv_namespaces {
+            Some(kv) => kv.clone(),
+            None => Vec::new(),
+        }
     }
 }
 
