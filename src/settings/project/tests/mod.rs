@@ -18,11 +18,11 @@ fn it_builds_from_config_with_kv() {
 
     let project = get_project_config(toml_path).unwrap();
 
-    let kv_1 = KVNamespace {
+    let kv_1 = KvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "prodKV".to_string(),
     };
-    let kv_2 = KVNamespace {
+    let kv_2 = KvNamespace {
         id: "anotherwaytoolongidstring".to_string(),
         binding: "stagingKV".to_string(),
     };
