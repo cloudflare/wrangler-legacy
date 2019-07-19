@@ -1,5 +1,5 @@
-use super::binding::{Binding, ToBinding};
-use super::file::{File, ToFile};
+use super::binding::Binding;
+use super::file::File;
 
 #[derive(Debug)]
 pub struct WasmModule {
@@ -10,8 +10,8 @@ pub struct WasmModule {
 
 // `name` corresponds to the binding used in the worker js
 // `part` corresponds to the name given to the file in the upload form
-impl ToBinding for WasmModule {
-    fn to_binding(&self) -> Binding {
+impl WasmModule {
+    pub fn binding(&self) -> Binding {
         let name = self.binding.clone();
         let part = self.filename.clone();
 
@@ -19,8 +19,8 @@ impl ToBinding for WasmModule {
     }
 }
 
-impl ToFile for WasmModule {
-    fn to_file(&self) -> File {
+impl WasmModule {
+    pub fn file(&self) -> File {
         File {
             name: self.filename.clone(),
             path: self.path.clone(),
