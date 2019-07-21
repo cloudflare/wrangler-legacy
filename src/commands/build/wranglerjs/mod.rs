@@ -64,7 +64,7 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
 
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
 fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure::Error> {
-    for tool in &["node", "npm"] {
+    for tool in &["node", "npm", "rustc"] {
         env_dep_installed(tool)?;
     }
 
