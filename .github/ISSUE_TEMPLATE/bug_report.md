@@ -16,6 +16,7 @@ $ wrangler -V
 #### What environment are you using?
 * operating system:
 * rustc version:
+* node version:
 
 #### What did you do?
 
