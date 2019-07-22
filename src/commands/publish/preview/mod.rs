@@ -85,7 +85,7 @@ fn open(
 
     let browser_preview = if install::target::DEBUG {
         format!(
-           "http://localhost:3000/src/test/manual/?session_id={}\\&ws_port={}\\&hide_editor=true#{}:{}{}",
+           "https://cloudflareworkers.com/ui/3.3.2-hotreload.1/index.html?session_id={}\\&ws_port={}\\&hide_editor=true#{}:{}{}",
             session_id, ws_port, script_id, https_str, preview_host,
         )
     } else {
