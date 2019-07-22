@@ -1,4 +1,8 @@
 ### 💡 Feature request
+
+<!-- Please answer these questions before submitting your issue. Thanks! -->
+
+#### Overview and problem statement
 Brief explanation of the requested feature, and a description of the problem it would solve.
 
 #### Basic example
