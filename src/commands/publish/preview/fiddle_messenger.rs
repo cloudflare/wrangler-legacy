@@ -1,6 +1,6 @@
+use crate::terminal::message;
 use serde::Serialize;
 use ws::{CloseCode, Handler, Handshake, Result as WSResult, Sender};
-use crate::terminal::message;
 
 //for now, this is only used by livereloading.
 //in the future we may use this websocket for other things
@@ -27,15 +27,15 @@ pub struct FiddleMessageServer {
 impl Handler for FiddleMessageServer {
     fn on_open(&mut self, handshake: Handshake) -> WSResult<()> {
         #[cfg(not(debug_assertions))]
-        const SAFE_ORIGINS: &[&str] = &[
-            "https://cloudflareworkers.com/",
-        ];
+        const SAFE_ORIGINS: &[&str] = &["https://cloudflareworkers.com/"];
 
         #[cfg(debug_assertions)]
         const SAFE_ORIGINS: &[&str] = &[
             "https://cloudflareworkers.com/",
-            "https://localhost", //trailing slash ommitted to allow for any port
+            "http://localhost", //trailing slash ommitted to allow for any port
         ];
+
+        message::preview(&format!("Allowing connections from {:?}", SAFE_ORIGINS));
 
         let origin = handshake.request.origin()?.unwrap_or("unknown");
 

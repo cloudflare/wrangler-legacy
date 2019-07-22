@@ -3,7 +3,6 @@ use std::process::Command;
 mod fiddle_messenger;
 use fiddle_messenger::*;
 
-
 mod http_method;
 pub use http_method::HTTPMethod;
 
@@ -21,7 +20,7 @@ use super::upload_form::build_script_upload_form;
 
 use std::sync::mpsc::channel;
 use std::thread;
-use ws::{WebSocket, Sender};
+use ws::{Sender, WebSocket};
 
 pub fn preview(
     project: &Project,
@@ -63,7 +62,7 @@ pub fn preview(
 
     if livereload {
         let server = WebSocket::new(|out| FiddleMessageServer { out })?
-                     .bind(format!("localhost:{}", ws_port))?;
+            .bind(format!("localhost:{}", ws_port))?;
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
         watch_for_changes(project, session.to_string(), broadcaster)?;
@@ -86,7 +85,7 @@ fn open(
 
     let browser_preview = if install::target::DEBUG {
         format!(
-            "http://localhost:3000/src/test/manual/?session_id={}\\&ws_port={}\\&hide_editor=true#{}:{}{}",
+           "http://localhost:3000/src/test/manual/?session_id={}\\&ws_port={}\\&hide_editor=true#{}:{}{}",
             session_id, ws_port, script_id, https_str, preview_host,
         )
     } else {
