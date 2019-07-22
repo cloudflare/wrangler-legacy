@@ -49,13 +49,11 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
             .write(&wranglerjs_output)
             .expect("could not write bundle to disk");
 
-        let mut msg = format!(
-            "Built successfully, script size is {}",
-            wranglerjs_output.script_size()
+        let msg = format!(
+            "Built successfully, built project size is {}",
+            wranglerjs_output.project_size()
         );
-        if bundle.has_wasm() {
-            msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
-        }
+
         message::success(&msg);
         Ok(())
     } else {
