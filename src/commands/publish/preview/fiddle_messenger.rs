@@ -27,12 +27,12 @@ pub struct FiddleMessageServer {
 impl Handler for FiddleMessageServer {
     fn on_open(&mut self, handshake: Handshake) -> WSResult<()> {
         #[cfg(not(debug_assertions))]
-        const SAFE_ORIGINS: &[&str] = &["https://cloudflareworkers.com/"];
+        const SAFE_ORIGINS: &[&str] = &["https://cloudflareworkers.com"];
 
         #[cfg(debug_assertions)]
         const SAFE_ORIGINS: &[&str] = &[
-            "https://cloudflareworkers.com/",
-            "http://localhost", //trailing slash ommitted to allow for any port
+            "https://cloudflareworkers.com",
+            "http://localhost",
         ];
 
         message::preview(&format!("Allowing connections from {:?}", SAFE_ORIGINS));
