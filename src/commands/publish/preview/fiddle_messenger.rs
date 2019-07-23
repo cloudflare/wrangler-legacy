@@ -32,8 +32,6 @@ impl Handler for FiddleMessageServer {
         #[cfg(debug_assertions)]
         const SAFE_ORIGINS: &[&str] = &["https://cloudflareworkers.com", "http://localhost"];
 
-        message::preview(&format!("Allowing connections from {:?}", SAFE_ORIGINS));
-
         let origin = handshake.request.origin()?.unwrap_or("unknown");
 
         let is_safe = SAFE_ORIGINS.iter().fold(false, |is_safe, safe_origin| {
