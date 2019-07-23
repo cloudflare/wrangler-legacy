@@ -50,7 +50,9 @@ fn publish_script(
 
     let client = http::auth_client(user);
 
-    let script_upload_form = build_script_upload_form(project)?;
+    // we want to include kv namespaces when we publish, but not when we preview
+    let include_kv = true;
+    let script_upload_form = build_script_upload_form(project, include_kv)?;
 
     let mut res = client
         .put(&worker_addr)
