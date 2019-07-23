@@ -60,6 +60,12 @@ pub fn preview(
     let msg = format!("Your worker responded with: {}", worker_res);
     message::preview(&msg);
 
+    if project.kv_namespaces.is_some() {
+        message::warn(
+            "KV Namespaces are not supported in the preview. Consider defining a fallback value.",
+        );
+    }
+
     open(preview_host, https, script_id)?;
 
     Ok(())

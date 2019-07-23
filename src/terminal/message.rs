@@ -24,3 +24,7 @@ pub fn working(msg: &str) {
 pub fn preview(msg: &str) {
     message(emoji::WORKER, msg);
 }
+
+pub fn warn(msg: &str) {
+    message(emoji::WARN, msg);
+}
