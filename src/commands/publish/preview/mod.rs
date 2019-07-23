@@ -50,23 +50,24 @@ pub fn preview(
         HTTPMethod::Post => post(preview_address, cookie, client, body)?,
     };
 
-    let ws_port: u16 = 8025;
-
-    open(
-        preview_host,
-        https,
-        script_id,
-        &session.to_string(),
-        ws_port,
-    )?;
-
     if livereload {
+        let ws_port: u16 = 8025;
+
+        open_livereload(
+            preview_host,
+            https,
+            script_id,
+            &session.to_string(),
+            ws_port,
+        )?;
+
         let server = WebSocket::new(|out| FiddleMessageServer { out })?
             .bind(format!("localhost:{}", ws_port))?;
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
         watch_for_changes(project, session.to_string(), broadcaster)?;
     } else {
+        open(preview_host, https, script_id)?;
         let msg = format!("Your worker responded with: {}", worker_res);
         message::preview(&msg);
     }
@@ -74,7 +75,29 @@ pub fn preview(
     Ok(())
 }
 
-fn open(
+fn open(preview_host: &str, https: bool, script_id: &str) -> Result<(), failure::Error>{
+    let https_str = if https { "https://" } else { "http://" };
+
+    let browser_preview = format!(
+        "https://cloudflareworkers.com/#{}:{}{}",
+        script_id, https_str, preview_host
+    );
+    let windows_cmd = format!("start {}", browser_preview);
+    let mac_cmd = format!("open {}", browser_preview);
+    let linux_cmd = format!("xdg-open {}", browser_preview);
+
+    let _output = if cfg!(target_os = "windows") {
+        Command::new("cmd").args(&["/C", &windows_cmd]).output()?
+    } else if cfg!(target_os = "linux") {
+        Command::new("sh").arg("-c").arg(&linux_cmd).output()?
+    } else {
+        Command::new("sh").arg("-c").arg(&mac_cmd).output()?
+    };
+
+    Ok(())
+}
+
+fn open_livereload(
     preview_host: &str,
     https: bool,
     script_id: &str,

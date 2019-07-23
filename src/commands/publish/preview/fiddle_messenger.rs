@@ -30,10 +30,7 @@ impl Handler for FiddleMessageServer {
         const SAFE_ORIGINS: &[&str] = &["https://cloudflareworkers.com"];
 
         #[cfg(debug_assertions)]
-        const SAFE_ORIGINS: &[&str] = &[
-            "https://cloudflareworkers.com",
-            "http://localhost",
-        ];
+        const SAFE_ORIGINS: &[&str] = &["https://cloudflareworkers.com", "http://localhost"];
 
         message::preview(&format!("Allowing connections from {:?}", SAFE_ORIGINS));
 
