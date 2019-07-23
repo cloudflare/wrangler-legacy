@@ -87,8 +87,10 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
 fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
     let mut form = Form::new();
 
-    form = add_files(form, assets)?;
+    // The preview service in particular streams the request form, and requires that the
+    // "metadata" part be set first, so this order is important.
     form = add_metadata(form, assets)?;
+    form = add_files(form, assets)?;
 
     Ok(form)
 }
