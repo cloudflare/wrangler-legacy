@@ -29,7 +29,9 @@ pub fn preview(
 
     commands::build(&project)?;
 
-    let script_upload_form = publish::build_script_upload_form(project)?;
+    // we want to include kv namespaces when we publish, but not when we preview
+    let include_kv = false;
+    let script_upload_form = publish::build_script_upload_form(project, include_kv)?;
 
     let res = client
         .post(create_address)

@@ -18,9 +18,17 @@ use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Error> {
+pub fn build_script_upload_form(
+    project: &Project,
+    include_kv: bool,
+) -> Result<Form, failure::Error> {
     let project_type = &project.project_type;
-    let kv_namespaces = project.kv_namespaces();
+    let mut kv_namespaces = Vec::new();
+
+    if include_kv {
+        kv_namespaces = project.kv_namespaces();
+    }
+
     match project_type {
         ProjectType::Rust => {
             info!("Rust project detected. Publishing...");
