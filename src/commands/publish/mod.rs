@@ -6,7 +6,7 @@ mod upload_form;
 
 use package::Package;
 use route::Route;
-use upload_form::build_script_upload_form;
+use upload_form::{build_script_upload_form, build_script_upload_form_no_kv};
 
 use log::info;
 
@@ -50,9 +50,7 @@ fn publish_script(
 
     let client = http::auth_client(user);
 
-    // we want to include kv namespaces when we publish, but not when we preview
-    let include_kv = true;
-    let script_upload_form = build_script_upload_form(project, include_kv)?;
+    let script_upload_form = build_script_upload_form(project)?;
 
     let mut res = client
         .put(&worker_addr)

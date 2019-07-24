@@ -18,16 +18,19 @@ use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_script_upload_form(
+pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Error> {
+    build_script_upload_form_with_kv(project, project.kv_namespaces())
+}
+
+pub fn build_script_upload_form_no_kv(project: &Project) -> Result<Form, failure::Error> {
+    build_script_upload_form_with_kv(project, Vec::new())
+}
+
+fn build_script_upload_form_with_kv(
     project: &Project,
-    include_kv: bool,
+    kv_namespaces: Vec<kv_namespace::KvNamespace>,
 ) -> Result<Form, failure::Error> {
     let project_type = &project.project_type;
-    let mut kv_namespaces = Vec::new();
-
-    if include_kv {
-        kv_namespaces = project.kv_namespaces();
-    }
 
     match project_type {
         ProjectType::Rust => {
