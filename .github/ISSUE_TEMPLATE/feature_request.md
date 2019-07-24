@@ -1,3 +1,8 @@
+---
+title: 'Feature request'
+labels: user report
+---
+
 ### 💡 Feature request
 
 <!-- Please answer these questions before submitting your issue. Thanks! -->

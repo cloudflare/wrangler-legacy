@@ -1,3 +1,8 @@
+---
+title: 'Bug report'
+labels: user report
+---
+
 ### 🐛 Bug Report
 
 <!-- Please answer these questions before submitting your issue. Thanks! -->
