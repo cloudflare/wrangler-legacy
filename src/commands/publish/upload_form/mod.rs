@@ -1,4 +1,3 @@
-mod file;
 mod project_assets;
 mod wasm_module;
 
@@ -96,8 +95,10 @@ fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
 }
 
 fn add_files(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure::Error> {
-    for file in assets.files() {
-        form = form.file(file.name, file.path)?;
+    form = form.file(assets.script_name(), assets.script_path())?;
+
+    for wasm_module in &assets.wasm_modules {
+        form = form.file(wasm_module.filename(), wasm_module.path())?;
     }
 
     Ok(form)
@@ -105,7 +106,7 @@ fn add_files(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure::Er
 
 fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure::Error> {
     let metadata_json = serde_json::json!(&Metadata {
-        body_part: "script".to_string(),
+        body_part: assets.script_name(),
         bindings: assets.bindings(),
     });
 

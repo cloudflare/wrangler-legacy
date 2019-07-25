@@ -1,5 +1,4 @@
 use super::binding::Binding;
-use super::file::File;
 use super::wasm_module::WasmModule;
 
 #[derive(Debug)]
@@ -9,22 +8,6 @@ pub struct ProjectAssets {
 }
 
 impl ProjectAssets {
-    pub fn files(&self) -> Vec<File> {
-        let mut files = Vec::new();
-        let script = File {
-            name: "script".to_string(),
-            path: self.script_path.clone(),
-        };
-        files.push(script);
-
-        for wm in &self.wasm_modules {
-            let wasm = wm.file();
-            files.push(wasm);
-        }
-
-        files
-    }
-
     pub fn bindings(&self) -> Vec<Binding> {
         let mut bindings = Vec::new();
 
@@ -34,5 +17,13 @@ impl ProjectAssets {
         }
 
         bindings
+    }
+
+    pub fn script_name(&self) -> String {
+        "script".to_string() // TODO: derive from script_path
+    }
+
+    pub fn script_path(&self) -> String {
+        self.script_path.to_string()
     }
 }
