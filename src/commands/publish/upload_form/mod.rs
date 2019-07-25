@@ -8,7 +8,7 @@ use reqwest::multipart::{Form, Part};
 use std::fs;
 use std::path::Path;
 
-use crate::commands::build::wranglerjs::Bundle;
+use crate::commands::build::wranglerjs;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
 use crate::settings::project::{Project, ProjectType};
@@ -59,7 +59,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
         ProjectType::Webpack => {
             info!("Webpack project detected. Publishing...");
             // FIXME(sven): shouldn't new
-            let bundle = Bundle::new();
+            let bundle = wranglerjs::Bundle::new();
 
             let script_path = bundle.script_path();
 

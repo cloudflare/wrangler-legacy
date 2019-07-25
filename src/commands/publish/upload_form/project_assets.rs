@@ -27,6 +27,7 @@ impl ProjectAssets {
 
     pub fn bindings(&self) -> Vec<Binding> {
         let mut bindings = Vec::new();
+
         for wm in &self.wasm_modules {
             let wasm = wm.binding();
             bindings.push(wasm);

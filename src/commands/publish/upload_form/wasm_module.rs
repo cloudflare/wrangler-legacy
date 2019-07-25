@@ -12,8 +12,8 @@ pub struct WasmModule {
 // `part` corresponds to the name given to the file in the upload form
 impl WasmModule {
     pub fn binding(&self) -> Binding {
-        let name = self.binding.clone();
-        let part = self.filename.clone();
+        let name = &self.binding;
+        let part = &self.filename;
 
         Binding::new_wasm_module(name, part)
     }
@@ -22,8 +22,8 @@ impl WasmModule {
 impl WasmModule {
     pub fn file(&self) -> File {
         File {
-            name: self.filename.clone(),
-            path: self.path.clone(),
+            name: self.filename.to_string(),
+            path: self.path.to_string(),
         }
     }
 }
