@@ -1,4 +1,5 @@
 use super::binding::Binding;
+use super::filename_from_path;
 use super::wasm_module::WasmModule;
 
 #[derive(Debug)]
@@ -20,7 +21,7 @@ impl ProjectAssets {
     }
 
     pub fn script_name(&self) -> String {
-        "script".to_string() // TODO: derive from script_path
+        filename_from_path(&self.script_path())
     }
 
     pub fn script_path(&self) -> String {

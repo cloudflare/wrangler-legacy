@@ -1,15 +1,15 @@
 use super::binding::Binding;
+use super::filename_from_path;
 
 #[derive(Debug)]
 pub struct WasmModule {
     pub path: String,
-    pub filename: String,
     pub binding: String,
 }
 
 impl WasmModule {
     pub fn filename(&self) -> String {
-        self.filename.to_string()
+        filename_from_path(&self.path())
     }
 
     pub fn path(&self) -> String {

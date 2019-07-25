@@ -29,7 +29,6 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
 
             let wasm_module = WasmModule {
                 path: format!("./pkg/{}_bg.wasm", name).to_string(),
-                filename: "wasmprogram".to_string(),
                 binding: "wasm".to_string(),
             };
 
@@ -67,7 +66,6 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             if bundle.has_wasm() {
                 let wasm_module = WasmModule {
                     path: bundle.wasm_path(),
-                    filename: bundle.get_wasm_binding(),
                     binding: bundle.get_wasm_binding(),
                 };
                 wasm_modules.push(wasm_module)
@@ -117,6 +115,11 @@ fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure:
     form = form.part("metadata", metadata);
 
     Ok(form)
+}
+
+fn filename_from_path(path: &String) -> String {
+    let path = Path::new(path);
+    path.file_stem().unwrap().to_str().unwrap().to_string()
 }
 
 fn build_generated_dir() -> Result<(), failure::Error> {
