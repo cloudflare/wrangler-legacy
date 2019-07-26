@@ -62,21 +62,17 @@ impl Project {
     }
 
     pub fn new() -> Result<Self, failure::Error> {
-        let mut config_path = PathBuf::new();
-        config_path.push("./wrangler.toml");
+        let config_path = Path::new("./wrangler.toml");
 
         get_project_config(config_path)
     }
 
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
-        match &self.kv_namespaces {
-            Some(kv) => kv.clone(),
-            None => Vec::new(),
-        }
+        self.kv_namespaces.clone().unwrap_or_else(Vec::new)
     }
 }
 
-fn get_project_config(config_path: PathBuf) -> Result<Project, failure::Error> {
+fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
     let mut s = Config::new();
 
     let config_str = config_path
