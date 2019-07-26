@@ -1,3 +1,5 @@
+pub mod kv;
+
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest::{Client, ClientBuilder, RedirectPolicy};
 use std::time::Duration;
