@@ -27,17 +27,13 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             build_generated_dir()?;
             concat_js(&name)?;
 
-            let wasm_module = WasmModule {
-                path: format!("./pkg/{}_bg.wasm", name).to_string(),
-                binding: "wasm".to_string(),
-            };
+            let path = format!("./pkg/{}_bg.wasm", name).to_string();
+            let binding = "wasm".to_string();
+            let wasm_module = WasmModule::new(path, binding)?;
 
             let script_path = "./worker/generated/script.js".to_string();
 
-            let assets = ProjectAssets {
-                script_path,
-                wasm_modules: vec![wasm_module],
-            };
+            let assets = ProjectAssets::new(script_path, vec![wasm_module])?;
 
             build_form(&assets)
         }
@@ -47,10 +43,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
 
             let script_path = package.main()?;
 
-            let assets = ProjectAssets {
-                script_path,
-                wasm_modules: Vec::new(),
-            };
+            let assets = ProjectAssets::new(script_path, Vec::new())?;
 
             build_form(&assets)
         }
@@ -64,17 +57,13 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             let mut wasm_modules = Vec::new();
 
             if bundle.has_wasm() {
-                let wasm_module = WasmModule {
-                    path: bundle.wasm_path(),
-                    binding: bundle.get_wasm_binding(),
-                };
+                let path = bundle.wasm_path();
+                let binding = bundle.get_wasm_binding();
+                let wasm_module = WasmModule::new(path, binding)?;
                 wasm_modules.push(wasm_module)
             }
 
-            let assets = ProjectAssets {
-                script_path,
-                wasm_modules,
-            };
+            let assets = ProjectAssets::new(script_path, wasm_modules)?;
 
             build_form(&assets)
         }
@@ -117,9 +106,9 @@ fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure:
     Ok(form)
 }
 
-fn filename_from_path(path: &String) -> String {
+fn filename_from_path(path: &String) -> Option<String> {
     let path = Path::new(path);
-    path.file_stem().unwrap().to_str().unwrap().to_string()
+    path.file_stem()?.to_str().map(|s| s.to_string())
 }
 
 fn build_generated_dir() -> Result<(), failure::Error> {

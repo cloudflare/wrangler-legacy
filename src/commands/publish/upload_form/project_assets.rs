@@ -1,14 +1,28 @@
+use failure::format_err;
+
 use super::binding::Binding;
 use super::filename_from_path;
 use super::wasm_module::WasmModule;
 
 #[derive(Debug)]
 pub struct ProjectAssets {
-    pub script_path: String,
+    script_name: String,
+    script_path: String,
     pub wasm_modules: Vec<WasmModule>,
 }
 
 impl ProjectAssets {
+    pub fn new(script_path: String, wasm_modules: Vec<WasmModule>) -> Result<Self, failure::Error> {
+        let script_name = filename_from_path(&script_path)
+            .ok_or(format_err!("filename should not be empty: {}", script_path))?;
+
+        Ok(Self {
+            script_name,
+            script_path,
+            wasm_modules,
+        })
+    }
+
     pub fn bindings(&self) -> Vec<Binding> {
         let mut bindings = Vec::new();
 
@@ -21,7 +35,7 @@ impl ProjectAssets {
     }
 
     pub fn script_name(&self) -> String {
-        filename_from_path(&self.script_path())
+        self.script_name.to_string()
     }
 
     pub fn script_path(&self) -> String {
