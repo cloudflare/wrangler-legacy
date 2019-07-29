@@ -147,13 +147,14 @@ There are two types of configuration that `wrangler` uses: global user and per p
         inside your Worker. Each namespace you include should have an entry in your wrangler.toml that includes:
 
         - `binding`: the name you want to bind to in your script
-        - `id`: the namespace_id assigned to your kv namespace [upon creation](https://workers.cloudflare.com/docs/reference/storage/writing-data/).
+        - `id`: the namespace_id assigned to your kv namespace upon creation.
             e.g. (per namespace):
         ``` toml
         [[kv-namespaces]]
         binding = "foo"
         id = "0f2ac74b498b48028cb68387c421e279"
         ```
+        Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
 
 ## ⚓ Installation
 
