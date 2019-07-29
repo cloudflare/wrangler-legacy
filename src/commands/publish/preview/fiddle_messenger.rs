@@ -32,7 +32,7 @@ impl Handler for FiddleMessageServer {
         #[cfg(debug_assertions)]
         const SAFE_ORIGINS: &[&str] = &["https://cloudflareworkers.com", "http://localhost"];
 
-        const SAFE_ADDRS: &[&str] = &["127.0.0.1", "localhost"];
+        const SAFE_ADDRS: &[&str] = &["127.0.0.1", "localhost", "::1"];
 
         //origin() returns Result<Option<&str>>
         let origin = handshake
@@ -63,10 +63,19 @@ impl Handler for FiddleMessageServer {
                 origin, incoming
             ));
         } else {
-            message::user_error(&format!(
-                "Denied connection from {}. This is not a trusted origin",
-                origin
-            ));
+            if !origin_is_safe {
+                message::user_error(&format!(
+                    "Denied connection from site {}. This is not a trusted origin",
+                    origin
+                ));
+            }
+
+            if !addr_is_safe {
+                message::user_error(&format!(
+                    "Denied connection originating from {} which is outside this machine",
+                    incoming
+                ));
+            }
 
             let _ = self
                 .out
