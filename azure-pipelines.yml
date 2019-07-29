@@ -6,62 +6,82 @@ trigger:
 
 jobs:
   - job: test_wrangler
-    displayName: "Run wrangler tests, fmt, and clippy"
+    displayName: 'Run wrangler tests, fmt, and clippy'
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
+      - task: CacheBeta@0
+        displayName: 'Cache Cargo deps'
+        inputs:
+          key: $(Build.SourcesDirectory)/Cargo.lock
+          path: $(Pipeline.Workspace)/.cargo
       - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
+        displayName: 'cargo install cargo-generate'
       - script: cargo test --locked
-        displayName: "cargo test --locked"
+        displayName: 'cargo test --locked'
       - script: rustup component add rustfmt
         displayName: rustup component add rustfmt
       - script: cargo fmt --all -- --check
-        displayName: "cargo fmt"
+        displayName: 'cargo fmt'
       - script: rustup component add clippy
         displayName: rustup component add clippy
       - script: cargo clippy
-        displayName: "cargo clippy"
+        displayName: 'cargo clippy'
 
   - job: test_wrangler_windows
-    displayName: "Run wrangler tests (Windows)"
+    displayName: 'Run wrangler tests (Windows)'
     pool:
       vmImage: vs2017-win2016
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
+      - task: CacheBeta@0
+        displayName: 'Cache Cargo deps'
+        inputs:
+          key: $(Build.SourcesDirectory)/Cargo.lock
+          path: $(Pipeline.Workspace)/.cargo
       - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
+        displayName: 'cargo install cargo-generate'
       - script: cargo test --locked
-        displayName: "cargo test --locked"
+        displayName: 'cargo test --locked'
         env:
           RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1
 
   - job: test_wrangler_nightly
-    displayName: "Run wrangler tests (nightly)"
+    displayName: 'Run wrangler tests (nightly)'
     steps:
       - template: ci/azure-install-rust.yml
         parameters:
           toolchain: nightly
       - template: ci/azure-install-node.yml
+      - task: CacheBeta@0
+        displayName: 'Cache Cargo deps'
+        inputs:
+          key: $(Build.SourcesDirectory)/Cargo.lock
+          path: $(Pipeline.Workspace)/.cargo
       - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
+        displayName: 'cargo install cargo-generate'
       - script: cargo test --locked
-        displayName: "cargo test --locked"
+        displayName: 'cargo test --locked'
         env:
           RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1
 
   - job: dist_linux
-    displayName: "Dist Linux binary"
+    displayName: 'Dist Linux binary'
     steps:
       - template: ci/azure-install-rust.yml
       - script: rustup target add x86_64-unknown-linux-musl
+      - task: CacheBeta@0
+        displayName: 'Cache Cargo deps'
+        inputs:
+          key: $(Build.SourcesDirectory)/Cargo.lock
+          path: $(Pipeline.Workspace)/.cargo
       - script: |
           sudo apt update -y
           sudo apt install musl-tools -y
-        displayName: "Install musl-tools"
+        displayName: 'Install musl-tools'
       - script: |
           set -ex
           cargo build --target x86_64-unknown-linux-musl --features vendored-openssl --release
@@ -71,11 +91,16 @@ jobs:
           name: dist_linux
 
   - job: dist_darwin
-    displayName: "Dist Darwin binary"
+    displayName: 'Dist Darwin binary'
     pool:
       vmImage: macOS-10.13
     steps:
       - template: ci/azure-install-rust.yml
+      - task: CacheBeta@0
+        displayName: 'Cache Cargo deps'
+        inputs:
+          key: $(Build.SourcesDirectory)/Cargo.lock
+          path: $(Pipeline.Workspace)/.cargo
       - script: cargo build --release
         env:
           MACOSX_DEPLOYMENT_TARGET: 10.7
@@ -84,11 +109,16 @@ jobs:
           name: dist_darwin
 
   - job: dist_windows
-    displayName: "Dist Windows binary"
+    displayName: 'Dist Windows binary'
     pool:
       vmImage: vs2017-win2016
     steps:
       - template: ci/azure-install-rust.yml
+      - task: CacheBeta@0
+        displayName: 'Cache Cargo deps'
+        inputs:
+          key: $(Build.SourcesDirectory)/Cargo.lock
+          path: $(Pipeline.Workspace)/.cargo
       - script: cargo build --release
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
@@ -97,7 +127,7 @@ jobs:
           name: dist_windows
 
   - job: dist_wranglerjs
-    displayName: "Dist wranglerjs"
+    displayName: 'Dist wranglerjs'
     steps:
       - task: ArchiveFiles@2
         inputs:
@@ -118,26 +148,26 @@ jobs:
       - dist_darwin
       - dist_windows
       - dist_wranglerjs
-    displayName: "Deploy release binaries"
+    displayName: 'Deploy release binaries'
     steps:
       - template: ci/azure-install-rust.yml
       - task: DownloadPipelineArtifact@0
-        displayName: "Download dist - windows"
+        displayName: 'Download dist - windows'
         inputs:
           artifactName: dist_windows
           targetPath: tmp/windows
       - task: DownloadPipelineArtifact@0
-        displayName: "Download dist - wranglerjs"
+        displayName: 'Download dist - wranglerjs'
         inputs:
           artifactName: dist_wranglerjs
           targetPath: tmp/wranglerjs
       - task: DownloadPipelineArtifact@0
-        displayName: "Download dist - linux"
+        displayName: 'Download dist - linux'
         inputs:
           artifactName: dist_linux
           targetPath: tmp/linux
       - task: DownloadPipelineArtifact@0
-        displayName: "Download dist - darwin"
+        displayName: 'Download dist - darwin'
         inputs:
           artifactName: dist_darwin
           targetPath: tmp/darwin
@@ -163,9 +193,9 @@ jobs:
           mk x86_64-apple-darwin darwin
           mk x86_64-pc-windows-msvc windows
           mv -v tmp/wranglerjs/* gh-release/wranglerjs-$tag.tar.gz
-        displayName: "prepare the github releases tarball artifacts"
+        displayName: 'prepare the github releases tarball artifacts'
       - task: PublishPipelineArtifact@0
-        displayName: "publish gh_release artifact"
+        displayName: 'publish gh_release artifact'
         inputs:
           artifactName: gh_release
           targetPath: gh-release
