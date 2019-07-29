@@ -75,7 +75,7 @@ pub fn preview(
     Ok(())
 }
 
-fn open(preview_host: &str, https: bool, script_id: &str) -> Result<(), failure::Error>{
+fn open(preview_host: &str, https: bool, script_id: &str) -> Result<(), failure::Error> {
     let https_str = if https { "https://" } else { "http://" };
 
     let browser_preview = format!(
