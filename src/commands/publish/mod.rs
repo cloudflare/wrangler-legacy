@@ -2,11 +2,11 @@ mod krate;
 pub mod package;
 pub mod preview;
 mod route;
-mod script_upload_form;
+mod upload_form;
 
 use package::Package;
 use route::Route;
-use script_upload_form::build_script_upload_form;
+use upload_form::build_script_upload_form;
 
 use log::info;
 

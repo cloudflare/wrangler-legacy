@@ -8,7 +8,10 @@ pub enum Binding {
 }
 
 impl Binding {
-    pub fn new_wasm_module(name: String, part: String) -> Binding {
-        Binding::wasm_module { name, part }
+    pub fn new_wasm_module(name: &str, part: &str) -> Binding {
+        Binding::wasm_module {
+            name: name.to_string(),
+            part: part.to_string(),
+        }
     }
 }
