@@ -10,6 +10,7 @@ use std::path::Path;
 use crate::commands::build::wranglerjs;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
+use crate::settings::project::kv_namespace;
 use crate::settings::project::{Project, ProjectType};
 
 use project_assets::ProjectAssets;
@@ -19,6 +20,7 @@ use super::{krate, Package};
 
 pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Error> {
     let project_type = &project.project_type;
+    let kv_namespaces = project.kv_namespaces();
     match project_type {
         ProjectType::Rust => {
             info!("Rust project detected. Publishing...");
@@ -33,7 +35,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
 
             let script_path = "./worker/generated/script.js".to_string();
 
-            let assets = ProjectAssets::new(script_path, vec![wasm_module])?;
+            let assets = ProjectAssets::new(script_path, vec![wasm_module], kv_namespaces)?;
 
             build_form(&assets)
         }
@@ -43,7 +45,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
 
             let script_path = package.main()?;
 
-            let assets = ProjectAssets::new(script_path, Vec::new())?;
+            let assets = ProjectAssets::new(script_path, Vec::new(), kv_namespaces)?;
 
             build_form(&assets)
         }
@@ -63,7 +65,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
                 wasm_modules.push(wasm_module)
             }
 
-            let assets = ProjectAssets::new(script_path, wasm_modules)?;
+            let assets = ProjectAssets::new(script_path, wasm_modules, kv_namespaces)?;
 
             build_form(&assets)
         }
@@ -77,6 +79,8 @@ fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
     // "metadata" part be set first, so this order is important.
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
+
+    info!("{:?}", &form);
 
     Ok(form)
 }
