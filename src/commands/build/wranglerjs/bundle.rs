@@ -6,8 +6,6 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
-use log::info;
-
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
 use crate::settings::binding::Binding;
 use crate::settings::metadata;
@@ -56,12 +54,6 @@ impl Bundle {
         let metadata = create_metadata(self).expect("could not create metadata");
         let mut metadata_file = File::create(self.metadata_path())?;
         metadata_file.write_all(metadata.as_bytes())?;
-
-        // cleanup {Webpack} dist, if specified.
-        if let Some(dist_to_clean) = &wranglerjs_output.dist_to_clean {
-            info!("Remove {}", dist_to_clean);
-            fs::remove_dir_all(dist_to_clean).expect("could not clean Webpack dist.");
-        }
 
         Ok(())
     }
@@ -150,7 +142,7 @@ mod tests {
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
             script: "".to_string(),
-            dist_to_clean: None,
+
             wasm: None,
         };
         let bundle = Bundle::new_at(out.clone());
@@ -171,7 +163,6 @@ mod tests {
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
             script: "foo".to_string(),
-            dist_to_clean: None,
             wasm: None,
         };
         let bundle = Bundle::new_at(out.clone());
@@ -190,7 +181,6 @@ mod tests {
             errors: vec![],
             script: "".to_string(),
             wasm: Some("abc".to_string()),
-            dist_to_clean: None,
         };
         let bundle = Bundle::new_at(out.clone());
 
@@ -208,7 +198,6 @@ mod tests {
             errors: vec![],
             script: "".to_string(),
             wasm: Some("abc".to_string()),
-            dist_to_clean: None,
         };
         let bundle = Bundle::new_at(out.clone());
 
@@ -231,7 +220,6 @@ mod tests {
             errors: vec!["a".to_string(), "b".to_string()],
             script: "".to_string(),
             wasm: None,
-            dist_to_clean: None,
         };
         assert!(wranglerjs_output.has_errors());
         assert!(wranglerjs_output.get_errors() == "a\nb");

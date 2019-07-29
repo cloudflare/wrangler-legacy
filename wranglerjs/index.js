@@ -75,7 +75,6 @@ compiler.run((err, stats) => {
   const bundle = {
     wasm: null,
     script: "",
-    dist_to_clean: fullConfig.output.path,
     errors: jsonStats.errors
   };
 

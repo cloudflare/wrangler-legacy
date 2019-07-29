@@ -1,3 +1,5 @@
+use crate::terminal::emoji;
+
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 
@@ -38,10 +40,11 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
         Ok(s) => Ok(s),
         Err(e) => {
             let msg = format!(
-                "⚠️ Your global config has an error, run `wrangler config`: {}",
+                "{} Your global config has an error, run `wrangler config`: {}",
+                emoji::WARN,
                 e
             );
-            Err(failure::err_msg(msg))
+            failure::bail!(msg)
         }
     }
 }

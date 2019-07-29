@@ -15,9 +15,11 @@ mod installer;
 mod settings;
 mod terminal;
 
+use crate::settings::project::ProjectType;
+use exitfailure::ExitFailure;
 use terminal::emoji;
 
-fn main() -> Result<(), failure::Error> {
+fn main() -> Result<(), ExitFailure> {
     env_logger::init();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
@@ -31,7 +33,10 @@ fn main() -> Result<(), failure::Error> {
             installer::install();
         }
     }
+    Ok(run()?)
+}
 
+fn run() -> Result<(), failure::Error> {
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("ashley g williams <ashley666ashley@gmail.com>")
@@ -167,12 +172,19 @@ fn main() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let project_type = match matches.value_of("type") {
-            Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
+            Some(s) => Some(ProjectType::from_str(&s.to_lowercase())?),
             None => None,
         };
-        let template = matches
-            .value_of("template")
-            .unwrap_or("https://github.com/cloudflare/worker-template");
+
+        let default_template = "https://github.com/cloudflare/worker-template";
+        let template = matches.value_of("template").unwrap_or(match project_type {
+            Some(ref pt) => match pt {
+                ProjectType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
+                _ => default_template,
+            },
+            _ => default_template,
+        });
+
         info!(
             "Generate command called with template {}, and name {}",
             template, name

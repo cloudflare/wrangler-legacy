@@ -1,3 +1,4 @@
+use crate::terminal::emoji;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 use number_prefix::{NumberPrefix, Prefixed, Standalone};
@@ -11,10 +12,6 @@ use std::io::prelude::*;
 pub struct WranglerjsOutput {
     pub wasm: Option<String>,
     pub script: String,
-    // {wranglerjs} will send us the path to the {dist} directory that {Webpack}
-    // used; it's tedious to remove a directory with content in JavaScript so
-    // let's do it in Rust!
-    pub dist_to_clean: Option<String>,
     // Errors emited by {wranglerjs}, if any
     pub errors: Vec<String>,
 }
@@ -28,24 +25,51 @@ impl WranglerjsOutput {
         self.errors.join("\n")
     }
 
-    pub fn script_size(&self) -> String {
+    fn project_size_bytes(&self) -> u64 {
         let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
-        e.write_all(&self.script.as_bytes())
-            .expect("could not write buffer");
-        let compressed_bytes = e.finish();
 
-        match NumberPrefix::decimal(compressed_bytes.unwrap().len() as f64) {
+        //approximation of how projects are gzipped
+        e.write_all(&self.script.as_bytes())
+            .expect("could not write script buffer");
+
+        if let Some(wasm) = &self.wasm {
+            e.write_all(wasm.to_owned().as_bytes())
+                .expect("could not write wasm buffer");
+        }
+
+        e.finish().expect("failed to compress project").len() as u64
+    }
+
+    fn project_size_message(compressed_size: u64) -> String {
+        const MAX_PROJECT_SIZE: u64 = 1 << 20; // 1 MiB
+        const WARN_THRESHOLD: u64 = MAX_PROJECT_SIZE - 81_920; //Warn when less than 80 KiB left to grow, ~92% usage
+
+        let bytes_left = MAX_PROJECT_SIZE.checked_sub(compressed_size);
+
+        let human_size = match NumberPrefix::binary(compressed_size as f64) {
             Standalone(bytes) => format!("{} bytes", bytes),
             Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
+        };
+
+        let human_leftover = if let Some(bytes_left) = bytes_left {
+            let msg = match NumberPrefix::binary(bytes_left as f64) {
+                Standalone(bytes) => format!("{} bytes", bytes),
+                Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
+            };
+            Some(msg)
+        } else {
+            None
+        };
+
+        match compressed_size {
+            WARN_THRESHOLD...MAX_PROJECT_SIZE => format!("{}. {2} Your built project is {} away from reaching the 1MiB size limit. {2}", human_size, human_leftover.expect("failed to get leftover bytes"), emoji::WARN),
+            0...WARN_THRESHOLD => format!("{}.", human_size),
+            _ => format!("{}. {1} Your built project has grown past the 1MiB size limit and may fail to deploy. {1}", human_size, emoji::WARN)
         }
     }
 
-    pub fn wasm_size(&self) -> String {
-        let size = self.wasm.to_owned().unwrap().len();
-        match NumberPrefix::decimal(size as f64) {
-            Standalone(bytes) => format!("{} bytes", bytes),
-            Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
-        }
+    pub fn project_size(&self) -> String {
+        Self::project_size_message(self.project_size_bytes())
     }
 }
 
@@ -54,26 +78,34 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_returns_gzip_script_size() {
-        let wranglerjs_output = WranglerjsOutput {
-            errors: vec![],
-            script: "aaaa".to_string(),
-            dist_to_clean: None,
-            wasm: None,
-        };
-
-        assert_eq!(wranglerjs_output.script_size(), "12 bytes");
+    fn it_warns_over_max_size() {
+        assert!(WranglerjsOutput::project_size_message(1 << 21).contains("grown past"));
     }
 
     #[test]
-    fn it_returns_wasm_size() {
+    fn it_warns_near_max_size() {
+        assert!(WranglerjsOutput::project_size_message((1 << 20) - 4096).contains("reaching"));
+    }
+
+    #[test]
+    fn it_returns_project_size_with_wasm() {
         let wranglerjs_output = WranglerjsOutput {
             errors: vec![],
-            script: "".to_string(),
-            dist_to_clean: None,
-            wasm: Some("abc".to_string()),
+            script: "abcdefg".to_string(),
+            wasm: Some("123456".to_string()),
         };
 
-        assert_eq!(wranglerjs_output.wasm_size(), "3 bytes");
+        assert_eq!(wranglerjs_output.project_size_bytes(), 21);
+    }
+
+    #[test]
+    fn it_returns_project_size_without_wasm() {
+        let wranglerjs_output = WranglerjsOutput {
+            errors: vec![],
+            script: "abcdefg".to_string(),
+            wasm: None,
+        };
+
+        assert_eq!(wranglerjs_output.project_size_bytes(), 15);
     }
 }
