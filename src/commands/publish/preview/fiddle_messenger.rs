@@ -32,14 +32,36 @@ impl Handler for FiddleMessageServer {
         #[cfg(debug_assertions)]
         const SAFE_ORIGINS: &[&str] = &["https://cloudflareworkers.com", "http://localhost"];
 
-        let origin = handshake.request.origin()?.unwrap_or("unknown");
+        const SAFE_ADDRS: &[&str] = &["127.0.0.1", "localhost"];
 
-        let is_safe = SAFE_ORIGINS.iter().fold(false, |is_safe, safe_origin| {
-            is_safe || origin.starts_with(safe_origin)
+        //origin() returns Result<Option<&str>>
+        let origin = handshake
+            .request
+            .origin()?
+            .unwrap_or("unknown")
+            .trim_end_matches(|c: char| c == '/' || c == ':' || c.is_numeric());
+
+        //remote_addr returns Result<Option<String>>
+        let incoming = handshake.remote_addr()?;
+        let incoming = incoming.as_ref().map_or("unknown", String::as_str);
+
+        //only allow connections from cloudflareworkers.com
+        let origin_is_safe = SAFE_ORIGINS.iter().fold(false, |is_safe, &safe_origin| {
+            //remove the port/slashes from the end so we can compare safely, instead of checking the
+            //prefix which is a security issue.
+            is_safe || origin == safe_origin
         });
 
-        if is_safe {
-            message::info(&format!("Accepted connection from {}", origin));
+        //only allow incoming websocket connections from localhost/current machine.
+        let addr_is_safe = SAFE_ADDRS.iter().fold(false, |is_safe, &safe_addr| {
+            is_safe || incoming == safe_addr
+        });
+
+        if origin_is_safe && addr_is_safe {
+            message::info(&format!(
+                "Accepted connection from site {} incoming from {}",
+                origin, incoming
+            ));
         } else {
             message::user_error(&format!(
                 "Denied connection from {}. This is not a trusted origin",
