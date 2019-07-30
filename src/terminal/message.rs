@@ -9,6 +9,10 @@ pub fn info(msg: &str) {
     message(emoji::INFO, msg);
 }
 
+pub fn warn(msg: &str) {
+    message(emoji::WARN, msg);
+}
+
 pub fn success(msg: &str) {
     message(emoji::SPARKLES, msg);
 }

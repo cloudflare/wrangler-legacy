@@ -91,7 +91,7 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
         let old_format = values.iter().any(|val| val.clone().into_str().is_ok());
 
         if old_format {
-            //not using message since
+            message::warn("As of 1.1.0 the kv-namespaces format was stabilized");
             message::info("Please add a section like this in your wrangler.toml for each KV Namespace you wish to bind:");
 
             let fmt_demo = r#"
@@ -101,13 +101,6 @@ id = "0f2ac74b498b48028cb68387c421e279"
             "#;
 
             println!("{}", fmt_demo);
-
-            let err_msg = format!(
-                "{0} Your project config contains the old, undocumented kv-namespace format {0}",
-                emoji::WARN,
-            );
-
-            failure::bail!(err_msg)
         }
     }
 
