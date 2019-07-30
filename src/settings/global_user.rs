@@ -1,7 +1,10 @@
-use crate::terminal::emoji;
+use std::env;
+use std::path::{Path, PathBuf};
 
-use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
+
+use crate::terminal::emoji;
+use config::{Config, Environment, File};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GlobalUser {
@@ -18,9 +21,9 @@ impl GlobalUser {
 fn get_global_config() -> Result<GlobalUser, failure::Error> {
     let mut s = Config::new();
 
-    let config_path = dirs::home_dir()
-        .expect("oops no home dir")
-        .join(".wrangler/config/default");
+    let config_path = get_global_config_dir()
+        .expect("could not find global config directory")
+        .join("default");
     let config_str = config_path
         .to_str()
         .expect("global config path should be a string");
@@ -47,4 +50,16 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
             failure::bail!(msg)
         }
     }
+}
+
+pub fn get_global_config_dir() -> Result<PathBuf, failure::Error> {
+    let home_dir = if let Ok(value) = env::var("WRANGLER_HOME") {
+        Path::new(&value).to_path_buf()
+    } else {
+        dirs::home_dir()
+            .expect("oops no home dir")
+            .join(".wrangler")
+    };
+
+    Ok(home_dir.join("config"))
 }
