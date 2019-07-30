@@ -94,16 +94,14 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
             message::warn("As of 1.1.0 the kv-namespaces format has been stabilized");
             message::info("Please add a section like this in your wrangler.toml for each KV Namespace you wish to bind:");
 
-            let fmt_demo = r#"
+            let fmt_demo = r##"
 [[kv-namespaces]]
 binding = "BINDING_NAME"
 id = "0f2ac74b498b48028cb68387c421e279"
-            "#;
 
-            message::info(
-                "binding is the variable name you wish to bind the namespace to in your script.",
-            );
-            message::info("id is the namespace_id assigned to your kv namespace upon creation. e.g. (per namespace)");
+# binding is the variable name you wish to bind the namespace to in your script.
+# id is the namespace_id assigned to your kv namespace upon creation. e.g. (per namespace)
+"##;
 
             println!("{}", fmt_demo);
             //don't return early, we want the error message below to trigger
