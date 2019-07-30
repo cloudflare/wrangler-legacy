@@ -83,6 +83,22 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
     s.merge(Environment::with_prefix("CF"))?;
 
+    // check for pre 1.1.0 KV namespace format
+    let kv_namespaces: Result<Vec<config::Value>, config::ConfigError> = s.get("kv-namespaces");
+
+    if let Ok(values) = kv_namespaces {
+        let old_format = values.iter().any(|val| val.clone().into_str().is_ok());
+
+        if old_format {
+            let msg = format!(
+                "{} Your project config contains the old kv-namespace format, check the README.md for details on the new format: {}",
+                emoji::WARN,
+            );
+
+            failure::bail!(msg)
+        }
+    }
+
     let project: Result<Project, config::ConfigError> = s.try_into();
     match project {
         Ok(s) => Ok(s),
