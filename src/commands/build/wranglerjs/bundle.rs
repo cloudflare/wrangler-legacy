@@ -7,8 +7,6 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
-use crate::settings::binding::Binding;
-use crate::settings::metadata;
 #[cfg(test)]
 use crate::terminal::message;
 
@@ -51,19 +49,7 @@ impl Bundle {
 
         script_file.write_all(script.as_bytes())?;
 
-        let metadata = create_metadata(self).expect("could not create metadata");
-        let mut metadata_file = File::create(self.metadata_path())?;
-        metadata_file.write_all(metadata.as_bytes())?;
-
         Ok(())
-    }
-
-    pub fn metadata_path(&self) -> String {
-        Path::new(&self.out)
-            .join("metadata.json".to_string())
-            .to_str()
-            .unwrap()
-            .to_string()
     }
 
     pub fn wasm_path(&self) -> String {
@@ -104,23 +90,6 @@ pub fn create_prologue() -> String {
     .to_string()
 }
 
-// This metadata describe the bindings on the Worker.
-fn create_metadata(bundle: &Bundle) -> Result<String, serde_json::error::Error> {
-    let mut bindings = vec![];
-
-    if bundle.has_wasm() {
-        bindings.push(Binding::new_wasm_module(
-            bundle.get_wasm_binding(),
-            bundle.get_wasm_binding(),
-        ));
-    }
-
-    serde_json::to_string(&metadata::Metadata {
-        body_part: "script".to_string(),
-        bindings,
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -134,27 +103,6 @@ mod tests {
         fs::create_dir(&dir).expect("could not create temp dir");
 
         dir.to_str().unwrap().to_string()
-    }
-
-    #[test]
-    fn it_writes_the_bundle_metadata() {
-        let out = create_temp_dir("it_writes_the_bundle_metadata");
-        let wranglerjs_output = WranglerjsOutput {
-            errors: vec![],
-            script: "".to_string(),
-
-            wasm: None,
-        };
-        let bundle = Bundle::new_at(out.clone());
-
-        bundle.write(&wranglerjs_output).unwrap();
-        assert!(Path::new(&bundle.metadata_path()).exists());
-        let contents =
-            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
-
-        assert_eq!(contents, r#"{"body_part":"script","bindings":[]}"#);
-
-        cleanup(out);
     }
 
     #[test]
@@ -187,29 +135,6 @@ mod tests {
         bundle.write(&wranglerjs_output).unwrap();
         assert!(Path::new(&bundle.wasm_path()).exists());
         assert!(bundle.has_wasm());
-
-        cleanup(out);
-    }
-
-    #[test]
-    fn it_writes_the_bundle_wasm_metadata() {
-        let out = create_temp_dir("it_writes_the_bundle_wasm_metadata");
-        let wranglerjs_output = WranglerjsOutput {
-            errors: vec![],
-            script: "".to_string(),
-            wasm: Some("abc".to_string()),
-        };
-        let bundle = Bundle::new_at(out.clone());
-
-        bundle.write(&wranglerjs_output).unwrap();
-        assert!(Path::new(&bundle.metadata_path()).exists());
-        let contents =
-            fs::read_to_string(&bundle.metadata_path()).expect("could not read metadata");
-
-        assert_eq!(
-            contents,
-            r#"{"body_part":"script","bindings":[{"type":"wasm_module","name":"wasmprogram","part":"wasmprogram"}]}"#
-        );
 
         cleanup(out);
     }
