@@ -105,10 +105,7 @@ id = "0f2ac74b498b48028cb68387c421e279"
 
             println!("{}", fmt_demo);
 
-            let msg = format!(
-                "{0} Your project config has an error {0}",
-                emoji::WARN
-            );
+            let msg = format!("{0} Your project config has an error {0}", emoji::WARN);
             failure::bail!(msg)
         }
     }
