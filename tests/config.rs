@@ -20,7 +20,7 @@ fn it_generates_the_config() {
     stdout
         .read_to_string(&mut buffer)
         .expect("could not read output");
-    assert!(buffer.contains("Enter email: \nEnter api key: \n Successfully configured."));
+    assert!(buffer.contains("Successfully configured."));
 
     let config_file = fake_home_dir.join("config").join("default.toml");
 
@@ -28,8 +28,8 @@ fn it_generates_the_config() {
         .expect(&format!("could not read config at {:?}", &config_file));
     assert_eq!(
         config,
-        r#"email = "a"
-api_key = "b"
+        r#"email = "email@example.com"
+api_key = "apikeythisissecretandlong"
 "#
     );
 
