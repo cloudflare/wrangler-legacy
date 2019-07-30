@@ -91,7 +91,7 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
         let old_format = values.iter().any(|val| val.clone().into_str().is_ok());
 
         if old_format {
-            message::warn("As of 1.1.0 the kv-namespaces format was stabilized");
+            message::warn("As of 1.1.0 the kv-namespaces format has been stabilized");
             message::info("Please add a section like this in your wrangler.toml for each KV Namespace you wish to bind:");
 
             let fmt_demo = r#"
