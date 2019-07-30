@@ -151,7 +151,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
             e.g. (per namespace):
         ``` toml
         [[kv-namespaces]]
-        binding = "foo"
+        binding = "FOO"
         id = "0f2ac74b498b48028cb68387c421e279"
         ```
         Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
