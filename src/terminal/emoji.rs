@@ -13,7 +13,6 @@
 
 use console::Emoji;
 
-pub static CONSTRUCTION: Emoji = Emoji("🚧 ", "");
 pub static CRAB: Emoji = Emoji("🦀 ", "");
 pub static DANCERS: Emoji = Emoji("👯 ", "");
 pub static EYES: Emoji = Emoji("👀 ", "");
