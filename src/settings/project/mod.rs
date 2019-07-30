@@ -100,10 +100,13 @@ binding = "BINDING_NAME"
 id = "0f2ac74b498b48028cb68387c421e279"
             "#;
 
-            message::info("binding is the variable name you wish to bind the namespace to in your script");
-            message::info("id is the namespace_id assigned to your kv namespace upon creation. e.g. (per namespace)")
+            message::info(
+                "binding is the variable name you wish to bind the namespace to in your script.",
+            );
+            message::info("id is the namespace_id assigned to your kv namespace upon creation. e.g. (per namespace)");
 
             println!("{}", fmt_demo);
+            //don't return early, we want the error message below to trigger
         }
     }
 
