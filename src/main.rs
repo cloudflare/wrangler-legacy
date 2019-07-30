@@ -151,7 +151,7 @@ fn run() -> Result<(), failure::Error> {
         )))
         .get_matches();
 
-    if let Some(_) = matches.subcommand_matches("config") {
+    if let Some(_matches) = matches.subcommand_matches("config") {
         println!("Enter email: ");
         let email: String = read!("{}\n");
         println!("Enter api key: ");

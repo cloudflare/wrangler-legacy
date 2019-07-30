@@ -13,7 +13,7 @@ pub struct WasmModule {
 impl WasmModule {
     pub fn new(path: String, binding: String) -> Result<Self, failure::Error> {
         let filename = filename_from_path(&path)
-            .ok_or(format_err!("filename should not be empty: {}", path))?;
+            .ok_or_else(|| format_err!("filename should not be empty: {}", path))?;
 
         Ok(Self {
             filename,
