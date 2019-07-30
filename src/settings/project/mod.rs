@@ -5,6 +5,7 @@ pub use kv_namespace::KvNamespace;
 pub use project_type::ProjectType;
 
 use crate::terminal::emoji;
+use crate::terminal::message;
 
 use std::collections::HashMap;
 use std::fs;
@@ -90,12 +91,23 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
         let old_format = values.iter().any(|val| val.clone().into_str().is_ok());
 
         if old_format {
-            let msg = format!(
-                "{} Your project config contains the old kv-namespace format, check the README.md for details on the new format: {}",
+            //not using message since
+            message::info("the new format looks like this");
+
+            let fmt_demo = r#"
+[[kv-namespaces]]
+binding = "FOO"
+id = "0f2ac74b498b48028cb68387c421e279"
+            "#;
+
+            println!("{}", fmt_demo);
+
+            let err_msg = format!(
+                "{0} Your project config contains the old, undocumented kv-namespace format {0}",
                 emoji::WARN,
             );
 
-            failure::bail!(msg)
+            failure::bail!(err_msg)
         }
     }
 
