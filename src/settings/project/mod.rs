@@ -92,7 +92,7 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
 
         if old_format {
             message::warn("As of 1.1.0 the kv-namespaces format has been stabilized");
-            message::info("Please add a section like this in your wrangler.toml for each KV Namespace you wish to bind:");
+            message::info("Please add a section like this in your `wrangler.toml` for each KV Namespace you wish to bind:");
 
             let fmt_demo = r##"
 [[kv-namespaces]]
@@ -104,7 +104,12 @@ id = "0f2ac74b498b48028cb68387c421e279"
 "##;
 
             println!("{}", fmt_demo);
-            //don't return early, we want the error message below to trigger
+
+            let msg = format!(
+                "{0} Your project config has an error {0}",
+                emoji::WARN
+            );
+            failure::bail!(msg)
         }
     }
 
