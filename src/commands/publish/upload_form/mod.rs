@@ -110,7 +110,7 @@ fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure:
     Ok(form)
 }
 
-fn filename_from_path(path: &String) -> Option<String> {
+fn filename_from_path(path: &str) -> Option<String> {
     let path = Path::new(path);
     path.file_stem()?.to_str().map(|s| s.to_string())
 }
