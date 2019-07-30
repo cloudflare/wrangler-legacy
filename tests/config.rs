@@ -33,8 +33,8 @@ api_key = "apikeythisissecretandlong"
 "#
     );
 
-    // check dir permissions (but not on windows)
-    if !cfg!(target_os = "windows") {
+    // check dir permissions (linux only)
+    if cfg!(target_os = "linux") {
         let mut command = Command::new("stat");
         command.arg("-c");
         command.arg("%a %n");
