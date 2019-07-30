@@ -92,11 +92,11 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
 
         if old_format {
             //not using message since
-            message::info("the new format looks like this");
+            message::info("Please add a section like this in your wrangler.toml for each KV Namespace you wish to bind:");
 
             let fmt_demo = r#"
 [[kv-namespaces]]
-binding = "FOO"
+binding = "BINDING_NAME"
 id = "0f2ac74b498b48028cb68387c421e279"
             "#;
 
