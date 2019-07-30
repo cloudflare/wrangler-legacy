@@ -1,6 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::terminal::emoji;
@@ -23,7 +24,7 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
 
     let config_path = get_global_config_dir()
         .expect("could not find global config directory")
-        .join("default");
+        .join("default.toml");
     let config_str = config_path
         .to_str()
         .expect("global config path should be a string");
@@ -31,6 +32,10 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
     // Skip reading global config if non existent
     // because envs might be provided
     if config_path.exists() {
+        info!(
+            "Config path exists. Reading from config file, {}",
+            config_str
+        );
         s.merge(File::with_name(config_str))?;
     }
 
@@ -54,12 +59,15 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
 
 pub fn get_global_config_dir() -> Result<PathBuf, failure::Error> {
     let home_dir = if let Ok(value) = env::var("WRANGLER_HOME") {
+        info!("Using WRANGLER_HOME: {}", value);
         Path::new(&value).to_path_buf()
     } else {
+        info!("No WRANGLER_HOME detected");
         dirs::home_dir()
             .expect("oops no home dir")
             .join(".wrangler")
     };
-
-    Ok(home_dir.join("config"))
+    let global_config_dir = home_dir.join("config");
+    info!("Using global config dir: {:?}", global_config_dir);
+    Ok(global_config_dir)
 }

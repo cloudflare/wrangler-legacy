@@ -1,7 +1,6 @@
 use assert_cmd::prelude::*;
 use std::env;
 use std::fs;
-use std::fs::File;
 use std::io::prelude::*;
 use std::process::{Child, Command, Stdio};
 
@@ -13,15 +12,15 @@ fn it_generates_the_config() {
     let cmd = config_with_wrangler_home(fake_home_dir.to_str().unwrap());
     let mut stdin = cmd.stdin.unwrap();
 
-    write!(stdin, "a\n").unwrap(); // email
-    write!(stdin, "b\n").unwrap(); // api_key
+    write!(stdin, "email@example.com\n").unwrap();
+    write!(stdin, "apikeythisissecretandlong\n").unwrap();
 
     let mut buffer = "".to_string();
-    let mut stdout = cmd.stdout.unwrap();
+    let mut stdout = cmd.stdout.expect("stdout");
     stdout
         .read_to_string(&mut buffer)
         .expect("could not read output");
-    assert!(buffer.contains("Enter email: \nEnter api key: \n Successfully configured."));
+    assert!(buffer.contains("Successfully configured."));
 
     let config_file = fake_home_dir.join("config").join("default.toml");
 
@@ -29,13 +28,13 @@ fn it_generates_the_config() {
         .expect(&format!("could not read config at {:?}", &config_file));
     assert_eq!(
         config,
-        r#"email = "a"
-api_key = "b"
+        r#"email = "email@example.com"
+api_key = "apikeythisissecretandlong"
 "#
     );
 
-    // check dir permissions (but not on windows)
-    if !cfg!(target_os = "windows") {
+    // check dir permissions (linux only)
+    if cfg!(target_os = "linux") {
         let mut command = Command::new("stat");
         command.arg("-c");
         command.arg("%a %n");
