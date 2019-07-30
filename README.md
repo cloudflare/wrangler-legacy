@@ -190,14 +190,6 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     cargo install wrangler
     ```
 
-1. Troubleshooting OpenSSL errors
-
-    If you are on a Mac, you might encounter an OpenSSL error when attempting to generate a project. You can resolve that issue by installing OpenSSL v1.1 through Homebrew (need to install Homebrew? Instructions available [here](https://brew.sh/)).
-
-    ```
-    $ brew install openssl@1.1
-    ```
-
 ### Manual Install:
 
 1. Download the binary tarball for your platform from our [releases page](https://github.com/cloudflare/wrangler/releases). You don't need to download wranglerjs, wrangler will install that for you.
