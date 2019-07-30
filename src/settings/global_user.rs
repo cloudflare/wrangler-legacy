@@ -24,7 +24,7 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
 
     let config_path = get_global_config_dir()
         .expect("could not find global config directory")
-        .join("default");
+        .join("default.toml");
     let config_str = config_path
         .to_str()
         .expect("global config path should be a string");
@@ -32,7 +32,10 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
     // Skip reading global config if non existent
     // because envs might be provided
     if config_path.exists() {
-        info!("Config path exists. Reading from config file, {}", config_str);
+        info!(
+            "Config path exists. Reading from config file, {}",
+            config_str
+        );
         s.merge(File::with_name(config_str))?;
     }
 
