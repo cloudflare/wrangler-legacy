@@ -34,7 +34,8 @@ pub fn preview(
     let res = client
         .post(create_address)
         .multipart(script_upload_form)
-        .send();
+        .send()?
+        .error_for_status();
 
     let p: Preview = serde_json::from_str(&res?.text()?)?;
 
