@@ -12,11 +12,11 @@ fn it_generates_the_config() {
     let cmd = config_with_wrangler_home(fake_home_dir.to_str().unwrap());
     let mut stdin = cmd.stdin.unwrap();
 
-    write!(stdin, "a\n").unwrap(); // email
-    write!(stdin, "b\n").unwrap(); // api_key
+    write!(stdin, "email@example.com\n").unwrap();
+    write!(stdin, "apikeythisissecretandlong\n").unwrap();
 
     let mut buffer = "".to_string();
-    let mut stdout = cmd.stdout.unwrap();
+    let mut stdout = cmd.stdout.expect("stdout");
     stdout
         .read_to_string(&mut buffer)
         .expect("could not read output");
