@@ -111,7 +111,13 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("body")
                         .help("Body string to post to your preview worker request")
                         .index(2),
-                ),
+                )
+                .arg(
+                    Arg::with_name("livereload")
+                        .help("watch your project for changes and update the preview automagically")
+                        .long("livereload")
+                        .takes_value(false),
+                )
         )
         .subcommand(
             SubCommand::with_name("publish").about(&*format!(
@@ -201,7 +207,13 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        commands::preview(&project, method, body)?;
+        let livereload = match matches.occurrences_of("livereload") {
+            1 => true,
+            _ => false,
+        };
+
+        commands::build(&project)?;
+        commands::preview(&project, method, body, livereload)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

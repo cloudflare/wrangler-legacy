@@ -3,9 +3,11 @@ use std::process::Command;
 mod http_method;
 pub use http_method::HTTPMethod;
 
+use crate::cache::get_wrangler_cache;
+use crate::commands::build;
 use crate::commands::publish;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::commands;
@@ -13,37 +15,23 @@ use crate::http;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-#[derive(Debug, Deserialize)]
-struct Preview {
-    pub id: String,
-}
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use std::sync::mpsc::channel;
+use std::thread;
+use std::time::Duration;
+use ws::WebSocket;
 
 pub fn preview(
     project: &Project,
     method: Result<HTTPMethod, failure::Error>,
     body: Option<String>,
+    livereload: bool,
 ) -> Result<(), failure::Error> {
-    let create_address = "https://cloudflareworkers.com/script";
-
-    let client = http::client();
-
-    commands::build(&project)?;
-
-    let script_upload_form = publish::build_script_upload_form(project)?;
-
-    let res = client
-        .post(create_address)
-        .multipart(script_upload_form)
-        .send()?
-        .error_for_status();
-
-    let p: Preview = serde_json::from_str(&res?.text()?)?;
-
     let session = Uuid::new_v4().to_simple();
 
     let preview_host = "example.com";
     let https = 1;
-    let script_id = &p.id;
+    let script_id = &upload_and_get_id()?;
 
     let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
     let cookie = format!(
@@ -53,14 +41,22 @@ pub fn preview(
 
     let method = method.unwrap_or_default();
 
+    let client = http::client();
     let worker_res = match method {
         HTTPMethod::Get => get(preview_address, cookie, client)?,
         HTTPMethod::Post => post(preview_address, cookie, client, body)?,
     };
+
     let msg = format!("Your worker responded with: {}", worker_res);
     message::preview(&msg);
 
     open(preview_host, https, script_id)?;
+
+    if livereload {
+        watch_for_changes(session.to_string())?;
+    } else {
+        println!("👷‍♀️ Your worker responded with: {}", worker_res);
+    }
 
     Ok(())
 }
@@ -74,7 +70,11 @@ fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::E
     };
 
     let browser_preview = format!(
-        "https://cloudflareworkers.com/#{}:{}{}",
+        //TODO this relies on a local version of the fiddle-ui for testing livereload
+        //maybe we can mock out the preview service url to a config file for when we do similar
+        //things like this in the future
+        //for now, hardcoded url :)))))))
+        "http://localhost:3000/src/test/manual/#{}:{}{}",
         script_id, https_str, preview_host
     );
     let windows_cmd = format!("start {}", browser_preview);
@@ -120,4 +120,81 @@ fn post(
     let msg = format!("POST {}", preview_address);
     message::preview(&msg);
     Ok(res?.text()?)
+}
+
+//for now, this is only used by livereloading.
+//in the future we may use this websocket for other things
+//so support other message types
+#[derive(Debug, Serialize)]
+enum FiddleMessage {
+    LiveReload { session: String, id: String },
+}
+
+fn watch_for_changes(session: String) -> Result<(), failure::Error> {
+    let (tx, rx) = channel();
+
+    let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2))?;
+    //TODO supporting more complex setups is blocked by https://github.com/cloudflare/wrangler/issues/251
+    watcher.watch("./index.js", RecursiveMode::Recursive)?;
+
+    //start up the websocket server.
+    //needs a bs handler factory closure, even though we never respond
+    let server = WebSocket::new(|_out| |_msg| Ok(()))?.bind("localhost:8025")?;
+    let broadcaster = server.broadcaster();
+    thread::spawn(move || server.run());
+
+    while let Ok(_e) = rx.recv() {
+        println!("Detected a file change, building now...");
+
+        let cache = get_wrangler_cache()?;
+        match build(&cache, &get_project_config()?.project_type) {
+            Ok(_) => println!("Build succeded, uploading bundle..."),
+            Err(_) => println!("Build failed"),
+        }
+
+        if let Ok(id) = upload_and_get_id() {
+            let msg = FiddleMessage::LiveReload {
+                session: session.clone(),
+                id,
+            };
+
+            match broadcaster.send(serde_json::to_string(&msg)?) {
+                Ok(_) => println!("Sent new id to preview!"),
+                Err(_e) => println!("communication with preview failed"),
+            }
+        }
+    }
+
+    broadcaster.shutdown()?;
+
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct Preview {
+    pub id: String,
+}
+
+fn upload_and_get_id() -> Result<String, failure::Error> {
+    let create_address = "https://cloudflareworkers.com/script";
+    let client = http::client();
+
+    let res = match get_project_config()?.project_type {
+        ProjectType::Rust => client
+            .post(create_address)
+            .multipart(publish::build_multipart_script()?)
+            .send(),
+        ProjectType::JavaScript => client
+            .post(create_address)
+            .body(publish::build_js_script()?)
+            .send(),
+        ProjectType::Webpack => client
+            .post(create_address)
+            .multipart(publish::build_webpack_form()?)
+            .send(),
+    };
+
+    let p: Preview = serde_json::from_str(&res?.text()?)?;
+
+    Ok(p.id)
 }
