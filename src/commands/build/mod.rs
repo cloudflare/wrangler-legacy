@@ -1,5 +1,4 @@
 pub mod wranglerjs;
-pub mod watch;
 
 use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
