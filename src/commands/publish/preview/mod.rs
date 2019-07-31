@@ -34,6 +34,7 @@ pub fn preview(
 
     let preview_host = "example.com";
     let https = true;
+    let https_str = if https { "https://" } else { "http://" };
     let script_id = &upload_and_get_id(project)?;
 
     let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
@@ -53,13 +54,10 @@ pub fn preview(
     if livereload {
         let ws_port: u16 = 8025;
 
-        open_livereload(
-            preview_host,
-            https,
-            script_id,
-            &session.to_string(),
-            ws_port,
-        )?;
+        open_browser(&format!(
+            "https://cloudflareworkers.com/ui/staging/index.html?session_id={}\\&ws_port={}\\&hide_editor#{}:{}{}",
+            &session.to_string(), ws_port, script_id, https_str, preview_host,
+        ))?;
 
         let server = WebSocket::new(|out| FiddleMessageServer { out })?
             .bind(format!("localhost:{}", ws_port))?;
@@ -67,7 +65,10 @@ pub fn preview(
         thread::spawn(move || server.run());
         watch_for_changes(project, session.to_string(), broadcaster)?;
     } else {
-        open(preview_host, https, script_id)?;
+        open_browser(&format!(
+            "https://cloudflareworkers.com/#{}:{}{}",
+            script_id, https_str, preview_host
+        ))?;
         let msg = format!("Your worker responded with: {}", worker_res);
         message::preview(&msg);
     }
@@ -75,51 +76,10 @@ pub fn preview(
     Ok(())
 }
 
-fn open(preview_host: &str, https: bool, script_id: &str) -> Result<(), failure::Error> {
-    let https_str = if https { "https://" } else { "http://" };
-
-    let browser_preview = format!(
-        "https://cloudflareworkers.com/#{}:{}{}",
-        script_id, https_str, preview_host
-    );
-    let windows_cmd = format!("start {}", browser_preview);
-    let mac_cmd = format!("open {}", browser_preview);
-    let linux_cmd = format!("xdg-open {}", browser_preview);
-
-    let _output = if cfg!(target_os = "windows") {
-        Command::new("cmd").args(&["/C", &windows_cmd]).output()?
-    } else if cfg!(target_os = "linux") {
-        Command::new("sh").arg("-c").arg(&linux_cmd).output()?
-    } else {
-        Command::new("sh").arg("-c").arg(&mac_cmd).output()?
-    };
-
-    Ok(())
-}
-
-fn open_livereload(
-    preview_host: &str,
-    https: bool,
-    script_id: &str,
-    session_id: &str,
-    ws_port: u16,
-) -> Result<(), failure::Error> {
-    let https_str = if https { "https://" } else { "http://" };
-
-    let browser_preview = if install::target::DEBUG {
-        format!(
-           "https://cloudflareworkers.com/ui/3.3.2-hotreload.1/index.html?session_id={}\\&ws_port={}\\&hide_editor=true#{}:{}{}",
-            session_id, ws_port, script_id, https_str, preview_host,
-        )
-    } else {
-        format!(
-            "https://cloudflareworkers.com/?session_id={}\\&ws_port={}\\&hide_editor=true#{}:{}{}",
-            session_id, ws_port, script_id, https_str, preview_host,
-        )
-    };
-    let windows_cmd = format!("start {}", browser_preview);
-    let mac_cmd = format!("open {}", browser_preview);
-    let linux_cmd = format!("xdg-open {}", browser_preview);
+fn open_browser(url: &str) -> Result<(), failure::Error>{
+    let windows_cmd = format!("start {}", url);
+    let mac_cmd = format!("open {}", url);
+    let linux_cmd = format!("xdg-open {}", url);
 
     let _output = if cfg!(target_os = "windows") {
         Command::new("cmd").args(&["/C", &windows_cmd]).output()?
