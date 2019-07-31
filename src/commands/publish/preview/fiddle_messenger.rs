@@ -46,10 +46,14 @@ impl Handler for FiddleMessageServer {
         let incoming_addr = incoming_addr.as_ref().map_or("unknown", String::as_str);
 
         //only allow connections from cloudflareworkers.com
-        let origin_is_safe = SAFE_ORIGINS.iter().any(|safe_origin| &origin == safe_origin);
+        let origin_is_safe = SAFE_ORIGINS
+            .iter()
+            .any(|safe_origin| &origin == safe_origin);
 
         //only allow incoming websocket connections from localhost/current machine.
-        let addr_is_safe = SAFE_ADDRS.iter().any(|safe_addr| &incoming_addr == safe_addr);
+        let addr_is_safe = SAFE_ADDRS
+            .iter()
+            .any(|safe_addr| &incoming_addr == safe_addr);
 
         if origin_is_safe && addr_is_safe {
             message::info(&format!(
@@ -71,8 +75,7 @@ impl Handler for FiddleMessageServer {
                 ));
             }
 
-            self
-                .out
+            self.out
                 .close(CloseCode::Policy)
                 .expect("failed to close connection to unsafe origin");
         }

@@ -75,7 +75,7 @@ pub fn preview(
     Ok(())
 }
 
-fn open_browser(url: &str) -> Result<(), failure::Error>{
+fn open_browser(url: &str) -> Result<(), failure::Error> {
     let windows_cmd = format!("start {}", url);
     let mac_cmd = format!("open {}", url);
     let linux_cmd = format!("xdg-open {}", url);
