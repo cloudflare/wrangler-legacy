@@ -12,6 +12,7 @@ pub mod whoami;
 
 pub use self::config::global_config;
 pub use build::build;
+pub use build::build_and_watch;
 pub use generate::generate;
 pub use init::init;
 pub use publish::preview::preview;

@@ -3,8 +3,8 @@ use std::process::Command;
 mod http_method;
 pub use http_method::HTTPMethod;
 
-use crate::cache::get_wrangler_cache;
 use crate::commands::build;
+use crate::commands::build_and_watch;
 use crate::commands::publish;
 
 use serde::{Deserialize, Serialize};
@@ -12,13 +12,17 @@ use uuid::Uuid;
 
 use crate::commands;
 use crate::http;
+<<<<<<< HEAD
 use crate::settings::project::Project;
+=======
+use crate::install;
+use crate::settings::project::get_project_config;
+use crate::settings::project::{Project, ProjectType};
+>>>>>>> c35288a... add build_and_watch
 use crate::terminal::message;
 
-use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::sync::mpsc::channel;
 use std::thread;
-use std::time::Duration;
 use ws::WebSocket;
 
 pub fn preview(
@@ -27,6 +31,8 @@ pub fn preview(
     body: Option<String>,
     livereload: bool,
 ) -> Result<(), failure::Error> {
+    build(&project)?; //do the initial build
+
     let session = Uuid::new_v4().to_simple();
 
     let preview_host = "example.com";
@@ -50,7 +56,7 @@ pub fn preview(
     let msg = format!("Your worker responded with: {}", worker_res);
     message::preview(&msg);
 
-    open(preview_host, https, script_id)?;
+    open(preview_host, https, script_id, &session.to_string())?;
 
     if livereload {
         watch_for_changes(session.to_string())?;
@@ -61,18 +67,23 @@ pub fn preview(
     Ok(())
 }
 
-fn open(preview_host: &str, https: bool, script_id: &str) -> Result<(), failure::Error> {
+fn open(
+    preview_host: &str,
+    https: bool,
+    script_id: &str,
+    session_id: &str,
+) -> Result<(), failure::Error> {
     let https_str = if https { "https://" } else { "http://" };
 
     let browser_preview = if install::target::DEBUG {
         format!(
-            "http://localhost:3000/src/test/manual/#{}:{}{}",
-            script_id, https_str, preview_host
+            "http://localhost:3000/src/test/manual/#{}:{}{}?session_id={}&noeditor=true",
+            script_id, https_str, preview_host, session_id
         )
     } else {
         format!(
-            "https://cloudflareworkers.com/#{}:{}{}",
-            script_id, https_str, preview_host
+            "https://cloudflareworkers.com/#{}:{}{}?session_id={}&noeditor=true",
+            script_id, https_str, preview_host, session_id
         )
     };
     let windows_cmd = format!("start {}", browser_preview);
@@ -129,25 +140,6 @@ enum FiddleMessage {
 }
 
 fn watch_for_changes(original_id: String) -> Result<(), failure::Error> {
-    let (tx, rx) = channel();
-    let project_type = &get_project_config()?.project_type;
-
-    let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2))?;
-
-    match project_type {
-        ProjectType::JavaScript => {
-            //watch entry point in package.json
-        }
-        ProjectType::Rust => {
-            //watch "src/"
-        }
-        ProjectType::Webpack => {
-            //watch "src/"
-            //watch "dist/"
-            //start webpack in watch mode
-        }
-    }
-
     //start up the websocket server.
     //needs a bs handler factory closure, even though we never respond
     let server = WebSocket::new(|_out| |_msg| Ok(()))?.bind("localhost:8025")?;
@@ -155,20 +147,10 @@ fn watch_for_changes(original_id: String) -> Result<(), failure::Error> {
     thread::spawn(move || server.run());
 
     let mut old_id = original_id;
+    let (tx, rx) = channel();
+    build_and_watch(&get_project_config()?, Some(tx));
 
     while let Ok(_e) = rx.recv() {
-        match project_type {
-            Webpack => println!("Detected new bundle, uploading now..."),
-            FileNotifier => {
-                println!("Detected file change, building now...");
-                let cache = get_wrangler_cache()?;
-                match build(&cache, &get_project_config()?.project_type) {
-                    Ok(_) => println!("Build succeded, uploading bundle..."),
-                    Err(_) => println!("Build failed"),
-                }
-            }
-        }
-
         if let Ok(new_id) = upload_and_get_id() {
             let msg = FiddleMessage::LiveReload {
                 old_id: old_id.clone(),

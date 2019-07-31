@@ -93,8 +93,13 @@ fn run() -> Result<(), failure::Error> {
                 .about(&*format!(
                     "{} Build your worker",
                     emoji::CRAB
-                )
-            ),
+                ))
+                .arg(
+                    Arg::with_name("watch")
+                        .help("watch your project for changes and build your worker when they happen")
+                        .long("watch")
+                        .takes_value(false),
+                ),
         )
         .subcommand(
             SubCommand::with_name("preview")
@@ -195,7 +200,10 @@ fn run() -> Result<(), failure::Error> {
     } else if matches.subcommand_matches("build").is_some() {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
-        commands::build(&project)?;
+        match matches.occurrences_of("watch") {
+            1 => commands::build(&project)?,
+            _ => commands::build_and_watch(&project, None)?,
+        };
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;

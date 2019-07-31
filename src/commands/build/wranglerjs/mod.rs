@@ -66,8 +66,12 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
     }
 }
 
-pub fn run_build_watch(tx: Sender<WranglerjsOutput>) -> Result<(), failure::Error> {
-    let (command, temp_file) = setup_command(true)?;
+pub fn run_build_and_watch(
+    project: &Project,
+    tx: Option<Sender<()>>,
+) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(project)?;
+    command.arg("--watch=1");
 
     info!("Running {:?}", command);
 
@@ -85,8 +89,27 @@ pub fn run_build_watch(tx: Sender<WranglerjsOutput>) -> Result<(), failure::Erro
             let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
             fs::remove_file(temp_file);
 
-            if let Ok(output) = serde_json::from_str(&output) {
-                tx.send(output);
+            let wranglerjs_output: WranglerjsOutput =
+                serde_json::from_str(&output).expect("could not parse wranglerjs output");
+
+            if wranglerjs_output.has_errors() {
+                message::user_error(&format!("{}", wranglerjs_output.get_errors()));
+            } else {
+                bundle
+                    .write(&wranglerjs_output)
+                    .expect("could not write bundle to disk");
+
+                let mut msg = format!(
+                    "Built successfully, script size is {}",
+                    wranglerjs_output.script_size()
+                );
+                if bundle.has_wasm() {
+                    msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
+                }
+
+                if let Some(tx) = tx {
+                    tx.send(());
+                }
             }
         }
     });
@@ -117,7 +140,10 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
     temp_file.push(format!(".wranglerjs_output{}", random_chars(5)));
     File::create(temp_file.clone())?;
 
-    command.arg(format!("--output-file={:?}", ipc_temp_file_path,));
+    command.arg(format!(
+        "--output-file={:?}",
+        temp_file.clone().to_str().unwrap().to_string()
+    ));
 
     let bundle = Bundle::new();
 
@@ -149,8 +175,6 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
             &webpack_config_path.to_str().unwrap().to_string()
         ));
     }
-
-    command.arg("--watch={:?}", watch);
 
     Ok((command, temp_file, bundle))
 }
