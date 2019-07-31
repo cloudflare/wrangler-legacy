@@ -105,7 +105,10 @@ pub fn run_build_and_watch(
     Ok(())
 }
 
-fn write_wranglerjs_output(bundle: &Bundle, output: &WranglerjsOutput) -> Result<(), failure::Error> {
+fn write_wranglerjs_output(
+    bundle: &Bundle,
+    output: &WranglerjsOutput,
+) -> Result<(), failure::Error> {
     if output.has_errors() {
         message::user_error(output.get_errors().as_str());
         failure::bail!("Webpack returned an error");

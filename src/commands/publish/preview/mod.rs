@@ -12,11 +12,11 @@ use crate::commands::watch_and_build;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use super::upload_form::build_script_upload_form;
 use crate::http;
 use crate::install;
 use crate::settings::project::Project;
 use crate::terminal::message;
-use super::upload_form::build_script_upload_form;
 
 use std::sync::mpsc::channel;
 use std::thread;
@@ -162,7 +162,11 @@ fn post(
     Ok(res?.text()?)
 }
 
-fn watch_for_changes(project: &Project, session_id: String, broadcaster: Sender) -> Result<(), failure::Error> {
+fn watch_for_changes(
+    project: &Project,
+    session_id: String,
+    broadcaster: Sender,
+) -> Result<(), failure::Error> {
     let (tx, rx) = channel();
     watch_and_build(project, Some(tx))?;
 
@@ -197,9 +201,9 @@ fn upload_and_get_id(project: &Project) -> Result<String, failure::Error> {
     let client = http::client();
 
     let res = client
-            .post(create_address)
-            .multipart(build_script_upload_form(project)?)
-            .send();
+        .post(create_address)
+        .multipart(build_script_upload_form(project)?)
+        .send();
 
     let p: Preview = serde_json::from_str(&res?.text()?)?;
 
