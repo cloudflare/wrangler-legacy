@@ -13,6 +13,7 @@ use log::info;
 
 mod commands;
 mod http;
+mod util;
 mod install;
 mod installer;
 mod settings;

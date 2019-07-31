@@ -3,6 +3,7 @@ pub mod output;
 
 use crate::commands::publish::package::Package;
 use crate::install;
+use crate::util;
 pub use bundle::Bundle;
 use fs2::FileExt;
 use log::info;
@@ -60,10 +61,9 @@ pub fn run_build_and_watch(
 
     info!("Running {:?}", command);
 
-    //start wranglerjs in a new thread
-    let _command_handle = command.spawn()?;
+    let _command_guard = util::GuardedCommand::spawn(command);
 
-    let _thread_handle = thread::spawn(move || {
+    let _watch_thread_handle = thread::spawn(move || {
         let (watcher_tx, watcher_rx) = channel();
         let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
@@ -85,8 +85,8 @@ pub fn run_build_and_watch(
                             let _ = tx.send(());
                         }
                     }
-                },
-                Err(_) => panic!("Something went wrong while watching.")
+                }
+                Err(_) => message::user_error("Something went wrong while watching."),
             }
         }
     });

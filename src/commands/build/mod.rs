@@ -3,8 +3,8 @@ pub mod wranglerjs;
 mod watch;
 pub use watch::watch_and_build;
 
-use crate::terminal::message;
 use crate::settings::project::{Project, ProjectType};
+use crate::terminal::message;
 use crate::{commands, install};
 
 use std::path::PathBuf;
@@ -33,7 +33,6 @@ pub fn build(project: &Project) -> Result<(), failure::Error> {
 
     Ok(())
 }
-
 
 pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
     message::working("Compiling your project to WebAssembly...");

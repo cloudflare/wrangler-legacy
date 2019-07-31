@@ -1,15 +1,14 @@
-use crate::terminal::message;
-use crate::commands::build::{wranglerjs, command};
+use crate::commands::build::{command, wranglerjs};
 use crate::commands::publish::Package;
-use crate::{commands, install};
 use crate::settings::project::{Project, ProjectType};
+use crate::terminal::message;
+use crate::{commands, install};
 
 use notify::{watcher, RecursiveMode, Watcher};
-
+use std::env;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
-use std::env;
 
 /// watch a project for changes and re-build it when necessary,
 /// outputting a build event to tx.
@@ -33,8 +32,8 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                             if let Some(tx) = tx.clone() {
                                 let _ = tx.send(());
                             }
-                        },
-                        Err(_) => panic!("Something went wrong while watching.")
+                        }
+                        Err(_) => message::user_error("Something went wrong while watching."),
                     }
                 }
             });
@@ -60,13 +59,13 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                             message::working("Detected changes...");
                             let command = command(&args, &binary_path);
                             let command_name = format!("{:?}", command);
-                            if let Ok(_) = commands::run(command, &command_name) {
+                            if commands::run(command, &command_name).is_ok() {
                                 if let Some(tx) = tx.clone() {
                                     let _ = tx.send(());
                                 }
                             }
-                        },
-                        Err(_) => panic!("Something went wrong while watching.")
+                        }
+                        Err(_) => message::user_error("Something went wrong while watching."),
                     }
                 }
             });
