@@ -42,25 +42,19 @@ impl Handler for FiddleMessageServer {
             .trim_end_matches(|c: char| c == '/' || c == ':' || c.is_numeric());
 
         //remote_addr returns Result<Option<String>>
-        let incoming = handshake.remote_addr()?;
-        let incoming = incoming.as_ref().map_or("unknown", String::as_str);
+        let incoming_addr = handshake.remote_addr()?;
+        let incoming_addr = incoming_addr.as_ref().map_or("unknown", String::as_str);
 
         //only allow connections from cloudflareworkers.com
-        let origin_is_safe = SAFE_ORIGINS.iter().fold(false, |is_safe, &safe_origin| {
-            //remove the port/slashes from the end so we can compare safely, instead of checking the
-            //prefix which is a security issue.
-            is_safe || origin == safe_origin
-        });
+        let origin_is_safe = SAFE_ORIGINS.iter().any(|safe_origin| &origin == safe_origin);
 
         //only allow incoming websocket connections from localhost/current machine.
-        let addr_is_safe = SAFE_ADDRS.iter().fold(false, |is_safe, &safe_addr| {
-            is_safe || incoming == safe_addr
-        });
+        let addr_is_safe = SAFE_ADDRS.iter().any(|safe_addr| &incoming_addr == safe_addr);
 
         if origin_is_safe && addr_is_safe {
             message::info(&format!(
                 "Accepted connection from site {} incoming from {}",
-                origin, incoming
+                origin, incoming_addr
             ));
         } else {
             if !origin_is_safe {
@@ -73,11 +67,11 @@ impl Handler for FiddleMessageServer {
             if !addr_is_safe {
                 message::user_error(&format!(
                     "Denied connection originating from {} which is outside this machine",
-                    incoming
+                    incoming_addr
                 ));
             }
 
-            let _ = self
+            self
                 .out
                 .close(CloseCode::Policy)
                 .expect("failed to close connection to unsafe origin");

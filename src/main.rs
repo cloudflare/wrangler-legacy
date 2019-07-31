@@ -205,11 +205,8 @@ fn run() -> Result<(), failure::Error> {
         match matches.occurrences_of("watch") {
             1 => {
                 commands::watch_and_build(&project, None)?;
-                loop {
-                    //we need to keep the main thread "alive"
-                    //watch_and_build has all the messaging we need
-                    //so this loop doesn't actually need to do anything
-                }
+                std::thread::park();
+                panic!("Wrangler exited early while watching for changes")
             }
             _ => commands::build(&project)?,
         };

@@ -14,7 +14,6 @@ use uuid::Uuid;
 
 use super::upload_form::build_script_upload_form;
 use crate::http;
-use crate::install;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
