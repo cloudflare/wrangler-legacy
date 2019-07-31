@@ -76,44 +76,53 @@ pub fn run_build_and_watch(
     info!("Running {:?}", command);
 
     //start wranglerjs in a new thread
-    command.spawn()?;
+    let command_handle = command.spawn()?;
 
-    let (watcher_tx, watcher_rx) = channel();
-    let mut watcher = watcher(watcher_tx, Duration::from_secs(1))?;
+    println!("getting watcher ready");
 
-    watcher.watch(&temp_file, RecursiveMode::Recursive)?;
+    let builder = thread::Builder::new().name("handler".into());
 
-    thread::spawn(move || loop {
-        if let Ok(DebouncedEvent::Write(_path)) = watcher_rx.recv() {
-            println!("got new bundle from wranglerjs");
-            let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
+    let handle = builder.spawn(move || {
+        let (watcher_tx, watcher_rx) = channel();
+        let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-            let wranglerjs_output: WranglerjsOutput =
-                serde_json::from_str(&output).expect("could not parse wranglerjs output");
+        watcher.watch(&temp_file, RecursiveMode::Recursive).unwrap();
 
-            if wranglerjs_output.has_errors() {
-                message::user_error(&format!("{}", wranglerjs_output.get_errors()));
-            } else {
-                bundle
-                    .write(&wranglerjs_output)
-                    .expect("could not write bundle to disk");
+        println!("watching {:?}", &temp_file);
 
-                let mut msg = format!(
-                    "Built successfully, script size is {}",
-                    wranglerjs_output.script_size()
-                );
-                if bundle.has_wasm() {
-                    msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
-                }
+        loop {
+            let event = watcher_rx.recv();
+            if let Ok(DebouncedEvent::Write(_)) = event {
+                println!("got new bundle from wranglerjs");
+                let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
 
-                message::success(&msg);
+                let wranglerjs_output: WranglerjsOutput =
+                    serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
-                if let Some(tx) = tx.clone() {
-                    let _ = tx.send(());
+                if wranglerjs_output.has_errors() {
+                    message::user_error(&format!("{}", wranglerjs_output.get_errors()));
+                } else {
+                    bundle
+                        .write(&wranglerjs_output)
+                        .expect("could not write bundle to disk");
+
+                    let mut msg = format!(
+                        "Built successfully, script size is {}",
+                        wranglerjs_output.script_size()
+                    );
+                    if bundle.has_wasm() {
+                        msg = format!("{} and Wasm size is {}", msg, wranglerjs_output.wasm_size());
+                    }
+
+                    message::success(&msg);
+
+                    if let Some(tx) = tx.clone() {
+                        let _ = tx.send(());
+                    }
                 }
             }
         }
-    });
+    })?;
 
     Ok(())
 }

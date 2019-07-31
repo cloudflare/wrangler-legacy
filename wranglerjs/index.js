@@ -1,6 +1,6 @@
 const webpack = require("webpack");
 const { join } = require("path");
-const { writeFileSync } = require("fs");
+const fs = require("fs");
 const WasmMainTemplatePlugin = require("webpack/lib/wasm/WasmMainTemplatePlugin");
 
 function error(msg) {
@@ -65,37 +65,45 @@ fetchCompileWasmTemplatePlugin.fn = function(compilation) {
   plugin.apply(mainTemplate);
 };
 
+let lastHash = "";
 const compilerCallback = (err, stats) => {
   if (err) {
     throw err;
   }
 
-  const assets = stats.compilation.assets;
-  const jsonStats = stats.toJson();
-  const bundle = {
-    wasm: null,
-    script: "",
-    errors: jsonStats.errors
-  };
+  console.log(lastHash + " : " + stats.hash);
+  if (stats.hash != lastHash) {
+    console.log("build done")
+    const assets = stats.compilation.assets;
+    const jsonStats = stats.toJson();
+    const bundle = {
+      wasm: null,
+      script: "",
+      errors: jsonStats.errors
+    };
 
-  const wasmModuleAsset = Object.keys(assets).find(filterByExtension("wasm"));
-  const jsAssets = Object.keys(assets).filter(filterByExtension("js"));
-  const hasWasmModule = wasmModuleAsset !== undefined;
+    const wasmModuleAsset = Object.keys(assets).find(filterByExtension("wasm"));
+    const jsAssets = Object.keys(assets).filter(filterByExtension("js"));
+    const hasWasmModule = wasmModuleAsset !== undefined;
 
-  bundle.script = jsAssets.reduce((acc, k) => {
-    const asset = assets[k];
-    return acc + asset.source();
-  }, "");
+    bundle.script = jsAssets.reduce((acc, k) => {
+      const asset = assets[k];
+      return acc + asset.source();
+    }, "");
 
-  if (hasWasmModule === true) {
-    bundle.wasm = Buffer.from(assets[wasmModuleAsset].source()).toString("base64");
+    if (hasWasmModule === true) {
+      bundle.wasm = Buffer.from(assets[wasmModuleAsset].source()).toString("base64");
+    }
+
+    fs.writeFileSync(args["output-file"], JSON.stringify(bundle));
   }
-
-  writeFileSync(args["output-file"], JSON.stringify(bundle));
+  lastHash = stats.hash;
 };
 
 if (args["watch"] === "1") {
+  console.log("watch mode");
   compiler.watch(fullConfig.watchOptions, compilerCallback);
 } else {
+  console.log("run mode");
   compiler.run(compilerCallback);
 }
