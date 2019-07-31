@@ -30,7 +30,7 @@ pub fn preview(
     let session = Uuid::new_v4().to_simple();
 
     let preview_host = "example.com";
-    let https = 1;
+    let https = true;
     let script_id = &upload_and_get_id()?;
 
     let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
@@ -61,13 +61,8 @@ pub fn preview(
     Ok(())
 }
 
-fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::Error> {
-    let https_str = match https {
-        1 => "https://",
-        0 => "http://",
-        // hrm.
-        _ => "",
-    };
+fn open(preview_host: &str, https: bool, script_id: &str) -> Result<(), failure::Error> {
+    let https_str = if https { "https://" } else { "http://" };
 
     let browser_preview = format!(
         //TODO this relies on a local version of the fiddle-ui for testing livereload
@@ -134,10 +129,23 @@ fn watch_for_changes(
     original_id: String,
 ) -> Result<(), failure::Error> {
     let (tx, rx) = channel();
+    let project_type = &get_project_config()?.project_type;
 
     let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2))?;
 
-    watcher.watch("./index.js", RecursiveMode::Recursive)?;
+    match project_type {
+        ProjectType::JavaScript => {
+            //watch entry point in package.json
+        },
+        ProjectType::Rust => {
+            //watch "src/"
+        },
+        ProjectType::Webpack => {
+            //watch "src/"
+            //watch "dist/"
+            //start webpack in watch mode
+        }, 
+    }
 
     //start up the websocket server.
     //needs a bs handler factory closure, even though we never respond
@@ -148,12 +156,16 @@ fn watch_for_changes(
     let mut old_id = original_id;
 
     while let Ok(_e) = rx.recv() {
-        println!("Detected a file change, building now...");
-
-        let cache = get_wrangler_cache()?;
-        match build(&cache, &get_project_config()?.project_type) {
-            Ok(_) => println!("Build succeded, uploading bundle..."),
-            Err(_) => println!("Build failed"),
+        match project_type {
+            Webpack => println!("Detected new bundle, uploading now..."),
+            FileNotifier => {
+                println!("Detected file change, building now...");
+                let cache = get_wrangler_cache()?;
+                match build(&cache, &get_project_config()?.project_type) {
+                    Ok(_) => println!("Build succeded, uploading bundle..."),
+                    Err(_) => println!("Build failed"),
+                }
+            },
         }
 
         if let Ok(new_id) = upload_and_get_id() {

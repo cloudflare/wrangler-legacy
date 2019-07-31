@@ -113,9 +113,9 @@ fn run() -> Result<(), failure::Error> {
                         .index(2),
                 )
                 .arg(
-                    Arg::with_name("livereload")
+                    Arg::with_name("watch")
                         .help("watch your project for changes and update the preview automagically")
-                        .long("livereload")
+                        .long("watch")
                         .takes_value(false),
                 )
         )
@@ -207,13 +207,13 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        let livereload = match matches.occurrences_of("livereload") {
+        let watch = match matches.occurrences_of("watch") {
             1 => true,
             _ => false,
         };
 
         commands::build(&project)?;
-        commands::preview(&project, method, body, livereload)?;
+        commands::preview(&project, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

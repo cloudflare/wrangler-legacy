@@ -17,8 +17,13 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::settings::project::Project;
-
 use crate::terminal::message;
+
+use std::time::Duration;
+use std::sync::mpsc::{channel, Sender};
+use std::thread;
+use notify::{Watcher, watcher, DebouncedEvent, RecursiveMode};
+
 
 // Run the underlying {wranglerjs} executable.
 //
@@ -62,6 +67,38 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
     }
 }
 
+pub fn run_build_watch(
+    tx: Sender<WranglerjsOutput>,
+) -> Result<(), failure::Error> {
+    let (command, temp_file) = setup_command(true)?;
+
+    info!("Running {:?}", command);
+
+    //start wranglerjs in a new thread
+    let status = command.spawn()?;
+
+    let (watcher_tx, watcher_rx) = channel();
+    let mut watcher = watcher(watcher_tx, Duration::from_secs(1))?;
+
+    watcher.watch(temp_file, RecursiveMode::Recursive)?;
+
+    thread::spawn(move || {
+        loop {
+            if let Ok(DebouncedEvent::Write(path)) = watcher_rx.recv() {
+                println!("got new bundle from wranglerjs");
+                let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
+                fs::remove_file(temp_file);
+
+                if let Ok(output) = serde_json::from_str(&output) {
+                    tx.send(output);
+                }
+            }
+        }
+    });
+
+    Ok(())
+}
+
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
 fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure::Error> {
     for tool in &["node", "npm"] {
@@ -86,8 +123,8 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
     File::create(temp_file.clone())?;
 
     command.arg(format!(
-        "--output-file={}",
-        temp_file.clone().to_str().unwrap().to_string()
+        "--output-file={:?}",
+        ipc_temp_file_path,
     ));
 
     let bundle = Bundle::new();
@@ -121,8 +158,11 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
         ));
     }
 
+    command.arg("--watch={:?}", watch);
+
     Ok((command, temp_file, bundle))
 }
+
 
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
