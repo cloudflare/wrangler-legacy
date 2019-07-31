@@ -54,7 +54,7 @@ pub fn preview(
         let ws_port: u16 = 8025;
 
         open_browser(&format!(
-            "https://cloudflareworkers.com/ui/staging/index.html?session_id={}\\&ws_port={}\\&hide_editor#{}:{}{}",
+            "https://cloudflareworkers.com/ui/staging/index.html?wrangler_session_id={}\\&wrangler_ws_port={}\\&hide_editor#{}:{}{}",
             &session.to_string(), ws_port, script_id, https_str, preview_host,
         ))?;
 
