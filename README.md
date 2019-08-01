@@ -118,11 +118,15 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
 	- #### Using environment variables
 
-		You can also configure your global user with the following environment variables:
+		You can also configure your global user with environment variables. This is the preferred method for using Wrangler in CI:
 
-	    - $CF_API_KEY for your Cloudflare API key
-	    - $CF_EMAIL for your Cloudflare account email
-
+	    ``` sh
+	    # e.g.
+	    CF_API_KEY=superlongapikey CF_EMAIL=user@mail.com wrangler publish --release
+	    # where
+	    # $CF_API_KEY -> your Cloudflare API key
+	    # $CF_EMAIL -> your Cloudflare account email
+	    ```
 
 - ### Per Project
 
