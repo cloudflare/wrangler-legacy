@@ -23,10 +23,6 @@ npm i @cloudflare/wrangler -g
 
 ```
 cargo install wrangler
-Enter email:
-...
-Enter api key:
-...
 ```
 
 ## 🎙️ Commands
