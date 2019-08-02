@@ -13,6 +13,7 @@ build = "build.rs"
 atty = "0.2.11"
 binary-install = "0.0.3-alpha"
 clap = "2.32.0"
+cloudflare = { git = "https://github.com/cloudflare/cloudflare-rs.git" }
 config = "0.9.2"
 console = "0.7.5"
 dirs = "1.0.5"
