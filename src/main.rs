@@ -21,6 +21,7 @@ mod terminal;
 use crate::settings::project::ProjectType;
 use exitfailure::ExitFailure;
 use terminal::emoji;
+use terminal::message;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -45,6 +46,19 @@ fn run() -> Result<(), failure::Error> {
         .author("ashley g williams <ashley666ashley@gmail.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
+        .subcommand(
+            SubCommand::with_name("kv")
+                .about(&*format!(
+                    "{} Interact with your Workers KV Store",
+                    emoji::KV
+                ))
+                .subcommand(
+                    SubCommand::with_name("create")
+                        .arg(
+                            Arg::with_name("title")
+                        )
+                )
+        )
         .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
@@ -235,6 +249,15 @@ fn run() -> Result<(), failure::Error> {
             .expect("The subdomain name you are requesting must be provided.");
 
         commands::subdomain(name, &user, &project)?;
+    } else if let Some(kv_matches) = matches.subcommand_matches("kv") {
+        match kv_matches.subcommand() {
+            ("create", Some(create_matches)) => {
+                let title = create_matches.value_of("title").unwrap();
+                commands::kv::create_namespace(title)?;
+            }
+            ("", None) => message::warn("kv expects a subcommand"),
+            _ => unreachable!(),
+        }
     }
     Ok(())
 }
