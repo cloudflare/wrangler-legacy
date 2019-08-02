@@ -7,6 +7,8 @@
 
 `wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare workers](https://workers.cloudflare.com/).
 
+![Wrangler Demo](/wrangler-demo.gif)
+
 ## Installation
 
 You have many options to install wrangler!
@@ -21,6 +23,10 @@ npm i @cloudflare/wrangler -g
 
 ```
 cargo install wrangler
+Enter email:
+...
+Enter api key:
+...
 ```
 
 ## 🎙️ Commands
@@ -47,6 +53,10 @@ cargo install wrangler
 
     ```
     wrangler config
+    Enter email:
+    ...
+    Enter api key:
+    ...
     ```
 
     You can also [use environment variables](#using-environment-variables) to configure these values.
