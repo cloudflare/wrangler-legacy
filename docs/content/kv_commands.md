@@ -48,3 +48,20 @@ $ wrangler kv rename f7b02e7fc70443149ac906dd81ec1791 "updated kv namespace"
     title: "updated kv namespace",
 }
 ```
+
+### `list`
+
+Outputs a list of all KV namespaces associated with your account id.
+
+#### Usage
+
+``` sh
+$ wrangler kv list
+🌀  Retrieving namespaces 🌀 
+✨  Success: 
++------------------+----------------------------------+
+| TITLE            | ID                               |
++------------------+----------------------------------+
+| new kv namespace | f7b02e7fc70443149ac906dd81ec1791 |
++------------------+----------------------------------+
+```
