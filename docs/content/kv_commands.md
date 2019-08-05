@@ -25,3 +25,13 @@ $ wrangler kv create "new kv namespace"
     title: "new kv namespace",
 }
 ```
+
+### `delete <namespace-id>`
+
+#### Usage
+
+``` sh
+$ wrangler kv delete f7b02e7fc70443149ac906dd81ec1791
+🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791 🌀 
+✨  Success
+```
