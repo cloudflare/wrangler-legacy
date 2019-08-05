@@ -1,5 +1,5 @@
 ---
-nane: 💡 Feature request
+name: 💡 Feature request
 about: Suggest a feature for wrangler
 labels: user report
 ---
