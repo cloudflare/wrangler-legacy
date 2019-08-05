@@ -87,7 +87,7 @@ fn fixture_path(fixture: &str) -> PathBuf {
 
 fn create_temporary_copy(fixture: &str) {
     let current_dir = env::current_dir().unwrap();
-    let src = Path::new(&current_dir).join("tests").join(fixture);
+    let src = Path::new(&current_dir).join("tests/fixtures").join(fixture);
 
     let dest = env::temp_dir();
 
