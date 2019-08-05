@@ -1,36 +1,30 @@
 ---
-title: 'Bug report'
+name: 🐛 Bug report
+about: Something's not quite right? You're in the right place!
 labels: user report
 ---
 
 ### 🐛 Bug Report
 
-<!-- Please answer these questions before submitting your issue. Thanks! -->
+<!-- 
+  Please fill out each section below before submitting your 🐛 bug report.
 
-#### What version of Wrangler are you using (`wrangler -V`)?
+  Before opening a new issue, please:
+  * search for existing issues: https://github.com/cloudflare/wrangler/issues
+  * make sure you are using the latest release: https://workers.cloudflare.com/docs/quickstart/updating-the-cli/
+  
+  Thanks! -->
 
-<pre>
-$ wrangler -V
+#### Environment
 
-</pre>
-
-#### Does this issue reproduce with the latest release?
-
-
-
-#### What environment are you using?
 * operating system:
-* rustc version:
-* node version:
+* output of `rustc -V`:
+* output of `node -v`:
 
-#### What did you do?
+#### Steps to reproduce
 
-<!--
-If possible, provide a recipe for reproducing the error.
--->
+<!-- Clear steps describing how to reproduce the issue. If you have a repository that exhibits the problem, please link it! -->
 
 #### What did you expect to see?
-
-
 
 #### What did you see instead?
