@@ -8,9 +8,11 @@ use crate::terminal::message;
 
 mod create_namespace;
 mod delete_namespace;
+mod rename_namespace;
 
 pub use create_namespace::create_namespace;
 pub use delete_namespace::delete_namespace;
+pub use rename_namespace::rename_namespace;
 
 fn api_client() -> Result<HTTPAPIClient, failure::Error> {
     let user = settings::global_user::GlobalUser::new()?;
