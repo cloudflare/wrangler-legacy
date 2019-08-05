@@ -95,6 +95,9 @@ cargo install wrangler
     wrangler preview get // this is the default
     ```
 
+  - ### 🗂️ `kv`
+    Interact with your Cloudflare Workers KV store. [Check out the docs.](./docs/content/kv)
+
 
 ## 🔩 Configuration
 
