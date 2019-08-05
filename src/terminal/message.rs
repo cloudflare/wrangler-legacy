@@ -1,30 +1,40 @@
 use super::emoji;
-use console::Emoji;
 
-fn message(label: Emoji, msg: &str) {
-    println!("{0} {1} {0}", label, msg);
+fn message(msg: &str) {
+    println!("{}", msg);
 }
 
 pub fn info(msg: &str) {
-    message(emoji::INFO, msg);
+    let msg = format!("{} {}", emoji::INFO, msg);
+    message(&msg);
 }
 
 pub fn warn(msg: &str) {
-    message(emoji::WARN, msg);
+    let msg = format!("{} {}", emoji::WARN, msg);
+    message(&msg);
 }
 
 pub fn success(msg: &str) {
-    message(emoji::SPARKLES, msg);
+    let msg = format!("{} {}", emoji::SPARKLES, msg);
+    message(&msg);
 }
 
 pub fn user_error(msg: &str) {
-    message(emoji::EYES, msg);
+    let msg = format!("{} {}", emoji::EYES, msg);
+    message(&msg);
 }
 
 pub fn working(msg: &str) {
-    message(emoji::SWIRL, msg);
+    let msg = format!("{} {}", emoji::SWIRL, msg);
+    message(&msg);
 }
 
 pub fn preview(msg: &str) {
-    message(emoji::WORKER, msg);
+    let msg = format!("{} {}", emoji::WORKER, msg);
+    message(&msg);
+}
+
+pub fn help(msg: &str) {
+    let msg = format!("{} {}", emoji::SLEUTH, msg);
+    message(&msg);
 }
