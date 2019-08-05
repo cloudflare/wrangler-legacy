@@ -58,6 +58,12 @@ fn run() -> Result<(), failure::Error> {
                             Arg::with_name("title")
                         )
                 )
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .arg(
+                            Arg::with_name("id")
+                        )
+                )
         )
         .subcommand(
             SubCommand::with_name("generate")
@@ -252,6 +258,10 @@ fn run() -> Result<(), failure::Error> {
             ("create", Some(create_matches)) => {
                 let title = create_matches.value_of("title").unwrap();
                 commands::kv::create_namespace(title)?;
+            }
+            ("delete", Some(delete_matches)) => {
+                let id = delete_matches.value_of("id").unwrap();
+                commands::kv::delete_namespace(id)?;
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),
