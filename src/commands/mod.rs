@@ -6,6 +6,7 @@ pub mod build;
 pub mod config;
 pub mod generate;
 pub mod init;
+pub mod kv;
 pub mod publish;
 pub mod subdomain;
 pub mod whoami;
