@@ -4,8 +4,8 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 #[test]
-fn it_builds_from_config() {
-    let toml_path = toml_fixture_path("default");
+fn it_builds_from_legacy_config() {
+    let toml_path = legacy_toml_fixture_path("default");
 
     let project = get_project_config(&toml_path).unwrap();
 
@@ -13,8 +13,8 @@ fn it_builds_from_config() {
 }
 
 #[test]
-fn it_builds_from_config_with_kv() {
-    let toml_path = toml_fixture_path("kv_namespaces");
+fn it_builds_from_legacy_config_with_kv() {
+    let toml_path = legacy_toml_fixture_path("kv_namespaces");
 
     let project = get_project_config(&toml_path).unwrap();
 
@@ -37,15 +37,21 @@ fn it_builds_from_config_with_kv() {
     }
 }
 
-fn toml_fixture_path(fixture: &str) -> PathBuf {
+fn base_fixture_path() -> PathBuf {
     let current_dir = env::current_dir().unwrap();
 
-    // TODO: This is kind of stupid but idk worth it for now?
     Path::new(&current_dir)
         .join("src")
         .join("settings")
         .join("project")
         .join("tests")
         .join("tomls")
-        .join(fixture)
+}
+
+fn legacy_toml_fixture_path(fixture: &str) -> PathBuf {
+    base_fixture_path().join("legacy").join(fixture)
+}
+
+fn toml_fixture_path(fixture: &str) -> PathBuf {
+    base_fixture_path().join(fixture)
 }

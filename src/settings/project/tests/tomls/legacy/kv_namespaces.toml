@@ -1,7 +1,5 @@
-type = "webpack"
-
-[env.default]
 name = "worker"
+type = "webpack"
 zone_id = ""
 private = false
 account_id = ""
@@ -10,13 +8,6 @@ route = ""
 [[kv-namespaces]]
 id = "somecrazylongidentifierstring"
 binding = "prodKV"
-
-[env.production]
-name = "prod-worker"
-zone_id = ""
-private = false
-account_id = ""
-route = ""
 
 [[kv-namespaces]]
 id = "anotherwaytoolongidstring"

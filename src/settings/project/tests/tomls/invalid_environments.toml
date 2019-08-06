@@ -6,3 +6,10 @@ zone_id = ""
 private = false
 account_id = ""
 route = ""
+
+[env.production]
+name = "worker"
+zone_id = ""
+private = false
+account_id = ""
+route = ""
