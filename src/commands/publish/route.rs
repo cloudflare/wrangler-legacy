@@ -1,4 +1,7 @@
-use crate::user::User;
+use crate::http;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::project::Project;
+use crate::terminal::emoji;
 use reqwest::header::CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
 
@@ -6,8 +9,8 @@ use log::info;
 
 #[derive(Deserialize, Serialize)]
 pub struct Route {
-    script: String,
-    pattern: String,
+    script: Option<String>,
+    pub pattern: String,
 }
 
 #[derive(Deserialize)]
@@ -16,26 +19,35 @@ struct RoutesResponse {
 }
 
 impl Route {
-    pub fn new(user: &User) -> Result<Route, failure::Error> {
-        let pattern = &user.settings.clone().project.route.expect(
-            "⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.",
-        );
-        let script = &user.settings.clone().project.name;
+    pub fn new(project: &Project) -> Result<Route, failure::Error> {
+        if project
+            .route
+            .clone()
+            .expect("You must provide a zone_id in your wrangler.toml before publishing!")
+            .is_empty()
+        {
+            failure::bail!("You must provide a zone_id in your wrangler.toml before publishing!");
+        }
+        let msg_config_error = format!("{} Your project config has an error, check your `wrangler.toml`: `route` must be provided.", emoji::WARN);
         Ok(Route {
-            script: script.to_string(),
-            pattern: pattern.to_string(),
+            script: Some(project.name.to_string()),
+            pattern: project.route.clone().expect(&msg_config_error),
         })
     }
 
-    pub fn publish(user: &User, route: Route) -> Result<(), failure::Error> {
-        if route.exists(user)? {
+    pub fn publish(
+        user: &GlobalUser,
+        project: &Project,
+        route: &Route,
+    ) -> Result<(), failure::Error> {
+        if route.exists(user, project)? {
             return Ok(());
         }
-        create(user, route)
+        create(user, project, route)
     }
 
-    pub fn exists(&self, user: &User) -> Result<bool, failure::Error> {
-        let routes = get_routes(user)?;
+    pub fn exists(&self, user: &GlobalUser, project: &Project) -> Result<bool, failure::Error> {
+        let routes = get_routes(user, project)?;
 
         for route in routes {
             if route.matches(self) {
@@ -50,21 +62,17 @@ impl Route {
     }
 }
 
-fn get_routes(user: &User) -> Result<Vec<Route>, failure::Error> {
-    let routes_addr = get_routes_addr(user)?;
+fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failure::Error> {
+    let routes_addr = get_routes_addr(project)?;
 
-    let client = reqwest::Client::new();
-    let settings = user.settings.to_owned();
+    let client = http::auth_client(user);
 
-    let mut res = client
-        .get(&routes_addr)
-        .header("X-Auth-Key", settings.global_user.api_key)
-        .header("X-Auth-Email", settings.global_user.email)
-        .send()?;
+    let mut res = client.get(&routes_addr).send()?;
 
     if !res.status().is_success() {
         let msg = format!(
-            "⛔ There was an error featching your project's routes.\n Status Code: {}\n Msg: {}",
+            "{} There was an error fetching your project's routes.\n Status Code: {}\n Msg: {}",
+            emoji::WARN,
             res.status(),
             res.text()?
         );
@@ -76,28 +84,23 @@ fn get_routes(user: &User) -> Result<Vec<Route>, failure::Error> {
     Ok(routes_response.result)
 }
 
-fn create(user: &User, route: Route) -> Result<(), failure::Error> {
-    let client = reqwest::Client::new();
-    let settings = user.settings.to_owned();
+fn create(user: &GlobalUser, project: &Project, route: &Route) -> Result<(), failure::Error> {
+    let client = http::auth_client(user);
     let body = serde_json::to_string(&route)?;
 
-    let routes_addr = get_routes_addr(user)?;
+    let routes_addr = get_routes_addr(project)?;
 
-    info!(
-        "Creating your route {} for script {}",
-        route.pattern, route.script
-    );
+    info!("Creating your route {:#?}", &route.pattern,);
     let mut res = client
         .post(&routes_addr)
-        .header("X-Auth-Key", settings.global_user.api_key)
-        .header("X-Auth-Email", settings.global_user.email)
         .header(CONTENT_TYPE, "application/json")
         .body(body)
         .send()?;
 
     if !res.status().is_success() {
         let msg = format!(
-            "⛔ There was an error creating your route.\n Status Code: {}\n Msg: {}",
+            "{} There was an error creating your route.\n Status Code: {}\n Msg: {}",
+            emoji::WARN,
             res.status(),
             res.text()?
         );
@@ -106,13 +109,12 @@ fn create(user: &User, route: Route) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn get_routes_addr(user: &User) -> Result<String, failure::Error> {
-    let zone_id = &user.settings.project.zone_id;
-    if zone_id.is_empty() {
-        failure::bail!("You much provide a zone_id in your wrangler.toml.")
+fn get_routes_addr(project: &Project) -> Result<String, failure::Error> {
+    if let Some(zone_id) = &project.zone_id {
+        return Ok(format!(
+            "https://api.cloudflare.com/client/v4/zones/{}/workers/routes",
+            zone_id
+        ));
     }
-    Ok(format!(
-        "https://api.cloudflare.com/client/v4/zones/{}/workers/routes",
-        zone_id
-    ))
+    failure::bail!("You much provide a zone_id in your wrangler.toml.")
 }

@@ -1,0 +1,9 @@
+{
+  "name": "wrangler-js",
+  "version": "0.1.11",
+  "author": "Sven Sauleau <sven@sauleau.com>",
+  "license": "MIT",
+  "dependencies": {
+    "webpack": "4.33.0"
+  }
+}

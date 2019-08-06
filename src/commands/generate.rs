@@ -1,33 +1,34 @@
-use crate::user::settings::{ProjectSettings, ProjectType};
+use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
-use binary_install::Cache;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::emoji;
+use crate::terminal::{emoji, message};
 
-pub fn generate(name: &str, template: &str, cache: &Cache) -> Result<(), failure::Error> {
+pub fn generate(name: &str, template: &str, pt: Option<ProjectType>) -> Result<(), failure::Error> {
     let tool_name = "cargo-generate";
-    let binary_path = install::install(tool_name, "ashleygwilliams", cache)?.binary(tool_name)?;
+    let binary_path = install::install(tool_name, "ashleygwilliams")?.binary(tool_name)?;
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
 
-    let project_type = project_type(template);
-    let command = command(name, binary_path, &args, &project_type);
+    let pt = pt.unwrap_or_else(|| project_type(template));
+    let command = command(name, binary_path, &args, &pt);
     let command_name = format!("{:?}", command);
 
     commands::run(command, &command_name)?;
-    ProjectSettings::generate(name.to_string(), project_type)?;
+    Project::generate(name.to_string(), pt, false)?;
     Ok(())
 }
 
 fn command(name: &str, binary_path: PathBuf, args: &[&str], project_type: &ProjectType) -> Command {
-    println!(
+    let msg = format!(
         "{} Generating a new {} worker project with name '{}'...",
         emoji::SHEEP,
         project_type,
         name
     );
+
+    message::working(&msg);
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
@@ -46,5 +47,5 @@ fn project_type(template: &str) -> ProjectType {
     if template.contains("rust") {
         return ProjectType::Rust;
     }
-    ProjectType::JavaScript
+    ProjectType::default()
 }
