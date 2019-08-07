@@ -10,14 +10,9 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - task: CacheBeta@0
-        displayName: 'Cache Cargo deps'
-        inputs:
-          key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Agent.WorkFolder)/.cargo
+      - template: ci/azure-cache-rust-deps.yml
       - script: cargo install cargo-generate
         displayName: 'cargo install cargo-generate'
-      - script: ls -la $(Agent.WorkFolder)/.cargo
       - script: cargo test --locked
         displayName: 'cargo test --locked'
       - script: rustup component add rustfmt
@@ -36,11 +31,7 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - task: CacheBeta@0
-        displayName: 'Cache Cargo deps'
-        inputs:
-          key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Agent.WorkFolder)/.cargo
+      - template: ci/azure-cache-rust-deps.yml
       - script: cargo install cargo-generate
         displayName: 'cargo install cargo-generate'
       - script: cargo test --locked
@@ -56,11 +47,7 @@ jobs:
         parameters:
           toolchain: nightly
       - template: ci/azure-install-node.yml
-      - task: CacheBeta@0
-        displayName: 'Cache Cargo deps'
-        inputs:
-          key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Agent.WorkFolder)/.cargo
+      - template: ci/azure-cache-rust-deps.yml
       - script: cargo install cargo-generate
         displayName: 'cargo install cargo-generate'
       - script: cargo test --locked
@@ -74,11 +61,7 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - script: rustup target add x86_64-unknown-linux-musl
-      - task: CacheBeta@0
-        displayName: 'Cache Cargo deps'
-        inputs:
-          key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Agent.WorkFolder)/.cargo
+      - template: ci/azure-cache-rust-deps.yml
       - script: |
           sudo apt update -y
           sudo apt install musl-tools -y
@@ -97,11 +80,7 @@ jobs:
       vmImage: macOS-10.13
     steps:
       - template: ci/azure-install-rust.yml
-      - task: CacheBeta@0
-        displayName: 'Cache Cargo deps'
-        inputs:
-          key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Agent.WorkFolder)/.cargo
+      - template: ci/azure-cache-rust-deps.yml
       - script: cargo build --release
         env:
           MACOSX_DEPLOYMENT_TARGET: 10.7
@@ -115,11 +94,7 @@ jobs:
       vmImage: vs2017-win2016
     steps:
       - template: ci/azure-install-rust.yml
-      - task: CacheBeta@0
-        displayName: 'Cache Cargo deps'
-        inputs:
-          key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Agent.WorkFolder)/.cargo
+      - template: ci/azure-cache-rust-deps.yml
       - script: cargo build --release
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static

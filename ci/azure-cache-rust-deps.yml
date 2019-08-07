@@ -1,0 +1,10 @@
+steps:
+  - script: cd $(Agent.WorkFolder) && mkdir .cargo
+  - task: CacheBeta@0
+    displayName: 'Cache Cargo deps'
+    inputs:
+      key: |
+        wrangler
+        $(Agent.OS)
+        $(Build.SourcesDirectory)/Cargo.lock
+      path: $(Agent.WorkFolder)/.cargo
