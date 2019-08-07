@@ -35,3 +35,16 @@ $ wrangler kv delete f7b02e7fc70443149ac906dd81ec1791
 🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791 🌀 
 ✨  Success
 ```
+
+### ✨ `rename <namespace-id> <new-title>`
+
+#### Usage
+
+``` sh
+$ wrangler kv rename f7b02e7fc70443149ac906dd81ec1791 "updated kv namespace"
+🌀  Renaming namespace f7b02e7fc70443149ac906dd81ec1791 with title "updated kv namespace"
+✨  Success: WorkersKVNamespace {
+    id: "f7b02e7fc70443149ac906dd81ec1791",
+    title: "updated kv namespace",
+}
+```
