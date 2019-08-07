@@ -4,6 +4,15 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 #[test]
+fn it_builds_from_config() {
+    let toml_path = toml_fixture_path("default");
+
+    let project = get_project_config(&toml_path).unwrap();
+
+    assert!(project.kv_namespaces.is_none());
+}
+
+#[test]
 fn it_builds_from_legacy_config() {
     let toml_path = legacy_toml_fixture_path("default");
 

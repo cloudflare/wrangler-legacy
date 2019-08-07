@@ -11,8 +11,8 @@ route = ""
 id = "somecrazylongidentifierstring"
 binding = "prodKV"
 
-[env.production]
-name = "prod-worker"
+[env.staging]
+name = "staging-worker"
 zone_id = ""
 private = false
 account_id = ""
