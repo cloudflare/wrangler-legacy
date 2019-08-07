@@ -3,8 +3,5 @@ steps:
   - task: CacheBeta@0
     displayName: 'Cache Cargo deps'
     inputs:
-      key: |
-        wrangler
-        $(Agent.OS)
-        $(Build.SourcesDirectory)/Cargo.lock
+      key: "$(Agent.OS)|wrangler|$(Build.SourcesDirectory)/Cargo.lock"
       path: $(Agent.WorkFolder)/.cargo
