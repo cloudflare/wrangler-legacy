@@ -14,9 +14,10 @@ jobs:
         displayName: 'Cache Cargo deps'
         inputs:
           key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Pipeline.Workspace)/.cargo
+          path: $(Agent.WorkFolder)/.cargo
       - script: cargo install cargo-generate
         displayName: 'cargo install cargo-generate'
+      - script: ls -la $(Agent.WorkFolder)/.cargo
       - script: cargo test --locked
         displayName: 'cargo test --locked'
       - script: rustup component add rustfmt
@@ -39,7 +40,7 @@ jobs:
         displayName: 'Cache Cargo deps'
         inputs:
           key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Pipeline.Workspace)/.cargo
+          path: $(Agent.WorkFolder)/.cargo
       - script: cargo install cargo-generate
         displayName: 'cargo install cargo-generate'
       - script: cargo test --locked
@@ -59,7 +60,7 @@ jobs:
         displayName: 'Cache Cargo deps'
         inputs:
           key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Pipeline.Workspace)/.cargo
+          path: $(Agent.WorkFolder)/.cargo
       - script: cargo install cargo-generate
         displayName: 'cargo install cargo-generate'
       - script: cargo test --locked
@@ -77,7 +78,7 @@ jobs:
         displayName: 'Cache Cargo deps'
         inputs:
           key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Pipeline.Workspace)/.cargo
+          path: $(Agent.WorkFolder)/.cargo
       - script: |
           sudo apt update -y
           sudo apt install musl-tools -y
@@ -100,7 +101,7 @@ jobs:
         displayName: 'Cache Cargo deps'
         inputs:
           key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Pipeline.Workspace)/.cargo
+          path: $(Agent.WorkFolder)/.cargo
       - script: cargo build --release
         env:
           MACOSX_DEPLOYMENT_TARGET: 10.7
@@ -118,7 +119,7 @@ jobs:
         displayName: 'Cache Cargo deps'
         inputs:
           key: $(Build.SourcesDirectory)/Cargo.lock
-          path: $(Pipeline.Workspace)/.cargo
+          path: $(Agent.WorkFolder)/.cargo
       - script: cargo build --release
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
