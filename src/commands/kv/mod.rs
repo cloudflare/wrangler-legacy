@@ -1,7 +1,6 @@
 use cloudflare::auth::Credentials;
 use cloudflare::response::APIFailure;
-use cloudflare::response::APIResponse;
-use cloudflare::response::APIResult;
+
 use cloudflare::HTTPAPIClient;
 
 use crate::settings;
@@ -26,22 +25,19 @@ fn account_id() -> Result<String, failure::Error> {
     Ok(project.account_id)
 }
 
-fn print_response<T: APIResult>(response: APIResponse<T>) {
-    match response {
-        Ok(success) => message::success(&format!("Success: {:#?}", success.result)),
-        Err(e) => match e {
-            APIFailure::Error(_status, errors) => {
-                for error in errors {
-                    message::warn(&format!("Error {}: {}", error.code, error.message,));
+fn print_error(e: APIFailure) {
+    match e {
+        APIFailure::Error(_status, errors) => {
+            for error in errors {
+                message::warn(&format!("Error {}: {}", error.code, error.message,));
 
-                    let suggestion = help(error.code);
-                    if !suggestion.is_empty() {
-                        message::help(suggestion);
-                    }
+                let suggestion = help(error.code);
+                if !suggestion.is_empty() {
+                    message::help(suggestion);
                 }
             }
-            APIFailure::Invalid(reqwest_err) => message::warn(&format!("Error: {}", reqwest_err)),
-        },
+        }
+        APIFailure::Invalid(reqwest_err) => message::warn(&format!("Error: {}", reqwest_err)),
     }
 }
 
