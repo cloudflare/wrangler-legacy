@@ -19,7 +19,10 @@ pub fn create_namespace(title: &str) -> Result<(), failure::Error> {
         },
     });
 
-    super::print_response(response);
+    match response {
+        Ok(success) => message::success(&format!("Success: {:#?}", success.result)),
+        Err(e) => super::print_error(e),
+    }
 
     Ok(())
 }
