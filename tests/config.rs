@@ -5,15 +5,24 @@ use std::io::prelude::*;
 use std::process::{Child, Command, Stdio};
 
 #[test]
-fn it_generates_the_config() {
+fn it_generates_the_config_unix_eol() {
+    generate_config_with("\n");
+}
+
+#[test]
+fn it_generates_the_config_windows_eol() {
+    generate_config_with("\r\n");
+}
+
+fn generate_config_with(eol: &str) {
     let fake_home_dir = env::current_dir()
         .expect("could not retrieve cwd")
-        .join(".it_generates_the_config");
+        .join(format!(".it_generates_the_config_{}", random_chars(5)));
     let cmd = config_with_wrangler_home(fake_home_dir.to_str().unwrap());
     let mut stdin = cmd.stdin.unwrap();
 
-    write!(stdin, "email@example.com\n").unwrap();
-    write!(stdin, "apikeythisissecretandlong\n").unwrap();
+    write!(stdin, "email@example.com{}", eol).unwrap();
+    write!(stdin, "apikeythisissecretandlong{}", eol).unwrap();
 
     let mut buffer = "".to_string();
     let mut stdout = cmd.stdout.expect("stdout");
@@ -56,4 +65,15 @@ fn config_with_wrangler_home(home_dir: &str) -> Child {
         .env("WRANGLER_HOME", home_dir)
         .spawn()
         .unwrap()
+}
+
+fn random_chars(n: usize) -> String {
+    use rand::distributions::Alphanumeric;
+    use rand::{thread_rng, Rng};
+    use std::iter;
+    let mut rng = thread_rng();
+    iter::repeat(())
+        .map(|()| rng.sample(Alphanumeric))
+        .take(n)
+        .collect()
 }

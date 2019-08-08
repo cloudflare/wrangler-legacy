@@ -209,6 +209,12 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     cargo install wrangler
     ```
 
+    Installing wrangler on linux requires some [OpenSSL-related packages](https://docs.rs/openssl/0.10.24/openssl/#automatic) to be installed. If you don't want to deal with this, you can use vendored OpenSSL.
+
+    ```
+    cargo install wrangler --features vendored-openssl
+    ```
+
 ### Manual Install:
 
 1. Download the binary tarball for your platform from our [releases page](https://github.com/cloudflare/wrangler/releases). You don't need to download wranglerjs, wrangler will install that for you.

@@ -60,9 +60,10 @@ fn subdomain_addr(account_id: &str) -> String {
 
 pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
     if project.account_id.is_empty() {
-        failure::bail!(
-            "⛔ You must provide an account_id in your wrangler.toml before creating a subdomain!"
-        )
+        failure::bail!(format!(
+            "{} You must provide an account_id in your wrangler.toml before creating a subdomain!",
+            emoji::WARN
+        ))
     }
     let msg = format!(
         "Registering your subdomain, {}.workers.dev, this could take up to a minute.",

@@ -1,6 +1,8 @@
 mod krate;
 pub mod target;
 
+use crate::terminal::emoji;
+
 use binary_install::{Cache, Download};
 use krate::Krate;
 use log::info;
@@ -52,9 +54,8 @@ pub fn install_artifact(
 fn tool_exists(tool_name: &str) -> Option<Download> {
     if let Ok(path) = which(tool_name) {
         log::debug!("found global {} binary at: {}", tool_name, path.display());
-        Some(Download::at(
-            path.parent().expect("⚠️ There is no path parent"),
-        ))
+        let no_parent_msg = format!("{} There is no path parent", emoji::WARN);
+        Some(Download::at(path.parent().expect(&no_parent_msg)))
     } else {
         None
     }
