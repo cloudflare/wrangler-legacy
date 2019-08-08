@@ -20,6 +20,7 @@ labels: user report
 * operating system:
 * output of `rustc -V`:
 * output of `node -v`:
+* output of `wrangler -V`:
 
 #### Steps to reproduce
 
