@@ -1,6 +1,7 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
+use crate::terminal::emoji;
 use reqwest::header::CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
 
@@ -27,10 +28,10 @@ impl Route {
         {
             failure::bail!("You must provide a zone_id in your wrangler.toml before publishing!");
         }
-
+        let msg_config_error = format!("{} Your project config has an error, check your `wrangler.toml`: `route` must be provided.", emoji::WARN);
         Ok(Route {
             script: Some(project.name.to_string()),
-            pattern: project.route.clone().expect("⚠️ Your project config has an error, check your `wrangler.toml`: `route` must be provided.").to_string(),
+            pattern: project.route.clone().expect(&msg_config_error),
         })
     }
 
@@ -70,7 +71,8 @@ fn get_routes(user: &GlobalUser, project: &Project) -> Result<Vec<Route>, failur
 
     if !res.status().is_success() {
         let msg = format!(
-            "⛔ There was an error fetching your project's routes.\n Status Code: {}\n Msg: {}",
+            "{} There was an error fetching your project's routes.\n Status Code: {}\n Msg: {}",
+            emoji::WARN,
             res.status(),
             res.text()?
         );
@@ -97,7 +99,8 @@ fn create(user: &GlobalUser, project: &Project, route: &Route) -> Result<(), fai
 
     if !res.status().is_success() {
         let msg = format!(
-            "⛔ There was an error creating your route.\n Status Code: {}\n Msg: {}",
+            "{} There was an error creating your route.\n Status Code: {}\n Msg: {}",
+            emoji::WARN,
             res.status(),
             res.text()?
         );

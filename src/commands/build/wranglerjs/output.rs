@@ -43,6 +43,7 @@ impl WranglerjsOutput {
     fn project_size_message(compressed_size: u64) -> String {
         const MAX_PROJECT_SIZE: u64 = 1 << 20; // 1 MiB
         const WARN_THRESHOLD: u64 = MAX_PROJECT_SIZE - 81_920; //Warn when less than 80 KiB left to grow, ~92% usage
+        const MAX_BEFORE_WARN: u64 = WARN_THRESHOLD - 1;
 
         let bytes_left = MAX_PROJECT_SIZE.checked_sub(compressed_size);
 
@@ -63,7 +64,7 @@ impl WranglerjsOutput {
 
         match compressed_size {
             WARN_THRESHOLD...MAX_PROJECT_SIZE => format!("{}. {2} Your built project is {} away from reaching the 1MiB size limit. {2}", human_size, human_leftover.expect("failed to get leftover bytes"), emoji::WARN),
-            0...WARN_THRESHOLD => format!("{}.", human_size),
+            0...MAX_BEFORE_WARN => format!("{}.", human_size),
             _ => format!("{}. {1} Your built project has grown past the 1MiB size limit and may fail to deploy. {1}", human_size, emoji::WARN)
         }
     }

@@ -35,7 +35,6 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
 
     if status.success() {
         let output = fs::read_to_string(temp_file.clone()).expect("could not retrieve ouput");
-        fs::remove_file(temp_file)?;
 
         let wranglerjs_output: WranglerjsOutput =
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
@@ -54,10 +53,10 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
             wranglerjs_output.project_size()
         );
 
+        fs::remove_file(temp_file)?;
         message::success(&msg);
         Ok(())
     } else {
-        fs::remove_file(temp_file)?;
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
 }

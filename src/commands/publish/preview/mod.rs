@@ -34,9 +34,14 @@ pub fn preview(
     let res = client
         .post(create_address)
         .multipart(script_upload_form)
-        .send();
+        .send()?
+        .error_for_status();
 
-    let p: Preview = serde_json::from_str(&res?.text()?)?;
+    let text = &res?.text()?;
+    log::info!("Response from preview: {:?}", text);
+
+    let p: Preview =
+        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
 
     let session = Uuid::new_v4().to_simple();
 

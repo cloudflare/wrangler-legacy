@@ -1,5 +1,8 @@
 #![allow(clippy::redundant_closure)]
 
+#[macro_use]
+extern crate text_io;
+
 use std::env;
 use std::str::FromStr;
 
@@ -127,19 +130,7 @@ fn run() -> Result<(), failure::Error> {
                 .about(&*format!(
                     "{} Setup wrangler with your Cloudflare account",
                     emoji::SLEUTH
-                ))
-                .arg(
-                    Arg::with_name("email")
-                        .help("the email address associated with your Cloudflare account")
-                        .index(1)
-                        .required(true),
-                )
-                .arg(
-                    Arg::with_name("api-key")
-                        .help("your Cloudflare API key")
-                        .index(2)
-                        .required(true),
-                ),
+                )),
         )
         .subcommand(
             SubCommand::with_name("subdomain")
@@ -160,13 +151,13 @@ fn run() -> Result<(), failure::Error> {
         )))
         .get_matches();
 
-    if let Some(matches) = matches.subcommand_matches("config") {
-        let email = matches
-            .value_of("email")
-            .expect("An email address must be provided.");
-        let api_key = matches
-            .value_of("api-key")
-            .expect("An API key must be provided.");
+    if let Some(_matches) = matches.subcommand_matches("config") {
+        println!("Enter email: ");
+        let mut email: String = read!("{}\n");
+        email.truncate(email.trim_end().len());
+        println!("Enter api key: ");
+        let mut api_key: String = read!("{}\n");
+        api_key.truncate(api_key.trim_end().len());
 
         commands::global_config(email, api_key)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {

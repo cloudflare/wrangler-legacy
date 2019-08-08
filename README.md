@@ -47,9 +47,9 @@ cargo install wrangler
 
 ## 🎙️ Commands
 
-  - ### 👯 `generate` 
+  - ### 👯 `generate`
     Scaffold a project, including boilerplate for a Rust library and a Cloudflare Worker.
-    You can pass a name and template to this command optionally. 
+    You can pass a name and template to this command optionally.
 
     ```
     wrangler generate <name> <template> --type=["webpack", "javascript", "rust"]
@@ -83,7 +83,7 @@ cargo install wrangler
     By default, `publish` will make your worker available at `<project-name>.<subdomain>.workers.dev`.
     To disable publishing to your workers.dev subdomain, set `private = true` in your `wrangler.toml`.
     This setting prevents the `publish` command from making your worker publicly available. To
-    explicitly enable deployment to `<project-name>.<subdomain>.workers.dev`, you can set `private = false`. 
+    explicitly enable deployment to `<project-name>.<subdomain>.workers.dev`, you can set `private = false`.
 
     To use this command, you'll need to have the following keys in your `wrangler.toml`:
 
@@ -165,6 +165,18 @@ There are two types of configuration that `wrangler` uses: global user and per p
         This key is optional if you are using a workers.dev subdomain and is only required for `publish --release`.
     - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and
         defaults to `webpack.config.js`
+    - `[[kv-namespaces]]`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) namespaces you want to access from
+        inside your Worker. Each namespace you include should have an entry in your wrangler.toml that includes:
+
+        - `binding`: the name you want to bind to in your script
+        - `id`: the namespace_id assigned to your kv namespace upon creation.
+            e.g. (per namespace):
+        ``` toml
+        [[kv-namespaces]]
+        binding = "FOO"
+        id = "0f2ac74b498b48028cb68387c421e279"
+        ```
+        Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
 
 ## ⚓ Installation
 
@@ -200,12 +212,10 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     cargo install wrangler
     ```
 
-1. Troubleshooting OpenSSL errors
-
-    If you are on a Mac, you might encounter an OpenSSL error when attempting to generate a project. You can resolve that issue by installing OpenSSL v1.1 through Homebrew (need to install Homebrew? Instructions available [here](https://brew.sh/)).
+    Installing wrangler on linux requires some [OpenSSL-related packages](https://docs.rs/openssl/0.10.24/openssl/#automatic) to be installed. If you don't want to deal with this, you can use vendored OpenSSL.
 
     ```
-    $ brew install openssl@1.1
+    cargo install wrangler --features vendored-openssl
     ```
 
 ### Manual Install:
