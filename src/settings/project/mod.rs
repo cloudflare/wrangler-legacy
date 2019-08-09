@@ -62,10 +62,10 @@ impl Project {
         Ok(project)
     }
 
-    pub fn new() -> Result<Self, failure::Error> {
+    pub fn new(environment: Option<String>) -> Result<Self, failure::Error> {
         let config_path = Path::new("./wrangler.toml");
 
-        get_project_config(config_path)
+        get_project_config(environment, config_path)
     }
 
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
@@ -73,7 +73,10 @@ impl Project {
     }
 }
 
-fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
+fn get_project_config(
+    environment: Option<String>,
+    config_path: &Path,
+) -> Result<Project, failure::Error> {
     let mut s = Config::new();
 
     let config_str = config_path
@@ -110,19 +113,20 @@ id = "0f2ac74b498b48028cb68387c421e279"
         }
     }
 
-    let project: Result<Project, config::ConfigError> = s.try_into();
-    match project {
-        Ok(s) => Ok(s),
-        Err(e) => {
+    let environment_table = s.get_table("env");
+    if environment_table.is_err() {
+        let project: Result<Project, config::ConfigError> = s.try_into();
+        return project.map_err(|e| {
             let msg = format!(
                 "{} Your project config has an error, check your `wrangler.toml`: {}",
                 emoji::WARN,
                 e
             );
-
-            failure::bail!(msg)
-        }
+            failure::err_msg(msg)
+        });
     }
+    //TODO other create project logic
+    failure::bail!(":(")
 }
 
 #[cfg(test)]
