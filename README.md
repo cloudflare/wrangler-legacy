@@ -224,7 +224,7 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
 
 ## Updating `wrangler`:
 
-   You can find instructions on updating your version of Wrangler [in the docs](https://workers.cloudflare.com/docs/quickstart/updating-the-cli/).
+   You can find instructions on updating Wrangler [in the docs](https://workers.cloudflare.com/docs/quickstart/updating-the-cli/).
 
 ## ⚡ Quick Start
 
