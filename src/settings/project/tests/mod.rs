@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 fn it_builds_from_config() {
     let toml_path = toml_fixture_path("default");
 
-    let project = get_project_config(&toml_path).unwrap();
+    let project = get_project_config(None, &toml_path).unwrap();
 
     assert!(project.kv_namespaces.is_none());
 }
@@ -16,7 +16,7 @@ fn it_builds_from_config() {
 fn it_builds_from_legacy_config() {
     let toml_path = legacy_toml_fixture_path("default");
 
-    let project = get_project_config(&toml_path).unwrap();
+    let project = get_project_config(None, &toml_path).unwrap();
 
     assert!(project.kv_namespaces.is_none());
 }
@@ -25,7 +25,7 @@ fn it_builds_from_legacy_config() {
 fn it_builds_from_legacy_config_with_kv() {
     let toml_path = legacy_toml_fixture_path("kv_namespaces");
 
-    let project = get_project_config(&toml_path).unwrap();
+    let project = get_project_config(None, &toml_path).unwrap();
 
     let kv_1 = KvNamespace {
         id: "somecrazylongidentifierstring".to_string(),

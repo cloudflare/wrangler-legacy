@@ -62,7 +62,7 @@ impl Project {
         Ok(project)
     }
 
-    pub fn new(environment: Option<String>) -> Result<Self, failure::Error> {
+    pub fn new(environment: Option<&str>) -> Result<Self, failure::Error> {
         let config_path = Path::new("./wrangler.toml");
 
         get_project_config(environment, config_path)
@@ -74,7 +74,7 @@ impl Project {
 }
 
 fn get_project_config(
-    environment: Option<String>,
+    environment_name: Option<&str>,
     config_path: &Path,
 ) -> Result<Project, failure::Error> {
     let mut s = Config::new();
@@ -113,8 +113,8 @@ id = "0f2ac74b498b48028cb68387c421e279"
         }
     }
 
-    let environment_table = s.get_table("env");
-    if environment_table.is_err() {
+    let environments = s.get_table("env");
+    if environments.is_err() {
         let project: Result<Project, config::ConfigError> = s.try_into();
         return project.map_err(|e| {
             let msg = format!(
@@ -125,6 +125,40 @@ id = "0f2ac74b498b48028cb68387c421e279"
             failure::err_msg(msg)
         });
     }
+    let environments = environments.unwrap();
+    let project_type: Result<&str, config::ConfigError> = s.get("type");
+    if project_type.is_err() {
+        failure::bail!(format!(
+            "{} Your `wrangler.toml` is missing a `type` field.",
+            emoji::WARN
+        ))
+    }
+    let project_type = project_type.unwrap();
+    let environment_name = match environment_name {
+        None => "default",
+        Some(x) => x,
+    };
+    let environment = match environments.get(environment_name) {
+        Some(e) => e,
+        None => failure::bail!(format!(
+            "{} Your `wrangler.toml` does not contain a `{}` environment",
+            emoji::WARN,
+            environment_name
+        )),
+    };
+    let environment_table = environment.clone().into_table();
+    if environment_table.is_err() {
+        failure::bail!(format!(
+            "{} Your `{}` environment could not be parsed.",
+            emoji::WARN,
+            environment_name
+        ))
+    }
+    let environment_table = environment_table.unwrap().insert(
+        "type".to_string(),
+        config::Value::new(None, project_type.to_string()),
+    );
+    println!("{:#?}", environment_table);
     //TODO other create project logic
     failure::bail!(":(")
 }
