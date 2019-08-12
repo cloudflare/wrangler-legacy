@@ -37,6 +37,20 @@ fn it_can_preview_js_project() {
 }
 
 #[test]
+fn it_can_preview_js_project_with_kv() {
+    let fixture = "simple_js_with_kv";
+    create_temporary_copy(fixture);
+    settings! {fixture, r#"
+        type = "javascript"
+        [[kv-namespaces]]
+        id = "somecrazylongidentifierstring"
+        binding = "prodKV"
+    "#};
+    preview(fixture);
+    cleanup(fixture);
+}
+
+#[test]
 fn it_can_preview_webpack_project() {
     let fixture = "webpack_simple_js";
     create_temporary_copy(fixture);
@@ -48,11 +62,39 @@ fn it_can_preview_webpack_project() {
 }
 
 #[test]
+fn it_can_preview_webpack_project_with_kv() {
+    let fixture = "webpack_simple_js_with_kv";
+    create_temporary_copy(fixture);
+    settings! {fixture, r#"
+        type = "webpack"
+        [[kv-namespaces]]
+        id = "somecrazylongidentifierstring"
+        binding = "prodKV"
+    "#};
+    preview(fixture);
+    cleanup(fixture);
+}
+
+#[test]
 fn it_can_preview_rust_project() {
     let fixture = "simple_rust";
     create_temporary_copy(fixture);
     settings! {fixture, r#"
         type = "rust"
+    "#};
+    preview(fixture);
+    cleanup(fixture);
+}
+
+#[test]
+fn it_can_preview_rust_project_with_kv() {
+    let fixture = "simple_rust_with_kv";
+    create_temporary_copy(fixture);
+    settings! {fixture, r#"
+        type = "rust"
+        [[kv-namespaces]]
+        id = "somecrazylongidentifierstring"
+        binding = "prodKV"
     "#};
     preview(fixture);
     cleanup(fixture);
