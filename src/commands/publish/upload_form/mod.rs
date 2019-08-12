@@ -8,8 +8,8 @@ use log::info;
 use minifier::js;
 use reqwest::multipart::{Form, Part};
 use std::fs;
-use std::path::Path;
 use std::io::prelude::*;
+use std::path::Path;
 
 use crate::commands::build::wranglerjs;
 use crate::settings::binding;
@@ -136,12 +136,19 @@ fn concat_js(name: &str) -> Result<(), failure::Error> {
     let worker_js: String = fs::read_to_string("./worker/worker.js")?.parse()?;
     let worker_js_minified: String = js::minify(&worker_js);
 
-    let mut merged_js = fs::OpenOptions::new().write(true).create(true).open("./worker/generated/script.js")?;
+    let mut merged_js = fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open("./worker/generated/script.js")?;
 
     // Need to add trailing ; to bindgen_js_minified because otherwise, the minifier will not add it,
     // which will lead to an error when worker_js_minified is appended.
     // TODO: move this final semicolon logic into wasm-pack instead?
-    write!(&mut merged_js, "{};{}", bindgen_js_minified, worker_js_minified)?;
+    write!(
+        &mut merged_js,
+        "{};{}",
+        bindgen_js_minified, worker_js_minified
+    )?;
 
     Ok(())
 }
