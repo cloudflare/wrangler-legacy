@@ -60,7 +60,7 @@ pub fn run_build_and_watch(
     let (mut command, temp_file, bundle) = setup_build(project)?;
     command.arg("--watch=1");
 
-    info!("Running {:?}", command);
+    info!("Running {:?} in watch mode", command);
 
     thread::spawn(move || {
         let _command_guard = util::GuardedCommand::spawn(command);
@@ -70,7 +70,7 @@ pub fn run_build_and_watch(
 
         watcher.watch(&temp_file, RecursiveMode::Recursive).unwrap();
 
-        message::info(&format!("watching {:?}", &temp_file));
+        info!("watching temp file {:?}", &temp_file);
 
         let mut is_first = true;
 
