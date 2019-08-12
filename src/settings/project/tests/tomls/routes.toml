@@ -1,0 +1,11 @@
+type = "webpack"
+
+[env.default]
+name = "worker"
+zone_id = ""
+private = false
+account_id = ""
+route = ""
+
+[env.default.routes]
+one = "hello"

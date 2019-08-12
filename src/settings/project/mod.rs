@@ -92,16 +92,53 @@ impl TryFrom<HashMap<String, config::Value>> for Project {
             .get("account_id")
             .ok_or("Environment does not have an `account_id`")?;
         let account_id = account_id.clone().into_str().map_err(|e| e.to_string())?;
+        let private = map
+            .get("private")
+            .map(|p| p.clone().into_bool().map_err(|e| e.to_string()))
+            .transpose()?;
+        let zone_id = map
+            .get("zone_id")
+            .map(|z| z.clone().into_str().map_err(|e| e.to_string()))
+            .transpose()?;
+        let route = map
+            .get("route")
+            .map(|r| r.clone().into_str().map_err(|e| e.to_string()))
+            .transpose()?;
+        println!("{:#?}", map.get("routes"));
+        let routes = map
+            .get("routes")
+            .map(|r| r.clone().into_table().map_err(|e| e.to_string()))
+            .transpose()?;
+        // if routes.is_some() {
+        //     let routes_map: HashMap<String, String> = routes.map(|r| {
+        //         let new_routes = HashMap::new();
+        //         for (k, v) in r.iter() {
+        //             let value = v.clone().into_str().map_err(|e| e.to_string());
+        //             new_routes.insert(k, value);
+        //         }
+        //         new_routes
+        //     });
+        //     let routes = Some(routes_map);
+        // }
+        // println!("{:#?}", routes);
+        let kv_namespaces = map
+            .get("kv_namespaces")
+            .map(|k| k.clone().into_array().map_err(|e| e.to_string()))
+            .transpose()?;
+        let webpack_config = map
+            .get("webpack_config")
+            .map(|w| w.clone().into_str().map_err(|e| e.to_string()))
+            .transpose()?;
         Ok(Project {
-            name: name,
-            project_type: project_type,
-            private: None, // TODO implement
-            zone_id: None, // TODO implement
-            account_id: account_id,
-            route: None,          // TODO implement
-            routes: None,         // TODO implement
-            kv_namespaces: None,  // TODO implement
-            webpack_config: None, // TODO implement
+            name,
+            project_type,
+            private,
+            zone_id,
+            account_id,
+            route,
+            routes: None,        // TODO implement
+            kv_namespaces: None, // TODO implement
+            webpack_config,
         })
     }
 }

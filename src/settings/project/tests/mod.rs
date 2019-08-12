@@ -13,6 +13,33 @@ fn it_builds_from_config() {
 }
 
 #[test]
+fn it_builds_from_environments_config() {
+    let toml_path = toml_fixture_path("environments");
+
+    let project = get_project_config(None, &toml_path).unwrap();
+
+    assert!(project.kv_namespaces.is_none());
+}
+
+#[test]
+fn it_builds_from_routes_config() {
+    let toml_path = toml_fixture_path("routes");
+
+    let project = get_project_config(None, &toml_path).unwrap();
+
+    assert!(project.kv_namespaces.is_none());
+}
+
+#[test]
+fn it_builds_from_environments_config_with_kv() {
+    let toml_path = toml_fixture_path("kv_namespaces");
+
+    let project = get_project_config(None, &toml_path).unwrap();
+
+    assert!(project.kv_namespaces.is_none());
+}
+
+#[test]
 fn it_builds_from_legacy_config() {
     let toml_path = legacy_toml_fixture_path("default");
 
