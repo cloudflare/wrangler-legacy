@@ -1,4 +1,5 @@
 use crate::terminal::message;
+use log::info;
 use serde::Serialize;
 use ws::{CloseCode, Handler, Handshake, Result as WSResult, Sender};
 
@@ -56,10 +57,9 @@ impl Handler for FiddleMessageServer {
             .any(|safe_addr| &incoming_addr == safe_addr);
 
         if origin_is_safe && addr_is_safe {
-            message::info(&format!(
-                "Accepted connection from site {} incoming from {}",
+            info!("Accepted connection from site {} incoming from {}",
                 origin, incoming_addr
-            ));
+            );
         } else {
             if !origin_is_safe {
                 message::user_error(&format!(
