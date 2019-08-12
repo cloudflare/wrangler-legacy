@@ -19,129 +19,75 @@ struct Preview {
     pub id: String,
 }
 
-fn preview_with_auth(
+pub fn preview(
     project: &Project,
-    user: &GlobalUser,
+    user: Option<GlobalUser>,
     method: Result<HTTPMethod, failure::Error>,
     body: Option<String>,
 ) -> Result<(), failure::Error> {
-    let create_address = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
-        project.account_id, project.name
+    commands::build(&project)?;
+
+    let client = match &user {
+        Some(user) => http::auth_client(&user),
+        None => http::client(),
+    };
+
+    let preview = upload_to_preview(&project, user, &client)?;
+
+    let session = Uuid::new_v4().to_simple();
+
+    let preview_host = "example.com";
+    let https = 1;
+    let script_id = &preview.id;
+
+    let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
+    let cookie = format!(
+        "__ew_fiddle_preview={}{}{}{}",
+        script_id, session, https, preview_host
     );
 
-    let client = http::auth_client(user);
+    let method = method.unwrap_or_default();
 
-    commands::build(&project)?;
+    let worker_res = match method {
+        HTTPMethod::Get => get(preview_address, cookie, &client)?,
+        HTTPMethod::Post => post(preview_address, cookie, &client, body)?,
+    };
+    let msg = format!("Your worker responded with: {}", worker_res);
+    message::preview(&msg);
+
+    open(preview_host, https, script_id)?;
+
+    Ok(())
+}
+
+fn upload_to_preview(
+    project: &Project,
+    user: Option<GlobalUser>,
+    client: &reqwest::Client,
+) -> Result<Preview, failure::Error> {
+    let create_address = match &user {
+        Some(_user) => format!(
+            "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
+            project.account_id, project.name
+        ),
+        None => "https://cloudflareworkers.com/script".to_string(),
+    };
 
     let script_upload_form = publish::build_script_upload_form(project)?;
 
-    log::info!("💩");
-    let res = client
+    let mut res = client
         .post(&create_address)
         .multipart(script_upload_form)
         .send()?
-        .error_for_status();
+        .error_for_status()?;
 
-    let text = &res?.text()?;
+    let text = &res.text()?;
     log::info!("Response from preview: {:?}", text);
 
-    let p: Preview =
+    let preview: Preview =
         serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
 
-    let session = Uuid::new_v4().to_simple();
-
-    let preview_host = "example.com";
-    let https = 1;
-    let script_id = &p.id;
-
-    let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
-    let cookie = format!(
-        "__ew_fiddle_preview={}{}{}{}",
-        script_id, session, https, preview_host
-    );
-
-    let method = method.unwrap_or_default();
-
-    let worker_res = match method {
-        HTTPMethod::Get => get(preview_address, cookie, client)?,
-        HTTPMethod::Post => post(preview_address, cookie, client, body)?,
-    };
-    let msg = format!("Your worker responded with: {}", worker_res);
-    message::preview(&msg);
-
-    open(preview_host, https, script_id)?;
-
-    Ok(())
-}
-
-fn preview_without_auth(
-    project: &Project,
-    method: Result<HTTPMethod, failure::Error>,
-    body: Option<String>,
-) -> Result<(), failure::Error> {
-    let create_address = "https://cloudflareworkers.com/script";
-
-    let client = http::client();
-
-    commands::build(&project)?;
-
-    let script_upload_form = publish::build_script_upload_form(project)?;
-
-    let res = client
-        .post(create_address)
-        .multipart(script_upload_form)
-        .send()?
-        .error_for_status();
-
-    let text = &res?.text()?;
-    log::info!("Response from preview: {:?}", text);
-
-    let p: Preview =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
-
-    let session = Uuid::new_v4().to_simple();
-
-    let preview_host = "example.com";
-    let https = 1;
-    let script_id = &p.id;
-
-    let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
-    let cookie = format!(
-        "__ew_fiddle_preview={}{}{}{}",
-        script_id, session, https, preview_host
-    );
-
-    let method = method.unwrap_or_default();
-
-    let worker_res = match method {
-        HTTPMethod::Get => get(preview_address, cookie, client)?,
-        HTTPMethod::Post => post(preview_address, cookie, client, body)?,
-    };
-    let msg = format!("Your worker responded with: {}", worker_res);
-    message::preview(&msg);
-
-    open(preview_host, https, script_id)?;
-
-    Ok(())
-}
-
-pub fn preview(
-    method: Result<HTTPMethod, failure::Error>,
-    body: Option<String>,
-) -> Result<(), failure::Error> {
-    let project = Project::new()?;
-
-    match GlobalUser::new() {
-        Ok(user) => {
-            log::info!("running in authenticated mode");
-            return preview_with_auth(&project, &user, method, body);
-        }
-        Err(_e) => {
-            log::info!("running in unauthenticated mode");
-            return preview_without_auth(&project, method, body);
-        }
-    }
+    Ok(preview)
 }
 
 fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::Error> {
@@ -174,7 +120,7 @@ fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::E
 fn get(
     preview_address: &str,
     cookie: String,
-    client: reqwest::Client,
+    client: &reqwest::Client,
 ) -> Result<String, failure::Error> {
     let res = client.get(preview_address).header("Cookie", cookie).send();
     let msg = format!("GET {}", preview_address);
@@ -185,7 +131,7 @@ fn get(
 fn post(
     preview_address: &str,
     cookie: String,
-    client: reqwest::Client,
+    client: &reqwest::Client,
     body: Option<String>,
 ) -> Result<String, failure::Error> {
     let res = match body {
