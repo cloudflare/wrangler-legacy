@@ -10,6 +10,7 @@ use uuid::Uuid;
 
 use crate::commands;
 use crate::http;
+use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
@@ -18,7 +19,63 @@ struct Preview {
     pub id: String,
 }
 
-pub fn preview(
+fn preview_with_auth(
+    project: &Project,
+    user: &GlobalUser,
+    method: Result<HTTPMethod, failure::Error>,
+    body: Option<String>,
+) -> Result<(), failure::Error> {
+    let create_address = format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
+        project.account_id, project.name
+    );
+
+    let client = http::auth_client(user);
+
+    commands::build(&project)?;
+
+    let script_upload_form = publish::build_script_upload_form(project)?;
+
+    log::info!("💩");
+    let res = client
+        .post(&create_address)
+        .multipart(script_upload_form)
+        .send()?
+        .error_for_status();
+
+    let text = &res?.text()?;
+    log::info!("Response from preview: {:?}", text);
+
+    let p: Preview =
+        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+
+    let session = Uuid::new_v4().to_simple();
+
+    let preview_host = "example.com";
+    let https = 1;
+    let script_id = &p.id;
+
+    let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
+    let cookie = format!(
+        "__ew_fiddle_preview={}{}{}{}",
+        script_id, session, https, preview_host
+    );
+
+    let method = method.unwrap_or_default();
+
+    let worker_res = match method {
+        HTTPMethod::Get => get(preview_address, cookie, client)?,
+        HTTPMethod::Post => post(preview_address, cookie, client, body)?,
+    };
+    let msg = format!("Your worker responded with: {}", worker_res);
+    message::preview(&msg);
+
+    open(preview_host, https, script_id)?;
+
+    Ok(())
+}
+
+fn preview_without_auth(
     project: &Project,
     method: Result<HTTPMethod, failure::Error>,
     body: Option<String>,
@@ -67,6 +124,24 @@ pub fn preview(
     open(preview_host, https, script_id)?;
 
     Ok(())
+}
+
+pub fn preview(
+    method: Result<HTTPMethod, failure::Error>,
+    body: Option<String>,
+) -> Result<(), failure::Error> {
+    let project = Project::new()?;
+
+    match GlobalUser::new() {
+        Ok(user) => {
+            log::info!("running in authenticated mode");
+            return preview_with_auth(&project, &user, method, body);
+        }
+        Err(_e) => {
+            log::info!("running in unauthenticated mode");
+            return preview_without_auth(&project, method, body);
+        }
+    }
 }
 
 fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::Error> {

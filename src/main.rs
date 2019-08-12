@@ -194,7 +194,6 @@ fn run() -> Result<(), failure::Error> {
         commands::build(&project)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
 
         let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
 
@@ -203,7 +202,7 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        commands::preview(&project, method, body)?;
+        commands::preview(method, body)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
