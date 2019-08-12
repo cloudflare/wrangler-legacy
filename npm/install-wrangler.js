@@ -10,8 +10,8 @@ const { homedir } = require('os');
 
 const cwd = join(homedir(), ".wrangler");
 
-function getLatestRelease() {
-  return get("https://api.github.com/repos/cloudflare/wrangler/releases/latest")
+function getReleaseByTag(tag) {
+  return get(`https://api.github.com/repos/cloudflare/wrangler/releases/tags/v${tag}`)
     .then(res => get(res.data.assets_url))
     .then(res => res.data);
 }
@@ -60,7 +60,7 @@ if (!existsSync(cwd)) {
   mkdirSync(cwd);
 }
 
-getLatestRelease()
+getReleaseByTag("1.1.1")
   .then(assets => {
     const [compatibleAssets] = assets.filter(asset =>
       asset.name.endsWith(getPlatform() + ".tar.gz")
@@ -75,6 +75,4 @@ getLatestRelease()
   .then(() => {
     console.log("Wrangler has been installed!");
   })
-  .catch(err => {
-    throw err;
-  });
+  .catch(e => { console.error("Error fetching release", e.message); });

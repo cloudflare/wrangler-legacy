@@ -5,7 +5,9 @@
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 
-`wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare workers](https://workers.cloudflare.com/).
+`wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare Workers](https://workers.cloudflare.com/).
+
+![Wrangler Demo](/wrangler-demo.gif)
 
 ## Installation
 
@@ -43,11 +45,17 @@ cargo install wrangler
     with the `"type"` declared there.
 
   - ### 🔧 `config`
-    Configure your global Cloudflare user. You will need to pass your email and API key:
+    Configure your global Cloudflare user. This is an interactive command that will prompt you for your email and API key:
 
     ```
-    wrangler config <email> <api_key>
+    wrangler config
+    Enter email:
+    ...
+    Enter api key:
+    ...
     ```
+
+    You can also [use environment variables](#using-environment-variables) to configure these values.
 
   - ### ☁️ 🆙 `publish`
 
@@ -114,6 +122,17 @@ There are two types of configuration that `wrangler` uses: global user and per p
        When successful, this command will print out your user information, including the type of plan you
        are currently on.
 
+	- #### Using environment variables
+
+		You can also configure your global user with environment variables. This is the preferred method for using Wrangler in CI:
+
+	    ``` sh
+	    # e.g.
+	    CF_API_KEY=superlongapikey CF_EMAIL=user@mail.com wrangler publish --release
+	    # where
+	    # $CF_API_KEY -> your Cloudflare API key
+	    # $CF_EMAIL -> your Cloudflare account email
+	    ```
 
 - ### Per Project
 
@@ -190,6 +209,12 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     cargo install wrangler
     ```
 
+    Installing wrangler on linux requires some [OpenSSL-related packages](https://docs.rs/openssl/0.10.24/openssl/#automatic) to be installed. If you don't want to deal with this, you can use vendored OpenSSL.
+
+    ```
+    cargo install wrangler --features vendored-openssl
+    ```
+
 ### Manual Install:
 
 1. Download the binary tarball for your platform from our [releases page](https://github.com/cloudflare/wrangler/releases). You don't need to download wranglerjs, wrangler will install that for you.
@@ -199,17 +224,7 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
 
 ## Updating `wrangler`:
 
-   To get the latest version of Wrangler, using Cargo, run:
-
-   ```
-   cargo install wrangler --force
-   ```
-
-   To get the latest version of Wrangler, using NPM, run:
-
-   ```
-   npm install @cloudflare/wrangler
-   ```
+   You can find instructions on updating Wrangler [in the docs](https://workers.cloudflare.com/docs/quickstart/updating-the-cli/).
 
 ## ⚡ Quick Start
 
@@ -237,10 +252,10 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
     wrangler preview
     ```
 
-1. (optional) Configure with your Cloudflare account:
+1. (optional) Configure with your Cloudflare account (or [use environment variables](#using-environment-variables)):
 
     ```
-    wrangler config <email> <api_key>
+    wrangler config
     ```
 
     Configuring your account is required to use the `publish` step, which will push your Worker live to the

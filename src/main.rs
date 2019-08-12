@@ -165,11 +165,13 @@ fn run() -> Result<(), failure::Error> {
 
     if let Some(_matches) = matches.subcommand_matches("config") {
         println!("Enter email: ");
-        let email: String = read!("{}\n");
+        let mut email: String = read!("{}\n");
+        email.truncate(email.trim_end().len());
         println!("Enter api key: ");
-        let api_key: String = read!("{}\n");
+        let mut api_key: String = read!("{}\n");
+        api_key.truncate(api_key.trim_end().len());
 
-        commands::global_config(&email, &api_key)?;
+        commands::global_config(email, api_key)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let project_type = match matches.value_of("type") {

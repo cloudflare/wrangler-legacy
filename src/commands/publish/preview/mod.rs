@@ -6,13 +6,12 @@ use fiddle_messenger::*;
 mod http_method;
 pub use http_method::HTTPMethod;
 
-use crate::commands::build;
-use crate::commands::watch_and_build;
+use crate::commands;
+use crate::commands::publish;
 
 use serde::Deserialize;
 use uuid::Uuid;
 
-use super::upload_form::build_script_upload_form;
 use crate::http;
 use crate::settings::project::Project;
 use crate::terminal::message;
@@ -27,10 +26,9 @@ pub fn preview(
     body: Option<String>,
     livereload: bool,
 ) -> Result<(), failure::Error> {
-    build(&project)?; //do the initial build
+    commands::build(&project)?;
 
     let session = Uuid::new_v4().to_simple();
-
     let preview_host = "example.com";
     let https = true;
     let https_str = if https { "https://" } else { "http://" };
@@ -127,7 +125,7 @@ fn watch_for_changes(
     broadcaster: Sender,
 ) -> Result<(), failure::Error> {
     let (tx, rx) = channel();
-    watch_and_build(project, Some(tx))?;
+    commands::watch_and_build(project, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
         if let Ok(new_id) = upload_and_get_id(project) {
@@ -158,13 +156,19 @@ struct Preview {
 fn upload_and_get_id(project: &Project) -> Result<String, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     let client = http::client();
+    let script_upload_form = publish::build_script_upload_form(project)?;
 
     let res = client
         .post(create_address)
-        .multipart(build_script_upload_form(project)?)
-        .send();
+        .multipart(script_upload_form)
+        .send()?
+        .error_for_status();
 
-    let p: Preview = serde_json::from_str(&res?.text()?)?;
+    let text = &res?.text()?;
+    log::info!("Response from preview: {:?}", text);
+
+    let p: Preview =
+        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
 
     Ok(p.id)
 }
