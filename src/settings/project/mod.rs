@@ -76,21 +76,32 @@ impl Project {
 }
 
 impl TryFrom<HashMap<String, config::Value>> for Project {
-    type Error = &'static str;
+    type Error = String;
 
-    fn try_from(value: HashMap<String, config::Value>) -> Result<Self, Self::Error> {
-        // TODO implement try_from logic
-        let project_type = ProjectType::from_str("javascript").unwrap();
+    fn try_from(map: HashMap<String, config::Value>) -> Result<Self, Self::Error> {
+        let project_type = map
+            .get("type")
+            .ok_or("Environment does not have a `type`".to_string())?;
+        let project_type = project_type.clone().into_str().map_err(|e| e.to_string())?;
+        let project_type = ProjectType::from_str(&project_type).map_err(|e| e.to_string())?;
+        let name = map
+            .get("name")
+            .ok_or("Environment does not have a `name`")?;
+        let name = name.clone().into_str().map_err(|e| e.to_string())?;
+        let account_id = map
+            .get("account_id")
+            .ok_or("Environment does not have an `account_id`")?;
+        let account_id = account_id.clone().into_str().map_err(|e| e.to_string())?;
         Ok(Project {
-            name: "name".to_string(),
+            name: name,
             project_type: project_type,
-            private: Some(false),
-            zone_id: Some(String::new()),
-            account_id: String::new(),
-            route: Some(String::new()),
-            routes: None,
-            kv_namespaces: None,
-            webpack_config: None,
+            private: None, // TODO implement
+            zone_id: None, // TODO implement
+            account_id: account_id,
+            route: None,          // TODO implement
+            routes: None,         // TODO implement
+            kv_namespaces: None,  // TODO implement
+            webpack_config: None, // TODO implement
         })
     }
 }
@@ -138,7 +149,7 @@ id = "0f2ac74b498b48028cb68387c421e279"
     let project_type: Result<String, config::ConfigError> = s.get("type");
     if project_type.is_err() {
         failure::bail!(format!(
-            "{} Your `wrangler.toml` is missing a `type` field.",
+            "{0} Your `wrangler.toml` is missing a `type` field {0}",
             emoji::WARN
         ))
     }
@@ -164,24 +175,24 @@ id = "0f2ac74b498b48028cb68387c421e279"
     let environment = match environments.get(environment_name) {
         Some(e) => e,
         None => failure::bail!(format!(
-            "{} Your `wrangler.toml` does not contain a `{}` environment",
+            "{0} Your `wrangler.toml` does not contain a `{1}` environment {0}",
             emoji::WARN,
             environment_name
         )),
     };
+    let env_parse_err = format!(
+        "{0} Your `{1}` environment could not be parsed {0}",
+        emoji::WARN,
+        environment_name
+    );
     let environment_table = environment.clone().into_table();
     if environment_table.is_err() {
-        failure::bail!(format!(
-            "{} Your `{}` environment could not be parsed.",
-            emoji::WARN,
-            environment_name
-        ))
+        failure::bail!(env_parse_err)
     }
     let mut environment_table = environment_table.unwrap();
     environment_table.insert("type".to_string(), Value::new(None, project_type));
-    println!("{:#?}", environment_table);
-    // TODO handle parse error
-    Ok(Project::try_from(environment_table).unwrap())
+    let project = Project::try_from(environment_table).map_err(|e| failure::err_msg(e))?;
+    Ok(project)
 }
 
 #[cfg(test)]
