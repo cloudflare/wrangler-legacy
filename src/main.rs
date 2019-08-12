@@ -228,7 +228,6 @@ fn run() -> Result<(), failure::Error> {
             _ => false,
         };
 
-        commands::build(&project)?;
         commands::preview(&project, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
