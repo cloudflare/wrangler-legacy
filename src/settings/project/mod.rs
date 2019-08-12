@@ -8,13 +8,15 @@ use crate::terminal::emoji;
 use crate::terminal::message;
 
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use log::info;
 
-use config::{Config, Environment, File};
+use config::{Config, Environment, File, Value};
 use serde::{Deserialize, Serialize};
+
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Project {
@@ -113,6 +115,15 @@ id = "0f2ac74b498b48028cb68387c421e279"
         }
     }
 
+    let project_type: Result<String, config::ConfigError> = s.get("type");
+    if project_type.is_err() {
+        failure::bail!(format!(
+            "{} Your `wrangler.toml` is missing a `type` field.",
+            emoji::WARN
+        ))
+    }
+    let project_type = project_type.unwrap();
+
     let environments = s.get_table("env");
     if environments.is_err() {
         let project: Result<Project, config::ConfigError> = s.try_into();
@@ -126,14 +137,6 @@ id = "0f2ac74b498b48028cb68387c421e279"
         });
     }
     let environments = environments.unwrap();
-    let project_type: Result<&str, config::ConfigError> = s.get("type");
-    if project_type.is_err() {
-        failure::bail!(format!(
-            "{} Your `wrangler.toml` is missing a `type` field.",
-            emoji::WARN
-        ))
-    }
-    let project_type = project_type.unwrap();
     let environment_name = match environment_name {
         None => "default",
         Some(x) => x,
@@ -154,11 +157,19 @@ id = "0f2ac74b498b48028cb68387c421e279"
             environment_name
         ))
     }
-    let environment_table = environment_table.unwrap().insert(
-        "type".to_string(),
-        config::Value::new(None, project_type.to_string()),
-    );
+    let mut environment_table = environment_table.unwrap();
+    environment_table.insert("type".to_string(), Value::new(None, project_type));
     println!("{:#?}", environment_table);
+    let project = environment_table.try_from()?;
+    // let project: Result<Project, config::ConfigError> = environment_table.try_into();
+    //     return project.map_err(|e| {
+    //         let msg = format!(
+    //             "{} Your project config has an error, check your `wrangler.toml`: {}",
+    //             emoji::WARN,
+    //             e
+    //         );
+    //         failure::err_msg(msg)
+    //     });
     //TODO other create project logic
     failure::bail!(":(")
 }
