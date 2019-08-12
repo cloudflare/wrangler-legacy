@@ -224,17 +224,7 @@ Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and 
 
 ## Updating `wrangler`:
 
-   To get the latest version of Wrangler, using Cargo, run:
-
-   ```
-   cargo install wrangler --force
-   ```
-
-   To get the latest version of Wrangler, using NPM, run:
-
-   ```
-   npm install @cloudflare/wrangler
-   ```
+   You can find instructions on updating Wrangler [in the docs](https://workers.cloudflare.com/docs/quickstart/updating-the-cli/).
 
 ## ⚡ Quick Start
 
