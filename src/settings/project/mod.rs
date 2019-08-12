@@ -8,15 +8,15 @@ use crate::terminal::emoji;
 use crate::terminal::message;
 
 use std::collections::HashMap;
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use log::info;
 
 use config::{Config, Environment, File, Value};
 use serde::{Deserialize, Serialize};
-
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Project {
@@ -72,6 +72,26 @@ impl Project {
 
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
         self.kv_namespaces.clone().unwrap_or_else(Vec::new)
+    }
+}
+
+impl TryFrom<HashMap<String, config::Value>> for Project {
+    type Error = &'static str;
+
+    fn try_from(value: HashMap<String, config::Value>) -> Result<Self, Self::Error> {
+        // TODO implement try_from logic
+        let project_type = ProjectType::from_str("javascript").unwrap();
+        Ok(Project {
+            name: "name".to_string(),
+            project_type: project_type,
+            private: Some(false),
+            zone_id: Some(String::new()),
+            account_id: String::new(),
+            route: Some(String::new()),
+            routes: None,
+            kv_namespaces: None,
+            webpack_config: None,
+        })
     }
 }
 
@@ -160,18 +180,8 @@ id = "0f2ac74b498b48028cb68387c421e279"
     let mut environment_table = environment_table.unwrap();
     environment_table.insert("type".to_string(), Value::new(None, project_type));
     println!("{:#?}", environment_table);
-    let project = environment_table.try_from()?;
-    // let project: Result<Project, config::ConfigError> = environment_table.try_into();
-    //     return project.map_err(|e| {
-    //         let msg = format!(
-    //             "{} Your project config has an error, check your `wrangler.toml`: {}",
-    //             emoji::WARN,
-    //             e
-    //         );
-    //         failure::err_msg(msg)
-    //     });
-    //TODO other create project logic
-    failure::bail!(":(")
+    // TODO handle parse error
+    Ok(Project::try_from(environment_table).unwrap())
 }
 
 #[cfg(test)]
