@@ -75,74 +75,6 @@ impl Project {
     }
 }
 
-impl TryFrom<HashMap<String, config::Value>> for Project {
-    type Error = String;
-
-    fn try_from(map: HashMap<String, config::Value>) -> Result<Self, Self::Error> {
-        let project_type = map
-            .get("type")
-            .ok_or("Environment does not have a `type`".to_string())?;
-        let project_type = project_type.clone().into_str().map_err(|e| e.to_string())?;
-        let project_type = ProjectType::from_str(&project_type).map_err(|e| e.to_string())?;
-        let name = map
-            .get("name")
-            .ok_or("Environment does not have a `name`")?;
-        let name = name.clone().into_str().map_err(|e| e.to_string())?;
-        let account_id = map
-            .get("account_id")
-            .ok_or("Environment does not have an `account_id`")?;
-        let account_id = account_id.clone().into_str().map_err(|e| e.to_string())?;
-        let private = map
-            .get("private")
-            .map(|p| p.clone().into_bool().map_err(|e| e.to_string()))
-            .transpose()?;
-        let zone_id = map
-            .get("zone_id")
-            .map(|z| z.clone().into_str().map_err(|e| e.to_string()))
-            .transpose()?;
-        let route = map
-            .get("route")
-            .map(|r| r.clone().into_str().map_err(|e| e.to_string()))
-            .transpose()?;
-        println!("{:#?}", map.get("routes"));
-        let routes = map
-            .get("routes")
-            .map(|r| r.clone().into_table().map_err(|e| e.to_string()))
-            .transpose()?;
-        // if routes.is_some() {
-        //     let routes_map: HashMap<String, String> = routes.map(|r| {
-        //         let new_routes = HashMap::new();
-        //         for (k, v) in r.iter() {
-        //             let value = v.clone().into_str().map_err(|e| e.to_string());
-        //             new_routes.insert(k, value);
-        //         }
-        //         new_routes
-        //     });
-        //     let routes = Some(routes_map);
-        // }
-        // println!("{:#?}", routes);
-        let kv_namespaces = map
-            .get("kv_namespaces")
-            .map(|k| k.clone().into_array().map_err(|e| e.to_string()))
-            .transpose()?;
-        let webpack_config = map
-            .get("webpack_config")
-            .map(|w| w.clone().into_str().map_err(|e| e.to_string()))
-            .transpose()?;
-        Ok(Project {
-            name,
-            project_type,
-            private,
-            zone_id,
-            account_id,
-            route,
-            routes: None,        // TODO implement
-            kv_namespaces: None, // TODO implement
-            webpack_config,
-        })
-    }
-}
-
 fn get_project_config(
     environment_name: Option<&str>,
     config_path: &Path,
@@ -183,15 +115,6 @@ id = "0f2ac74b498b48028cb68387c421e279"
         }
     }
 
-    let project_type: Result<String, config::ConfigError> = s.get("type");
-    if project_type.is_err() {
-        failure::bail!(format!(
-            "{0} Your `wrangler.toml` is missing a `type` field {0}",
-            emoji::WARN
-        ))
-    }
-    let project_type = project_type.unwrap();
-
     let environments = s.get_table("env");
     if environments.is_err() {
         let project: Result<Project, config::ConfigError> = s.try_into();
@@ -217,18 +140,8 @@ id = "0f2ac74b498b48028cb68387c421e279"
             environment_name
         )),
     };
-    let env_parse_err = format!(
-        "{0} Your `{1}` environment could not be parsed {0}",
-        emoji::WARN,
-        environment_name
-    );
-    let environment_table = environment.clone().into_table();
-    if environment_table.is_err() {
-        failure::bail!(env_parse_err)
-    }
-    let mut environment_table = environment_table.unwrap();
-    environment_table.insert("type".to_string(), Value::new(None, project_type));
-    let project = Project::try_from(environment_table).map_err(|e| failure::err_msg(e))?;
+
+    let project = environment.clone().try_into()?;
     Ok(project)
 }
 

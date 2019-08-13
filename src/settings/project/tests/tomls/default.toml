@@ -1,6 +1,5 @@
-type = "webpack"
-
 [env.default]
+type = "webpack"
 name = "worker"
 zone_id = ""
 private = false

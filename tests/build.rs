@@ -16,11 +16,7 @@ macro_rules! multiple_env_settings {
         let mut file = File::create(file_path).unwrap();
         let content = format!(
             r#"
-            name = "default-test"
-            zone_id = ""
-            account_id = ""
-            {}
-            [env.prod]
+            [env.default]
             name = "prod-test"
             zone_id = ""
             account_id = ""
@@ -31,7 +27,7 @@ macro_rules! multiple_env_settings {
             account_id = ""
             {}
         "#,
-            $x, $x, $x
+            $x, $x
         );
         file.write_all(content.as_bytes()).unwrap();
     };
@@ -52,19 +48,6 @@ macro_rules! single_env_settings {
         );
         file.write_all(content.as_bytes()).unwrap();
     };
-}
-
-#[test]
-fn it_builds_with_multiple_environments_single_js() {
-    let fixture = "webpack_simple_js";
-    create_temporary_copy(fixture);
-    multiple_env_settings! {fixture, r#"
-        type = "Webpack"
-    "#};
-
-    build(fixture);
-    assert!(fixture_out_path(fixture).join("script.js").exists());
-    cleanup(fixture);
 }
 
 #[test]
