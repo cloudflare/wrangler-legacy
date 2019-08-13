@@ -17,11 +17,11 @@ jobs:
       - script: rustup component add rustfmt
         displayName: rustup component add rustfmt
       - script: cargo fmt --all -- --check
-        displayName: "cargo fmt"
+        displayName: "cargo fmt --all -- --check"
       - script: rustup component add clippy
         displayName: rustup component add clippy
       - script: cargo clippy
-        displayName: "cargo clippy"
+        displayName: "cargo clippy --all --all-features -- -D warnings"
 
   - job: test_wrangler_windows
     displayName: "Run wrangler tests (Windows)"
