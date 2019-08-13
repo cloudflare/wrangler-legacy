@@ -13,6 +13,7 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
+use reqwest::Client;
 
 // Using this instead of just `https://cloudflareworkers.com` returns just the worker response to the CLI
 const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
@@ -30,6 +31,9 @@ impl From<ApiPreview> for Preview {
     }
 }
 
+// When making authenticated preview requests, we go through the v4 Workers API rather than
+// hitting the preview service directly, so its response is formatted like a v4 API response.
+// These structs are here to convert from this format into the Preview defined above.
 #[derive(Debug, Deserialize)]
 struct ApiPreview {
     pub preview_id: String,
@@ -41,20 +45,104 @@ struct V4ApiResponse {
 }
 
 pub fn preview(
-    project: &Project,
+    mut project: Project,
     user: Option<GlobalUser>,
     method: HTTPMethod,
     body: Option<String>,
 ) -> Result<(), failure::Error> {
-    commands::build(&project)?;
+    let client: Client;
 
-    let client = match &user {
-        Some(user) => http::auth_client(&user),
-        None => http::client(),
+    let preview = match &user {
+        Some(user) => {
+            log::info!("Running in Auth'd mode");
+
+            project.validate(false)?;
+
+            commands::build(&project)?;
+            client = http::auth_client(&user);
+
+            authenticated_upload(&client, &project)?
+        }
+        None => {
+            log::info!("Running in Un-auth'd mode");
+
+            // KV namespaces are not supported by the preview service unless you authenticate
+            // so we omit them and provide the user with a little guidance. We don't error out, though,
+            // because there are valid workarounds for this for testing purposes.
+            if project.kv_namespaces.is_some() {
+                message::warn("KV Namespaces are not supported in unauthenticated mode");
+                message::help(
+                    "Run wrangler config or set $CF_API_KEY and $CF_EMAIL to configure your user.",
+                );
+                project.kv_namespaces = None;
+            }
+
+            commands::build(&project)?;
+            client = http::client();
+
+            unauthenticated_upload(&client, &project)?
+        }
     };
 
-    let preview = upload_to_preview(&project, user, &client)?;
+    let worker_res = call_worker(&client, preview, method, body)?;
 
+    let msg = format!("Your worker responded with: {}", worker_res);
+    message::preview(&msg);
+
+    Ok(())
+}
+
+fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+    let create_address = format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
+        project.account_id, project.name
+    );
+    log::info!("address: {}", create_address);
+
+    let script_upload_form = publish::build_script_upload_form(&project)?;
+
+    let mut res = client
+        .post(&create_address)
+        .multipart(script_upload_form)
+        .send()?
+        .error_for_status()?;
+
+    let text = &res.text()?;
+    log::info!("Response from preview: {:#?}", text);
+
+    let response: V4ApiResponse =
+        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+
+    Ok(Preview::from(response.result))
+}
+
+fn unauthenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+    let create_address = "https://cloudflareworkers.com/script";
+    log::info!("address: {}", create_address);
+
+    let script_upload_form = publish::build_script_upload_form(project)?;
+
+    let mut res = client
+        .post(create_address)
+        .multipart(script_upload_form)
+        .send()?
+        .error_for_status()?;
+
+    let text = &res.text()?;
+    log::info!("Response from preview: {:#?}", text);
+
+    let preview: Preview =
+        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+
+    Ok(preview)
+}
+
+fn call_worker(
+    client: &Client,
+    preview: Preview,
+    method: HTTPMethod,
+    body: Option<String>,
+) -> Result<String, failure::Error> {
     let session = Uuid::new_v4().to_simple();
 
     let preview_host = "example.com";
@@ -66,55 +154,14 @@ pub fn preview(
         script_id, session, https, preview_host
     );
 
-    let worker_res = match method {
+    let res = match method {
         HTTPMethod::Get => get(cookie, &client)?,
         HTTPMethod::Post => post(cookie, &client, body)?,
     };
-    let msg = format!("Your worker responded with: {}", worker_res);
-    message::preview(&msg);
 
     open(preview_host, https, script_id)?;
 
-    Ok(())
-}
-
-fn upload_to_preview(
-    project: &Project,
-    user: Option<GlobalUser>,
-    client: &reqwest::Client,
-) -> Result<Preview, failure::Error> {
-    let create_address = match &user {
-        Some(_user) => format!(
-            "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
-            project.account_id, project.name
-        ),
-        None => "https://cloudflareworkers.com/script".to_string(),
-    };
-    log::info!("address: {}", create_address);
-
-    let script_upload_form = publish::build_script_upload_form(project)?;
-
-    let mut res = client
-        .post(&create_address)
-        .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
-
-    let text = &res.text()?;
-    log::info!("Response from preview: {:#?}", text);
-
-    match user {
-        Some(_user) => {
-            let response: V4ApiResponse = serde_json::from_str(text)
-                .expect("could not create a script on cloudflareworkers.com");
-
-            Ok(Preview::from(response.result))
-        }
-        None => {
-            Ok(serde_json::from_str(text)
-                .expect("could not create a script on cloudflareworkers.com"))
-        }
-    }
+    Ok(res)
 }
 
 fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::Error> {

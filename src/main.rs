@@ -195,6 +195,9 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
+
+        // the preview command can be called with or without a Global User having been config'd
+        // so we convert this Result into an Option
         let user = settings::global_user::GlobalUser::new().ok();
 
         let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
@@ -204,7 +207,7 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        commands::preview(&project, user, method, body)?;
+        commands::preview(project, user, method, body)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
