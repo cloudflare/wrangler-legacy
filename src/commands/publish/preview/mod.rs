@@ -14,6 +14,8 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
+const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
+
 #[derive(Debug, Deserialize)]
 struct Preview {
     pub id: String,
@@ -58,7 +60,6 @@ pub fn preview(
     let https = 1;
     let script_id = &preview.id;
 
-    let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
     let cookie = format!(
         "__ew_fiddle_preview={}{}{}{}",
         script_id, session, https, preview_host
@@ -67,8 +68,8 @@ pub fn preview(
     let method = method.unwrap_or_default();
 
     let worker_res = match method {
-        HTTPMethod::Get => get(preview_address, cookie, &client)?,
-        HTTPMethod::Post => post(preview_address, cookie, &client, body)?,
+        HTTPMethod::Get => get(cookie, &client)?,
+        HTTPMethod::Post => post(cookie, &client, body)?,
     };
     let msg = format!("Your worker responded with: {}", worker_res);
     message::preview(&msg);
@@ -144,32 +145,27 @@ fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::E
     Ok(())
 }
 
-fn get(
-    preview_address: &str,
-    cookie: String,
-    client: &reqwest::Client,
-) -> Result<String, failure::Error> {
-    let res = client.get(preview_address).header("Cookie", cookie).send();
-    let msg = format!("GET {}", preview_address);
+fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Error> {
+    let res = client.get(PREVIEW_ADDRESS).header("Cookie", cookie).send();
+    let msg = format!("GET {}", PREVIEW_ADDRESS);
     message::preview(&msg);
     Ok(res?.text()?)
 }
 
 fn post(
-    preview_address: &str,
     cookie: String,
     client: &reqwest::Client,
     body: Option<String>,
 ) -> Result<String, failure::Error> {
     let res = match body {
         Some(s) => client
-            .post(preview_address)
+            .post(PREVIEW_ADDRESS)
             .header("Cookie", cookie)
             .body(s)
             .send(),
-        None => client.post(preview_address).header("Cookie", cookie).send(),
+        None => client.post(PREVIEW_ADDRESS).header("Cookie", cookie).send(),
     };
-    let msg = format!("POST {}", preview_address);
+    let msg = format!("POST {}", PREVIEW_ADDRESS);
     message::preview(&msg);
     Ok(res?.text()?)
 }
