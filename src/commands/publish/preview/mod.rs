@@ -19,6 +19,24 @@ struct Preview {
     pub id: String,
 }
 
+impl From<ApiPreview> for Preview {
+    fn from(api_preview: ApiPreview) -> Preview {
+        Preview {
+            id: api_preview.preview_id,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct ApiPreview {
+    pub preview_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct V4ApiResponse {
+    pub result: ApiPreview,
+}
+
 pub fn preview(
     project: &Project,
     user: Option<GlobalUser>,
@@ -72,6 +90,7 @@ fn upload_to_preview(
         ),
         None => "https://cloudflareworkers.com/script".to_string(),
     };
+    log::info!("address: {}", create_address);
 
     let script_upload_form = publish::build_script_upload_form(project)?;
 
@@ -82,12 +101,20 @@ fn upload_to_preview(
         .error_for_status()?;
 
     let text = &res.text()?;
-    log::info!("Response from preview: {:?}", text);
+    log::info!("Response from preview: {:#?}", text);
 
-    let preview: Preview =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+    match user {
+        Some(_user) => {
+            let response: V4ApiResponse = serde_json::from_str(text)
+                .expect("could not create a script on cloudflareworkers.com");
 
-    Ok(preview)
+            Ok(Preview::from(response.result))
+        }
+        None => {
+            Ok(serde_json::from_str(text)
+                .expect("could not create a script on cloudflareworkers.com"))
+        }
+    }
 }
 
 fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::Error> {
