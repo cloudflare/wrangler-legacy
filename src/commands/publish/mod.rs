@@ -20,7 +20,7 @@ use crate::terminal::message;
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
 
-    validate_project(project, release)?;
+    project.validate(release)?;
     commands::build(&project)?;
     publish_script(&user, &project, release)?;
     if release {
@@ -113,69 +113,5 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
             res.text()?
         )
     }
-    Ok(())
-}
-
-fn validate_project(project: &Project, release: bool) -> Result<(), failure::Error> {
-    let mut missing_fields = Vec::new();
-
-    if project.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
-    if project.name.is_empty() {
-        missing_fields.push("name")
-    };
-
-    match &project.kv_namespaces {
-        Some(kv_namespaces) => {
-            for kv in kv_namespaces {
-                if kv.binding.is_empty() {
-                    missing_fields.push("kv-namespace binding")
-                }
-
-                if kv.id.is_empty() {
-                    missing_fields.push("kv-namespace id")
-                }
-            }
-        }
-        None => {}
-    }
-
-    let destination = if release {
-        //check required fields for release
-        if project
-            .zone_id
-            .as_ref()
-            .unwrap_or(&"".to_string())
-            .is_empty()
-        {
-            missing_fields.push("zone_id")
-        };
-        if project.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
-            missing_fields.push("route")
-        };
-        //zoned deploy destination
-        "a route"
-    } else {
-        //zoneless deploy destination
-        "your subdomain"
-    };
-
-    let (field_pluralization, is_are) = match missing_fields.len() {
-        n if n >= 2 => ("fields", "are"),
-        1 => ("field", "is"),
-        _ => ("", ""),
-    };
-
-    if !missing_fields.is_empty() {
-        failure::bail!(
-            "Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
-            field_pluralization,
-            missing_fields,
-            is_are,
-            destination
-        );
-    };
-
     Ok(())
 }
