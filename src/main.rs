@@ -197,7 +197,7 @@ fn run() -> Result<(), failure::Error> {
         let project = settings::project::Project::new()?;
         let user = settings::global_user::GlobalUser::new().ok();
 
-        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
+        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),

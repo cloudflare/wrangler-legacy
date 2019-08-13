@@ -14,6 +14,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
+// Using this instead of just `https://cloudflareworkers.com` returns just the worker response to the CLI
 const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
 
 #[derive(Debug, Deserialize)]
@@ -42,7 +43,7 @@ struct V4ApiResponse {
 pub fn preview(
     project: &Project,
     user: Option<GlobalUser>,
-    method: Result<HTTPMethod, failure::Error>,
+    method: HTTPMethod,
     body: Option<String>,
 ) -> Result<(), failure::Error> {
     commands::build(&project)?;
@@ -64,8 +65,6 @@ pub fn preview(
         "__ew_fiddle_preview={}{}{}{}",
         script_id, session, https, preview_host
     );
-
-    let method = method.unwrap_or_default();
 
     let worker_res = match method {
         HTTPMethod::Get => get(cookie, &client)?,
