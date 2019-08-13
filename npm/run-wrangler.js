@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { join, resolve } = require("path");
+const { join } = require("path");
 const { spawnSync } = require("child_process");
-const { homedir } = require('os');
+const { homedir } = require("os");
 
 const cwd = join(homedir(), ".wrangler");
 const bin = join(cwd, "out", "wrangler");
@@ -12,4 +12,4 @@ const opts = {
   cwd: process.cwd(),
   stdio: "inherit"
 };
-spawnSync(bin, args, opts);
+process.exit(spawnSync(bin, args, opts).status);
