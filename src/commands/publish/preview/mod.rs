@@ -146,7 +146,7 @@ fn watch_for_changes(
 
             match broadcaster.send(serde_json::to_string(&msg)?) {
                 Ok(_) => {
-                    message::preview("Sent new id to preview!");
+                    message::preview("Updating preview with changes");
                 }
                 Err(_e) => message::user_error("communication with preview failed"),
             }
