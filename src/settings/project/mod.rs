@@ -86,11 +86,11 @@ impl Project {
             Some(kv_namespaces) => {
                 for kv in kv_namespaces {
                     if kv.binding.is_empty() {
-                        missing_fields.push("kv-namespace binding")
+                        missing_fields.push("kv-namespaces binding")
                     }
 
                     if kv.id.is_empty() {
-                        missing_fields.push("kv-namespace id")
+                        missing_fields.push("kv-namespaces id")
                     }
                 }
             }

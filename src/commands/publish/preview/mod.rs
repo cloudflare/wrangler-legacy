@@ -54,7 +54,7 @@ pub fn preview(
 
     let preview = match &user {
         Some(user) => {
-            log::info!("Running in Auth'd mode");
+            log::info!("GlobalUser set, running with authentication");
 
             project.validate(false)?;
 
@@ -64,15 +64,15 @@ pub fn preview(
             authenticated_upload(&client, &project)?
         }
         None => {
-            log::info!("Running in Un-auth'd mode");
+            log::info!("GlobalUser not set, running without authentication");
 
             // KV namespaces are not supported by the preview service unless you authenticate
             // so we omit them and provide the user with a little guidance. We don't error out, though,
             // because there are valid workarounds for this for testing purposes.
             if project.kv_namespaces.is_some() {
-                message::warn("KV Namespaces are not supported in unauthenticated mode");
+                message::warn("KV Namespaces are not supported without setting API credentials");
                 message::help(
-                    "Run wrangler config or set $CF_API_KEY and $CF_EMAIL to configure your user.",
+                    "Run `wrangler config` or set $CF_API_KEY and $CF_EMAIL to configure your user.",
                 );
                 project.kv_namespaces = None;
             }
