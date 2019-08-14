@@ -1,5 +1,74 @@
 # Changelog
 
+## 💆🏻‍♂️ 1.2.0
+
+- ### Features
+
+  - **Implement live previewing for wrangler - [xortive], [pull/451]**
+
+    The `wrangler preview` command now supports live previewing! As you develop your project, you can start up a link between your local codebase and the preview service by running `wrangler preview --watch`. Any updates to your project will be passed to the preview service, allowing you to instantly see any changes to your project. This is a _massive_ improvement to the development process for building applications with Workers, and we're super excited to ship it!
+
+    A huge shout-out to @xortive, who almost single-handedly built this feature during his summer internship at Cloudflare, over the last few months. Amazing work! 😍
+
+    [xortive]: https://github.com/xortive
+    [pull/451]: https://github.com/cloudflare/wrangler/pull/451
+
+  - **Authenticate calls to preview service when possible - [ashleymichal], [issue/423] [issue/431] [pull/429]**
+
+    This PR allows developers to use the preview service with account and user-specific functionality, such as KV support inside of the preview service. Previously, attempting to preview a Workers project with KV bindings would cause an error - this PR fixes that, by allowing `wrangler preview` to make authenticated calls to the preview service.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [issue/423]: https://github.com/cloudflare/wrangler/issues/423
+    [issue/431]: https://github.com/cloudflare/wrangler/issues/431
+    [pull/429]: https://github.com/cloudflare/wrangler/pull/429
+
+- ### Documentation
+
+  - **Cleanup README and link to workers docs - [EverlastingBugstopper], [pull/440]**
+
+    This PR cleans up the README and adds additional links to the [Workers documentation](https://workers.cloudflare.com/docs) to improve consistency around Wrangler documentation.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/440]: https://github.com/cloudflare/wrangler/pull/440
+
+  - **Link to docs for update instructions - [ashleymichal], [pull/422]**
+
+    We've migrated the "Updating `wrangler`" section of the README to the [Workers documentation](https://workers.cloudflare.com/docs/quickstart/updating-the-cli).
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/422]: https://github.com/cloudflare/wrangler/pull/422
+
+- ### Fixes
+
+  - **Fix ignoring exit code from spawnSync - run-wrangler.js - [defjosiah], [issue/433] [issue/335] [pull/432]**
+
+    This PR fixes an issue where an NPM-installed `wrangler` would _always_ return an exit code of 0, even when `wrangler` had errored. This improves `wrangler`'s ability to be scripted, e.g. in CI projects.
+
+    [defjosiah]: https://github.com/defjosiah
+    [issue/433]: https://github.com/cloudflare/wrangler/issues/433
+    [issue/335]: https://github.com/cloudflare/wrangler/issues/335
+    [pull/432]: https://github.com/cloudflare/wrangler/pull/432
+
+- ### Maintenance
+
+  - **[chore] Deny clippy warnings in CI, run rustfmt in --check mode - [xortive], [issue/426] [pull/435]**
+
+    This PR updates some of the CI steps for testing Wrangler, to make sure that [rust-clippy](https://github.com/rust-lang/rust-clippy) warnings cause CI to fail. This helps Wrangler code stay well-written and consistent - hooray!
+
+    [xortive]: https://github.com/xortive
+    [issue/426]: https://github.com/cloudflare/wrangler/issues/426
+    [pull/435]: https://github.com/cloudflare/wrangler/pull/435
+
+  - **Nits: fix clippy warnings - [xortive], [pull/427]**
+
+    [xortive]: https://github.com/xortive
+    [pull/427]: https://github.com/cloudflare/wrangler/pull/427
+
+  - **Add repository link to Cargo.toml - [56quarters], [pull/425]**
+
+    [56quarters]: https://github.com/56quarters
+    [pull/425]: https://github.com/cloudflare/wrangler/pull/425
+
 ## 🏄‍♀️ 1.1.1
 
 - ### Features
