@@ -64,9 +64,13 @@ impl Project {
         Ok(project)
     }
 
-    pub fn new(environment: Option<&str>) -> Result<Self, failure::Error> {
+    pub fn new() -> Result<Self, failure::Error> {
         let config_path = Path::new("./wrangler.toml");
+        get_project_config(None, config_path)
+    }
 
+    pub fn new_from_environment(environment: Option<&str>) -> Result<Self, failure::Error> {
+        let config_path = Path::new("./wrangler.toml");
         get_project_config(environment, config_path)
     }
 

@@ -190,11 +190,11 @@ fn run() -> Result<(), failure::Error> {
         commands::init(name, project_type)?;
     } else if matches.subcommand_matches("build").is_some() {
         info!("Getting project settings");
-        let project = settings::project::Project::new(None)?;
+        let project = settings::project::Project::new()?;
         commands::build(&project)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
-        let project = settings::project::Project::new(None)?;
+        let project = settings::project::Project::new()?;
 
         let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
 
@@ -211,7 +211,7 @@ fn run() -> Result<(), failure::Error> {
         commands::whoami(&user);
     } else if let Some(matches) = matches.subcommand_matches("publish") {
         info!("Getting project settings");
-        let project = settings::project::Project::new(None)?;
+        let project = settings::project::Project::new()?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -225,7 +225,7 @@ fn run() -> Result<(), failure::Error> {
         commands::publish(&user, &project, release)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
-        let project = settings::project::Project::new(None)?;
+        let project = settings::project::Project::new()?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
