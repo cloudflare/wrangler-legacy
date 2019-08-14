@@ -1,4 +1,4 @@
-use cloudflare::apiclient::APIClient;
+use cloudflare::apiclient::ApiClient;
 
 use cloudflare::workerskv::create_namespace::CreateNamespace;
 use cloudflare::workerskv::create_namespace::CreateNamespaceParams;

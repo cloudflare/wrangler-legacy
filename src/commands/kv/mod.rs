@@ -1,7 +1,7 @@
 use cloudflare::auth::Credentials;
-use cloudflare::response::APIFailure;
+use cloudflare::response::ApiFailure;
 
-use cloudflare::HTTPAPIClient;
+use cloudflare::HttpApiClient;
 
 use crate::settings;
 use crate::terminal::message;
@@ -16,10 +16,10 @@ pub use delete_namespace::delete_namespace;
 pub use list_namespaces::list_namespaces;
 pub use rename_namespace::rename_namespace;
 
-fn api_client() -> Result<HTTPAPIClient, failure::Error> {
+fn api_client() -> Result<HttpApiClient, failure::Error> {
     let user = settings::global_user::GlobalUser::new()?;
 
-    Ok(HTTPAPIClient::new(Credentials::from(user)))
+    Ok(HttpApiClient::new(Credentials::from(user)))
 }
 
 fn account_id() -> Result<String, failure::Error> {
@@ -31,10 +31,10 @@ fn account_id() -> Result<String, failure::Error> {
     Ok(project.account_id)
 }
 
-fn print_error(e: APIFailure) {
+fn print_error(e: ApiFailure) {
     match e {
-        APIFailure::Error(_status, errors) => {
-            for error in errors {
+        ApiFailure::Error(_status, api_errors) => {
+            for error in api_errors.errors {
                 message::warn(&format!("Error {}: {}", error.code, error.message,));
 
                 let suggestion = help(error.code);
@@ -43,7 +43,7 @@ fn print_error(e: APIFailure) {
                 }
             }
         }
-        APIFailure::Invalid(reqwest_err) => message::warn(&format!("Error: {}", reqwest_err)),
+        ApiFailure::Invalid(reqwest_err) => message::warn(&format!("Error: {}", reqwest_err)),
     }
 }
 
