@@ -56,12 +56,22 @@ pub fn preview(
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
 
-            super::validate_project(&project, false)?;
-
             commands::build(&project)?;
             client = http::auth_client(&user);
 
-            authenticated_upload(&client, &project)?
+            let missing_fields = validate(&project);
+
+            if !missing_fields.is_empty() {
+                message::warn(&format!(
+                    "Your wrangler.toml is missing the following fields: {:?}",
+                    missing_fields
+                ));
+                message::info("Falling back to unauthenticated preview.");
+
+                unauthenticated_upload(&client, &project)?
+            } else {
+                authenticated_upload(&client, &project)?
+            }
         }
         None => {
             log::info!("GlobalUser not set, running without authentication");
@@ -90,6 +100,34 @@ pub fn preview(
     message::preview(&msg);
 
     Ok(())
+}
+
+fn validate(project: &Project) -> Vec<&str> {
+    let mut missing_fields = Vec::new();
+
+    if project.account_id.is_empty() {
+        missing_fields.push("account_id")
+    };
+    if project.name.is_empty() {
+        missing_fields.push("name")
+    };
+
+    match &project.kv_namespaces {
+        Some(kv_namespaces) => {
+            for kv in kv_namespaces {
+                if kv.binding.is_empty() {
+                    missing_fields.push("kv-namespace binding")
+                }
+
+                if kv.id.is_empty() {
+                    missing_fields.push("kv-namespace id")
+                }
+            }
+        }
+        None => {}
+    }
+
+    missing_fields
 }
 
 fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
