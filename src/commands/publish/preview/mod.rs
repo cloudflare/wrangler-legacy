@@ -49,15 +49,25 @@ pub fn preview(
     };
 
     if livereload {
-        let ws_port: u16 = 8025;
+        let mut ws_port: u16 = 8025;
+
+        let server = loop {
+            let result = WebSocket::new(|out| FiddleMessageServer { out })?
+                .bind(format!("127.0.0.1:{}", ws_port)); //explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
+
+            match result {
+                Ok(server) => break server,
+                //if 65535-8025 ports are filled, this will cause a panic due to the overflow
+                //if you are using that many ports, i salute you
+                Err(_) => ws_port += 1,
+            }
+        };
 
         open_browser(&format!(
             "https://cloudflareworkers.com/ui/staging/index.html?wrangler_session_id={}\\&wrangler_ws_port={}\\&hide_editor#{}:{}{}",
             &session.to_string(), ws_port, script_id, https_str, preview_host,
         ))?;
 
-        let server = WebSocket::new(|out| FiddleMessageServer { out })?
-            .bind(format!("localhost:{}", ws_port))?;
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
         watch_for_changes(project, session.to_string(), broadcaster)?;
