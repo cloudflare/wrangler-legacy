@@ -47,6 +47,9 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
+            let package = Package::new("./")?;
+            let entry = package.main()?;
+
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = channel();
                 let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
@@ -55,7 +58,8 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                 path.push("src");
 
                 watcher.watch(&path, RecursiveMode::Recursive).unwrap();
-                message::info(&format!("watching {:?}", &path));
+                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
+                message::info(&format!("watching {:?} and {:?}", &path, &entry));
 
                 loop {
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
