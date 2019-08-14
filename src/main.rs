@@ -93,8 +93,14 @@ fn run() -> Result<(), failure::Error> {
                 .about(&*format!(
                     "{} Build your worker",
                     emoji::CRAB
-                )
-            ),
+                ))
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to build")
+                        .short("e")
+                        .long("environment")
+                        .takes_value(true)
+                ),
         )
         .subcommand(
             SubCommand::with_name("preview")
@@ -111,19 +117,35 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("body")
                         .help("Body string to post to your preview worker request")
                         .index(2),
+                )
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to preview")
+                        .short("e")
+                        .long("environment")
+                        .takes_value(true)
                 ),
         )
         .subcommand(
-            SubCommand::with_name("publish").about(&*format!(
-                "{} Publish your worker to the orange cloud",
-                emoji::UP
-            ))
-            .arg(
-                Arg::with_name("release")
-                    .long("release")
-                    .takes_value(false)
-                    .help("should this be published to a workers.dev subdomain or a domain name you have registered"),
-             ),
+            SubCommand::with_name("publish")
+                .about(&*format!(
+                    "{} Publish your worker to the orange cloud",
+                    emoji::UP
+                ))
+                .arg(
+                    Arg::with_name("release")
+                        .long("release")
+                        .takes_value(false)
+                        .help("[this will be deprecated, use --env instead]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
+                )
+                .arg(
+                    Arg::with_name("env")
+                        .help("environments to publish to")
+                        .short("e")
+                        .long("environment")
+                        .takes_value(true)
+                        .multiple(true)
+                ),
         )
         .subcommand(
             SubCommand::with_name("config")
