@@ -71,65 +71,6 @@ impl Project {
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
         self.kv_namespaces.clone().unwrap_or_else(Vec::new)
     }
-
-    pub fn validate(&self, release: bool) -> Result<(), failure::Error> {
-        let mut missing_fields = Vec::new();
-
-        if self.account_id.is_empty() {
-            missing_fields.push("account_id")
-        };
-        if self.name.is_empty() {
-            missing_fields.push("name")
-        };
-
-        match &self.kv_namespaces {
-            Some(kv_namespaces) => {
-                for kv in kv_namespaces {
-                    if kv.binding.is_empty() {
-                        missing_fields.push("kv-namespaces binding")
-                    }
-
-                    if kv.id.is_empty() {
-                        missing_fields.push("kv-namespaces id")
-                    }
-                }
-            }
-            None => {}
-        }
-
-        let destination = if release {
-            //check required fields for release
-            if self.zone_id.as_ref().unwrap_or(&"".to_string()).is_empty() {
-                missing_fields.push("zone_id")
-            };
-            if self.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
-                missing_fields.push("route")
-            };
-            //zoned deploy destination
-            "a route"
-        } else {
-            //zoneless deploy destination
-            "your subdomain"
-        };
-
-        let (field_pluralization, is_are) = match missing_fields.len() {
-            n if n >= 2 => ("fields", "are"),
-            1 => ("field", "is"),
-            _ => ("", ""),
-        };
-
-        if !missing_fields.is_empty() {
-            failure::bail!(
-                "Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
-                field_pluralization,
-                missing_fields,
-                is_are,
-                destination
-            );
-        };
-
-        Ok(())
-    }
 }
 
 fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {

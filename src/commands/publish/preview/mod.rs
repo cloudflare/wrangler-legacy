@@ -56,7 +56,7 @@ pub fn preview(
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
 
-            project.validate(false)?;
+            super::validate_project(&project, false)?;
 
             commands::build(&project)?;
             client = http::auth_client(&user);
