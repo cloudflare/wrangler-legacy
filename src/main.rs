@@ -4,6 +4,7 @@
 extern crate text_io;
 
 use std::env;
+use std::path::Path;
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
@@ -119,6 +120,20 @@ fn run() -> Result<(), failure::Error> {
                             .long("file")
                             .takes_value(false)
                             .help("the value passed in is a filename; open and upload its contents"),
+                    SubCommand::with_name("write")
+                        .subcommand(
+                            SubCommand::with_name("bulk")
+                                .about("upload multiple key-value pairs at once")
+                                .arg(
+                                    Arg::with_name("id")
+                                        .help("the id of your Workers KV namespace")
+                                        .index(1),
+                                )
+                                .arg(
+                                    Arg::with_name("path")
+                                    .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...] OR the directory of files to upload.")
+                                    .index(2),
+                                )
                         )
                 )
         )
@@ -339,7 +354,7 @@ fn run() -> Result<(), failure::Error> {
                 let title = rename_matches.value_of("title").unwrap();
                 commands::kv::rename_namespace(id, title)?;
             }
-            ("list", Some(_create_matches)) => {
+            ("list", Some(_list_matches)) => {
                 commands::kv::list_namespaces()?;
             }
             ("read-key", Some(read_key_matches)) => {
@@ -364,6 +379,15 @@ fn run() -> Result<(), failure::Error> {
                 let ttl = write_key_matches.value_of("expiration-ttl");
 
                 commands::kv::write_key(&project, &user, id, key, value, is_file, expiration, ttl)?;
+            }
+            ("write", Some(write_matches)) => match write_matches.subcommand() {
+                ("bulk", Some(bulk_write_matches)) => {
+                    let id = bulk_write_matches.value_of("id").unwrap();
+                    let filename = bulk_write_matches.value_of("path").unwrap();
+                    commands::kv::write_bulk(id, Path::new(filename))?;
+                }
+                ("", None) => println!("hi!"),
+                _ => unreachable!(),
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),
