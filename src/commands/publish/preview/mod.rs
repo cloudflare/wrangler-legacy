@@ -6,13 +6,15 @@ use fiddle_messenger::*;
 mod http_method;
 pub use http_method::HTTPMethod;
 
-use crate::commands;
-use crate::commands::publish;
+mod upload;
+use upload::upload_and_get_id;
 
-use serde::Deserialize;
+use crate::commands;
+
 use uuid::Uuid;
 
 use crate::http;
+use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
@@ -20,33 +22,23 @@ use std::sync::mpsc::channel;
 use std::thread;
 use ws::{Sender, WebSocket};
 
+// Using this instead of just `https://cloudflareworkers.com` returns just the worker response to the CLI
+const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
+
 pub fn preview(
-    project: &Project,
-    method: Result<HTTPMethod, failure::Error>,
+    project: Project,
+    user: Option<GlobalUser>,
+    method: HTTPMethod,
     body: Option<String>,
     livereload: bool,
 ) -> Result<(), failure::Error> {
     commands::build(&project)?;
+    let script_id = upload_and_get_id(&project, user.as_ref())?;
 
     let session = Uuid::new_v4().to_simple();
     let preview_host = "example.com";
     let https = true;
     let https_str = if https { "https://" } else { "http://" };
-    let script_id = &upload_and_get_id(project)?;
-
-    let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
-    let cookie = format!(
-        "__ew_fiddle_preview={}{}{}{}",
-        script_id, session, https as u8, preview_host
-    );
-
-    let method = method.unwrap_or_default();
-
-    let client = http::client();
-    let worker_res = match method {
-        HTTPMethod::Get => get(preview_address, cookie, client)?,
-        HTTPMethod::Post => post(preview_address, cookie, client, body)?,
-    };
 
     if livereload {
         let mut ws_port: u16 = 8025;
@@ -68,14 +60,28 @@ pub fn preview(
             &session.to_string(), ws_port, script_id, https_str, preview_host,
         ))?;
 
+        //don't do initial GET + POST with livereload as the expected behavior is unclear.
+
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
-        watch_for_changes(project, session.to_string(), broadcaster)?;
+        watch_for_changes(&project, user.as_ref(), session.to_string(), broadcaster)?;
     } else {
         open_browser(&format!(
             "https://cloudflareworkers.com/#{}:{}{}",
             script_id, https_str, preview_host
         ))?;
+
+        let cookie = format!(
+            "__ew_fiddle_preview={}{}{}{}",
+            script_id, session, https as u8, preview_host
+        );
+
+        let client = http::client();
+
+        let worker_res = match method {
+            HTTPMethod::Get => get(cookie, &client)?,
+            HTTPMethod::Post => post(cookie, &client, body)?,
+        };
         let msg = format!("Your worker responded with: {}", worker_res);
         message::preview(&msg);
     }
@@ -99,46 +105,42 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn get(
-    preview_address: &str,
-    cookie: String,
-    client: reqwest::Client,
-) -> Result<String, failure::Error> {
-    let res = client.get(preview_address).header("Cookie", cookie).send();
-    let msg = format!("GET {}", preview_address);
+fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Error> {
+    let res = client.get(PREVIEW_ADDRESS).header("Cookie", cookie).send();
+    let msg = format!("GET {}", PREVIEW_ADDRESS);
     message::preview(&msg);
     Ok(res?.text()?)
 }
 
 fn post(
-    preview_address: &str,
     cookie: String,
-    client: reqwest::Client,
+    client: &reqwest::Client,
     body: Option<String>,
 ) -> Result<String, failure::Error> {
     let res = match body {
         Some(s) => client
-            .post(preview_address)
+            .post(PREVIEW_ADDRESS)
             .header("Cookie", cookie)
             .body(s)
             .send(),
-        None => client.post(preview_address).header("Cookie", cookie).send(),
+        None => client.post(PREVIEW_ADDRESS).header("Cookie", cookie).send(),
     };
-    let msg = format!("POST {}", preview_address);
+    let msg = format!("POST {}", PREVIEW_ADDRESS);
     message::preview(&msg);
     Ok(res?.text()?)
 }
 
 fn watch_for_changes(
     project: &Project,
+    user: Option<&GlobalUser>,
     session_id: String,
     broadcaster: Sender,
 ) -> Result<(), failure::Error> {
     let (tx, rx) = channel();
-    commands::watch_and_build(project, Some(tx))?;
+    commands::watch_and_build(&project, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        if let Ok(new_id) = upload_and_get_id(project) {
+        if let Ok(new_id) = upload_and_get_id(project, user) {
             let msg = FiddleMessage {
                 session_id: session_id.clone(),
                 data: FiddleMessageData::LiveReload { new_id },
@@ -156,29 +158,4 @@ fn watch_for_changes(
     broadcaster.shutdown()?;
 
     Ok(())
-}
-
-#[derive(Debug, Deserialize)]
-struct Preview {
-    id: String,
-}
-
-fn upload_and_get_id(project: &Project) -> Result<String, failure::Error> {
-    let create_address = "https://cloudflareworkers.com/script";
-    let client = http::client();
-    let script_upload_form = publish::build_script_upload_form(project)?;
-
-    let res = client
-        .post(create_address)
-        .multipart(script_upload_form)
-        .send()?
-        .error_for_status();
-
-    let text = &res?.text()?;
-    log::info!("Response from preview: {:?}", text);
-
-    let p: Preview =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
-
-    Ok(p.id)
 }

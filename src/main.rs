@@ -216,7 +216,11 @@ fn run() -> Result<(), failure::Error> {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
 
-        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
+        // the preview command can be called with or without a Global User having been config'd
+        // so we convert this Result into an Option
+        let user = settings::global_user::GlobalUser::new().ok();
+
+        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
@@ -228,7 +232,7 @@ fn run() -> Result<(), failure::Error> {
             _ => false,
         };
 
-        commands::preview(&project, method, body, watch)?;
+        commands::preview(project, user, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
