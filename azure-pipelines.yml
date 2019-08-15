@@ -11,7 +11,7 @@ jobs:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
       - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
+        displayName: "cargo install --locked cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
       - script: rustup component add rustfmt
@@ -31,7 +31,7 @@ jobs:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
       - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
+        displayName: "cargo install --locked cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
         env:
@@ -46,7 +46,7 @@ jobs:
           toolchain: nightly
       - template: ci/azure-install-node.yml
       - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
+        displayName: "cargo install --locked cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
         env:
@@ -64,7 +64,7 @@ jobs:
         displayName: "Install musl-tools"
       - script: |
           set -ex
-          cargo build --target x86_64-unknown-linux-musl --features vendored-openssl --release
+          cargo build --locked --target x86_64-unknown-linux-musl --features vendored-openssl --release
       - template: ci/azure-create-tarball.yml
         parameters:
           artifacts: target/x86_64-unknown-linux-musl/release/wrangler
@@ -76,7 +76,7 @@ jobs:
       vmImage: macOS-10.13
     steps:
       - template: ci/azure-install-rust.yml
-      - script: cargo build --release
+      - script: cargo build --locked --release
         env:
           MACOSX_DEPLOYMENT_TARGET: 10.7
       - template: ci/azure-create-tarball.yml
@@ -89,7 +89,7 @@ jobs:
       vmImage: vs2017-win2016
     steps:
       - template: ci/azure-install-rust.yml
-      - script: cargo build --release
+      - script: cargo build --locked --release
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
       - template: ci/azure-create-tarball.yml
