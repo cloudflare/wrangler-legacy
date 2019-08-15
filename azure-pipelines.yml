@@ -10,8 +10,6 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
       - script: rustup component add rustfmt
@@ -30,8 +28,6 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
         env:
@@ -45,8 +41,6 @@ jobs:
         parameters:
           toolchain: nightly
       - template: ci/azure-install-node.yml
-      - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
         env:
