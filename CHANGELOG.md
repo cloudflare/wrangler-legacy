@@ -1,5 +1,124 @@
 # Changelog
 
+## 🏄‍♀️ 1.1.1
+
+- ### Features
+
+  - **Install current version, not latest - [ashleygwilliams], [issue/418][pull/419]**
+
+    Previously the NPM installer for wrangler would always pull the most recent release from Github releases, and the installer did not increase version numbers when Wrangler did. Many users found this confusing. Now the installer will increment versions along with Wrangler releases, and point at specific versions rather than the most recent one at the time of installation.
+
+    [ashleygwilliams]: https://github.com/ashleygwilliams
+    [issue/418]: https://github.com/cloudflare/wrangler/issues/418
+    [pull/419]: https://github.com/cloudflare/wrangler/pull/419
+
+  - **Improve JSON errors debuggability - [xtuc], [pull/394]**
+
+    This PR improves JSON error output in `wrangler`. Specifically:
+
+    - If a `package.json` file fails to decode, `wrangler` now emits a clearer error:
+
+      ```
+      $ wrangler build
+      ⬇️  Installing wranglerjs...
+      ⬇️  Installing wasm-pack...
+      thread 'main' panicked at 'could not parse "./package.json": Error("expected `,` or `}`", line: 4, column: 3)', src/libcore/result.rs:999:5
+      ```
+
+    - If the `wranglerjs` backend returns invalid JSON, it now preserves the output file for further investigation. Note that the console doesn't print the output file location by default, and you will need to pass `RUST_LOG=info` while running `wrangler build`, and search for the `--output-file=FILE` argument passed to `wranglerjs`:
+
+      ```
+      $ RUST_LOG=info wrangler build
+      ⬇️ Installing wasm-pack...
+      [2019-08-09T19:28:48Z INFO  wrangler::commands::build::wranglerjs] Running "/Users/kristian/.nvm/versions/node/v12.1.0/bin/node" "/Users/kristian/src/workers/wrangler/wranglerjs" "--output-file=/var/folders/5x/yzqyqst11n518yl8xl7yv1f80000gp/T/.wranglerjs_output5eREv" # ...
+      ```
+
+    - If the preview service returns invalid JSON, it now emits a clearer error, and the full output can be seen by using `RUST_LOG=info`.
+
+      Previously:
+
+        ```
+        $ wrangler preview
+        ⬇️ Installing wasm-pack...
+        ⬇️ Installing wranglerjs...
+        ✨   Built successfully.
+        Error: Error("expected value", line: 2, column: 1)
+        ```
+
+      Now:
+
+      ```
+      $ wrangler preview
+      ⬇️ Installing wranglerjs...
+      ⬇️ Installing wasm-pack...
+      ✨   Built successfully, built project size is 1 MiB. ⚠️  Your built project has grown past the 1MiB size limit and may fail to deploy. ⚠️  ✨
+      Error: https://cloudflareworkers.com/script: Server Error: 502 Bad Gateway
+      ```
+
+    [xtuc]: https://github.com/xtuc
+    [pull/394]: https://github.com/cloudflare/wrangler/pull/394
+
+- ### Fixes
+
+  - **Fix `wrangler config` for systems with non-unix EOL - [xortive], [issue/389][pull/399]**
+
+    `wrangler config` was not properly truncating whitespace from the end of user input, resulting in a panic when trying to use `wrangler publish`, because `wrangler` would try to create an HTTP header with invalid characters. Now, `wrangler` will properly truncate extra whitespace (including `\r`) from the end of the input into `wrangler config`.
+
+    [xortive]: https://github.com/xortive
+    [issue/389]: https://github.com/cloudflare/wrangler/issues/389
+    [pull/399]: https://github.com/cloudflare/wrangler/pull/399
+
+- ### Maintenance
+
+  - **Migrate straggler emojis to terminal::emoji - [EverlastingBugstopper], [pull/382]**
+
+    This PR updates the last remaining instances where `wrangler` was using hard-coded emojis for messages, rather than using `terminal::emoji`. In addition, there are two instances where this PR changes the usage of the ⛔ emoji to ⚠️.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/382]: https://github.com/cloudflare/wrangler/pull/382
+
+  - **Move test fixtures to their own directory - [EverlastingBugstopper], [pull/383]**
+
+    This PR aggregates fixtures used in integration tests into a `fixtures` directory to
+    make it easier to find/use them.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/383]: https://github.com/cloudflare/wrangler/pull/383
+
+  - **Update issue templates to fit Github's data model - [EverlastingBugstopper], [pull/387]**
+
+    Our previous issue templates were not picked up by Github's user interface. This PR updates the templates to fit the accepted data model, and adds some style tweaks to make the templates easier to use.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/387]: https://github.com/cloudflare/wrangler/pull/387
+
+  - **Move Emoji formatting/messaging into new functions - [ashleymichal], [pull/391]**
+
+    This PR makes improvements to the internal messaging logic of Wrangler, allowing us to be more flexible in how we display information to users.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/391]: https://github.com/cloudflare/wrangler/pull/391
+
+- ### Documentation
+
+  - **Update README to include config, env var changes - [ashleymichal], [pull/379]**
+
+    In 1.1.0 we changed the `config` command to be interactive. This PR updates the README to reflect that change.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/379]: https://github.com/cloudflare/wrangler/pull/379
+
+  - **Add section to readme about Vendored OpenSSL - [xortive], [pull/407]**
+
+    Wrangler has some external OpenSSL dependencies when installing on Linux -- this PR documents those dependencies, and how to install Wrangler using a vendored OpenSSL feature flag:
+
+    ```
+    cargo install wrangler --features vendored-openssl
+    ```
+
+    [xortive]: https://github.com/xortive
+    [pull/407]: https://github.com/cloudflare/wrangler/pull/407
+
 ## 🔑 1.1.0
 
 Wrangler 1.1.0 includes a number of improvements to documentation and project stability, including:

@@ -5,31 +5,46 @@
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 
-`wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare workers](https://workers.cloudflare.com/).
+`wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare Workers](https://workers.cloudflare.com/).
+
+![Wrangler Demo](/wrangler-demo.gif)
 
 ## Installation
 
 You have many options to install wrangler!
 
-### Using `npm`
+### Install with `npm`
 
-```
+```bash
 npm i @cloudflare/wrangler -g
 ```
 
-### Using `cargo`
+### Install with `cargo`
 
-```
+```bash
 cargo install wrangler
 ```
 
+If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](#additional-installation-instructions)
+
+For more information on installation, click [here](https://workers.cloudflare.com/docs/quickstart/cli-setup/).
+
+## Updating
+
+For information regarding updating Wrangler, click [here](https://workers.cloudflare.com/docs/quickstart/updating-the-cli/).
+
+## Additional Documentation
+
+General documentation surrounding workers development and using `wrangler` can be found [here](https://workers.cloudflare.com/docs). This documentation will be highly valuable to you when developing with `wrangler`.
+
 ## 🎙️ Commands
 
-  - ### 👯 `generate`
+- ### 👯 `generate`
+
     Scaffold a project, including boilerplate for a Rust library and a Cloudflare Worker.
     You can pass a name and template to this command optionally.
 
-    ```
+    ```bash
     wrangler generate <name> <template> --type=["webpack", "javascript", "rust"]
     ```
 
@@ -38,23 +53,31 @@ cargo install wrangler
         - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
         - `type`: defaults to "webpack"
 
-  - ### 🦀⚙️ `build`
+- ### 🦀⚙️ `build`
+
     Build your project. This command looks at your `wrangler.toml` file and runs the build steps associated
     with the `"type"` declared there.
 
-  - ### 🔧 `config`
-    Configure your global Cloudflare user. You will need to pass your email and API key:
+- ### 🔧 `config`
 
-    ```
-    wrangler config <email> <api_key>
+    Configure your global Cloudflare user. This is an interactive command that will prompt you for your email and API key:
+
+    ```bash
+    wrangler config
+    Enter email:
+    testuser@example.com
+    Enter api key:
+    ...
     ```
 
-  - ### ☁️ 🆙 `publish`
+    You can also [use environment variables](#using-environment-variables) to configure these values.
+
+- ### ☁️ 🆙 `publish`
 
     Publish your Worker to Cloudflare. This uses several keys in your `wrangler.toml` depending on whether
     you are publishing to a workers.dev subdomain or your own domain, registered with Cloudflare.
 
-    ```
+    ```bash
     wrangler publish
     ```
 
@@ -71,7 +94,7 @@ cargo install wrangler
 
     You'll also need to have a workers.dev subdomain registered. You can register a subdomain by using:
 
-    ```
+    ```bash
     wrangler subdomain <name>
     ```
 
@@ -84,18 +107,26 @@ cargo install wrangler
     - `zone_id`
     - `route`
 
-  - ### 🔬 `preview`
-    Preview your project using the cloudflareworkers.com API.
+- ### 🔬 `preview`
+
+    Preview your project using the [Cloudflare Workers preview service](cloudflareworkers.com).
 
     You can optionally pass `get` or `post` and a `body` to this command. This will send a request to your
     worker on the preview service and return the response in your terminal. For example:
 
-    ```
-    wrangler preview post hello=hello
-    wrangler preview get // this is the default
+    GET requests can be sent with 
+
+    ```bash
+    wrangler preview
     ```
 
-  - ### 🗂️ `kv`
+    or
+
+    ```bash
+    wrangler preview get
+    ```
+
+- ### 🗂️ `kv`
     Interact with your Cloudflare Workers KV store. [Check out the docs.](./docs/content/kv)
 
 
@@ -117,6 +148,17 @@ There are two types of configuration that `wrangler` uses: global user and per p
        When successful, this command will print out your user information, including the type of plan you
        are currently on.
 
+- #### Using environment variables
+
+    You can also configure your global user with environment variables. This is the preferred method for using Wrangler in CI:
+
+    ```bash
+    # e.g.
+    CF_API_KEY=superlongapikey CF_EMAIL=testuser@example.com wrangler publish --release
+    # where
+    # $CF_API_KEY -> your Cloudflare API key
+    # $CF_EMAIL -> your Cloudflare account email
+    ```
 
 - ### Per Project
 
@@ -152,132 +194,57 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `binding`: the name you want to bind to in your script
         - `id`: the namespace_id assigned to your kv namespace upon creation.
             e.g. (per namespace):
-        ``` toml
+
+        ```toml
         [[kv-namespaces]]
         binding = "FOO"
         id = "0f2ac74b498b48028cb68387c421e279"
         ```
+
         Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
 
-## ⚓ Installation
+## Additional Installation Instructions
 
 Wrangler can be installed both through [npm](https://www.npmjs.com/get-npm) and through Rust's package manager, [Cargo](https://github.com/rust-lang/cargo).
 
-### Using `npm`:
+### Using `npm`
 
 1. If you don't already have npm on your machine, install it using [npm's recommended method](https://www.npmjs.com/get-npm), a node.js version manager.
 
     If you have already installed npm with a package manager, it is possible you will run into an `EACCES` error while installing wrangler. This is related to how many system packagers install npm. You can either uninstall npm and reinstall using the npm recommended install method (a version manager), or use one of our other install methods.
 
-1. Install Wrangler by running:
+2. Install Wrangler by running:
 
-    ```
+    ```bash
     npm i @cloudflare/wrangler -g
     ```
 
-### Using `cargo`:
+### Using `cargo`
 
 1. Install `cargo`:
 
     Rustup, a tool for installing Rust, will also install Cargo. On Linux and macOS systems, `rustup` can be installed as follows:
 
-    ```
+    ```bash
     curl https://sh.rustup.rs -sSf | sh
     ```
 
     Additional installation methods are available [here](https://forge.rust-lang.org/other-installation-methods.html).
 
-1. Install `wrangler`:
+2. Install `wrangler`:
 
-    ```
+    ```bash
     cargo install wrangler
     ```
 
     Installing wrangler on linux requires some [OpenSSL-related packages](https://docs.rs/openssl/0.10.24/openssl/#automatic) to be installed. If you don't want to deal with this, you can use vendored OpenSSL.
 
-    ```
+    ```bash
     cargo install wrangler --features vendored-openssl
     ```
 
-### Manual Install:
+### Manual Install
 
 1. Download the binary tarball for your platform from our [releases page](https://github.com/cloudflare/wrangler/releases). You don't need to download wranglerjs, wrangler will install that for you.
 
 2. Unpack the tarball and place the binary `wrangler` somewhere on your `PATH`, preferably `/usr/local/bin` for linux/macOS or `Program Files` for windows.
-
-
-## Updating `wrangler`:
-
-   To get the latest version of Wrangler, using Cargo, run:
-
-   ```
-   cargo install wrangler --force
-   ```
-
-   To get the latest version of Wrangler, using NPM, run:
-
-   ```
-   npm install @cloudflare/wrangler
-   ```
-
-## ⚡ Quick Start
-
-1. Generate a new project:
-
-    ```
-    wrangler generate
-    ```
-
-1. Move into the new project directory:
-
-    ```
-    cd worker
-    ```
-
-1. Build your project:
-
-    ```
-    wrangler build
-    ```
-
-1. Preview your project:
-
-    ```
-    wrangler preview
-    ```
-
-1. (optional) Configure with your Cloudflare account:
-
-    ```
-    wrangler config <email> <api_key>
-    ```
-
-    Configuring your account is required to use the `publish` step, which will push your Worker live to the
-    Cloudflare edge. If you don't configure, you can still use `wrangler` to generate, build, and preview
-    a Worker.
-
-    Optionally, create a workers.dev subdomain:
-
-    ```
-    wrangler subdomain <name>
-    ```
-
-1. Check your configuration:
-
-    ```
-    wrangler whoami
-    ```
-
-1. Publish your project:
-
-    To publish to a workers.dev subdomain:
-    ```
-    wrangler publish
-    ```
-
-    To publish to a domain you have registered with Cloudflare, add a `route` and a `zone_id` to your
-    `wrangler.toml`. Then run:
-
-    ```
-    wrangler publish --release
-    ```
