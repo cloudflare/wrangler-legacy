@@ -57,40 +57,36 @@ pub fn preview(
             log::info!("GlobalUser set, running with authentication");
 
             commands::build(&project)?;
-            client = http::auth_client(&user);
 
             let missing_fields = validate(&project);
 
-            if !missing_fields.is_empty() {
+            if missing_fields.is_empty() {
+                client = http::auth_client(&user);
+
+                authenticated_upload(&client, &project)?
+            } else {
                 message::warn(&format!(
                     "Your wrangler.toml is missing the following fields: {:?}",
                     missing_fields
                 ));
-                message::info("Falling back to unauthenticated preview.");
+                message::warn("Falling back to unauthenticated preview.");
 
-                unauthenticated_upload(&client, &project)?
-            } else {
-                authenticated_upload(&client, &project)?
+                client = http::client();
+                unauthenticated_upload(&client, &mut project)?
             }
         }
         None => {
-            log::info!("GlobalUser not set, running without authentication");
-
-            // KV namespaces are not supported by the preview service unless you authenticate
-            // so we omit them and provide the user with a little guidance. We don't error out, though,
-            // because there are valid workarounds for this for testing purposes.
-            if project.kv_namespaces.is_some() {
-                message::warn("KV Namespaces are not supported without setting API credentials");
-                message::help(
-                    "Run `wrangler config` or set $CF_API_KEY and $CF_EMAIL to configure your user.",
-                );
-                project.kv_namespaces = None;
-            }
+            message::warn(
+                "You haven't run `wrangler config`. Running preview without authentication",
+            );
+            message::help(
+                "Run `wrangler config` or set $CF_API_KEY and $CF_EMAIL to configure your user.",
+            );
 
             commands::build(&project)?;
             client = http::client();
 
-            unauthenticated_upload(&client, &project)?
+            unauthenticated_upload(&client, &mut project)?
         }
     };
 
@@ -154,9 +150,22 @@ fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, f
     Ok(Preview::from(response.result))
 }
 
-fn unauthenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+fn unauthenticated_upload(
+    client: &Client,
+    project: &mut Project,
+) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
+
+    // KV namespaces are not supported by the preview service unless you authenticate
+    // so we omit them and provide the user with a little guidance. We don't error out, though,
+    // because there are valid workarounds for this for testing purposes.
+    if project.kv_namespaces.is_some() {
+        message::warn(
+            "KV Namespaces are not supported in preview without setting API credentials and account_id",
+        );
+        project.kv_namespaces = None;
+    }
 
     let script_upload_form = publish::build_script_upload_form(project)?;
 
