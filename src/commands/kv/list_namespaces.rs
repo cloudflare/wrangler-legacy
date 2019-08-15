@@ -1,6 +1,6 @@
-use cloudflare::apiclient::APIClient;
+use cloudflare::apiclient::ApiClient;
 use cloudflare::workerskv::list_namespaces::ListNamespaces;
-use cloudflare::workerskv::WorkersKVNamespace;
+use cloudflare::workerskv::WorkersKvNamespace;
 
 use prettytable::{Cell, Row, Table};
 
@@ -27,7 +27,7 @@ pub fn list_namespaces() -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn namespace_table(namespaces: Vec<WorkersKVNamespace>) -> Table {
+fn namespace_table(namespaces: Vec<WorkersKvNamespace>) -> Table {
     let mut table = Table::new();
     let table_head = Row::new(vec![Cell::new("TITLE"), Cell::new("ID")]);
 
