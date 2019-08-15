@@ -64,7 +64,7 @@ pub fn preview(
         };
 
         open_browser(&format!(
-            "https://cloudflareworkers.com/ui/staging/index.html?wrangler_session_id={}\\&wrangler_ws_port={}\\&hide_editor#{}:{}{}",
+            "https://cloudflareworkers.com/?wrangler_session_id={}\\&wrangler_ws_port={}\\&hide_editor#{}:{}{}",
             &session.to_string(), ws_port, script_id, https_str, preview_host,
         ))?;
 
