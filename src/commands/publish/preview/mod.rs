@@ -13,6 +13,8 @@ use crate::commands;
 
 use uuid::Uuid;
 
+use log::info;
+
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
@@ -41,12 +43,11 @@ pub fn preview(
     let https_str = if https { "https://" } else { "http://" };
 
     if livereload {
-        let ws_port = WebSocket::new(|out| FiddleMessageServer { out })?
-            .bind("127.0.0.1:0")? //explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
-            .local_addr()?
-            .port();
+        let server = WebSocket::new(|out| FiddleMessageServer { out })?.bind("127.0.0.1:0")?; //explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
 
-        info!("Opened websocket server on port {}", port);
+        let ws_port = server.local_addr()?.port();
+
+        info!("Opened websocket server on port {}", ws_port);
 
         open_browser(&format!(
             "https://cloudflareworkers.com/?wrangler_session_id={0}\\&wrangler_ws_port={1}\\&hide_editor#{2}:{3}{4}",
