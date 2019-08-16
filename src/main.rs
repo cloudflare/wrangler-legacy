@@ -194,7 +194,7 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
         commands::init(name, project_type)?;
-    } else if let Some(matches) = matches.subcommand_matches("build") {
+    } else if matches.subcommand_matches("build").is_some() {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
 
