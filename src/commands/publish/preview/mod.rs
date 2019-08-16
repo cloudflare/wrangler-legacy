@@ -50,7 +50,7 @@ pub fn preview(
         info!("Opened websocket server on port {}", ws_port);
 
         open_browser(&format!(
-            "https://cloudflareworkers.com/?wrangler_session_id={0}\\&wrangler_ws_port={1}\\&hide_editor#{2}:{3}{4}",
+            "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}{4}",
             &session.to_string(), ws_port, script_id, https_str, preview_host,
         ))?;
 
@@ -84,16 +84,12 @@ pub fn preview(
 }
 
 fn open_browser(url: &str) -> Result<(), failure::Error> {
-    let windows_cmd = format!("start {}", url);
-    let mac_cmd = format!("open {}", url);
-    let linux_cmd = format!("xdg-open {}", url);
-
     let _output = if cfg!(target_os = "windows") {
-        Command::new("cmd").args(&["/C", &windows_cmd]).output()?
+        Command::new("start").arg("/B").arg("Wrangler").arg(url).output()?
     } else if cfg!(target_os = "linux") {
-        Command::new("sh").arg("-c").arg(&linux_cmd).output()?
+        Command::new("xdg-open").arg(url).output()?
     } else {
-        Command::new("sh").arg("-c").arg(&mac_cmd).output()?
+        Command::new("open").arg(url).output()?
     };
 
     Ok(())
