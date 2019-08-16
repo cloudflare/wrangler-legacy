@@ -113,8 +113,7 @@ fn write_wranglerjs_output(
         failure::bail!("Webpack returned an error");
     }
 
-    bundle
-        .write(output)?;
+    bundle.write(output)?;
 
     let msg = format!(
         "Built successfully, built project size is {}",

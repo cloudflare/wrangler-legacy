@@ -17,7 +17,10 @@ pub const COOLDOWN_PERIOD: Duration = Duration::from_millis(2000);
 
 /// watch a project for changes and re-build it when necessary,
 /// outputting a build event to tx.
-pub fn watch_and_build(project: &Project, tx: Option<mpsc::Sender<()>>) -> Result<(), failure::Error> {
+pub fn watch_and_build(
+    project: &Project,
+    tx: Option<mpsc::Sender<()>>,
+) -> Result<(), failure::Error> {
     let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
