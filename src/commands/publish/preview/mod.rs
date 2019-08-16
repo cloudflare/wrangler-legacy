@@ -56,7 +56,7 @@ pub fn preview(
         };
 
         open_browser(&format!(
-            "https://cloudflareworkers.com/?wrangler_session_id={}\\&wrangler_ws_port={}\\&hide_editor#{}:{}{}",
+            "https://cloudflareworkers.com/?wrangler_session_id={0}\\&wrangler_ws_port={1}\\&hide_editor#{2}:{3}{4}",
             &session.to_string(), ws_port, script_id, https_str, preview_host,
         ))?;
 
@@ -67,7 +67,7 @@ pub fn preview(
         watch_for_changes(&project, user.as_ref(), session.to_string(), broadcaster)?;
     } else {
         open_browser(&format!(
-            "https://cloudflareworkers.com/#{}:{}{}",
+            "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
             script_id, https_str, preview_host
         ))?;
 
