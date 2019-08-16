@@ -71,7 +71,7 @@ const compilerCallback = (err, stats) => {
     throw err;
   }
 
-  if (stats.hash != lastHash) {
+  if (stats.hash !== lastHash) {
     const assets = stats.compilation.assets;
     const jsonStats = stats.toJson();
     const bundle = {
