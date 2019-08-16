@@ -31,6 +31,13 @@
 
 - ### Fixes
 
+  - **Fix typo `contirbute` --> `contribute` - [adamchalmers], [pull/444]**
+
+    Fixes a typo in CONTRIBUTING.md
+
+    [adamchalmers]: https://github.com/adamchalmers
+    [pull/444]: https://github.com/cloudflare/wrangler/pull/444
+
   - **Fix ignoring exit code from spawnSync - run-wrangler.js - [defjosiah], [issue/433] [issue/335] [pull/432]**
 
     This PR fixes an issue where an NPM-installed `wrangler` would _always_ return an exit code of 0, even when `wrangler` had errored. This improves `wrangler`'s ability to be scripted, e.g. in CI projects.
@@ -41,6 +48,13 @@
     [pull/432]: https://github.com/cloudflare/wrangler/pull/432
 
 - ### Maintenance
+
+  - **Don't install cargo-generate in CI - [EverlastingBugstopper], [pull/443]**
+
+    This was an unnecessary build step. This change improves CI build time and reduces possible build bugs that could be introduced upstream.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/443]: https://github.com/cloudflare/wrangler/pull/443
 
   - **[chore] Deny clippy warnings in CI, run rustfmt in --check mode - [xortive], [issue/426] [pull/435]**
 
