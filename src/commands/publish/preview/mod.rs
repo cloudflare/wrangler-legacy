@@ -41,19 +41,12 @@ pub fn preview(
     let https_str = if https { "https://" } else { "http://" };
 
     if livereload {
-        let mut ws_port: u16 = 8025;
+        let ws_port = WebSocket::new(|out| FiddleMessageServer { out })?
+            .bind("127.0.0.1:0")? //explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
+            .local_addr()?
+            .port();
 
-        let server = loop {
-            let result = WebSocket::new(|out| FiddleMessageServer { out })?
-                .bind(format!("127.0.0.1:{}", ws_port)); //explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
-
-            match result {
-                Ok(server) => break server,
-                //if 65535-8025 ports are filled, this will cause a panic due to the overflow
-                //if you are using that many ports, i salute you
-                Err(_) => ws_port += 1,
-            }
-        };
+        info!("Opened websocket server on port {}", port);
 
         open_browser(&format!(
             "https://cloudflareworkers.com/?wrangler_session_id={0}\\&wrangler_ws_port={1}\\&hide_editor#{2}:{3}{4}",
