@@ -10,63 +10,205 @@ use uuid::Uuid;
 
 use crate::commands;
 use crate::http;
+use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
+use reqwest::Client;
+
+// Using this instead of just `https://cloudflareworkers.com` returns just the worker response to the CLI
+const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
 
 #[derive(Debug, Deserialize)]
 struct Preview {
     pub id: String,
 }
 
+impl From<ApiPreview> for Preview {
+    fn from(api_preview: ApiPreview) -> Preview {
+        Preview {
+            id: api_preview.preview_id,
+        }
+    }
+}
+
+// When making authenticated preview requests, we go through the v4 Workers API rather than
+// hitting the preview service directly, so its response is formatted like a v4 API response.
+// These structs are here to convert from this format into the Preview defined above.
+#[derive(Debug, Deserialize)]
+struct ApiPreview {
+    pub preview_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct V4ApiResponse {
+    pub result: ApiPreview,
+}
+
 pub fn preview(
-    project: &Project,
-    method: Result<HTTPMethod, failure::Error>,
+    mut project: Project,
+    user: Option<GlobalUser>,
+    method: HTTPMethod,
     body: Option<String>,
 ) -> Result<(), failure::Error> {
+    let client: Client;
+
+    let preview = match &user {
+        Some(user) => {
+            log::info!("GlobalUser set, running with authentication");
+
+            commands::build(&project)?;
+
+            let missing_fields = validate(&project);
+
+            if missing_fields.is_empty() {
+                client = http::auth_client(&user);
+
+                authenticated_upload(&client, &project)?
+            } else {
+                message::warn(&format!(
+                    "Your wrangler.toml is missing the following fields: {:?}",
+                    missing_fields
+                ));
+                message::warn("Falling back to unauthenticated preview.");
+
+                client = http::client();
+                unauthenticated_upload(&client, &mut project)?
+            }
+        }
+        None => {
+            message::warn(
+                "You haven't run `wrangler config`. Running preview without authentication",
+            );
+            message::help(
+                "Run `wrangler config` or set $CF_API_KEY and $CF_EMAIL to configure your user.",
+            );
+
+            commands::build(&project)?;
+            client = http::client();
+
+            unauthenticated_upload(&client, &mut project)?
+        }
+    };
+
+    let worker_res = call_worker(&client, preview, method, body)?;
+
+    let msg = format!("Your worker responded with: {}", worker_res);
+    message::preview(&msg);
+
+    Ok(())
+}
+
+fn validate(project: &Project) -> Vec<&str> {
+    let mut missing_fields = Vec::new();
+
+    if project.account_id.is_empty() {
+        missing_fields.push("account_id")
+    };
+    if project.name.is_empty() {
+        missing_fields.push("name")
+    };
+
+    match &project.kv_namespaces {
+        Some(kv_namespaces) => {
+            for kv in kv_namespaces {
+                if kv.binding.is_empty() {
+                    missing_fields.push("kv-namespace binding")
+                }
+
+                if kv.id.is_empty() {
+                    missing_fields.push("kv-namespace id")
+                }
+            }
+        }
+        None => {}
+    }
+
+    missing_fields
+}
+
+fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+    let create_address = format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
+        project.account_id, project.name
+    );
+    log::info!("address: {}", create_address);
+
+    let script_upload_form = publish::build_script_upload_form(&project)?;
+
+    let mut res = client
+        .post(&create_address)
+        .multipart(script_upload_form)
+        .send()?
+        .error_for_status()?;
+
+    let text = &res.text()?;
+    log::info!("Response from preview: {:#?}", text);
+
+    let response: V4ApiResponse =
+        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+
+    Ok(Preview::from(response.result))
+}
+
+fn unauthenticated_upload(
+    client: &Client,
+    project: &mut Project,
+) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
+    log::info!("address: {}", create_address);
 
-    let client = http::client();
-
-    commands::build(&project)?;
+    // KV namespaces are not supported by the preview service unless you authenticate
+    // so we omit them and provide the user with a little guidance. We don't error out, though,
+    // because there are valid workarounds for this for testing purposes.
+    if project.kv_namespaces.is_some() {
+        message::warn(
+            "KV Namespaces are not supported in preview without setting API credentials and account_id",
+        );
+        project.kv_namespaces = None;
+    }
 
     let script_upload_form = publish::build_script_upload_form(project)?;
 
-    let res = client
+    let mut res = client
         .post(create_address)
         .multipart(script_upload_form)
         .send()?
-        .error_for_status();
+        .error_for_status()?;
 
-    let text = &res?.text()?;
-    log::info!("Response from preview: {:?}", text);
+    let text = &res.text()?;
+    log::info!("Response from preview: {:#?}", text);
 
-    let p: Preview =
+    let preview: Preview =
         serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
 
+    Ok(preview)
+}
+
+fn call_worker(
+    client: &Client,
+    preview: Preview,
+    method: HTTPMethod,
+    body: Option<String>,
+) -> Result<String, failure::Error> {
     let session = Uuid::new_v4().to_simple();
 
     let preview_host = "example.com";
     let https = 1;
-    let script_id = &p.id;
+    let script_id = &preview.id;
 
-    let preview_address = "https://00000000000000000000000000000000.cloudflareworkers.com";
     let cookie = format!(
         "__ew_fiddle_preview={}{}{}{}",
         script_id, session, https, preview_host
     );
 
-    let method = method.unwrap_or_default();
-
-    let worker_res = match method {
-        HTTPMethod::Get => get(preview_address, cookie, client)?,
-        HTTPMethod::Post => post(preview_address, cookie, client, body)?,
+    let res = match method {
+        HTTPMethod::Get => get(cookie, &client)?,
+        HTTPMethod::Post => post(cookie, &client, body)?,
     };
-    let msg = format!("Your worker responded with: {}", worker_res);
-    message::preview(&msg);
 
     open(preview_host, https, script_id)?;
 
-    Ok(())
+    Ok(res)
 }
 
 fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::Error> {
@@ -96,32 +238,27 @@ fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::E
     Ok(())
 }
 
-fn get(
-    preview_address: &str,
-    cookie: String,
-    client: reqwest::Client,
-) -> Result<String, failure::Error> {
-    let res = client.get(preview_address).header("Cookie", cookie).send();
-    let msg = format!("GET {}", preview_address);
+fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Error> {
+    let res = client.get(PREVIEW_ADDRESS).header("Cookie", cookie).send();
+    let msg = format!("GET {}", PREVIEW_ADDRESS);
     message::preview(&msg);
     Ok(res?.text()?)
 }
 
 fn post(
-    preview_address: &str,
     cookie: String,
-    client: reqwest::Client,
+    client: &reqwest::Client,
     body: Option<String>,
 ) -> Result<String, failure::Error> {
     let res = match body {
         Some(s) => client
-            .post(preview_address)
+            .post(PREVIEW_ADDRESS)
             .header("Cookie", cookie)
             .body(s)
             .send(),
-        None => client.post(preview_address).header("Cookie", cookie).send(),
+        None => client.post(PREVIEW_ADDRESS).header("Cookie", cookie).send(),
     };
-    let msg = format!("POST {}", preview_address);
+    let msg = format!("POST {}", PREVIEW_ADDRESS);
     message::preview(&msg);
     Ok(res?.text()?)
 }
