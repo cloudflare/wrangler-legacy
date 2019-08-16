@@ -69,7 +69,7 @@ pub fn run_build_and_watch(
         let (watcher_tx, watcher_rx) = channel();
         let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
 
-        watcher.watch(&temp_file, RecursiveMode::NonRecursive)?;
+        watcher.watch(&temp_file, RecursiveMode::Recursive)?;
 
         info!("watching temp file {:?}", &temp_file);
 

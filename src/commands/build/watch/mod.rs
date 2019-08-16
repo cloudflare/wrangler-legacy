@@ -30,7 +30,7 @@ pub fn watch_and_build(
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-                watcher.watch(&entry, RecursiveMode::NonRecursive).unwrap();
+                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
                 message::info(&format!("watching {:?}", &entry));
 
                 loop {
