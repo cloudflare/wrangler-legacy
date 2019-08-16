@@ -95,12 +95,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Build your worker",
                     emoji::CRAB
                 ))
-                .arg(
-                    Arg::with_name("watch")
-                        .help("watch your project for changes and build your worker when they happen")
-                        .long("watch")
-                        .takes_value(false),
-                ),
         )
         .subcommand(
             SubCommand::with_name("preview")
@@ -204,14 +198,7 @@ fn run() -> Result<(), failure::Error> {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
 
-        match matches.occurrences_of("watch") {
-            1 => {
-                commands::watch_and_build(&project, None)?;
-                std::thread::park();
-                panic!("Wrangler exited early while watching for changes")
-            }
-            _ => commands::build(&project)?,
-        };
+        commands::build(&project)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
