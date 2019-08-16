@@ -61,7 +61,7 @@ pub fn watch_and_build(
                 path.push("src");
 
                 watcher.watch(&path, RecursiveMode::Recursive).unwrap();
-                watcher.watch(&entry, RecursiveMode::NonRecursive).unwrap();
+                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
                 message::info(&format!("watching {:?} and {:?}", &path, &entry));
 
                 loop {
