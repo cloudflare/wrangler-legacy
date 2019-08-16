@@ -214,10 +214,7 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        let watch = match matches.occurrences_of("watch") {
-            1 => true,
-            _ => false,
-        };
+        let watch = matches.is_present("watch");
 
         commands::preview(project, user, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {

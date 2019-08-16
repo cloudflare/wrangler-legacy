@@ -23,7 +23,7 @@ use std::process::Command;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-use notify::{watcher, RecursiveMode, Watcher};
+use notify::{self, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
@@ -62,15 +62,14 @@ pub fn run_build_and_watch(
 
     info!("Running {:?} in watch mode", command);
 
-    thread::spawn(move || {
+    //Turbofish the result of the closure so we can use ?
+    thread::spawn::<_, Result<(), failure::Error>>(move || {
         let _command_guard = util::GuardedCommand::spawn(command);
 
         let (watcher_tx, watcher_rx) = channel();
-        let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
+        let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
 
-        watcher
-            .watch(&temp_file, RecursiveMode::NonRecursive)
-            .unwrap();
+        watcher.watch(&temp_file, RecursiveMode::NonRecursive)?;
 
         info!("watching temp file {:?}", &temp_file);
 
@@ -115,8 +114,7 @@ fn write_wranglerjs_output(
     }
 
     bundle
-        .write(output)
-        .expect("could not write bundle to disk");
+        .write(output)?;
 
     let msg = format!(
         "Built successfully, built project size is {}",

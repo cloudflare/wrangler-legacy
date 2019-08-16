@@ -5,6 +5,7 @@ use crate::settings::project::Project;
 use crate::terminal::message;
 use reqwest::Client;
 use serde::Deserialize;
+
 #[derive(Debug, Deserialize)]
 struct Preview {
     id: String,

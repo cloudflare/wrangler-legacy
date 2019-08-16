@@ -19,7 +19,7 @@ pub fn wait_for_changes(
             Ok(Some(path)) => {
                 message::working("Detected changes...");
                 //wait for cooldown
-                while let Ok(_e) = rx.recv_timeout(cooldown) {
+                while let Ok(_) = rx.recv_timeout(cooldown) {
                     message::working("Detected change during cooldown...");
                 }
                 message::working("Cooldown over, propogating changes...");
