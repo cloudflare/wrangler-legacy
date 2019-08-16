@@ -1,11 +1,14 @@
 pub mod wranglerjs;
 
+mod watch;
+pub use watch::watch_and_build;
+
 use crate::settings::project::{Project, ProjectType};
+use crate::terminal::message;
 use crate::{commands, install};
+
 use std::path::PathBuf;
 use std::process::Command;
-
-use crate::terminal::message;
 
 pub fn build(project: &Project) -> Result<(), failure::Error> {
     let project_type = &project.project_type;
@@ -18,7 +21,7 @@ pub fn build(project: &Project) -> Result<(), failure::Error> {
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
-            let command = command(&args, binary_path);
+            let command = command(&args, &binary_path);
             let command_name = format!("{:?}", command);
 
             commands::run(command, &command_name)?;
@@ -31,7 +34,7 @@ pub fn build(project: &Project) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn command(args: &[&str], binary_path: PathBuf) -> Command {
+pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
     message::working("Compiling your project to WebAssembly...");
 
     let mut c = if cfg!(target_os = "windows") {

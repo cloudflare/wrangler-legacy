@@ -17,6 +17,7 @@ mod install;
 mod installer;
 mod settings;
 mod terminal;
+mod util;
 
 use crate::settings::project::ProjectType;
 use exitfailure::ExitFailure;
@@ -93,8 +94,7 @@ fn run() -> Result<(), failure::Error> {
                 .about(&*format!(
                     "{} Build your worker",
                     emoji::CRAB
-                )
-            ),
+                ))
         )
         .subcommand(
             SubCommand::with_name("preview")
@@ -111,7 +111,13 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("body")
                         .help("Body string to post to your preview worker request")
                         .index(2),
-                ),
+                )
+                .arg(
+                    Arg::with_name("watch")
+                        .help("watch your project for changes and update the preview automagically")
+                        .long("watch")
+                        .takes_value(false),
+                )
         )
         .subcommand(
             SubCommand::with_name("publish").about(&*format!(
@@ -191,6 +197,7 @@ fn run() -> Result<(), failure::Error> {
     } else if matches.subcommand_matches("build").is_some() {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
+
         commands::build(&project)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
@@ -207,7 +214,9 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        commands::preview(project, user, method, body)?;
+        let watch = matches.is_present("watch");
+
+        commands::preview(project, user, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
