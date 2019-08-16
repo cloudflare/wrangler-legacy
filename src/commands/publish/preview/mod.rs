@@ -1,237 +1,98 @@
 use std::process::Command;
 
+mod fiddle_messenger;
+use fiddle_messenger::*;
+
 mod http_method;
 pub use http_method::HTTPMethod;
 
-use crate::commands::publish;
-
-use serde::Deserialize;
-use uuid::Uuid;
+mod upload;
+use upload::upload_and_get_id;
 
 use crate::commands;
+
+use uuid::Uuid;
+
+use log::info;
+
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
-use reqwest::Client;
+
+use std::sync::mpsc::channel;
+use std::thread;
+use ws::{Sender, WebSocket};
 
 // Using this instead of just `https://cloudflareworkers.com` returns just the worker response to the CLI
 const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
 
-#[derive(Debug, Deserialize)]
-struct Preview {
-    pub id: String,
-}
-
-impl From<ApiPreview> for Preview {
-    fn from(api_preview: ApiPreview) -> Preview {
-        Preview {
-            id: api_preview.preview_id,
-        }
-    }
-}
-
-// When making authenticated preview requests, we go through the v4 Workers API rather than
-// hitting the preview service directly, so its response is formatted like a v4 API response.
-// These structs are here to convert from this format into the Preview defined above.
-#[derive(Debug, Deserialize)]
-struct ApiPreview {
-    pub preview_id: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct V4ApiResponse {
-    pub result: ApiPreview,
-}
-
 pub fn preview(
-    mut project: Project,
+    project: Project,
     user: Option<GlobalUser>,
     method: HTTPMethod,
     body: Option<String>,
+    livereload: bool,
 ) -> Result<(), failure::Error> {
-    let client: Client;
+    commands::build(&project)?;
+    let script_id = upload_and_get_id(&project, user.as_ref())?;
 
-    let preview = match &user {
-        Some(user) => {
-            log::info!("GlobalUser set, running with authentication");
+    let session = Uuid::new_v4().to_simple();
+    let preview_host = "example.com";
+    let https = true;
+    let https_str = if https { "https://" } else { "http://" };
 
-            commands::build(&project)?;
+    if livereload {
+        let server = WebSocket::new(|out| FiddleMessageServer { out })?.bind("127.0.0.1:0")?; //explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
 
-            let missing_fields = validate(&project);
+        let ws_port = server.local_addr()?.port();
 
-            if missing_fields.is_empty() {
-                client = http::auth_client(&user);
+        info!("Opened websocket server on port {}", ws_port);
 
-                authenticated_upload(&client, &project)?
-            } else {
-                message::warn(&format!(
-                    "Your wrangler.toml is missing the following fields: {:?}",
-                    missing_fields
-                ));
-                message::warn("Falling back to unauthenticated preview.");
+        open_browser(&format!(
+            "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}{4}",
+            &session.to_string(), ws_port, script_id, https_str, preview_host,
+        ))?;
 
-                client = http::client();
-                unauthenticated_upload(&client, &mut project)?
-            }
-        }
-        None => {
-            message::warn(
-                "You haven't run `wrangler config`. Running preview without authentication",
-            );
-            message::help(
-                "Run `wrangler config` or set $CF_API_KEY and $CF_EMAIL to configure your user.",
-            );
+        //don't do initial GET + POST with livereload as the expected behavior is unclear.
 
-            commands::build(&project)?;
-            client = http::client();
+        let broadcaster = server.broadcaster();
+        thread::spawn(move || server.run());
+        watch_for_changes(&project, user.as_ref(), session.to_string(), broadcaster)?;
+    } else {
+        open_browser(&format!(
+            "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
+            script_id, https_str, preview_host
+        ))?;
 
-            unauthenticated_upload(&client, &mut project)?
-        }
-    };
+        let cookie = format!(
+            "__ew_fiddle_preview={}{}{}{}",
+            script_id, session, https as u8, preview_host
+        );
 
-    let worker_res = call_worker(&client, preview, method, body)?;
+        let client = http::client();
 
-    let msg = format!("Your worker responded with: {}", worker_res);
-    message::preview(&msg);
+        let worker_res = match method {
+            HTTPMethod::Get => get(cookie, &client)?,
+            HTTPMethod::Post => post(cookie, &client, body)?,
+        };
+        let msg = format!("Your worker responded with: {}", worker_res);
+        message::preview(&msg);
+    }
 
     Ok(())
 }
 
-fn validate(project: &Project) -> Vec<&str> {
-    let mut missing_fields = Vec::new();
-
-    if project.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
-    if project.name.is_empty() {
-        missing_fields.push("name")
-    };
-
-    match &project.kv_namespaces {
-        Some(kv_namespaces) => {
-            for kv in kv_namespaces {
-                if kv.binding.is_empty() {
-                    missing_fields.push("kv-namespace binding")
-                }
-
-                if kv.id.is_empty() {
-                    missing_fields.push("kv-namespace id")
-                }
-            }
-        }
-        None => {}
-    }
-
-    missing_fields
-}
-
-fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
-    let create_address = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
-        project.account_id, project.name
-    );
-    log::info!("address: {}", create_address);
-
-    let script_upload_form = publish::build_script_upload_form(&project)?;
-
-    let mut res = client
-        .post(&create_address)
-        .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
-
-    let text = &res.text()?;
-    log::info!("Response from preview: {:#?}", text);
-
-    let response: V4ApiResponse =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
-
-    Ok(Preview::from(response.result))
-}
-
-fn unauthenticated_upload(
-    client: &Client,
-    project: &mut Project,
-) -> Result<Preview, failure::Error> {
-    let create_address = "https://cloudflareworkers.com/script";
-    log::info!("address: {}", create_address);
-
-    // KV namespaces are not supported by the preview service unless you authenticate
-    // so we omit them and provide the user with a little guidance. We don't error out, though,
-    // because there are valid workarounds for this for testing purposes.
-    if project.kv_namespaces.is_some() {
-        message::warn(
-            "KV Namespaces are not supported in preview without setting API credentials and account_id",
-        );
-        project.kv_namespaces = None;
-    }
-
-    let script_upload_form = publish::build_script_upload_form(project)?;
-
-    let mut res = client
-        .post(create_address)
-        .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
-
-    let text = &res.text()?;
-    log::info!("Response from preview: {:#?}", text);
-
-    let preview: Preview =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
-
-    Ok(preview)
-}
-
-fn call_worker(
-    client: &Client,
-    preview: Preview,
-    method: HTTPMethod,
-    body: Option<String>,
-) -> Result<String, failure::Error> {
-    let session = Uuid::new_v4().to_simple();
-
-    let preview_host = "example.com";
-    let https = 1;
-    let script_id = &preview.id;
-
-    let cookie = format!(
-        "__ew_fiddle_preview={}{}{}{}",
-        script_id, session, https, preview_host
-    );
-
-    let res = match method {
-        HTTPMethod::Get => get(cookie, &client)?,
-        HTTPMethod::Post => post(cookie, &client, body)?,
-    };
-
-    open(preview_host, https, script_id)?;
-
-    Ok(res)
-}
-
-fn open(preview_host: &str, https: u8, script_id: &str) -> Result<(), failure::Error> {
-    let https_str = match https {
-        1 => "https://",
-        0 => "http://",
-        // hrm.
-        _ => "",
-    };
-
-    let browser_preview = format!(
-        "https://cloudflareworkers.com/#{}:{}{}",
-        script_id, https_str, preview_host
-    );
-    let windows_cmd = format!("start {}", browser_preview);
-    let mac_cmd = format!("open {}", browser_preview);
-    let linux_cmd = format!("xdg-open {}", browser_preview);
-
+fn open_browser(url: &str) -> Result<(), failure::Error> {
     let _output = if cfg!(target_os = "windows") {
+        let url_escaped = url.replace("&", "^&");
+        let windows_cmd = format!("start {}", url_escaped);
         Command::new("cmd").args(&["/C", &windows_cmd]).output()?
     } else if cfg!(target_os = "linux") {
+        let linux_cmd = format!(r#"xdg-open "{}""#, url);
         Command::new("sh").arg("-c").arg(&linux_cmd).output()?
     } else {
+        let mac_cmd = format!(r#"open "{}""#, url);
         Command::new("sh").arg("-c").arg(&mac_cmd).output()?
     };
 
@@ -261,4 +122,34 @@ fn post(
     let msg = format!("POST {}", PREVIEW_ADDRESS);
     message::preview(&msg);
     Ok(res?.text()?)
+}
+
+fn watch_for_changes(
+    project: &Project,
+    user: Option<&GlobalUser>,
+    session_id: String,
+    broadcaster: Sender,
+) -> Result<(), failure::Error> {
+    let (tx, rx) = channel();
+    commands::watch_and_build(&project, Some(tx))?;
+
+    while let Ok(_e) = rx.recv() {
+        if let Ok(new_id) = upload_and_get_id(project, user) {
+            let msg = FiddleMessage {
+                session_id: session_id.clone(),
+                data: FiddleMessageData::LiveReload { new_id },
+            };
+
+            match broadcaster.send(serde_json::to_string(&msg)?) {
+                Ok(_) => {
+                    message::preview("Updated preview with changes");
+                }
+                Err(_e) => message::user_error("communication with preview failed"),
+            }
+        }
+    }
+
+    broadcaster.shutdown()?;
+
+    Ok(())
 }

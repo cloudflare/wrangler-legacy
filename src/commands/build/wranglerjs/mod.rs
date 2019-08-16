@@ -1,8 +1,12 @@
 mod bundle;
 pub mod output;
 
+use crate::commands::build::watch::wait_for_changes;
+use crate::commands::build::watch::COOLDOWN_PERIOD;
+
 use crate::commands::publish::package::Package;
 use crate::install;
+use crate::util;
 pub use bundle::Bundle;
 use fs2::FileExt;
 use log::info;
@@ -17,8 +21,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::settings::project::Project;
-
 use crate::terminal::message;
+
+use notify::{self, RecursiveMode, Watcher};
+use std::sync::mpsc::{channel, Sender};
+use std::thread;
+use std::time::Duration;
 
 // Run the underlying {wranglerjs} executable.
 //
@@ -39,26 +47,81 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
         let wranglerjs_output: WranglerjsOutput =
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
-        if wranglerjs_output.has_errors() {
-            message::user_error(wranglerjs_output.get_errors().as_str());
-            failure::bail!("Webpack returned an error");
-        }
-
-        bundle
-            .write(&wranglerjs_output)
-            .expect("could not write bundle to disk");
-
-        let msg = format!(
-            "Built successfully, built project size is {}",
-            wranglerjs_output.project_size()
-        );
-
-        fs::remove_file(temp_file)?;
-        message::success(&msg);
-        Ok(())
+        write_wranglerjs_output(&bundle, &wranglerjs_output)
     } else {
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
+}
+
+pub fn run_build_and_watch(
+    project: &Project,
+    tx: Option<Sender<()>>,
+) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(project)?;
+    command.arg("--watch=1");
+
+    info!("Running {:?} in watch mode", command);
+
+    //Turbofish the result of the closure so we can use ?
+    thread::spawn::<_, Result<(), failure::Error>>(move || {
+        let _command_guard = util::GuardedCommand::spawn(command);
+
+        let (watcher_tx, watcher_rx) = channel();
+        let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
+
+        watcher.watch(&temp_file, RecursiveMode::Recursive)?;
+
+        info!("watching temp file {:?}", &temp_file);
+
+        let mut is_first = true;
+
+        loop {
+            match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
+                Ok(_) => {
+                    if is_first {
+                        is_first = false;
+                        message::info("Ignoring stale first change");
+                        //skip the first change event
+                        //so we don't do a refresh immediately
+                        continue;
+                    }
+
+                    let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
+                    let wranglerjs_output: WranglerjsOutput =
+                        serde_json::from_str(&output).expect("could not parse wranglerjs output");
+
+                    if write_wranglerjs_output(&bundle, &wranglerjs_output).is_ok() {
+                        if let Some(tx) = tx.clone() {
+                            tx.send(()).expect("--watch change message failed to send");
+                        }
+                    }
+                }
+                Err(_) => message::user_error("Something went wrong while watching."),
+            }
+        }
+    });
+
+    Ok(())
+}
+
+fn write_wranglerjs_output(
+    bundle: &Bundle,
+    output: &WranglerjsOutput,
+) -> Result<(), failure::Error> {
+    if output.has_errors() {
+        message::user_error(output.get_errors().as_str());
+        failure::bail!("Webpack returned an error");
+    }
+
+    bundle.write(output)?;
+
+    let msg = format!(
+        "Built successfully, built project size is {}",
+        output.project_size()
+    );
+
+    message::success(&msg);
+    Ok(())
 }
 
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
