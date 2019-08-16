@@ -85,11 +85,17 @@ pub fn preview(
 
 fn open_browser(url: &str) -> Result<(), failure::Error> {
     let _output = if cfg!(target_os = "windows") {
-        Command::new("start").arg("/B").arg("Wrangler").arg(url).output()?
+        Command::new("start")
+            .arg("/B")
+            .arg("Wrangler")
+            .arg(url)
+            .output()?
     } else if cfg!(target_os = "linux") {
-        Command::new("xdg-open").arg(url).output()?
+        let linux_cmd = format!(r#"xdg-open "{}""#, url);
+        Command::new("sh").arg("-c").arg(&linux_cmd).output()?
     } else {
-        Command::new("open").arg(url).output()?
+        let mac_cmd = format!(r#"open "{}""#, url);
+        Command::new("sh").arg("-c").arg(&mac_cmd).output()?
     };
 
     Ok(())
