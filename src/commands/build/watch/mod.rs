@@ -27,7 +27,7 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                 let (watcher_tx, watcher_rx) = channel();
                 let mut watcher = watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
+                watcher.watch(&entry, RecursiveMode::NonRecursive).unwrap();
                 message::info(&format!("watching {:?}", &entry));
 
                 loop {
@@ -58,7 +58,7 @@ pub fn watch_and_build(project: &Project, tx: Option<Sender<()>>) -> Result<(), 
                 path.push("src");
 
                 watcher.watch(&path, RecursiveMode::Recursive).unwrap();
-                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
+                watcher.watch(&entry, RecursiveMode::NonRecursive).unwrap();
                 message::info(&format!("watching {:?} and {:?}", &path, &entry));
 
                 loop {
