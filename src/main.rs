@@ -136,6 +136,24 @@ fn run() -> Result<(), failure::Error> {
                             .index(2),
                         )
                 )
+                .subcommand(
+                    SubCommand::with_name("delete-key")
+                        .arg(
+                            Arg::with_name("id")
+                        )
+                        .arg(
+                            Arg::with_name("key")
+                        )
+                )
+                .subcommand(
+                    SubCommand::with_name("delete-bulk")
+                        .arg(
+                            Arg::with_name("id")
+                        )
+                        .arg(
+                            Arg::with_name("path")
+                        )
+                )
         )
         .subcommand(
             SubCommand::with_name("generate")
@@ -380,8 +398,18 @@ fn run() -> Result<(), failure::Error> {
             }
             ("write-bulk", Some(write_bulk_matches)) => {
                 let id = write_bulk_matches.value_of("id").unwrap();
-                let filename = write_bulk_matches.value_of("path").unwrap();
-                commands::kv::write_bulk(id, Path::new(filename))?;
+                let path = write_bulk_matches.value_of("path").unwrap();
+                commands::kv::write_bulk(id, Path::new(path))?;
+            }
+            ("delete-key", Some(delete_matches)) => {
+                let id = delete_matches.value_of("id").unwrap();
+                let key = delete_matches.value_of("key").unwrap();
+                commands::kv::delete_key(id, key)?;
+            }
+            ("delete-bulk", Some(delete_matches)) => {
+                let id = delete_matches.value_of("id").unwrap();
+                let path = delete_matches.value_of("path").unwrap();
+                commands::kv::delete_bulk(id, Path::new(path))?;
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),
