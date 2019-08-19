@@ -77,6 +77,48 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("list")
                 )
+                .subcommand(
+                    SubCommand::with_name("set-key")
+                        .arg(
+                            Arg::with_name("id")
+                        )
+                        .arg(
+                            Arg::with_name("key")
+                        )
+                        .arg(
+                            Arg::with_name("value")
+                        )
+                        .arg(
+                            Arg::with_name("expiration")
+                            .short("e")
+                            .long("expiration")
+                            .takes_value(true)
+                            .value_name("SECONDS")
+                            .help("the time, measured in number of seconds since the UNIX epoch, at which the entries should expire"),
+                        )
+                        .arg(
+                            Arg::with_name("expiration-ttl")
+                            .short("t")
+                            .long("ttl")
+                            .value_name("SECONDS")
+                            .takes_value(true)
+                            .help("the number of seconds for which the entries should be visible before they expire. At least 60"),
+                        )
+                        .arg(
+                            Arg::with_name("base64")
+                            .short("b64")
+                            .long("base64")
+                            .takes_value(false)
+                            .help("the server should base64 decode the value before storing it. Useful for writing values that wouldn't otherwise be valid JSON strings, such as images."),	
+                        )
+                        .arg(
+                            Arg::with_name("file")
+                            .short("f")
+                            .long("file")
+                            .takes_value(false)
+                            .help("the value passed in is a filename; open and upload its contents"),
+                        )
+                )
         )
         .subcommand(
             SubCommand::with_name("generate")
@@ -297,6 +339,27 @@ fn run() -> Result<(), failure::Error> {
             }
             ("list", Some(_create_matches)) => {
                 commands::kv::list_namespaces()?;
+            }
+            ("set-key", Some(set_key_matches)) => {
+                let project = settings::project::Project::new()?;
+                let user = settings::global_user::GlobalUser::new()?;
+                let id = set_key_matches.value_of("id").unwrap();
+                let key = set_key_matches.value_of("key").unwrap();
+                let value = set_key_matches.value_of("value").unwrap();
+                let is_file = match set_key_matches.occurrences_of("file") {
+                    1 => true,
+                    _ => false,
+                };
+                let expiration = set_key_matches.value_of("expiration");
+                let ttl = set_key_matches.value_of("expiration-ttl");
+                let base64 = match set_key_matches.occurrences_of("base64") {
+                    1 => true,
+                    _ => false,
+                };
+
+                commands::kv::set_key(
+                    &project, &user, id, key, value, is_file, expiration, ttl, base64,
+                )?;
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),
