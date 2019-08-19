@@ -1,6 +1,6 @@
-use cloudflare::apiclient::ApiClient;
+use cloudflare::framework::apiclient::ApiClient;
 
-use cloudflare::workerskv::remove_namespace::RemoveNamespace;
+use cloudflare::endpoints::workerskv::remove_namespace::RemoveNamespace;
 
 use crate::terminal::message;
 

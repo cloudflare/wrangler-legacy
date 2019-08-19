@@ -1,6 +1,6 @@
-use cloudflare::apiclient::ApiClient;
-use cloudflare::workerskv::list_namespaces::ListNamespaces;
-use cloudflare::workerskv::WorkersKvNamespace;
+use cloudflare::endpoints::workerskv::list_namespaces::ListNamespaces;
+use cloudflare::endpoints::workerskv::WorkersKvNamespace;
+use cloudflare::framework::apiclient::ApiClient;
 
 use prettytable::{Cell, Row, Table};
 

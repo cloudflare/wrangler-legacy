@@ -1,7 +1,7 @@
-use cloudflare::apiclient::ApiClient;
+use cloudflare::framework::apiclient::ApiClient;
 
-use cloudflare::workerskv::create_namespace::CreateNamespace;
-use cloudflare::workerskv::create_namespace::CreateNamespaceParams;
+use cloudflare::endpoints::workerskv::create_namespace::CreateNamespace;
+use cloudflare::endpoints::workerskv::create_namespace::CreateNamespaceParams;
 
 use crate::terminal::message;
 

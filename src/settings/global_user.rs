@@ -1,7 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-use cloudflare::auth::Credentials;
+use cloudflare::framework::auth::Credentials;
 use log::info;
 use serde::{Deserialize, Serialize};
 

@@ -1,7 +1,7 @@
-use cloudflare::auth::Credentials;
-use cloudflare::response::ApiFailure;
+use cloudflare::framework::auth::Credentials;
+use cloudflare::framework::response::ApiFailure;
 
-use cloudflare::HttpApiClient;
+use cloudflare::framework::HttpApiClient;
 
 use crate::settings;
 use crate::terminal::message;

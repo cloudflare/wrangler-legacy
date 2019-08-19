@@ -1,7 +1,7 @@
-use cloudflare::apiclient::ApiClient;
+use cloudflare::framework::apiclient::ApiClient;
 
-use cloudflare::workerskv::rename_namespace::RenameNamespace;
-use cloudflare::workerskv::rename_namespace::RenameNamespaceParams;
+use cloudflare::endpoints::workerskv::rename_namespace::RenameNamespace;
+use cloudflare::endpoints::workerskv::rename_namespace::RenameNamespaceParams;
 
 use crate::terminal::message;
 
