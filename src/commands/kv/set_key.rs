@@ -29,19 +29,19 @@ pub fn set_key(
     );
 
     // Add expiration, expiration_ttl, and base64 query options as necessary.
-    let mut vector: Vec<(&str, &str)> = vec![];
+    let mut query_params: Vec<(&str, &str)> = vec![];
     match expiration {
-        Some(exp) => vector.push(("expiration", exp)),
+        Some(exp) => query_params.push(("expiration", exp)),
         None => (),
     }
     match expiration_ttl {
-        Some(ttl) => vector.push(("expiration_ttl", ttl)),
+        Some(ttl) => query_params.push(("expiration_ttl", ttl)),
         None => (),
     }
     if base64 {
-        vector.push(("base64", "true"));
+        query_params.push(("base64", "true"));
     }
-    let url = Url::parse_with_params(&api_endpoint, vector);
+    let url = Url::parse_with_params(&api_endpoint, query_params);
 
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
