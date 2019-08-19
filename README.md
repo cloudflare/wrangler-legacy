@@ -111,6 +111,14 @@ General documentation surrounding workers development and using `wrangler` can b
 
     Preview your project using the [Cloudflare Workers preview service](cloudflareworkers.com).
 
+    By default, `wrangler preview` will only bundle your project a single time. To enable live preview,
+    where Wrangler will continually update the preview service with the newest version of your project,
+    pass the `--watch` flag:
+
+    ```bash
+    wrangler preview --watch
+    ```
+
     You can optionally pass `get` or `post` and a `body` to this command. This will send a request to your
     worker on the preview service and return the response in your terminal. For example:
 

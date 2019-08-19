@@ -60,7 +60,7 @@ if (!existsSync(cwd)) {
   mkdirSync(cwd);
 }
 
-getReleaseByTag("1.1.1")
+getReleaseByTag("1.2.0")
   .then(assets => {
     const [compatibleAssets] = assets.filter(asset =>
       asset.name.endsWith(getPlatform() + ".tar.gz")

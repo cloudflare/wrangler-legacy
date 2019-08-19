@@ -4,7 +4,7 @@ pub mod preview;
 mod route;
 mod upload_form;
 
-use package::Package;
+pub use package::Package;
 use route::Route;
 use upload_form::build_script_upload_form;
 
