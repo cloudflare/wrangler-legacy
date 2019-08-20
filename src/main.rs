@@ -78,7 +78,7 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("list")
                 )
                 .subcommand(
-                    SubCommand::with_name("get-key")
+                    SubCommand::with_name("read-key")
                         .arg(
                             Arg::with_name("id")
                         )
@@ -307,12 +307,12 @@ fn run() -> Result<(), failure::Error> {
             ("list", Some(_create_matches)) => {
                 commands::kv::list_namespaces()?;
             }
-            ("get-key", Some(get_key_matches)) => {
+            ("read-key", Some(read_key_matches)) => {
                 let project = settings::project::Project::new()?;
                 let user = settings::global_user::GlobalUser::new()?;
-                let id = get_key_matches.value_of("id").unwrap();
-                let key = get_key_matches.value_of("key").unwrap();
-                commands::kv::get_key(&project, &user, id, key)?;
+                let id = read_key_matches.value_of("id").unwrap();
+                let key = read_key_matches.value_of("key").unwrap();
+                commands::kv::read_key(&project, &user, id, key)?;
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),

@@ -8,13 +8,13 @@ use crate::terminal::message;
 
 mod create_namespace;
 mod delete_namespace;
-mod get_key;
+mod read_key;
 mod list_namespaces;
 mod rename_namespace;
 
 pub use create_namespace::create_namespace;
 pub use delete_namespace::delete_namespace;
-pub use get_key::get_key;
+pub use read_key::read_key;
 pub use list_namespaces::list_namespaces;
 pub use rename_namespace::rename_namespace;
 

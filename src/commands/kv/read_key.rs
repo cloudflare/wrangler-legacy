@@ -10,7 +10,7 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 
-pub fn get_key(
+pub fn read_key(
     project: &Project,
     user: &GlobalUser,
     id: &str,
