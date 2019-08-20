@@ -27,7 +27,7 @@ pub fn write_key(
         project.account_id, id, key
     );
 
-    // Add expiration, expiration_ttl, and base64 query options as necessary.
+    // Add expiration and expiration_ttl query options as necessary.
     let mut query_params: Vec<(&str, &str)> = vec![];
     match expiration {
         Some(exp) => query_params.push(("expiration", exp)),
