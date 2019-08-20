@@ -154,6 +154,20 @@ fn run() -> Result<(), failure::Error> {
                             Arg::with_name("path")
                         )
                 )
+                .subcommand(
+                    SubCommand::with_name("list-keys")
+                        .arg(
+                            Arg::with_name("id")
+                        )
+                        .arg(
+                            Arg::with_name("prefix")
+                            .short("p")
+                            .long("prefix")
+                            .value_name("STRING")
+                            .takes_value(true)
+                            .help("The prefix to filter listed keys by"),
+                        )
+                )
         )
         .subcommand(
             SubCommand::with_name("generate")
@@ -410,6 +424,11 @@ fn run() -> Result<(), failure::Error> {
                 let id = delete_matches.value_of("id").unwrap();
                 let path = delete_matches.value_of("path").unwrap();
                 commands::kv::delete_bulk(id, Path::new(path))?;
+            }
+            ("list-keys", Some(list_keys_matches)) => {
+                let id = list_keys_matches.value_of("id").unwrap();
+                let prefix = list_keys_matches.value_of("prefix");
+                commands::kv::list_keys(id, prefix)?;
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),
