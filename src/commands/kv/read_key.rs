@@ -3,8 +3,8 @@
 // because the GET key operation doesn't return json on success--just the raw
 // value).
 
-use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 use cloudflare::framework::response::ApiFailure;
+use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
