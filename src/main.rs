@@ -78,7 +78,7 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("list")
                 )
                 .subcommand(
-                    SubCommand::with_name("set-key")
+                    SubCommand::with_name("write-key")
                         .arg(
                             Arg::with_name("id")
                         )
@@ -103,13 +103,6 @@ fn run() -> Result<(), failure::Error> {
                             .value_name("SECONDS")
                             .takes_value(true)
                             .help("the number of seconds for which the entries should be visible before they expire. At least 60"),
-                        )
-                        .arg(
-                            Arg::with_name("base64")
-                            .short("b64")
-                            .long("base64")
-                            .takes_value(false)
-                            .help("the server should base64 decode the value before storing it. Useful for writing values that wouldn't otherwise be valid JSON strings, such as images."),	
                         )
                         .arg(
                             Arg::with_name("file")
@@ -340,25 +333,21 @@ fn run() -> Result<(), failure::Error> {
             ("list", Some(_create_matches)) => {
                 commands::kv::list_namespaces()?;
             }
-            ("set-key", Some(set_key_matches)) => {
+            ("write-key", Some(write_key_matches)) => {
                 let project = settings::project::Project::new()?;
                 let user = settings::global_user::GlobalUser::new()?;
-                let id = set_key_matches.value_of("id").unwrap();
-                let key = set_key_matches.value_of("key").unwrap();
-                let value = set_key_matches.value_of("value").unwrap();
-                let is_file = match set_key_matches.occurrences_of("file") {
+                let id = write_key_matches.value_of("id").unwrap();
+                let key = write_key_matches.value_of("key").unwrap();
+                let value = write_key_matches.value_of("value").unwrap();
+                let is_file = match write_key_matches.occurrences_of("file") {
                     1 => true,
                     _ => false,
                 };
-                let expiration = set_key_matches.value_of("expiration");
-                let ttl = set_key_matches.value_of("expiration-ttl");
-                let base64 = match set_key_matches.occurrences_of("base64") {
-                    1 => true,
-                    _ => false,
-                };
+                let expiration = write_key_matches.value_of("expiration");
+                let ttl = write_key_matches.value_of("expiration-ttl");
 
-                commands::kv::set_key(
-                    &project, &user, id, key, value, is_file, expiration, ttl, base64,
+                commands::kv::write_key(
+                    &project, &user, id, key, value, is_file, expiration, ttl,
                 )?;
             }
             ("", None) => message::warn("kv expects a subcommand"),

@@ -12,7 +12,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-pub fn set_key(
+pub fn write_key(
     project: &Project,
     user: &GlobalUser,
     id: &str,
@@ -21,7 +21,6 @@ pub fn set_key(
     is_file: bool,
     expiration: Option<&str>,
     expiration_ttl: Option<&str>,
-    base64: bool,
 ) -> Result<(), failure::Error> {
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
@@ -37,9 +36,6 @@ pub fn set_key(
     match expiration_ttl {
         Some(ttl) => query_params.push(("expiration_ttl", ttl)),
         None => (),
-    }
-    if base64 {
-        query_params.push(("base64", "true"));
     }
     let url = Url::parse_with_params(&api_endpoint, query_params);
 
