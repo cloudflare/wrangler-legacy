@@ -37,6 +37,9 @@ text_io = "0.1.7"
 exitfailure = "0.5.1"
 notify = "4.0.12"
 ws = "0.9.0"
+shh = "1.0.0"
+jobserver = "0.1.16"
+shell-escape = "0.1.4"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"

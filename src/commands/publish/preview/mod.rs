@@ -3,11 +3,13 @@ use std::process::Command;
 mod fiddle_messenger;
 use fiddle_messenger::*;
 
+pub mod httpie;
+
 mod http_method;
 pub use http_method::HTTPMethod;
 
 mod upload;
-use upload::upload_and_get_id;
+pub use upload::upload_and_get_id;
 
 use crate::commands;
 
@@ -25,11 +27,12 @@ use std::thread;
 use ws::{Sender, WebSocket};
 
 // Using this instead of just `https://cloudflareworkers.com` returns just the worker response to the CLI
-const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
+pub const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
 
 pub fn preview(
     project: Project,
     user: Option<GlobalUser>,
+    preview_host: String,
     method: HTTPMethod,
     body: Option<String>,
     livereload: bool,
@@ -38,7 +41,6 @@ pub fn preview(
     let script_id = upload_and_get_id(&project, user.as_ref())?;
 
     let session = Uuid::new_v4().to_simple();
-    let preview_host = "example.com";
     let https = true;
     let https_str = if https { "https://" } else { "http://" };
 

@@ -18,6 +18,7 @@ mod installer;
 mod settings;
 mod terminal;
 mod util;
+mod process_builder;
 
 use crate::settings::project::ProjectType;
 use exitfailure::ExitFailure;
@@ -46,6 +47,7 @@ fn run() -> Result<(), failure::Error> {
         .author("ashley g williams <ashley666ashley@gmail.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::TrailingVarArg)
         .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
@@ -97,6 +99,35 @@ fn run() -> Result<(), failure::Error> {
                 ))
         )
         .subcommand(
+            SubCommand::with_name("http")
+                .about(&*format!(
+                    "{} Test your worker using httpie",
+                    emoji::MICROSCOPE
+                ))
+                .arg(
+                    Arg::with_name("host")
+                        .short("h")
+                        .long("host")
+                        .takes_value(true)
+                        .value_name("host")
+                        .help("What host to test your project in front of.")
+                )
+                .arg(Arg::with_name("http-args")
+                    .multiple(true)
+                )
+            )
+        .subcommand(
+            SubCommand::with_name("http-prompt")
+                .about(&*format!(
+                    "{} Test your worker using http-prompt",
+                    emoji::MICROSCOPE
+                ))
+                .arg(
+                    Arg::with_name("host")
+                        .help("What host to test your project in front of.")
+                )
+            )
+        .subcommand(
             SubCommand::with_name("preview")
                 .about(&*format!(
                     "{} Preview your code temporarily on cloudflareworkers.com",
@@ -111,6 +142,11 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("body")
                         .help("Body string to post to your preview worker request")
                         .index(2),
+                )
+                .arg(
+                    Arg::with_name("host")
+                        .help("What host to test your project in front of.")
+                        .index(3),
                 )
                 .arg(
                     Arg::with_name("watch")
@@ -214,9 +250,38 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
+        let host = matches.value_of("host").unwrap_or("example.com").to_string();
+
         let watch = matches.is_present("watch");
 
-        commands::preview(project, user, method, body, watch)?;
+        commands::preview(project, user, host, method, body, watch)?;
+    } else if let Some(subcommand_args) = matches.subcommand_matches("http") {
+        info!("Getting project settings");
+        let project = settings::project::Project::new()?;
+
+        // the preview command can be called with or without a Global User having been config'd
+        // so we convert this Result into an Option
+        let user = settings::global_user::GlobalUser::new().ok();
+
+        let host = matches.value_of("host").unwrap_or("example.com").to_string();
+
+        let mut ext_args: Vec<&str> = vec![];
+        ext_args.extend(subcommand_args.values_of("http-args").unwrap_or_default());
+
+        info!("args to httpie {:?}", ext_args);
+
+        commands::httpie(project, user, host, &ext_args)?;
+    } else if matches.subcommand_matches("http-prompt").is_some() {
+        info!("Getting project settings");
+        let project = settings::project::Project::new()?;
+
+        // the preview command can be called with or without a Global User having been config'd
+        // so we convert this Result into an Option
+        let user = settings::global_user::GlobalUser::new().ok();
+
+        let host = matches.value_of("host").unwrap_or("example.com").to_string();
+
+        commands::httpie_prompt(project, user, host)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

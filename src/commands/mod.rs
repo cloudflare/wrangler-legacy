@@ -15,6 +15,7 @@ pub use build::build;
 pub use build::watch_and_build;
 pub use generate::generate;
 pub use init::init;
+pub use publish::preview::httpie::{httpie, httpie_prompt};
 pub use publish::preview::preview;
 pub use publish::preview::HTTPMethod;
 pub use publish::publish;
