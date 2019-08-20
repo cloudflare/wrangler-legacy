@@ -346,9 +346,7 @@ fn run() -> Result<(), failure::Error> {
                 let expiration = write_key_matches.value_of("expiration");
                 let ttl = write_key_matches.value_of("expiration-ttl");
 
-                commands::kv::write_key(
-                    &project, &user, id, key, value, is_file, expiration, ttl,
-                )?;
+                commands::kv::write_key(&project, &user, id, key, value, is_file, expiration, ttl)?;
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),
