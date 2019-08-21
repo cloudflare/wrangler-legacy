@@ -78,6 +78,15 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("list")
                 )
                 .subcommand(
+                    SubCommand::with_name("read-key")
+                        .arg(
+                            Arg::with_name("id")
+                        )
+                        .arg(
+                            Arg::with_name("key")
+                        )
+                )
+                .subcommand(
                     SubCommand::with_name("write-key")
                         .arg(
                             Arg::with_name("id")
@@ -332,6 +341,14 @@ fn run() -> Result<(), failure::Error> {
             }
             ("list", Some(_create_matches)) => {
                 commands::kv::list_namespaces()?;
+            }
+            ("read-key", Some(read_key_matches)) => {
+                let project = settings::project::Project::new()?;
+                let user = settings::global_user::GlobalUser::new()?;
+                let id = read_key_matches.value_of("id").unwrap();
+                let key = read_key_matches.value_of("key").unwrap();
+              
+                commands::kv::read_key(&project, &user, id, key)?;
             }
             ("write-key", Some(write_key_matches)) => {
                 let project = settings::project::Project::new()?;
