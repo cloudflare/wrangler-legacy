@@ -86,6 +86,41 @@ fn run() -> Result<(), failure::Error> {
                             Arg::with_name("key")
                         )
                 )
+                .subcommand(
+                    SubCommand::with_name("write-key")
+                        .arg(
+                            Arg::with_name("id")
+                        )
+                        .arg(
+                            Arg::with_name("key")
+                        )
+                        .arg(
+                            Arg::with_name("value")
+                        )
+                        .arg(
+                            Arg::with_name("expiration")
+                            .short("e")
+                            .long("expiration")
+                            .takes_value(true)
+                            .value_name("SECONDS")
+                            .help("the time, measured in number of seconds since the UNIX epoch, at which the entries should expire"),
+                        )
+                        .arg(
+                            Arg::with_name("expiration-ttl")
+                            .short("t")
+                            .long("ttl")
+                            .value_name("SECONDS")
+                            .takes_value(true)
+                            .help("the number of seconds for which the entries should be visible before they expire. At least 60"),
+                        )
+                        .arg(
+                            Arg::with_name("file")
+                            .short("f")
+                            .long("file")
+                            .takes_value(false)
+                            .help("the value passed in is a filename; open and upload its contents"),
+                        )
+                )
         )
         .subcommand(
             SubCommand::with_name("generate")
@@ -312,7 +347,23 @@ fn run() -> Result<(), failure::Error> {
                 let user = settings::global_user::GlobalUser::new()?;
                 let id = read_key_matches.value_of("id").unwrap();
                 let key = read_key_matches.value_of("key").unwrap();
+
                 commands::kv::read_key(&project, &user, id, key)?;
+            }
+            ("write-key", Some(write_key_matches)) => {
+                let project = settings::project::Project::new()?;
+                let user = settings::global_user::GlobalUser::new()?;
+                let id = write_key_matches.value_of("id").unwrap();
+                let key = write_key_matches.value_of("key").unwrap();
+                let value = write_key_matches.value_of("value").unwrap();
+                let is_file = match write_key_matches.occurrences_of("file") {
+                    1 => true,
+                    _ => false,
+                };
+                let expiration = write_key_matches.value_of("expiration");
+                let ttl = write_key_matches.value_of("expiration-ttl");
+
+                commands::kv::write_key(&project, &user, id, key, value, is_file, expiration, ttl)?;
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),
