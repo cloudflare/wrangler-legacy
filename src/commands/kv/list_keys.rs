@@ -31,7 +31,6 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
     print!("["); // Open json list bracket
 
     // used to track whether to put a glue "," before printing a json blob.
-    let mut page = 1;
     // Iterate over all pages until no pages of keys are left.
     // This is detected when a returned cursor is an empty string.
     // todo(gabbi): the code in this loop is the product of a looooong fight
@@ -49,7 +48,7 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
         match cursor {
             None => {
                 // Case where we are done iterating through pages (no cursor returned)
-                print_page(result, page)?;
+                print_page(result, true)?;
                 print!("]"); // Close json list bracket
                 break;
             }
@@ -63,11 +62,10 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
                 // outputting them all at once). What do the reviewers think about this?
                 // I figured this was the best option because it wouldn't eat memory, but
                 // I'm curious what other folks think.
-                print_page(result, page)?;
+                print_page(result, false)?;
                 response = client.request(&request_params);
             }
         }
-        page = page + 1;
     }
 
     Ok(())
@@ -85,14 +83,13 @@ fn get_cursor_from_result_info(result_info: Option<JsonValue>) -> Option<String>
     }
 }
 
-fn print_page(keys: Vec<Key>, page: isize) -> Result<(), failure::Error> {
-    // add comma between this set of json blobs and the previous json blob, if
-    // previous json blob exists. This "concatenates" them.
-    if page > 1 {
-        print!(",")
-    }
-    for key in keys {
-        print!("{}", serde_json::to_string(&key)?);
+fn print_page(keys: Vec<Key>, last_page: bool) -> Result<(), failure::Error> {
+    for i in 0..keys.len() {
+        print!("{}", serde_json::to_string(&keys[i])?);
+        // if last key on last page, don't print final comma.
+        if !(last_page && i == keys.len() - 1) {
+            print!(",");
+        }
     }
     Ok(())
 }
