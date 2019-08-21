@@ -259,7 +259,7 @@ dependencies = [
 [[package]]
 name = "cloudflare"
 version = "0.1.0"
-source = "git+https://github.com/cloudflare/cloudflare-rs.git#12c17c27152ffabf20472a83be014e3919f63c5a"
+source = "git+https://github.com/cloudflare/cloudflare-rs.git#ed734bec9a5d06b9502a959d0040599196437176"
 dependencies = [
  "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
