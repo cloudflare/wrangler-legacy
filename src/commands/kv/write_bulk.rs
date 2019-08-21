@@ -3,7 +3,6 @@ extern crate base64;
 use cloudflare::framework::apiclient::ApiClient;
 use walkdir::WalkDir;
 
-use std::ffi::OsString;
 use std::fs;
 use std::fs::metadata;
 use std::path::Path;
@@ -59,7 +58,7 @@ fn parse_directory(directory: &Path) -> Result<Vec<KeyValuePair>, failure::Error
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
-            let key = generate_key(path, directory)?;
+            let key = super::generate_key(path, directory)?;
 
             let value = std::fs::read(path)?;
 
@@ -76,31 +75,4 @@ fn parse_directory(directory: &Path) -> Result<Vec<KeyValuePair>, failure::Error
         }
     }
     Ok(upload_vec)
-}
-
-// Courtesy of Steve Kalabnik's PoC :)
-fn generate_key(path: &Path, directory: &Path) -> Result<String, failure::Error> {
-    let path = path.strip_prefix(directory).unwrap();
-
-    // next, we have to re-build the paths: if we're on Windows, we have paths with
-    // `\` as separators. But we want to use `/` as separators. Because that's how URLs
-    // work.
-    let mut path_with_forward_slash = OsString::new();
-
-    for (i, component) in path.components().enumerate() {
-        // we don't want a leading `/`, so skip that
-        if i > 0 {
-            path_with_forward_slash.push("/");
-        }
-
-        path_with_forward_slash.push(component);
-    }
-
-    // if we have a non-utf8 path here, it will fail, but that's not realistically going to happen
-    let path = path_with_forward_slash.to_str().expect(&format!(
-        "found a non-UTF-8 path, {:?}",
-        path_with_forward_slash
-    ));
-
-    Ok(path.to_string())
 }
