@@ -30,7 +30,6 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
 
     print!("["); // Open json list bracket
 
-    // used to track whether to put a glue "," before printing a json blob.
     // Iterate over all pages until no pages of keys are left.
     // This is detected when a returned cursor is an empty string.
     // todo(gabbi): the code in this loop is the product of a looooong fight
