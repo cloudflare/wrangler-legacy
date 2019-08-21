@@ -37,6 +37,21 @@ fn it_builds_from_config_with_kv() {
     }
 }
 
+#[test]
+fn it_builds_from_config_with_assets() {
+    let toml_path = toml_fixture_path("assets");
+
+    let project = get_project_config(&toml_path).unwrap();
+
+    match project.assets {
+        Some(assets) => {
+            assert_eq!(assets.directory, "./");
+            assert_eq!(assets.kv, "prodKV");
+        }
+        None => assert!(false),
+    }
+}
+
 fn toml_fixture_path(fixture: &str) -> PathBuf {
     let current_dir = env::current_dir().unwrap();
 
