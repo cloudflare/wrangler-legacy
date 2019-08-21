@@ -2,6 +2,7 @@ extern crate serde_json;
 
 use cloudflare::endpoints::workerskv::list_namespace_keys::ListNamespaceKeys;
 use cloudflare::endpoints::workerskv::list_namespace_keys::ListNamespaceKeysParams;
+use cloudflare::endpoints::workerskv::Key;
 use cloudflare::framework::apiclient::ApiClient;
 use failure::bail;
 use serde_json::value::Value as JsonValue;
@@ -30,7 +31,7 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
     print!("["); // Open json list bracket
 
     // used to track whether to put a glue "," before printing a json blob.
-    let mut subsequent_result = false;
+    let mut page = 1;
     // Iterate over all pages until no pages of keys are left.
     // This is detected when a returned cursor is an empty string.
     // todo(gabbi): the code in this loop is the product of a looooong fight
@@ -38,8 +39,8 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
     // the logic below!
     loop {
         let (result, cursor) = match response {
-            Ok(ref success) => (
-                serde_json::to_string(&success.result.clone())?,
+            Ok(success) => (
+                success.result,
                 get_cursor_from_result_info(success.result_info.clone()),
             ),
             Err(e) => bail!(e),
@@ -48,7 +49,7 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
         match cursor {
             None => {
                 // Case where we are done iterating through pages (no cursor returned)
-                print_page(&result, subsequent_result);
+                print_page(result, page)?;
                 print!("]"); // Close json list bracket
                 break;
             }
@@ -62,11 +63,11 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
                 // outputting them all at once). What do the reviewers think about this?
                 // I figured this was the best option because it wouldn't eat memory, but
                 // I'm curious what other folks think.
-                print_page(&result, subsequent_result);
+                print_page(result, page)?;
                 response = client.request(&request_params);
             }
         }
-        subsequent_result = true;
+        page = page + 1;
     }
 
     Ok(())
@@ -84,14 +85,14 @@ fn get_cursor_from_result_info(result_info: Option<JsonValue>) -> Option<String>
     }
 }
 
-fn print_page(json_string: &str, is_subsequent: bool) {
+fn print_page(keys: Vec<Key>, page: isize) -> Result<(), failure::Error> {
     // add comma between this set of json blobs and the previous json blob, if
     // previous json blob exists. This "concatenates" them.
-    if is_subsequent {
+    if page > 1 {
         print!(",")
     }
-    // don't print out beginning`[` and ending `]` braces; the point is that we want only one
-    // json array to get returned (so we print out each page's json blobs only
-    // and add the `[]` array notation ourselves).
-    print!("{}", &json_string[1..json_string.len() - 1]);
+    for key in keys {
+        print!("{}", serde_json::to_string(&key)?);
+    }
+    Ok(())
 }
