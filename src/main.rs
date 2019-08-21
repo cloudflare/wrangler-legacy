@@ -347,7 +347,7 @@ fn run() -> Result<(), failure::Error> {
                 let user = settings::global_user::GlobalUser::new()?;
                 let id = read_key_matches.value_of("id").unwrap();
                 let key = read_key_matches.value_of("key").unwrap();
-              
+
                 commands::kv::read_key(&project, &user, id, key)?;
             }
             ("write-key", Some(write_key_matches)) => {
