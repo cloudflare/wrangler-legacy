@@ -29,6 +29,8 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
 
     print!("["); // Open json list bracket
 
+    // used to track whether to put a glue "," before printing a json blob.
+    let mut subsequent_result = false;
     // Iterate over all pages until no pages of keys are left.
     // This is detected when a returned cursor is an empty string.
     // todo(gabbi): the code in this loop is the product of a looooong fight
@@ -46,7 +48,7 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
         match cursor {
             None => {
                 // Case where we are done iterating through pages (no cursor returned)
-                print_page(&result);
+                print_page(&result, subsequent_result);
                 print!("]"); // Close json list bracket
                 break;
             }
@@ -60,11 +62,11 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
                 // outputting them all at once). What do the reviewers think about this?
                 // I figured this was the best option because it wouldn't eat memory, but
                 // I'm curious what other folks think.
-                print_page(&result);
-                print!(","); // add comma between this set of json blobs and next set of json blobs.
+                print_page(&result, subsequent_result);
                 response = client.request(&request_params);
             }
         }
+        subsequent_result = true;
     }
 
     Ok(())
@@ -82,7 +84,12 @@ fn get_cursor_from_result_info(result_info: Option<JsonValue>) -> Option<String>
     }
 }
 
-fn print_page(json_string: &str) {
+fn print_page(json_string: &str, is_subsequent: bool) {
+    // add comma between this set of json blobs and the previous json blob, if
+    // previous json blob exists. This "concatenates" them.
+    if is_subsequent {
+        print!(",")
+    }
     // don't print out beginning`[` and ending `]` braces; the point is that we want only one
     // json array to get returned (so we print out each page's json blobs only
     // and add the `[]` array notation ourselves).
