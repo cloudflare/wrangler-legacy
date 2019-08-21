@@ -120,20 +120,20 @@ fn run() -> Result<(), failure::Error> {
                             .long("file")
                             .takes_value(false)
                             .help("the value passed in is a filename; open and upload its contents"),
-                    SubCommand::with_name("write")
-                        .subcommand(
-                            SubCommand::with_name("bulk")
-                                .about("upload multiple key-value pairs at once")
-                                .arg(
-                                    Arg::with_name("id")
-                                        .help("the id of your Workers KV namespace")
-                                        .index(1),
-                                )
-                                .arg(
-                                    Arg::with_name("path")
-                                    .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...] OR the directory of files to upload.")
-                                    .index(2),
-                                )
+                        )
+                )
+                .subcommand(
+                    SubCommand::with_name("write-bulk")
+                        .about("upload multiple key-value pairs at once")
+                        .arg(
+                            Arg::with_name("id")
+                                .help("the id of your Workers KV namespace")
+                                .index(1),
+                        )
+                        .arg(
+                            Arg::with_name("path")
+                            .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...] OR the directory of files to upload.")
+                            .index(2),
                         )
                 )
         )
@@ -362,7 +362,6 @@ fn run() -> Result<(), failure::Error> {
                 let user = settings::global_user::GlobalUser::new()?;
                 let id = read_key_matches.value_of("id").unwrap();
                 let key = read_key_matches.value_of("key").unwrap();
-
                 commands::kv::read_key(&project, &user, id, key)?;
             }
             ("write-key", Some(write_key_matches)) => {
@@ -377,17 +376,12 @@ fn run() -> Result<(), failure::Error> {
                 };
                 let expiration = write_key_matches.value_of("expiration");
                 let ttl = write_key_matches.value_of("expiration-ttl");
-
                 commands::kv::write_key(&project, &user, id, key, value, is_file, expiration, ttl)?;
             }
-            ("write", Some(write_matches)) => match write_matches.subcommand() {
-                ("bulk", Some(bulk_write_matches)) => {
-                    let id = bulk_write_matches.value_of("id").unwrap();
-                    let filename = bulk_write_matches.value_of("path").unwrap();
-                    commands::kv::write_bulk(id, Path::new(filename))?;
-                }
-                ("", None) => println!("hi!"),
-                _ => unreachable!(),
+            ("write-bulk", Some(write_bulk_matches)) => {
+                let id = write_bulk_matches.value_of("id").unwrap();
+                let filename = write_bulk_matches.value_of("path").unwrap();
+                commands::kv::write_bulk(id, Path::new(filename))?;
             }
             ("", None) => message::warn("kv expects a subcommand"),
             _ => unreachable!(),
