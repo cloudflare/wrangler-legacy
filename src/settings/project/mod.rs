@@ -16,7 +16,7 @@ use log::info;
 use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Project {
     pub name: String,
     #[serde(rename = "type")]
@@ -37,17 +37,8 @@ impl Project {
         project_type: ProjectType,
         init: bool,
     ) -> Result<Project, failure::Error> {
-        let project = Project {
-            name: name.clone(),
-            project_type: project_type.clone(),
-            private: Some(false),
-            zone_id: Some(String::new()),
-            account_id: String::new(),
-            route: Some(String::new()),
-            routes: None,
-            kv_namespaces: None,
-            webpack_config: None,
-        };
+        let mut project = Project::default();
+        project.project_type = project_type.clone();
 
         let toml = toml::to_string(&project)?;
         let config_path = if init {
