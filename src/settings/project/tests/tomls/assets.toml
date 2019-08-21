@@ -1,0 +1,11 @@
+name = "worker"
+type = "webpack"
+zone_id = ""
+private = false
+account_id = ""
+route = ""
+assets = { directory = "./", kv = "prodKV" }
+
+[[kv-namespaces]]
+id = "somecrazylongidentifierstring"
+binding = "prodKV"

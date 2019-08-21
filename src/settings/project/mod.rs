@@ -29,6 +29,7 @@ pub struct Project {
     pub routes: Option<HashMap<String, String>>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub assets: Option<Assets>,
 }
 
 impl Project {
@@ -47,6 +48,7 @@ impl Project {
             routes: None,
             kv_namespaces: None,
             webpack_config: None,
+            assets: None,
         };
 
         let toml = toml::to_string(&project)?;
@@ -90,6 +92,7 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
     if let Ok(values) = kv_namespaces {
         let old_format = values.iter().any(|val| val.clone().into_str().is_ok());
 
+        // TODO: remove old format deprecation warnings
         if old_format {
             message::warn("As of 1.1.0 the kv-namespaces format has been stabilized");
             message::info("Please add a section like this in your `wrangler.toml` for each KV Namespace you wish to bind:");
@@ -123,6 +126,12 @@ id = "0f2ac74b498b48028cb68387c421e279"
             failure::bail!(msg)
         }
     }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct Assets {
+    directory: String,
+    kv: String,
 }
 
 #[cfg(test)]

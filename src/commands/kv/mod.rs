@@ -4,8 +4,8 @@ use std::path::Path;
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
-use http::status::StatusCode;
 use failure::bail;
+use http::status::StatusCode;
 
 use crate::settings;
 use crate::terminal::message;
