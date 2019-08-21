@@ -43,35 +43,43 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
             Err(e) => bail!(e),
         };
 
-        if cursor == "" {
-            // Case where we are done iterating through pages (no cursor returned)
-            print_page(&result);
-            print!("]"); // Close json list bracket
-            break;
-        } else {
-            // Case where we still have pages to iterate through (a cursor is returned).
-            // Update cursor in request_params.params, and make another request to Workers KV API.
-            request_params.params.cursor = Some(cursor);
+        match cursor {
+            None => {
+                // Case where we are done iterating through pages (no cursor returned)
+                print_page(&result);
+                print!("]"); // Close json list bracket
+                break;
+            }
+            Some(_) => {
+                // Case where we still have pages to iterate through (a cursor is returned).
+                // Update cursor in request_params.params, and make another request to Workers KV API.
+                request_params.params.cursor = cursor;
 
-            // todo(gabbi): Right now, I print out the results of every page
-            // as wrangler gets them (instead of storing them in memory and
-            // outputting them all at once). What do the reviewers think about this?
-            // I figured this was the best option because it wouldn't eat memory, but
-            // I'm curious what other folks think.
-            print_page(&result);
-            print!(","); // add comma between this set of json blobs and next set of json blobs.
-            response = client.request(&request_params);
+                // todo(gabbi): Right now, I print out the results of every page
+                // as wrangler gets them (instead of storing them in memory and
+                // outputting them all at once). What do the reviewers think about this?
+                // I figured this was the best option because it wouldn't eat memory, but
+                // I'm curious what other folks think.
+                print_page(&result);
+                print!(","); // add comma between this set of json blobs and next set of json blobs.
+                response = client.request(&request_params);
+            }
         }
     }
 
     Ok(())
 }
 
-fn get_cursor_from_result_info(result_info: Option<JsonValue>) -> String {
+// Returns Some(cursor) if cursor is non-empty, otherwise returns None.
+fn get_cursor_from_result_info(result_info: Option<JsonValue>) -> Option<String> {
     let result_info = result_info.unwrap();
     let returned_cursor_value = &result_info["cursor"];
-    let returned_cursor = returned_cursor_value.as_str().unwrap();
-    return returned_cursor.to_string();
+    let returned_cursor = returned_cursor_value.as_str().unwrap().to_string();
+    if returned_cursor.is_empty() {
+        None
+    } else {
+        Some(returned_cursor)
+    }
 }
 
 fn print_page(json_string: &str) {
