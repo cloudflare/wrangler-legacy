@@ -17,6 +17,7 @@ mod install;
 mod installer;
 mod settings;
 mod terminal;
+mod util;
 
 use crate::settings::project::ProjectType;
 use exitfailure::ExitFailure;
@@ -124,6 +125,12 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("environment")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("watch")
+                        .help("watch your project for changes and update the preview automagically")
+                        .long("watch")
+                        .takes_value(false),
                 ),
         )
         .subcommand(
@@ -213,19 +220,26 @@ fn run() -> Result<(), failure::Error> {
     } else if matches.subcommand_matches("build").is_some() {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
+
         commands::build(&project)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;
 
-        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
+        // the preview command can be called with or without a Global User having been config'd
+        // so we convert this Result into an Option
+        let user = settings::global_user::GlobalUser::new().ok();
+
+        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
             None => None,
         };
 
-        commands::preview(&project, method, body)?;
+        let watch = matches.is_present("watch");
+
+        commands::preview(project, user, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
