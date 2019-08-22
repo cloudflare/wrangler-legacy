@@ -29,7 +29,6 @@ pub struct Project {
     pub routes: Option<HashMap<String, String>>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
-    pub assets: Option<Assets>,
 }
 
 impl Project {
@@ -48,7 +47,6 @@ impl Project {
             routes: None,
             kv_namespaces: None,
             webpack_config: None,
-            assets: None,
         };
 
         let toml = toml::to_string(&project)?;
@@ -72,23 +70,6 @@ impl Project {
 
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
         self.kv_namespaces.clone().unwrap_or_else(Vec::new)
-    }
-
-    pub fn asset_directory_with_kv(&self) -> Result<(String, String), failure::Error> {
-        let directory;
-        let binding;
-        if let Some(a) = &self.assets {
-            directory = a.directory.clone();
-            binding = a.kv.clone();
-        } else {
-            failure::bail!("No assets defined");
-        }
-
-        let namespaces = self.kv_namespaces();
-
-        let namespace = namespaces.iter().find(|ns| ns.binding == binding).unwrap();
-
-        Ok((directory, namespace.id.clone()))
     }
 }
 
@@ -118,9 +99,11 @@ fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
 [[kv-namespaces]]
 binding = "BINDING_NAME"
 id = "0f2ac74b498b48028cb68387c421e279"
+bucket = "./public" # OPTIONAL
 
 # binding is the variable name you wish to bind the namespace to in your script.
 # id is the namespace_id assigned to your kv namespace upon creation. e.g. (per namespace)
+# bucket is the path to the directory you want to upload relative to your wrangler.toml
 "##;
 
             println!("{}", fmt_demo);
@@ -143,12 +126,6 @@ id = "0f2ac74b498b48028cb68387c421e279"
             failure::bail!(msg)
         }
     }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct Assets {
-    pub directory: String,
-    pub kv: String,
 }
 
 #[cfg(test)]

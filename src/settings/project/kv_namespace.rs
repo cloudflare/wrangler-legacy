@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct KvNamespace {
     pub id: String,
     pub binding: String,
+    pub bucket: Option<String>,
 }
 
 impl fmt::Display for KvNamespace {

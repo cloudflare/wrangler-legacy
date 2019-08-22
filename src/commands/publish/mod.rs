@@ -24,7 +24,7 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     info!("release = {}", release);
 
     validate_project(project, release)?;
-    upload_assets(project)?;
+    upload_bucket(project)?;
     commands::build(&project)?;
     publish_script(&user, &project, release)?;
     if release {
@@ -82,20 +82,18 @@ fn publish_script(
     Ok(())
 }
 
-fn upload_assets(project: &Project) -> Result<(), failure::Error> {
-    match &project.assets {
-        Some(assets) => {
-            let path = Path::new(&assets.directory);
+fn upload_bucket(project: &Project) -> Result<(), failure::Error> {
+    for namespace in &project.kv_namespaces() {
+        if let Some(bucket) = &namespace.bucket {
+            let path = Path::new(&bucket);
             match metadata(path) {
                 Ok(ref file_type) if file_type.is_file() => {
-                    panic!("assets should point to a directory");
+                    panic!("bucket should point to a directory");
                 }
                 Ok(ref file_type) if file_type.is_dir() => {
                     println!("Publishing contents of directory {:?}", path.as_os_str());
 
-                    let (directory, namespace_id) = project.asset_directory_with_kv()?;
-
-                    kv::write_bulk(&namespace_id, Path::new(&directory))
+                    kv::write_bulk(&namespace.id, Path::new(&path))?;
                 }
                 Ok(file_type) => {
                     // any other file types (namely, symlinks)
@@ -108,8 +106,9 @@ fn upload_assets(project: &Project) -> Result<(), failure::Error> {
                 Err(e) => panic!(e),
             }
         }
-        None => panic!("no assets directory specified"),
     }
+
+    Ok(())
 }
 
 fn build_subdomain_request() -> String {
