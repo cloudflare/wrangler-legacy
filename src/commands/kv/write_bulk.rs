@@ -53,7 +53,7 @@ pub fn write_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
         );
     }
     // Next, iterate over keys and values and make sure each is under limit
-    for pair in pairs.clone() {
+    for pair in &pairs {
         if pair.key.len() > MAX_KEY_SIZE {
             bail!(
                 "key {} is too large; it is over {} bytes",
