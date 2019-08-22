@@ -20,6 +20,10 @@ use crate::terminal::message;
 pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
 
+    if release {
+        message::warn("--release will be deprecated, please use --environment instead!");
+    }
+
     validate_project(project, release)?;
     commands::build(&project)?;
     publish_script(&user, &project, release)?;

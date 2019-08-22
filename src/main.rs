@@ -143,7 +143,7 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("release")
                         .long("release")
                         .takes_value(false)
-                        .help("[this will be deprecated, use --env instead]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
+                        .help("[this will be deprecated, use --environment instead]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
                 )
                 .arg(
                     Arg::with_name("env")
@@ -254,6 +254,9 @@ fn run() -> Result<(), failure::Error> {
         let user = settings::global_user::GlobalUser::new()?;
 
         info!("Getting project settings");
+        if matches.is_present("env") && matches.is_present("release") {
+            failure::bail!("You can only pass --environment or --release, not both")
+        }
         if matches.is_present("env") {
             let environment = matches.value_of("env").unwrap();
             let project = settings::project::Project::new_from_environment(environment)?;
@@ -262,7 +265,8 @@ fn run() -> Result<(), failure::Error> {
             let project = settings::project::Project::new()?;
             commands::publish(&user, &project, true)?;
         } else {
-            failure::bail!("You can only pass --environment or --release, not both")
+            let project = settings::project::Project::new()?;
+            commands::publish(&user, &project, false)?;
         }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");

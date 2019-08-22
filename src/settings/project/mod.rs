@@ -131,11 +131,11 @@ id = "0f2ac74b498b48028cb68387c421e279"
             failure::err_msg(msg)
         });
     }
+    if environment_name.is_none() {
+        failure::bail!("There are no environments in your `wrangler.toml`!")
+    }
     let environments = environments.unwrap();
-    let environment_name = match environment_name {
-        None => "default",
-        Some(x) => x,
-    };
+    let environment_name = environment_name.unwrap();
     let environment = match environments.get(environment_name) {
         Some(e) => e,
         None => failure::bail!(format!(
