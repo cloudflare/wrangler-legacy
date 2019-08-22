@@ -4,6 +4,7 @@ use std::path::Path;
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
+use http::status::StatusCode;
 
 use crate::settings;
 use crate::terminal::message;
@@ -47,7 +48,8 @@ fn account_id() -> Result<String, failure::Error> {
 
 fn print_error(e: ApiFailure) {
     match e {
-        ApiFailure::Error(_status, api_errors) => {
+        ApiFailure::Error(status, api_errors) => {
+            give_status_code_context(status);
             for error in api_errors.errors {
                 message::warn(&format!("Error {}: {}", error.code, error.message));
 
@@ -58,6 +60,15 @@ fn print_error(e: ApiFailure) {
             }
         }
         ApiFailure::Invalid(reqwest_err) => message::warn(&format!("Error: {}", reqwest_err)),
+    }
+}
+
+// For handling cases where the API gateway returns errors via HTTP status codes
+// (no KV error code is given).
+fn give_status_code_context(status_code: StatusCode) {
+    match status_code {
+        StatusCode::PAYLOAD_TOO_LARGE => message::warn("Returned status code 413, Payload Too Large. Make sure your upload is less than 100MB in size"),
+        _ => (),
     }
 }
 
