@@ -38,6 +38,23 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     Ok(())
 }
 
+pub fn publish_environment(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
+    validate_project(project, true)?;
+    commands::build(&project)?;
+    publish_script(&user, &project, true)?;
+    let route = Route::new(&project)?;
+    Route::publish(&user, &project, &route)?;
+    message::success(
+        &format!(
+            "Success! Your worker was successfully published. You can view it at {}.",
+            &route.pattern
+        )
+        .to_owned(),
+    );
+
+    Ok(())
+}
+
 fn publish_script(
     user: &GlobalUser,
     project: &Project,

@@ -151,7 +151,6 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("environment")
                         .takes_value(true)
-                        .multiple(true)
                 ),
         )
         .subcommand(
@@ -219,7 +218,12 @@ fn run() -> Result<(), failure::Error> {
         commands::init(name, project_type)?;
     } else if matches.subcommand_matches("build").is_some() {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
+        let project = if matches.is_present("env") {
+            let environment = matches.value_of("env").unwrap();
+            settings::project::Project::new_from_environment(environment)?
+        } else {
+            settings::project::Project::new()?
+        };
 
         commands::build(&project)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
@@ -246,19 +250,20 @@ fn run() -> Result<(), failure::Error> {
 
         commands::whoami(&user);
     } else if let Some(matches) = matches.subcommand_matches("publish") {
-        info!("Getting project settings");
-        let project = settings::project::Project::new()?;
-
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        info!("{}", matches.occurrences_of("release"));
-        let release = match matches.occurrences_of("release") {
-            1 => true,
-            _ => false,
-        };
-
-        commands::publish(&user, &project, release)?;
+        info!("Getting project settings");
+        if matches.is_present("env") {
+            let environment = matches.value_of("env").unwrap();
+            let project = settings::project::Project::new_from_environment(environment)?;
+            commands::publish_environment(&user, &project)?;
+        } else if matches.is_present("release") {
+            let project = settings::project::Project::new()?;
+            commands::publish(&user, &project, true)?;
+        } else {
+            failure::bail!("You can only pass --environment or --release, not both")
+        }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let project = settings::project::Project::new()?;

@@ -69,9 +69,9 @@ impl Project {
         get_project_config(None, config_path)
     }
 
-    pub fn new_from_environment(environment: Option<&str>) -> Result<Self, failure::Error> {
+    pub fn new_from_environment(environment: &str) -> Result<Self, failure::Error> {
         let config_path = Path::new("./wrangler.toml");
-        get_project_config(environment, config_path)
+        get_project_config(Some(environment), config_path)
     }
 
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {

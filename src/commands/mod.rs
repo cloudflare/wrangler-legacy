@@ -18,6 +18,7 @@ pub use init::init;
 pub use publish::preview::preview;
 pub use publish::preview::HTTPMethod;
 pub use publish::publish;
+pub use publish::publish_environment;
 pub use subdomain::subdomain;
 pub use whoami::whoami;
 
