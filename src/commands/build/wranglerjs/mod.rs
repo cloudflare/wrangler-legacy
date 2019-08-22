@@ -34,8 +34,8 @@ use std::time::Duration;
 // executable and wait for completion. The file will receive the a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(project: &Project) -> Result<(), failure::Error> {
-    let (mut command, temp_file, bundle) = setup_build(project)?;
+pub fn run_build(project: &Project, project_dir: &Path) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(project, project_dir)?;
 
     info!("Running {:?}", command);
 
@@ -55,9 +55,10 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
 
 pub fn run_build_and_watch(
     project: &Project,
+    project_dir: &Path,
     tx: Option<Sender<()>>,
 ) -> Result<(), failure::Error> {
-    let (mut command, temp_file, bundle) = setup_build(project)?;
+    let (mut command, temp_file, bundle) = setup_build(project, project_dir)?;
     command.arg("--watch=1");
 
     info!("Running {:?} in watch mode", command);
@@ -125,13 +126,15 @@ fn write_wranglerjs_output(
 }
 
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
-fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure::Error> {
+fn setup_build(
+    project: &Project,
+    project_dir: &Path,
+) -> Result<(Command, PathBuf, Bundle), failure::Error> {
     for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
 
-    let current_dir = env::current_dir()?;
-    run_npm_install(current_dir).expect("could not run `npm install`");
+    run_npm_install(project_dir).expect("could not run `npm install`");
 
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
@@ -167,9 +170,8 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
     // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
     if !bundle.has_webpack_config(&webpack_config_path) {
-        let package = Package::new("./")?;
-        let current_dir = env::current_dir()?;
-        let package_main = current_dir
+        let package = Package::new(project_dir)?;
+        let package_main = project_dir
             .join(package.main()?)
             .to_str()
             .unwrap()
@@ -188,7 +190,7 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
 
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
-fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
+fn run_npm_install(dir: &Path) -> Result<(), failure::Error> {
     let flock_path = dir.join(&".install.lock");
     let flock = File::create(&flock_path)?;
     // avoid running multiple {npm install} at the same time (eg. in tests)
@@ -196,7 +198,7 @@ fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
 
     if !dir.join("node_modules").exists() {
         let mut command = build_npm_command();
-        command.current_dir(dir.clone());
+        command.current_dir(dir);
         command.arg("install");
         info!("Running {:?} in directory {:?}", command, dir);
 
@@ -267,7 +269,7 @@ fn install() -> Result<PathBuf, failure::Error> {
         wranglerjs_path.path()
     };
 
-    run_npm_install(wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
+    run_npm_install(&wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
     Ok(wranglerjs_path)
 }
 

@@ -1,11 +1,16 @@
 use crate::settings::project::{Project, ProjectType};
 use crate::{commands, install};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::terminal::{emoji, message};
 
-pub fn generate(name: &str, template: &str, pt: Option<ProjectType>) -> Result<(), failure::Error> {
+pub fn generate(
+    name: &str,
+    template: &str,
+    pt: Option<ProjectType>,
+    project_dir: &Path,
+) -> Result<(), failure::Error> {
     let tool_name = "cargo-generate";
     let binary_path = install::install(tool_name, "ashleygwilliams")?.binary(tool_name)?;
 
@@ -16,7 +21,7 @@ pub fn generate(name: &str, template: &str, pt: Option<ProjectType>) -> Result<(
     let command_name = format!("{:?}", command);
 
     commands::run(command, &command_name)?;
-    Project::generate(name.to_string(), pt, false)?;
+    Project::generate(name.to_string(), pt, project_dir, false)?;
     Ok(())
 }
 

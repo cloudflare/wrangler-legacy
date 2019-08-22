@@ -5,22 +5,26 @@ use super::filename_from_path;
 use super::kv_namespace::KvNamespace;
 use super::wasm_module::WasmModule;
 
+use std::path::{Path, PathBuf};
+
 #[derive(Debug)]
 pub struct ProjectAssets {
     script_name: String,
-    script_path: String,
+    script_path: PathBuf,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
 }
 
 impl ProjectAssets {
-    pub fn new(
-        script_path: String,
+    pub fn new<P: Into<PathBuf>>(
+        script_path: P,
         wasm_modules: Vec<WasmModule>,
         kv_namespaces: Vec<KvNamespace>,
     ) -> Result<Self, failure::Error> {
-        let script_name = filename_from_path(&script_path)
-            .ok_or_else(|| format_err!("filename should not be empty: {}", script_path))?;
+        let script_path: PathBuf = script_path.into();
+        let script_name = filename_from_path(&script_path).ok_or_else(|| {
+            format_err!("filename should not be empty: {}", script_path.display())
+        })?;
 
         Ok(Self {
             script_name,
@@ -49,7 +53,7 @@ impl ProjectAssets {
         self.script_name.to_string()
     }
 
-    pub fn script_path(&self) -> String {
-        self.script_path.to_string()
+    pub fn script_path(&self) -> &Path {
+        self.script_path.as_ref()
     }
 }

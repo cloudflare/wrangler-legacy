@@ -9,7 +9,7 @@ use crate::terminal::message;
 
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use log::info;
 
@@ -35,6 +35,7 @@ impl Project {
     pub fn generate(
         name: String,
         project_type: ProjectType,
+        project_dir: &Path,
         init: bool,
     ) -> Result<Project, failure::Error> {
         let project = Project {
@@ -50,11 +51,8 @@ impl Project {
         };
 
         let toml = toml::to_string(&project)?;
-        let config_path = if init {
-            PathBuf::from("./")
-        } else {
-            Path::new("./").join(&name)
-        };
+        let init_dir = project_dir.join(&name);
+        let config_path = if init { project_dir } else { init_dir.as_ref() };
         let config_file = config_path.join("wrangler.toml");
 
         info!("Writing a wrangler.toml file at {}", config_file.display());
@@ -62,10 +60,8 @@ impl Project {
         Ok(project)
     }
 
-    pub fn new() -> Result<Self, failure::Error> {
-        let config_path = Path::new("./wrangler.toml");
-
-        get_project_config(config_path)
+    pub fn new(path: &Path) -> Result<Self, failure::Error> {
+        get_project_config(path.join("wrangler.toml").as_ref())
     }
 
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
@@ -76,10 +72,7 @@ impl Project {
 fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
     let mut s = Config::new();
 
-    let config_str = config_path
-        .to_str()
-        .expect("project config path should be a string");
-    s.merge(File::with_name(config_str))?;
+    s.merge(File::from(config_path))?;
 
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
     s.merge(Environment::with_prefix("CF"))?;

@@ -6,6 +6,8 @@ use crate::terminal::message;
 use reqwest::Client;
 use serde::Deserialize;
 
+use std::path::Path;
+
 #[derive(Debug, Deserialize)]
 struct Preview {
     id: String,
@@ -34,6 +36,7 @@ struct V4ApiResponse {
 
 pub fn upload_and_get_id(
     project: &Project,
+    project_dir: &Path,
     user: Option<&GlobalUser>,
 ) -> Result<String, failure::Error> {
     let preview = match &user {
@@ -45,7 +48,7 @@ pub fn upload_and_get_id(
             if missing_fields.is_empty() {
                 let client = http::auth_client(&user);
 
-                authenticated_upload(&client, &project)?
+                authenticated_upload(&client, &project, &project_dir)?
             } else {
                 message::warn(&format!(
                     "Your wrangler.toml is missing the following fields: {:?}",
@@ -54,7 +57,7 @@ pub fn upload_and_get_id(
                 message::warn("Falling back to unauthenticated preview.");
 
                 let client = http::client();
-                unauthenticated_upload(&client, &project)?
+                unauthenticated_upload(&client, &project, &project_dir)?
             }
         }
         None => {
@@ -67,7 +70,7 @@ pub fn upload_and_get_id(
 
             let client = http::client();
 
-            unauthenticated_upload(&client, &project)?
+            unauthenticated_upload(&client, &project, &project_dir)?
         }
     };
 
@@ -102,14 +105,18 @@ fn validate(project: &Project) -> Vec<&str> {
     missing_fields
 }
 
-fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+fn authenticated_upload(
+    client: &Client,
+    project: &Project,
+    project_dir: &Path,
+) -> Result<Preview, failure::Error> {
     let create_address = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
         project.account_id, project.name
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::build_script_upload_form(&project)?;
+    let script_upload_form = publish::build_script_upload_form(&project, project_dir)?;
 
     let mut res = client
         .post(&create_address)
@@ -126,7 +133,11 @@ fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, f
     Ok(Preview::from(response.result))
 }
 
-fn unauthenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+fn unauthenticated_upload(
+    client: &Client,
+    project: &Project,
+    project_dir: &Path,
+) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
@@ -139,9 +150,9 @@ fn unauthenticated_upload(client: &Client, project: &Project) -> Result<Preview,
         );
         let mut project = project.clone();
         project.kv_namespaces = None;
-        publish::build_script_upload_form(&project)?
+        publish::build_script_upload_form(&project, project_dir)?
     } else {
-        publish::build_script_upload_form(&project)?
+        publish::build_script_upload_form(&project, project_dir)?
     };
 
     let mut res = client

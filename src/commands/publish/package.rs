@@ -26,13 +26,13 @@ impl Package {
 }
 
 impl Package {
-    pub fn new(pkg_path: &str) -> Result<Package, failure::Error> {
-        let manifest_path = Path::new(pkg_path).join("package.json");
+    pub fn new(pkg_path: &Path) -> Result<Package, failure::Error> {
+        let manifest_path = pkg_path.join("package.json");
         if !manifest_path.is_file() {
             failure::bail!(
                 "Your JavaScript project is missing a `package.json` file; is `{}` the \
                  wrong directory?",
-                pkg_path
+                pkg_path.display()
             )
         }
 

@@ -20,6 +20,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
+use std::path::Path;
 use std::sync::mpsc::channel;
 use std::thread;
 use ws::{Sender, WebSocket};
@@ -29,13 +30,14 @@ const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudfla
 
 pub fn preview(
     project: Project,
+    project_dir: &Path,
     user: Option<GlobalUser>,
     method: HTTPMethod,
     body: Option<String>,
     livereload: bool,
 ) -> Result<(), failure::Error> {
-    commands::build(&project)?;
-    let script_id = upload_and_get_id(&project, user.as_ref())?;
+    commands::build(&project, project_dir)?;
+    let script_id = upload_and_get_id(&project, &project_dir, user.as_ref())?;
 
     let session = Uuid::new_v4().to_simple();
     let preview_host = "example.com";
@@ -58,7 +60,13 @@ pub fn preview(
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
-        watch_for_changes(&project, user.as_ref(), session.to_string(), broadcaster)?;
+        watch_for_changes(
+            &project,
+            &project_dir,
+            user.as_ref(),
+            session.to_string(),
+            broadcaster,
+        )?;
     } else {
         open_browser(&format!(
             "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
@@ -126,15 +134,16 @@ fn post(
 
 fn watch_for_changes(
     project: &Project,
+    project_dir: &Path,
     user: Option<&GlobalUser>,
     session_id: String,
     broadcaster: Sender,
 ) -> Result<(), failure::Error> {
     let (tx, rx) = channel();
-    commands::watch_and_build(&project, Some(tx))?;
+    commands::watch_and_build(project, project_dir, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        if let Ok(new_id) = upload_and_get_id(project, user) {
+        if let Ok(new_id) = upload_and_get_id(project, project_dir, user) {
             let msg = FiddleMessage {
                 session_id: session_id.clone(),
                 data: FiddleMessageData::LiveReload { new_id },

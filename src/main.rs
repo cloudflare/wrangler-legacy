@@ -7,21 +7,15 @@ use std::env;
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
-use commands::HTTPMethod;
 
 use log::info;
 
-mod commands;
-mod http;
-mod install;
-mod installer;
-mod settings;
-mod terminal;
-mod util;
+use wrangler::commands::{self, HTTPMethod};
+use wrangler::installer;
+use wrangler::settings::{self, project::ProjectType};
+use wrangler::terminal::emoji;
 
-use crate::settings::project::ProjectType;
 use exitfailure::ExitFailure;
-use terminal::emoji;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -157,6 +151,8 @@ fn run() -> Result<(), failure::Error> {
         )))
         .get_matches();
 
+    let project_dir = env::current_dir()?;
+
     if let Some(_matches) = matches.subcommand_matches("config") {
         println!("Enter email: ");
         let mut email: String = read!("{}\n");
@@ -186,22 +182,21 @@ fn run() -> Result<(), failure::Error> {
             "Generate command called with template {}, and name {}",
             template, name
         );
-        commands::generate(name, template, project_type)?;
+        commands::generate(name, template, project_type, &project_dir)?;
     } else if let Some(matches) = matches.subcommand_matches("init") {
         let name = matches.value_of("name");
         let project_type = match matches.value_of("type") {
             Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
             None => None,
         };
-        commands::init(name, project_type)?;
+        commands::init(name, project_type, &project_dir)?;
     } else if matches.subcommand_matches("build").is_some() {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
-
-        commands::build(&project)?;
+        let project = settings::project::Project::new(&project_dir)?;
+        commands::build(&project, &project_dir)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
+        let project = settings::project::Project::new(&project_dir)?;
 
         // the preview command can be called with or without a Global User having been config'd
         // so we convert this Result into an Option
@@ -216,7 +211,7 @@ fn run() -> Result<(), failure::Error> {
 
         let watch = matches.is_present("watch");
 
-        commands::preview(project, user, method, body, watch)?;
+        commands::preview(project, &project_dir, user, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -224,7 +219,7 @@ fn run() -> Result<(), failure::Error> {
         commands::whoami(&user);
     } else if let Some(matches) = matches.subcommand_matches("publish") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
+        let project = settings::project::Project::new(&project_dir)?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -235,10 +230,10 @@ fn run() -> Result<(), failure::Error> {
             _ => false,
         };
 
-        commands::publish(&user, &project, release)?;
+        commands::publish(&user, &project, &project_dir, release)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
+        let project = settings::project::Project::new(&project_dir)?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

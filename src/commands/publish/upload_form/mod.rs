@@ -18,7 +18,10 @@ use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Error> {
+pub fn build_script_upload_form(
+    project: &Project,
+    project_dir: &Path,
+) -> Result<Form, failure::Error> {
     let project_type = &project.project_type;
     let kv_namespaces = project.kv_namespaces();
     match project_type {
@@ -26,14 +29,17 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
             info!("Rust project detected. Publishing...");
             let name = krate::Krate::new("./")?.name.replace("-", "_");
             // TODO: move into build?
-            build_generated_dir()?;
+            build_generated_dir(project_dir)?;
             concat_js(&name)?;
 
-            let path = format!("./pkg/{}_bg.wasm", name).to_string();
-            let binding = "wasm".to_string();
-            let wasm_module = WasmModule::new(path, binding)?;
+            let wasm_path = project_dir.join("pkg").join(format!("{}_bg.wasm", name));
+            let wasm_binding = "wasm".to_string();
+            let wasm_module = WasmModule::new(wasm_path, wasm_binding)?;
 
-            let script_path = "./worker/generated/script.js".to_string();
+            let script_path = project_dir
+                .join("worker")
+                .join("generated")
+                .join("script.js");
 
             let assets = ProjectAssets::new(script_path, vec![wasm_module], kv_namespaces)?;
 
@@ -41,7 +47,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
         }
         ProjectType::JavaScript => {
             info!("JavaScript project detected. Publishing...");
-            let package = Package::new("./")?;
+            let package = Package::new(&project_dir)?;
 
             let script_path = package.main()?;
 
@@ -110,15 +116,14 @@ fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure:
     Ok(form)
 }
 
-fn filename_from_path(path: &str) -> Option<String> {
-    let path = Path::new(path);
+fn filename_from_path(path: &Path) -> Option<String> {
     path.file_stem()?.to_str().map(|s| s.to_string())
 }
 
-fn build_generated_dir() -> Result<(), failure::Error> {
-    let dir = "./worker/generated";
-    if !Path::new(dir).is_dir() {
-        fs::create_dir("./worker/generated")?;
+fn build_generated_dir(project_dir: &Path) -> Result<(), failure::Error> {
+    let dir = project_dir.join("worker").join("generated");
+    if !dir.is_dir() {
+        fs::create_dir(dir)?;
     }
 
     Ok(())

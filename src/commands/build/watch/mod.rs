@@ -8,7 +8,7 @@ use crate::terminal::message;
 use crate::{commands, install};
 
 use notify::{self, RecursiveMode, Watcher};
-use std::env;
+use std::path::Path;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -19,12 +19,13 @@ pub const COOLDOWN_PERIOD: Duration = Duration::from_millis(2000);
 /// outputting a build event to tx.
 pub fn watch_and_build(
     project: &Project,
+    project_dir: &Path,
     tx: Option<mpsc::Sender<()>>,
 ) -> Result<(), failure::Error> {
     let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
-            let package = Package::new("./")?;
+            let package = Package::new(project_dir)?;
             let entry = package.main()?;
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
@@ -50,15 +51,14 @@ pub fn watch_and_build(
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
-            let package = Package::new("./")?;
+            let package = Package::new(project_dir)?;
             let entry = package.main()?;
+
+            let path = project_dir.join("src");
 
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
-
-                let mut path = env::current_dir().expect("current dir");
-                path.push("src");
 
                 watcher.watch(&path, RecursiveMode::Recursive).unwrap();
                 watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
@@ -81,7 +81,7 @@ pub fn watch_and_build(
             });
         }
         ProjectType::Webpack => {
-            wranglerjs::run_build_and_watch(project, tx)?;
+            wranglerjs::run_build_and_watch(project, project_dir, tx)?;
         }
     }
 

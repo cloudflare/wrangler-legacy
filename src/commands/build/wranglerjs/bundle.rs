@@ -12,6 +12,7 @@ use crate::terminal::message;
 
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
+// TODO(nit) refactor so this uses project_dir from main, instead of ./
 const BUNDLE_OUT: &str = "./worker";
 pub struct Bundle {
     out: String,

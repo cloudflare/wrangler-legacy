@@ -10,6 +10,8 @@ use upload_form::build_script_upload_form;
 
 use log::info;
 
+use std::path::Path;
+
 use crate::commands;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
@@ -17,12 +19,17 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
+pub fn publish(
+    user: &GlobalUser,
+    project: &Project,
+    project_dir: &Path,
+    release: bool,
+) -> Result<(), failure::Error> {
     info!("release = {}", release);
 
     validate_project(project, release)?;
-    commands::build(&project)?;
-    publish_script(&user, &project, release)?;
+    commands::build(project, project_dir)?;
+    publish_script(user, project, project_dir, release)?;
     if release {
         info!("release mode detected, making a route...");
         let route = Route::new(&project)?;
@@ -41,6 +48,7 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
 fn publish_script(
     user: &GlobalUser,
     project: &Project,
+    project_dir: &Path,
     release: bool,
 ) -> Result<(), failure::Error> {
     let worker_addr = format!(
@@ -50,7 +58,7 @@ fn publish_script(
 
     let client = http::auth_client(user);
 
-    let script_upload_form = build_script_upload_form(project)?;
+    let script_upload_form = build_script_upload_form(project, project_dir)?;
 
     let mut res = client
         .put(&worker_addr)
