@@ -12,6 +12,8 @@ use failure::bail;
 
 use crate::terminal::message;
 
+const MAX_PAIRS: usize = 10000;
+
 pub fn delete_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
     let client = super::api_client()?;
     let account_id = super::account_id()?;
@@ -36,10 +38,21 @@ pub fn delete_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::E
         Err(e) => bail!(e),
     };
 
+    // Validate that bulk delete is within API constraints
+    let keys = keys?;
+    // Check number of pairs is under limit
+    if keys.len() > MAX_PAIRS {
+        bail!(
+            "Number of keys to delete ({}) exceeds max of {}",
+            keys.len(),
+            MAX_PAIRS
+        );
+    }
+
     let response = client.request(&DeleteBulk {
         account_identifier: &account_id,
         namespace_identifier: namespace_id,
-        bulk_keys: keys?,
+        bulk_keys: keys,
     });
 
     match response {

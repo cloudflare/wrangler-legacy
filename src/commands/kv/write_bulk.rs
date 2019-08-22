@@ -13,7 +13,7 @@ use failure::bail;
 
 use crate::terminal::message;
 
-const MAX_PAYLOAD_SIZE: usize = 100 * 1024 * 1024; // 100MB
+const MAX_PAIRS: usize = 10000;
 const MAX_KEY_SIZE: usize = 512;
 const MAX_VALUE_SIZE: usize = 2 * 1024 * 1024; // 2 MB
 
@@ -47,7 +47,7 @@ pub fn write_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
     // First check number of pairs is under limit
     if pairs.len() > MAX_PAIRS {
         bail!(
-            "Number of key-value pairs to upload {} exceeds max of {}",
+            "Number of key-value pairs to upload ({}) exceeds max of {}",
             pairs.len(),
             MAX_PAIRS
         );
