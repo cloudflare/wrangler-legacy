@@ -6,11 +6,14 @@ mod upload_form;
 
 pub use package::Package;
 use route::Route;
+use std::fs::metadata;
 use upload_form::build_script_upload_form;
 
 use log::info;
+use std::path::Path;
 
 use crate::commands;
+use crate::commands::kv;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -21,6 +24,7 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     info!("release = {}", release);
 
     validate_project(project, release)?;
+    upload_assets(project)?;
     commands::build(&project)?;
     publish_script(&user, &project, release)?;
     if release {
@@ -76,6 +80,36 @@ fn publish_script(
     }
 
     Ok(())
+}
+
+fn upload_assets(project: &Project) -> Result<(), failure::Error> {
+    match &project.assets {
+        Some(assets) => {
+            let path = Path::new(&assets.directory);
+            match metadata(path) {
+                Ok(ref file_type) if file_type.is_file() => {
+                    panic!("assets should point to a directory");
+                }
+                Ok(ref file_type) if file_type.is_dir() => {
+                    println!("Publishing contents of directory {:?}", path.as_os_str());
+
+                    let (directory, namespace_id) = project.asset_directory_with_kv()?;
+
+                    kv::write_bulk(&namespace_id, Path::new(&directory))
+                }
+                Ok(file_type) => {
+                    // any other file types (namely, symlinks)
+                    panic!(
+                        "Cannot upload a file of type {:?}: {}",
+                        file_type,
+                        path.display()
+                    )
+                }
+                Err(e) => panic!(e),
+            }
+        }
+        None => panic!("no assets directory specified"),
+    }
 }
 
 fn build_subdomain_request() -> String {

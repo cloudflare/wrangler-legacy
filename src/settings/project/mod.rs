@@ -73,6 +73,23 @@ impl Project {
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
         self.kv_namespaces.clone().unwrap_or_else(Vec::new)
     }
+
+    pub fn asset_directory_with_kv(&self) -> Result<(String, String), failure::Error> {
+        let directory;
+        let binding;
+        if let Some(a) = &self.assets {
+            directory = a.directory.clone();
+            binding = a.kv.clone();
+        } else {
+            failure::bail!("No assets defined");
+        }
+
+        let namespaces = self.kv_namespaces();
+
+        let namespace = namespaces.iter().find(|ns| ns.binding == binding).unwrap();
+
+        Ok((directory, namespace.id.clone()))
+    }
 }
 
 fn get_project_config(config_path: &Path) -> Result<Project, failure::Error> {
@@ -130,8 +147,8 @@ id = "0f2ac74b498b48028cb68387c421e279"
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Assets {
-    directory: String,
-    kv: String,
+    pub directory: String,
+    pub kv: String,
 }
 
 #[cfg(test)]
