@@ -70,6 +70,8 @@ pub fn write_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
         }
     }
 
+    message::working("Parsing successful. Uploading all files above");
+
     let response = client.request(&WriteBulk {
         account_identifier: &account_id,
         namespace_identifier: namespace_id,
