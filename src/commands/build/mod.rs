@@ -21,7 +21,7 @@ pub fn build(project: &Project, project_dir: &Path) -> Result<(), failure::Error
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
-            let command = command(&args, &binary_path);
+            let command = command(&args, &binary_path, project_dir);
             let command_name = format!("{:?}", command);
 
             commands::run(command, &command_name)?;
@@ -34,7 +34,7 @@ pub fn build(project: &Project, project_dir: &Path) -> Result<(), failure::Error
     Ok(())
 }
 
-pub fn command(args: &[&str], binary_path: &Path) -> Command {
+pub fn command(args: &[&str], binary_path: &Path, project_dir: &Path) -> Command {
     message::working("Compiling your project to WebAssembly...");
 
     let mut c = if cfg!(target_os = "windows") {
@@ -46,6 +46,6 @@ pub fn command(args: &[&str], binary_path: &Path) -> Command {
         Command::new(binary_path)
     };
 
-    c.args(args);
+    c.args(args).current_dir(project_dir);
     c
 }

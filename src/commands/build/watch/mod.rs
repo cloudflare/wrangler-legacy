@@ -54,6 +54,7 @@ pub fn watch_and_build(
             let package = Package::new(project_dir)?;
             let entry = package.main()?;
 
+            let project_dir = project_dir.to_owned();
             let path = project_dir.join("src");
 
             thread::spawn(move || {
@@ -67,7 +68,7 @@ pub fn watch_and_build(
                 loop {
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
                         Ok(_path) => {
-                            let command = command(&args, &binary_path);
+                            let command = command(&args, &binary_path, &project_dir);
                             let command_name = format!("{:?}", command);
                             if commands::run(command, &command_name).is_ok() {
                                 if let Some(tx) = tx.clone() {
