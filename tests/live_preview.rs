@@ -12,7 +12,7 @@ use std::thread;
 use std::time::Duration;
 
 const WATCH_TIMEOUT: Duration = Duration::from_secs(15);
-const WATCH_TIMEOUT_RUST: Duration = Duration::from_secs(60);
+const WATCH_TIMEOUT_RUST: Duration = Duration::from_secs(120);
 
 macro_rules! settings {
     ( $f:expr, $x:expr ) => {
