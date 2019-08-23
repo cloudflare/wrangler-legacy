@@ -25,9 +25,11 @@ pub fn watch_and_build(
     let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
-            let package = Package::new(project_dir)?;
-            let entry = package.main()?;
-            thread::spawn(move || {
+            let package = Package::new(&project_dir)?;
+            //Turbofish the result of the closure so we can use ?
+            thread::spawn::<_, Result<(), failure::Error>>(move || {
+                let entry = package.main()?;
+
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
@@ -51,18 +53,19 @@ pub fn watch_and_build(
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
-            let package = Package::new(project_dir)?;
-            let entry = package.main()?;
-
+            let package = Package::new(&project_dir)?;
             let project_dir = project_dir.to_owned();
             let path = project_dir.join("src");
 
-            thread::spawn(move || {
-                let (watcher_tx, watcher_rx) = mpsc::channel();
-                let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
+            //Turbofish the result of the closure so we can use ?
+            thread::spawn::<_, Result<(), failure::Error>>(move || {
+                let entry = package.main()?;
 
-                watcher.watch(&path, RecursiveMode::Recursive).unwrap();
-                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
+                let (watcher_tx, watcher_rx) = mpsc::channel();
+                let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
+
+                watcher.watch(&path, RecursiveMode::Recursive)?;
+                watcher.watch(&entry, RecursiveMode::Recursive)?;
                 message::info(&format!("watching {:?} and {:?}", &path, &entry));
 
                 loop {
@@ -72,7 +75,7 @@ pub fn watch_and_build(
                             let command_name = format!("{:?}", command);
                             if commands::run(command, &command_name).is_ok() {
                                 if let Some(tx) = tx.clone() {
-                                    tx.send(()).expect("--watch change message failed to send");
+                                    tx.send(())?;
                                 }
                             }
                         }

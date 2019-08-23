@@ -1,26 +1,27 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::{self, Deserialize};
 
-#[derive(Debug, Deserialize)]
 pub struct Package {
+    main: PathBuf
+}
+
+#[derive(Debug, Deserialize)]
+struct PackageRaw {
     #[serde(default)]
     main: String,
 }
+
 impl Package {
-    pub fn main(&self) -> Result<String, failure::Error> {
-        if self.main == "" {
-            failure::bail!(
-                "The `main` key in your `package.json` file is required; please specified the entrypoint of your Worker.",
-            )
-        } else if !Path::new(&self.main).exists() {
+    pub fn main(&self) -> Result<&Path, failure::Error> {
+        if !self.main.exists() {
             failure::bail!(
                 "The entrypoint of your Worker ({}) could not be found.",
-                self.main
+                self.main.display()
             )
         } else {
-            Ok(self.main.clone())
+            Ok(self.main.as_ref())
         }
     }
 }
@@ -37,8 +38,18 @@ impl Package {
         }
 
         let package_json: String = fs::read_to_string(manifest_path.clone())?.parse()?;
-        let package: Package = serde_json::from_str(&package_json)
+        let package_raw: PackageRaw = serde_json::from_str(&package_json)
             .unwrap_or_else(|_| panic!("could not parse {:?}", manifest_path));
+
+        if package_raw.main == "" {
+            failure::bail!(
+                "The `main` key in your `package.json` file is required; please specified the entrypoint of your Worker.",
+            );
+        }
+
+        let package = Package {
+            main: pkg_path.join(package_raw.main)
+        };
 
         Ok(package)
     }
