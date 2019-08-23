@@ -14,8 +14,6 @@ use failure::bail;
 use crate::terminal::message;
 
 const MAX_PAIRS: usize = 10000;
-const MAX_KEY_SIZE: usize = 512;
-const MAX_VALUE_SIZE: usize = 2 * 1024 * 1024; // 2 MB
 
 pub fn write_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
     let client = super::api_client()?;
@@ -44,30 +42,12 @@ pub fn write_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
 
     // Validate that bulk upload is within size constraints
     let pairs = pairs?;
-    // First check number of pairs is under limit
     if pairs.len() > MAX_PAIRS {
         bail!(
             "Number of key-value pairs to upload ({}) exceeds max of {}",
             pairs.len(),
             MAX_PAIRS
         );
-    }
-    // Next, iterate over keys and values and make sure each is under limit
-    for pair in &pairs {
-        if pair.key.len() > MAX_KEY_SIZE {
-            bail!(
-                "key {} is too large; it is over {} bytes",
-                pair.key,
-                MAX_KEY_SIZE
-            );
-        }
-        if pair.value.len() > MAX_VALUE_SIZE {
-            bail!(
-                "value for key {} is too large; it is over {} bytes",
-                pair.key,
-                MAX_VALUE_SIZE
-            );
-        }
     }
 
     message::working("Parsing successful. Uploading all files above");
