@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde::{self, Deserialize};
 
 pub struct Package {
-    main: PathBuf
+    main: PathBuf,
 }
 
 #[derive(Debug, Deserialize)]
@@ -48,7 +48,7 @@ impl Package {
         }
 
         let package = Package {
-            main: pkg_path.join(package_raw.main)
+            main: pkg_path.join(package_raw.main),
         };
 
         Ok(package)
