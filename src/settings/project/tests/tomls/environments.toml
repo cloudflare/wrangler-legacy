@@ -6,7 +6,7 @@ private = false
 account_id = ""
 route = ""
 
-[env.staging]
+[env.environments]
 type = "webpack"
 name = "staging-worker"
 zone_id = ""

@@ -9,7 +9,7 @@ route = ""
     id = "somecrazylongidentifierstring"
     binding = "prodKV"
 
-[env.staging]
+[env.kv_namespaces]
 type = "webpack"
 name = "staging-worker"
 zone_id = ""
