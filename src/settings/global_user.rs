@@ -45,7 +45,6 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
     s.merge(Environment::with_prefix("CF"))?;
 
     let global_user: Result<GlobalUser, config::ConfigError> = s.try_into();
-    println!("{:?}", global_user);
     match global_user {
         Ok(s) => Ok(s),
         Err(e) => {

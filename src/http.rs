@@ -49,8 +49,6 @@ pub fn auth_client(user: &GlobalUser) -> Client {
         None => None,
     };
 
-    println!("{:?}", headers);
-
     builder()
         .default_headers(headers)
         .redirect(RedirectPolicy::none())

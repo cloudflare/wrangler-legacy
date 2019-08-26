@@ -169,7 +169,6 @@ fn run() -> Result<(), failure::Error> {
         if !api_key_str.is_empty() {
             api_key = Some(api_key_str);
         }
-        println!("{:?}", api_key);
 
         println!("If using API token, enter API token (otherwise press Enter): ");
         let mut api_token_str: String = read!("{}\n");
@@ -178,7 +177,6 @@ fn run() -> Result<(), failure::Error> {
         if !api_token_str.is_empty() {
             api_token = Some(api_token_str);
         }
-        println!("{:?}", api_token);
 
         commands::global_config(email, api_key, api_token)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
