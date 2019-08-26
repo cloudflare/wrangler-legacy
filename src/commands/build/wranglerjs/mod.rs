@@ -269,7 +269,7 @@ fn install() -> Result<PathBuf, failure::Error> {
         wranglerjs_path.path()
     };
 
-    run_npm_install(&wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
+    run_npm_install(&wranglerjs_path).expect("could not install wranglerjs dependencies");
     Ok(wranglerjs_path)
 }
 
