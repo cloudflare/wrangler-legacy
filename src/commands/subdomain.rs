@@ -27,6 +27,8 @@ impl Subdomain {
             )
         }
 
+        println!("{:?}", res);
+
         let res: Response = serde_json::from_str(&res.text()?)?;
         Ok(res
             .result

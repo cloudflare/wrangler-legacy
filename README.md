@@ -168,6 +168,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
     # where
     # $CF_API_KEY -> your Cloudflare API key
     # $CF_EMAIL -> your Cloudflare account email
+    # $CF_API_TOKEN -> your Cloudflare API token
     ```
 
 - ### Per Project

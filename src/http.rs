@@ -34,8 +34,22 @@ pub fn client() -> Client {
 
 pub fn auth_client(user: &GlobalUser) -> Client {
     let mut headers = headers();
-    headers.insert("X-Auth-Key", HeaderValue::from_str(&user.api_key).unwrap());
     headers.insert("X-Auth-Email", HeaderValue::from_str(&user.email).unwrap());
+    // If API Key is present (not None), use API Key.
+    match &user.api_key {
+        Some(key) => headers.insert("X-Auth-Key", HeaderValue::from_str(&key).unwrap()),
+        None => None,
+    };
+
+    match &user.api_token {
+        Some(token) => headers.insert(
+            "Authorization",
+            HeaderValue::from_str(&format!("Bearer {}", &token)).unwrap(),
+        ),
+        None => None,
+    };
+
+    println!("{:?}", headers);
 
     builder()
         .default_headers(headers)

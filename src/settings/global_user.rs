@@ -10,7 +10,8 @@ use config::{Config, Environment, File};
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GlobalUser {
     pub email: String,
-    pub api_key: String,
+    pub api_key: Option<String>,
+    pub api_token: Option<String>,
 }
 
 impl GlobalUser {
@@ -40,10 +41,11 @@ fn get_global_config() -> Result<GlobalUser, failure::Error> {
     }
 
     // Eg.. `CF_API_KEY=farts` would set the `account_auth_key` key
-    // envs are: CF_API_KEY and CF_EMAIL
+    // envs are: CF_EMAIL, CF_API_KEY and CF_API_TOKEN
     s.merge(Environment::with_prefix("CF"))?;
 
     let global_user: Result<GlobalUser, config::ConfigError> = s.try_into();
+    println!("{:?}", global_user);
     match global_user {
         Ok(s) => Ok(s),
         Err(e) => {

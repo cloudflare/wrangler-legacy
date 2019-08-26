@@ -17,8 +17,16 @@ pub fn set_file_mode(file: &PathBuf) {
         .expect("could not set permissions on file");
 }
 
-pub fn global_config(email: String, api_key: String) -> Result<(), failure::Error> {
-    let s = GlobalUser { email, api_key };
+pub fn global_config(
+    email: String,
+    api_key: Option<String>,
+    api_token: Option<String>,
+) -> Result<(), failure::Error> {
+    let s = GlobalUser {
+        email,
+        api_key,
+        api_token,
+    };
 
     let toml = toml::to_string(&s)?;
 
