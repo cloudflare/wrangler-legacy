@@ -23,6 +23,7 @@ fn generate_config_with(eol: &str) {
 
     write!(stdin, "email@example.com{}", eol).unwrap();
     write!(stdin, "apikeythisissecretandlong{}", eol).unwrap();
+    write!(stdin, "{}", eol).unwrap();
 
     let mut buffer = "".to_string();
     let mut stdout = cmd.stdout.expect("stdout");
