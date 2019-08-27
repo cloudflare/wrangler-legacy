@@ -13,6 +13,8 @@ use failure::bail;
 
 use crate::terminal::message;
 
+const MAX_PAIRS: usize = 10000;
+
 pub fn write_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
     let client = super::api_client()?;
     let account_id = super::account_id()?;
@@ -38,10 +40,22 @@ pub fn write_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
         Err(e) => bail!(e),
     };
 
+    // Validate that bulk upload is within size constraints
+    let pairs = pairs?;
+    if pairs.len() > MAX_PAIRS {
+        bail!(
+            "Number of key-value pairs to upload ({}) exceeds max of {}",
+            pairs.len(),
+            MAX_PAIRS
+        );
+    }
+
+    message::working("Parsing successful. Uploading all files above");
+
     let response = client.request(&WriteBulk {
         account_identifier: &account_id,
         namespace_identifier: namespace_id,
-        bulk_key_value_pairs: pairs?,
+        bulk_key_value_pairs: pairs,
     });
 
     match response {
@@ -64,7 +78,7 @@ fn parse_directory(directory: &Path) -> Result<Vec<KeyValuePair>, failure::Error
 
             // Need to base64 encode value
             let b64_value = base64::encode(&value);
-            message::working(&format!("Uploading {}...", key.clone()));
+            message::working(&format!("Parsing {}...", key.clone()));
             upload_vec.push(KeyValuePair {
                 key: key,
                 value: b64_value,
