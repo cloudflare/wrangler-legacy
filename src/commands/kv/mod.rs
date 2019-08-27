@@ -4,6 +4,7 @@ use std::path::Path;
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
+use failure::bail;
 
 use crate::settings;
 use crate::terminal::message;
@@ -40,7 +41,7 @@ fn account_id() -> Result<String, failure::Error> {
     let project = settings::project::Project::new()?;
     // we need to be certain that account id is present to make kv calls
     if project.account_id.is_empty() {
-        panic!("Your wrangler.toml is missing the account_id field which is required to create KV namespaces!");
+        bail!("Your wrangler.toml is missing the account_id field which is required to create KV namespaces!");
     }
     Ok(project.account_id)
 }

@@ -58,21 +58,25 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("create")
                         .arg(
                             Arg::with_name("title")
+                            .required(true)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .arg(
-                            Arg::with_name("id")
+                            Arg::with_name("namespace-id")
+                            .required(true)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("rename")
                         .arg(
-                            Arg::with_name("id")
+                            Arg::with_name("namespace-id")
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("title")
+                            .required(true)
                         )
                 )
                 .subcommand(
@@ -81,22 +85,27 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("read-key")
                         .arg(
-                            Arg::with_name("id")
+                            Arg::with_name("namespace-id")
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("key")
+                            .required(true)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("write-key")
                         .arg(
-                            Arg::with_name("id")
+                            Arg::with_name("namespace-id")
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("key")
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("value")
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("expiration")
@@ -126,38 +135,45 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("write-bulk")
                         .about("upload multiple key-value pairs at once")
                         .arg(
-                            Arg::with_name("id")
+                            Arg::with_name("namespace-id")
                                 .help("the id of your Workers KV namespace")
+                                .required(true)
                                 .index(1),
                         )
                         .arg(
                             Arg::with_name("path")
                             .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...] OR the directory of files to upload.")
+                            .required(true)
                             .index(2),
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete-key")
                         .arg(
-                            Arg::with_name("id")
+                            Arg::with_name("namespace-id")
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("key")
+                            .required(true)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete-bulk")
                         .arg(
-                            Arg::with_name("id")
+                            Arg::with_name("namespace-id")
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("path")
+                            .required(true)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("list-keys")
                         .arg(
-                            Arg::with_name("id")
+                            Arg::with_name("namespace-id")
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("prefix")
@@ -378,11 +394,11 @@ fn run() -> Result<(), failure::Error> {
                 commands::kv::create_namespace(title)?;
             }
             ("delete", Some(delete_matches)) => {
-                let id = delete_matches.value_of("id").unwrap();
+                let id = delete_matches.value_of("namespace-id").unwrap();
                 commands::kv::delete_namespace(id)?;
             }
             ("rename", Some(rename_matches)) => {
-                let id = rename_matches.value_of("id").unwrap();
+                let id = rename_matches.value_of("namespace-id").unwrap();
                 let title = rename_matches.value_of("title").unwrap();
                 commands::kv::rename_namespace(id, title)?;
             }
@@ -392,14 +408,14 @@ fn run() -> Result<(), failure::Error> {
             ("read-key", Some(read_key_matches)) => {
                 let project = settings::project::Project::new()?;
                 let user = settings::global_user::GlobalUser::new()?;
-                let id = read_key_matches.value_of("id").unwrap();
+                let id = read_key_matches.value_of("namespace-id").unwrap();
                 let key = read_key_matches.value_of("key").unwrap();
                 commands::kv::read_key(&project, &user, id, key)?;
             }
             ("write-key", Some(write_key_matches)) => {
                 let project = settings::project::Project::new()?;
                 let user = settings::global_user::GlobalUser::new()?;
-                let id = write_key_matches.value_of("id").unwrap();
+                let id = write_key_matches.value_of("namespace-id").unwrap();
                 let key = write_key_matches.value_of("key").unwrap();
                 let value = write_key_matches.value_of("value").unwrap();
                 let is_file = match write_key_matches.occurrences_of("file") {
@@ -411,22 +427,22 @@ fn run() -> Result<(), failure::Error> {
                 commands::kv::write_key(&project, &user, id, key, value, is_file, expiration, ttl)?;
             }
             ("write-bulk", Some(write_bulk_matches)) => {
-                let id = write_bulk_matches.value_of("id").unwrap();
+                let id = write_bulk_matches.value_of("namespace-id").unwrap();
                 let path = write_bulk_matches.value_of("path").unwrap();
                 commands::kv::write_bulk(id, Path::new(path))?;
             }
             ("delete-key", Some(delete_matches)) => {
-                let id = delete_matches.value_of("id").unwrap();
+                let id = delete_matches.value_of("namespace-id").unwrap();
                 let key = delete_matches.value_of("key").unwrap();
                 commands::kv::delete_key(id, key)?;
             }
             ("delete-bulk", Some(delete_matches)) => {
-                let id = delete_matches.value_of("id").unwrap();
+                let id = delete_matches.value_of("namespace-id").unwrap();
                 let path = delete_matches.value_of("path").unwrap();
                 commands::kv::delete_bulk(id, Path::new(path))?;
             }
             ("list-keys", Some(list_keys_matches)) => {
-                let id = list_keys_matches.value_of("id").unwrap();
+                let id = list_keys_matches.value_of("namespace-id").unwrap();
                 let prefix = list_keys_matches.value_of("prefix");
                 commands::kv::list_keys(id, prefix)?;
             }
