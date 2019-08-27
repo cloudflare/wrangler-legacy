@@ -1,7 +1,20 @@
-[env.default]
+[env.production]
 type = "webpack"
-name = "worker"
+name = "prod-worker"
 zone_id = ""
 private = false
 account_id = ""
 route = ""
+
+[env.staging]
+type = "webpack"
+name = "staging-worker"
+zone_id = ""
+private = false
+account_id = ""
+route = ""
+
+[defaults]
+preview = "production"
+publish = "staging"
+build = "production"

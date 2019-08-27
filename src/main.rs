@@ -4,8 +4,9 @@
 extern crate text_io;
 
 use std::env;
-use std::str::FromStr;
 
+use std::path::Path;
+use std::str::FromStr;
 use clap::{App, AppSettings, Arg, SubCommand};
 use commands::HTTPMethod;
 
@@ -265,8 +266,17 @@ fn run() -> Result<(), failure::Error> {
             let project = settings::project::Project::new()?;
             commands::publish(&user, &project, true)?;
         } else {
-            let project = settings::project::Project::new()?;
-            commands::publish(&user, &project, false)?;
+            let config_path = Path::new("./wrangler.toml");
+            let environment =
+                settings::project::Project::get_default_environment("publish", config_path)?;
+            if environment.is_none() {
+                let project = settings::project::Project::new()?;
+                commands::publish(&user, &project, false)?;
+            } else {
+                let project =
+                    settings::project::Project::new_from_environment(&environment.unwrap())?;
+                commands::publish_environment(&user, &project)?;
+            }
         }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");

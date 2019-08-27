@@ -14,6 +14,20 @@ fn it_builds_from_config() {
 }
 
 #[test]
+fn it_builds_from_default_config() {
+    const NAME: &str = "default";
+    let toml_path = toml_fixture_path(NAME);
+
+    let default = Project::get_default_environment("build", &toml_path).unwrap();
+    assert!(!default.is_none());
+    assert_eq!(default, Some("default".to_string()));
+
+    let project = get_project_config(Some(NAME), &toml_path).unwrap();
+
+    assert!(project.kv_namespaces.is_none());
+}
+
+#[test]
 fn it_builds_from_environments_config() {
     const NAME: &str = "environments";
     let toml_path = toml_fixture_path(NAME);

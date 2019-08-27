@@ -8,14 +8,12 @@ use crate::terminal::emoji;
 use crate::terminal::message;
 
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 use log::info;
 
-use config::{Config, Environment, File, Value};
+use config::{Config, Environment, File};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -77,12 +75,26 @@ impl Project {
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
         self.kv_namespaces.clone().unwrap_or_else(Vec::new)
     }
+
+    pub fn get_default_environment(
+        command_name: &str,
+        config_path: &Path,
+    ) -> Result<Option<String>, failure::Error> {
+        let s = read_config(config_path)?;
+
+        let defaults = s.get_table("defaults")?;
+
+        let default = defaults.get(command_name);
+
+        if default.is_none() {
+            failure::bail!(format!("{} There is no default environment specified for {}", emoji::WARN, command_name))
+        }
+        Ok(Some(default.unwrap().to_string()))
+    }
 }
 
-fn get_project_config(
-    environment_name: Option<&str>,
-    config_path: &Path,
-) -> Result<Project, failure::Error> {
+
+fn read_config(config_path: &Path) -> Result<Config, failure::Error> {
     let mut s = Config::new();
 
     let config_str = config_path
@@ -92,6 +104,14 @@ fn get_project_config(
 
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
     s.merge(Environment::with_prefix("CF"))?;
+    Ok(s)
+}
+
+fn get_project_config(
+    environment_name: Option<&str>,
+    config_path: &Path,
+) -> Result<Project, failure::Error> {
+    let s = read_config(config_path)?;
 
     // check for pre 1.1.0 KV namespace format
     let kv_namespaces: Result<Vec<config::Value>, config::ConfigError> = s.get("kv-namespaces");
@@ -121,6 +141,7 @@ id = "0f2ac74b498b48028cb68387c421e279"
 
     let environments = s.get_table("env");
     if environments.is_err() {
+        message::warn("Your `wrangler.toml` is outdated, see <link> for an example configuration.");
         let project: Result<Project, config::ConfigError> = s.try_into();
         return project.map_err(|e| {
             let msg = format!(
@@ -132,9 +153,16 @@ id = "0f2ac74b498b48028cb68387c421e279"
         });
     }
     if environment_name.is_none() {
-        failure::bail!("There are no environments in your `wrangler.toml`!")
+        failure::bail!(
+            r##"
+You either need to specify an environment with --environment or specify default environments like so:
+[defaults]
+publish = "staging"
+preview = "production"
+"##
+        )
     }
-    let environments = environments.unwrap();
+    let environments = environments?;
     let environment_name = environment_name.unwrap();
     let environment = match environments.get(environment_name) {
         Some(e) => e,
