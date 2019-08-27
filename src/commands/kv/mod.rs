@@ -5,6 +5,7 @@ use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
 use http::status::StatusCode;
+use failure::bail;
 
 use crate::settings;
 use crate::terminal::message;
@@ -41,7 +42,7 @@ fn account_id() -> Result<String, failure::Error> {
     let project = settings::project::Project::new()?;
     // we need to be certain that account id is present to make kv calls
     if project.account_id.is_empty() {
-        panic!("Your wrangler.toml is missing the account_id field which is required to create KV namespaces!");
+        bail!("Your wrangler.toml is missing the account_id field which is required to create KV namespaces!");
     }
     Ok(project.account_id)
 }
@@ -87,7 +88,7 @@ fn help(error_code: u16) -> &'static str {
         // legacy namespace errors
         10021 | 10035 | 10038 => "Consider moving this namespace",
         // cloudflare account errors
-        10017 | 10026 => "Check your account settings in the Cloudflare dashboard",
+        10017 | 10026 => "Workers KV is a paid feature, please upgrade your account (https://www.cloudflare.com/products/workers-kv/)",
         _ => "",
     }
 }
