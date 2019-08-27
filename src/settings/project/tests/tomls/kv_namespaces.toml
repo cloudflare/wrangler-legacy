@@ -1,4 +1,4 @@
-[env.default]
+[env.production]
 type = "webpack"
 name = "worker"
 zone_id = ""
@@ -9,7 +9,7 @@ route = ""
     id = "somecrazylongidentifierstring"
     binding = "prodKV"
 
-[env.kv_namespaces]
+[env.staging]
 type = "webpack"
 name = "staging-worker"
 zone_id = ""

@@ -87,12 +87,15 @@ impl Project {
         let default = defaults.get(command_name);
 
         if default.is_none() {
-            failure::bail!(format!("{} There is no default environment specified for {}", emoji::WARN, command_name))
+            failure::bail!(format!(
+                "{} There is no default environment specified for {}",
+                emoji::WARN,
+                command_name
+            ))
         }
         Ok(Some(default.unwrap().to_string()))
     }
 }
-
 
 fn read_config(config_path: &Path) -> Result<Config, failure::Error> {
     let mut s = Config::new();

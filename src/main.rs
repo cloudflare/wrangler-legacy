@@ -5,10 +5,10 @@ extern crate text_io;
 
 use std::env;
 
-use std::path::Path;
-use std::str::FromStr;
 use clap::{App, AppSettings, Arg, SubCommand};
 use commands::HTTPMethod;
+use std::path::Path;
+use std::str::FromStr;
 
 use log::info;
 

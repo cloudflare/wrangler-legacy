@@ -5,44 +5,40 @@ use std::path::{Path, PathBuf};
 
 #[test]
 fn it_builds_from_config() {
-    const NAME: &str = "default";
-    let toml_path = toml_fixture_path(NAME);
+    let toml_path = toml_fixture_path("default");
 
-    let project = get_project_config(Some(NAME), &toml_path).unwrap();
+    let project = get_project_config(Some("staging"), &toml_path).unwrap();
 
     assert!(project.kv_namespaces.is_none());
 }
 
 #[test]
 fn it_builds_from_default_config() {
-    const NAME: &str = "default";
-    let toml_path = toml_fixture_path(NAME);
+    let toml_path = toml_fixture_path("default");
 
     let default = Project::get_default_environment("build", &toml_path).unwrap();
     assert!(!default.is_none());
-    assert_eq!(default, Some("default".to_string()));
+    assert_eq!(default, Some("production".to_string()));
 
-    let project = get_project_config(Some(NAME), &toml_path).unwrap();
+    let project = get_project_config(Some("production"), &toml_path).unwrap();
 
     assert!(project.kv_namespaces.is_none());
 }
 
 #[test]
 fn it_builds_from_environments_config() {
-    const NAME: &str = "environments";
-    let toml_path = toml_fixture_path(NAME);
+    let toml_path = toml_fixture_path("environments");
 
-    let project = get_project_config(Some(NAME), &toml_path).unwrap();
+    let project = get_project_config(Some("production"), &toml_path).unwrap();
 
     assert!(project.kv_namespaces.is_none());
 }
 
 #[test]
 fn it_builds_from_environments_config_with_kv() {
-    const NAME: &str = "kv_namespaces";
-    let toml_path = toml_fixture_path(NAME);
+    let toml_path = toml_fixture_path("kv_namespaces");
 
-    let project = get_project_config(Some(NAME), &toml_path).unwrap();
+    let project = get_project_config(Some("production"), &toml_path).unwrap();
 
     assert!(project.kv_namespaces.is_none());
 }
