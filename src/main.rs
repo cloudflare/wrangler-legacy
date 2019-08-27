@@ -142,7 +142,7 @@ fn run() -> Result<(), failure::Error> {
                         )
                         .arg(
                             Arg::with_name("path")
-                            .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...] OR the directory of files to upload.")
+                            .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...].")
                             .required(true)
                             .index(2),
                         )
