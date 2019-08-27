@@ -21,10 +21,12 @@ fn it_builds_from_config_with_kv() {
     let kv_1 = KvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "prodKV".to_string(),
+        bucket: None,
     };
     let kv_2 = KvNamespace {
         id: "anotherwaytoolongidstring".to_string(),
         binding: "stagingKV".to_string(),
+        bucket: None,
     };
 
     match project.kv_namespaces {
@@ -32,21 +34,6 @@ fn it_builds_from_config_with_kv() {
             assert!(kv_namespaces.len() == 2);
             assert!(kv_namespaces.contains(&kv_1));
             assert!(kv_namespaces.contains(&kv_2));
-        }
-        None => assert!(false),
-    }
-}
-
-#[test]
-fn it_builds_from_config_with_assets() {
-    let toml_path = toml_fixture_path("assets");
-
-    let project = get_project_config(&toml_path).unwrap();
-
-    match project.assets {
-        Some(assets) => {
-            assert_eq!(assets.directory, "./");
-            assert_eq!(assets.kv, "prodKV");
         }
         None => assert!(false),
     }

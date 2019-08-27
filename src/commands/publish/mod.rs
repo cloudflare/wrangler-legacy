@@ -6,11 +6,14 @@ mod upload_form;
 
 pub use package::Package;
 use route::Route;
+use std::fs::metadata;
 use upload_form::build_script_upload_form;
 
 use log::info;
+use std::path::Path;
 
 use crate::commands;
+use crate::commands::kv;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -21,6 +24,7 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     info!("release = {}", release);
 
     validate_project(project, release)?;
+    upload_bucket(project)?;
     commands::build(&project)?;
     publish_script(&user, &project, release)?;
     if release {
@@ -72,6 +76,35 @@ fn publish_script(
         if !private {
             info!("--release not passed, publishing to subdomain");
             make_public_on_subdomain(project, user)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn upload_bucket(project: &Project) -> Result<(), failure::Error> {
+    for namespace in &project.kv_namespaces() {
+        if let Some(bucket) = &namespace.bucket {
+            let path = Path::new(&bucket);
+            match metadata(path) {
+                Ok(ref file_type) if file_type.is_file() => {
+                    panic!("bucket should point to a directory");
+                }
+                Ok(ref file_type) if file_type.is_dir() => {
+                    println!("Publishing contents of directory {:?}", path.as_os_str());
+
+                    kv::write_bulk(&namespace.id, Path::new(&path))?;
+                }
+                Ok(file_type) => {
+                    // any other file types (namely, symlinks)
+                    panic!(
+                        "Cannot upload a file of type {:?}: {}",
+                        file_type,
+                        path.display()
+                    )
+                }
+                Err(e) => panic!(e),
+            }
         }
     }
 
