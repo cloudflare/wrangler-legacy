@@ -1,7 +1,7 @@
 ---
-name: 🐛 Bug report
+name: 🐛htsgroup report
 about: Something's not quite right? You're in the right place!
-labels: user report
+labels: apn report
 ---
 
 ### 🐛 Bug Report
