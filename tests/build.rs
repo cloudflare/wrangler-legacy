@@ -171,6 +171,49 @@ fn it_builds_with_webpack_wast() {
     cleanup(fixture);
 }
 
+#[test]
+fn it_fails_with_webpack_target_web() {
+    let fixture = "webpack_target_web";
+    create_temporary_copy(fixture);
+
+    webpack_config(
+        fixture,
+        r#"{
+          entry: "./index.js",
+          target: "node",
+        }"#,
+    );
+    settings! {fixture, r#"
+        type = "webpack"
+    "#};
+
+    build_fails_with(
+        fixture,
+        "Building a Cloudflare Worker with target \"node\" is not supported",
+    );
+    cleanup(fixture);
+}
+
+#[test]
+fn it_builds_with_webpack_target_webworker() {
+    let fixture = "webpack_target_webworker";
+    create_temporary_copy(fixture);
+
+    webpack_config(
+        fixture,
+        r#"{
+          entry: "./index.js",
+          target: "webworker",
+        }"#,
+    );
+    settings! {fixture, r#"
+        type = "webpack"
+    "#};
+
+    build(fixture);
+    cleanup(fixture);
+}
+
 fn cleanup(fixture: &str) {
     let path = fixture_path(fixture);
     assert!(path.exists(), format!("{:?} does not exist", path));
@@ -235,4 +278,17 @@ fn create_temporary_copy(fixture: &str) {
     let mut options = CopyOptions::new();
     options.overwrite = true;
     copy(src, dest, &options).unwrap();
+}
+
+// TODO: remove once https://github.com/cloudflare/wrangler/pull/489 is merged
+pub fn webpack_config(fixture: &str, config: &str) {
+    let file_path = fixture_path(fixture).join("webpack.config.js");
+    let mut file = File::create(file_path).unwrap();
+    let content = format!(
+        r#"
+                 module.exports = {};
+             "#,
+        config
+    );
+    file.write_all(content.as_bytes()).unwrap();
 }
