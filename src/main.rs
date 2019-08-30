@@ -227,7 +227,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
-                        .about("Delete multiple keys (and their values) from a namespace")
+                        .about("Delete multiple keys and their values from a namespace")
                         .arg(
                             Arg::with_name("namespace-id")
                             .help("The ID of the namespace this action applies to")
