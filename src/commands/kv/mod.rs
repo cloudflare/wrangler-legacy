@@ -22,14 +22,14 @@ mod write_bulk;
 mod write_key;
 
 pub use create_namespace::create_namespace;
-pub use delete_bulk::delete_bulk;
+pub use delete_bulk::delete_json;
 pub use delete_key::delete_key;
 pub use delete_namespace::delete_namespace;
 pub use list_keys::list_keys;
 pub use list_namespaces::list_namespaces;
 pub use read_key::read_key;
 pub use rename_namespace::rename_namespace;
-pub use write_bulk::write_bulk;
+pub use write_bulk::write_json;
 pub use write_key::write_key;
 
 fn api_client() -> Result<HttpApiClient, failure::Error> {
