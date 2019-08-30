@@ -1,7 +1,6 @@
 extern crate base64;
 
 use cloudflare::framework::apiclient::ApiClient;
-use walkdir::WalkDir;
 
 use std::fs;
 use std::fs::metadata;

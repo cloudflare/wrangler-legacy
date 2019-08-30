@@ -1,7 +1,6 @@
 extern crate base64;
 
 use cloudflare::framework::apiclient::ApiClient;
-use walkdir::WalkDir;
 
 use std::fs;
 use std::fs::metadata;
@@ -40,8 +39,6 @@ fn write_bulk(namespace_id: &str, pairs: Vec<KeyValuePair>) -> Result<(), failur
             MAX_PAIRS
         );
     }
-
-    message::working("Parsing successful. Uploading all files above");
 
     let response = client.request(&WriteBulk {
         account_identifier: &account_id,
