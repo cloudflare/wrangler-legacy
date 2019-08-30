@@ -119,20 +119,20 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                         )
                         .arg(
+                            Arg::with_name("expiration-ttl")
+                            .help("Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option")
+                            .short("t")
+                            .long("ttl")
+                            .value_name("SECONDS")
+                            .takes_value(true)
+                        )
+                        .arg(
                             Arg::with_name("expiration")
                             .help("Number of seconds since the UNIX epoch, indicating when the key-value pair should expire")
                             .short("e")
                             .long("expiration")
                             .takes_value(true)
                             .value_name("SECONDS")
-                        )
-                        .arg(
-                            Arg::with_name("expiration-ttl")
-                            .help("Number of seconds for which the entries should be visible before they expire. At least 60")
-                            .short("t")
-                            .long("ttl")
-                            .value_name("SECONDS")
-                            .takes_value(true)
                         )
                         .arg(
                             Arg::with_name("file")
