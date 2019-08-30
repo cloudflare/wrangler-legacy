@@ -1,11 +1,8 @@
-use std::ffi::OsString;
-use std::path::Path;
-
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
-use http::status::StatusCode;
 use failure::bail;
+use http::status::StatusCode;
 
 use crate::settings;
 use crate::terminal::message;
@@ -22,14 +19,14 @@ mod write_bulk;
 mod write_key;
 
 pub use create_namespace::create_namespace;
-pub use delete_bulk::delete_bulk;
+pub use delete_bulk::delete_json;
 pub use delete_key::delete_key;
 pub use delete_namespace::delete_namespace;
 pub use list_keys::list_keys;
 pub use list_namespaces::list_namespaces;
 pub use read_key::read_key;
 pub use rename_namespace::rename_namespace;
-pub use write_bulk::write_bulk;
+pub use write_bulk::write_json;
 pub use write_key::write_key;
 
 fn api_client() -> Result<HttpApiClient, failure::Error> {
@@ -91,31 +88,4 @@ fn help(error_code: u16) -> &'static str {
         10017 | 10026 => "Workers KV is a paid feature, please upgrade your account (https://www.cloudflare.com/products/workers-kv/)",
         _ => "",
     }
-}
-
-// Courtesy of Steve Kalabnik's PoC :) Used for bulk operations (write, delete)
-fn generate_key(path: &Path, directory: &Path) -> Result<String, failure::Error> {
-    let path = path.strip_prefix(directory).unwrap();
-
-    // next, we have to re-build the paths: if we're on Windows, we have paths with
-    // `\` as separators. But we want to use `/` as separators. Because that's how URLs
-    // work.
-    let mut path_with_forward_slash = OsString::new();
-
-    for (i, component) in path.components().enumerate() {
-        // we don't want a leading `/`, so skip that
-        if i > 0 {
-            path_with_forward_slash.push("/");
-        }
-
-        path_with_forward_slash.push(component);
-    }
-
-    // if we have a non-utf8 path here, it will fail, but that's not realistically going to happen
-    let path = path_with_forward_slash.to_str().expect(&format!(
-        "found a non-UTF-8 path, {:?}",
-        path_with_forward_slash
-    ));
-
-    Ok(path.to_string())
 }

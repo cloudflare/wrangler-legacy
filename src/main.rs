@@ -142,7 +142,7 @@ fn run() -> Result<(), failure::Error> {
                         )
                         .arg(
                             Arg::with_name("path")
-                            .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...] OR the directory of files to upload.")
+                            .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...].")
                             .required(true)
                             .index(2),
                         )
@@ -429,7 +429,7 @@ fn run() -> Result<(), failure::Error> {
             ("write-bulk", Some(write_bulk_matches)) => {
                 let id = write_bulk_matches.value_of("namespace-id").unwrap();
                 let path = write_bulk_matches.value_of("path").unwrap();
-                commands::kv::write_bulk(id, Path::new(path))?;
+                commands::kv::write_json(id, Path::new(path))?;
             }
             ("delete-key", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
@@ -439,7 +439,7 @@ fn run() -> Result<(), failure::Error> {
             ("delete-bulk", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let path = delete_matches.value_of("path").unwrap();
-                commands::kv::delete_bulk(id, Path::new(path))?;
+                commands::kv::delete_json(id, Path::new(path))?;
             }
             ("list-keys", Some(list_keys_matches)) => {
                 let id = list_keys_matches.value_of("namespace-id").unwrap();

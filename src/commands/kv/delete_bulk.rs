@@ -1,7 +1,6 @@
 extern crate base64;
 
 use cloudflare::framework::apiclient::ApiClient;
-use walkdir::WalkDir;
 
 use std::fs;
 use std::fs::metadata;
@@ -14,32 +13,23 @@ use crate::terminal::message;
 
 const MAX_PAIRS: usize = 10000;
 
-pub fn delete_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
-    let client = super::api_client()?;
-    let account_id = super::account_id()?;
-
-    // If the provided argument for delete_bulk is a json file, parse it
-    // and delete its listed keys. If the argument is a directory, delete key-value
-    // pairs where keys are the relative pathnames of files in the directory.
-    let mut data;
+pub fn delete_json(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
     let keys: Result<Vec<String>, failure::Error> = match metadata(filename) {
         Ok(ref file_type) if file_type.is_file() => {
-            data = fs::read_to_string(filename)?;
+            let data = fs::read_to_string(filename)?;
             Ok(serde_json::from_str(&data)?)
         }
-        Ok(ref file_type) if file_type.is_dir() => parse_directory(filename),
-        Ok(_file_type) => {
-            // any other file types (namely, symlinks)
-            bail!(
-                "{} should be a file or directory, but is a symlink",
-                filename.display()
-            )
-        }
+        Ok(_) => bail!("{} should be a JSON file, but is not", filename.display()),
         Err(e) => bail!(e),
     };
 
-    // Validate that bulk delete is within API constraints
-    let keys = keys?;
+    delete_bulk(namespace_id, keys?)
+}
+
+fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Error> {
+    let client = super::api_client()?;
+    let account_id = super::account_id()?;
+
     // Check number of pairs is under limit
     if keys.len() > MAX_PAIRS {
         bail!(
@@ -61,19 +51,4 @@ pub fn delete_bulk(namespace_id: &str, filename: &Path) -> Result<(), failure::E
     }
 
     Ok(())
-}
-
-fn parse_directory(directory: &Path) -> Result<Vec<String>, failure::Error> {
-    let mut delete_vec: Vec<String> = Vec::new();
-    for entry in WalkDir::new(directory) {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.is_file() {
-            let key = super::generate_key(path, directory)?;
-
-            message::working(&format!("Deleting {}...", key.clone()));
-            delete_vec.push(key);
-        }
-    }
-    Ok(delete_vec)
 }
