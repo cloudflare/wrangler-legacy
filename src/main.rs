@@ -162,7 +162,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
-                        .about("Delete a key (and its value) from a namespace")
+                        .about("Delete a key and its value from a namespace")
                         .arg(
                             Arg::with_name("namespace-id")
                             .help("The ID of the namespace this action applies to")
