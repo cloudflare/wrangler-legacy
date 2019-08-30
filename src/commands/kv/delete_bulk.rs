@@ -27,16 +27,6 @@ pub fn delete_json(namespace_id: &str, filename: &Path) -> Result<(), failure::E
     delete_bulk(namespace_id, keys?)
 }
 
-pub fn delete_directory(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
-    let keys: Result<Vec<String>, failure::Error> = match metadata(filename) {
-        Ok(ref file_type) if file_type.is_dir() => parse_directory(filename),
-        Ok(_) => bail!("{} should be a directory, but is not", filename.display()),
-        Err(e) => bail!(e),
-    };
-
-    delete_bulk(namespace_id, keys?)
-}
-
 fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Error> {
     let client = super::api_client()?;
     let account_id = super::account_id()?;
@@ -62,19 +52,4 @@ fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Err
     }
 
     Ok(())
-}
-
-fn parse_directory(directory: &Path) -> Result<Vec<String>, failure::Error> {
-    let mut delete_vec: Vec<String> = Vec::new();
-    for entry in WalkDir::new(directory) {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.is_file() {
-            let key = super::generate_key(path, directory)?;
-
-            message::working(&format!("Going to delete {}...", key.clone()));
-            delete_vec.push(key);
-        }
-    }
-    Ok(delete_vec)
 }
