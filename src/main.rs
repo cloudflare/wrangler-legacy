@@ -49,139 +49,198 @@ fn run() -> Result<(), failure::Error> {
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
         .subcommand(
-            SubCommand::with_name("kv")
+            SubCommand::with_name("kv:namespace")
                 .about(&*format!(
-                    "{} Interact with your Workers KV Store",
+                    "{} Interact with your Workers KV Namespaces",
                     emoji::KV
                 ))
                 .subcommand(
                     SubCommand::with_name("create")
+                        .about("Create a new namespace")
                         .arg(
                             Arg::with_name("title")
+                            .help("The name for your new namespace")
                             .required(true)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
+                        .about("Delete namespace")
                         .arg(
                             Arg::with_name("namespace-id")
+                            .help("The ID of the namespace this action applies to")
                             .required(true)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("rename")
+                        .about("Rename a namespace")
                         .arg(
                             Arg::with_name("namespace-id")
+                            .help("The ID of the namespace this action applies to")
                             .required(true)
                         )
                         .arg(
                             Arg::with_name("title")
+                            .help("New title for the namespace")
                             .required(true)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("list")
+                        .about("List all namespaces on your Cloudflare account")
                 )
+        )
+            .subcommand(SubCommand::with_name("kv:key")
+                .about(&*format!(
+                    "{} Interact with your Workers KV Key-Value Pairs",
+                    emoji::KV
+                ))
                 .subcommand(
-                    SubCommand::with_name("read-key")
+                    SubCommand::with_name("put")
+                        .about("Put a key-value pair into a namespace")
                         .arg(
                             Arg::with_name("namespace-id")
+                            .help("The ID of the namespace this action applies to")
                             .required(true)
+                            // .short("n")
+                            // .long("namespace-id")
+                            // .value_name("<ID>")
+                            // .takes_value(true)
                         )
                         .arg(
                             Arg::with_name("key")
-                            .required(true)
-                        )
-                )
-                .subcommand(
-                    SubCommand::with_name("write-key")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .required(true)
-                        )
-                        .arg(
-                            Arg::with_name("key")
+                            .help("Key to write value to")
                             .required(true)
                         )
                         .arg(
                             Arg::with_name("value")
+                            .help("Value for key")
                             .required(true)
                         )
                         .arg(
-                            Arg::with_name("expiration")
-                            .short("e")
-                            .long("expiration")
-                            .takes_value(true)
-                            .value_name("SECONDS")
-                            .help("the time, measured in number of seconds since the UNIX epoch, at which the entries should expire"),
-                        )
-                        .arg(
                             Arg::with_name("expiration-ttl")
+                            .help("Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option")
                             .short("t")
                             .long("ttl")
                             .value_name("SECONDS")
                             .takes_value(true)
-                            .help("the number of seconds for which the entries should be visible before they expire. At least 60"),
+                        )
+                        .arg(
+                            Arg::with_name("expiration")
+                            .help("Number of seconds since the UNIX epoch, indicating when the key-value pair should expire")
+                            .short("e")
+                            .long("expiration")
+                            .takes_value(true)
+                            .value_name("SECONDS")
                         )
                         .arg(
                             Arg::with_name("file")
+                            .help("The value passed in is a filename; open and upload its contents")
                             .short("f")
                             .long("file")
                             .takes_value(false)
-                            .help("the value passed in is a filename; open and upload its contents"),
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("write-bulk")
-                        .about("upload multiple key-value pairs at once")
+                    SubCommand::with_name("get")
+                        .about("Get a key's value from a namespace")
                         .arg(
                             Arg::with_name("namespace-id")
-                                .help("the id of your Workers KV namespace")
+                            .help("The ID of the namespace this action applies to")
+                            .required(true)
+                            // .short("n")
+                            // .long("namespace-id")
+                            // .value_name("<ID>")
+                            // .takes_value(true)
+                        )
+                        .arg(
+                            Arg::with_name("key")
+                            .help("Key whose value to get")
+                            .required(true)
+                        )
+                )
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .about("Delete a key and its value from a namespace")
+                        .arg(
+                            Arg::with_name("namespace-id")
+                            .help("The ID of the namespace this action applies to")
+                            .required(true)
+                            // .short("n")
+                            // .long("namespace-id")
+                            // .value_name("<ID>")
+                            // .takes_value(true)
+                        )
+                        .arg(
+                            Arg::with_name("key")
+                            .help("Key whose value to delete")
+                            .required(true)
+                        )
+                )
+                .subcommand(
+                    SubCommand::with_name("list")
+                        .about("List all keys in a namespace. Produces JSON output")
+                        .arg(
+                            Arg::with_name("namespace-id")
+                            .help("The ID of the namespace this action applies to")
+                            .required(true)
+                            // .short("n")
+                            // .long("namespace-id")
+                            // .value_name("<ID>")
+                            // .takes_value(true)
+                        )
+                        .arg(
+                            Arg::with_name("prefix")
+                            .help("The prefix for filtering listed keys")
+                            .short("p")
+                            .long("prefix")
+                            .value_name("STRING")
+                            .takes_value(true),
+                        )
+                )
+        )
+        .subcommand(
+            SubCommand::with_name("kv:bulk")
+                .about(&*format!(
+                    "{} Interact with your Workers KV Key-Value Pairs",
+                    emoji::KV
+                ))
+                .subcommand(
+                    SubCommand::with_name("put")
+                        .about("Upload multiple key-value pairs to a namespace")
+                        .arg(
+                            Arg::with_name("namespace-id")
+                                .help("The ID of the namespace this action applies to")
                                 .required(true)
-                                .index(1),
+                                // .short("n")
+                                // .long("namespace-id")
+                                // .value_name("<ID>")
+                                // .takes_value(true)
                         )
                         .arg(
                             Arg::with_name("path")
-                            .help("the json file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...].")
+                            .help("the JSON file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...]")
                             .required(true)
                             .index(2),
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("delete-key")
+                    SubCommand::with_name("delete")
+                        .about("Delete multiple keys and their values from a namespace")
                         .arg(
                             Arg::with_name("namespace-id")
+                            .help("The ID of the namespace this action applies to")
                             .required(true)
-                        )
-                        .arg(
-                            Arg::with_name("key")
-                            .required(true)
-                        )
-                )
-                .subcommand(
-                    SubCommand::with_name("delete-bulk")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .required(true)
+                            // .short("n")
+                            // .long("namespace-id")
+                            // .value_name("<ID>")
+                            // .takes_value(true)
                         )
                         .arg(
                             Arg::with_name("path")
+                            .help("the JSON file of key-value pairs to upload, in form [\"<example-key>\", ...]")
                             .required(true)
-                        )
-                )
-                .subcommand(
-                    SubCommand::with_name("list-keys")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .required(true)
-                        )
-                        .arg(
-                            Arg::with_name("prefix")
-                            .short("p")
-                            .long("prefix")
-                            .value_name("STRING")
-                            .takes_value(true)
-                            .help("The prefix to filter listed keys by"),
                         )
                 )
         )
@@ -387,7 +446,7 @@ fn run() -> Result<(), failure::Error> {
             .expect("The subdomain name you are requesting must be provided.");
 
         commands::subdomain(name, &user, &project)?;
-    } else if let Some(kv_matches) = matches.subcommand_matches("kv") {
+    } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
                 let title = create_matches.value_of("title").unwrap();
@@ -405,14 +464,19 @@ fn run() -> Result<(), failure::Error> {
             ("list", Some(_list_matches)) => {
                 commands::kv::list_namespaces()?;
             }
-            ("read-key", Some(read_key_matches)) => {
+            ("", None) => message::warn("kv:namespace expects a subcommand"),
+            _ => unreachable!(),
+        }
+    } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
+        match kv_matches.subcommand() {
+            ("get", Some(read_key_matches)) => {
                 let project = settings::project::Project::new()?;
                 let user = settings::global_user::GlobalUser::new()?;
                 let id = read_key_matches.value_of("namespace-id").unwrap();
                 let key = read_key_matches.value_of("key").unwrap();
                 commands::kv::read_key(&project, &user, id, key)?;
             }
-            ("write-key", Some(write_key_matches)) => {
+            ("put", Some(write_key_matches)) => {
                 let project = settings::project::Project::new()?;
                 let user = settings::global_user::GlobalUser::new()?;
                 let id = write_key_matches.value_of("namespace-id").unwrap();
@@ -426,27 +490,32 @@ fn run() -> Result<(), failure::Error> {
                 let ttl = write_key_matches.value_of("expiration-ttl");
                 commands::kv::write_key(&project, &user, id, key, value, is_file, expiration, ttl)?;
             }
-            ("write-bulk", Some(write_bulk_matches)) => {
-                let id = write_bulk_matches.value_of("namespace-id").unwrap();
-                let path = write_bulk_matches.value_of("path").unwrap();
-                commands::kv::write_json(id, Path::new(path))?;
-            }
-            ("delete-key", Some(delete_matches)) => {
+            ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let key = delete_matches.value_of("key").unwrap();
                 commands::kv::delete_key(id, key)?;
             }
-            ("delete-bulk", Some(delete_matches)) => {
-                let id = delete_matches.value_of("namespace-id").unwrap();
-                let path = delete_matches.value_of("path").unwrap();
-                commands::kv::delete_json(id, Path::new(path))?;
-            }
-            ("list-keys", Some(list_keys_matches)) => {
+            ("list", Some(list_keys_matches)) => {
                 let id = list_keys_matches.value_of("namespace-id").unwrap();
                 let prefix = list_keys_matches.value_of("prefix");
                 commands::kv::list_keys(id, prefix)?;
             }
-            ("", None) => message::warn("kv expects a subcommand"),
+            ("", None) => message::warn("kv:key expects a subcommand"),
+            _ => unreachable!(),
+        }
+    } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
+        match kv_matches.subcommand() {
+            ("put", Some(write_bulk_matches)) => {
+                let id = write_bulk_matches.value_of("namespace-id").unwrap();
+                let path = write_bulk_matches.value_of("path").unwrap();
+                commands::kv::write_json(id, Path::new(path))?;
+            }
+            ("delete", Some(delete_matches)) => {
+                let id = delete_matches.value_of("namespace-id").unwrap();
+                let path = delete_matches.value_of("path").unwrap();
+                commands::kv::delete_json(id, Path::new(path))?;
+            }
+            ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
         }
     }
