@@ -24,7 +24,9 @@ pub fn write_key(
 ) -> Result<(), failure::Error> {
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        project.account_id, id, key
+        project.account_id,
+        id,
+        super::url_encode_key(key)
     );
 
     // Add expiration and expiration_ttl query options as necessary.
