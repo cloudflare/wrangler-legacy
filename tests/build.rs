@@ -42,6 +42,48 @@ fn it_builds_with_webpack_single_js() {
 }
 
 #[test]
+fn it_builds_with_webpack_function_config_js() {
+    let fixture = "webpack_function_config_js";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+    "#};
+
+    build(fixture);
+    assert!(fixture_out_path(fixture).join("script.js").exists());
+    cleanup(fixture);
+}
+
+#[test]
+fn it_builds_with_webpack_promise_config_js() {
+    let fixture = "webpack_promise_config_js";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+    "#};
+
+    build(fixture);
+    assert!(fixture_out_path(fixture).join("script.js").exists());
+    cleanup(fixture);
+}
+
+#[test]
+fn it_builds_with_webpack_function_promise_config_js() {
+    let fixture = "webpack_function_promise_config_js";
+    create_temporary_copy(fixture);
+
+    settings! {fixture, r#"
+        type = "Webpack"
+    "#};
+
+    build(fixture);
+    assert!(fixture_out_path(fixture).join("script.js").exists());
+    cleanup(fixture);
+}
+
+#[test]
 fn it_builds_with_webpack_single_js_use_package_main() {
     let fixture = "webpack_single_js_use_package_main";
     create_temporary_copy(fixture);
