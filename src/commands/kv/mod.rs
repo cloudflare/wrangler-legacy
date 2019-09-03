@@ -78,7 +78,7 @@ fn interactive_delete(prompt_string: &str) -> Result<bool, failure::Error> {
     match response.as_ref() {
         YES => Ok(true),
         NO => Ok(false),
-        _ => failure::bail!("Response must either by \"y\" for yes or \"n\" for no"),
+        _ => failure::bail!("Response must either be \"y\" for yes or \"n\" for no"),
     }
 }
 
