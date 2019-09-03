@@ -2,11 +2,12 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use cloudflare::endpoints::workerskv::remove_namespace::RemoveNamespace;
 
+use crate::commands::kv;
 use crate::terminal::message;
 
 pub fn delete_namespace(id: &str) -> Result<(), failure::Error> {
-    let client = super::api_client()?;
-    let account_id = super::account_id()?;
+    let client = kv::api_client()?;
+    let account_id = kv::account_id()?;
 
     let msg = format!("Deleting namespace {}", id);
     message::working(&msg);
@@ -18,7 +19,7 @@ pub fn delete_namespace(id: &str) -> Result<(), failure::Error> {
 
     match response {
         Ok(_success) => message::success("Success"),
-        Err(e) => super::print_error(e),
+        Err(e) => kv::print_error(e),
     }
 
     Ok(())

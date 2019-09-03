@@ -10,6 +10,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
 use failure::bail;
 
+use crate::commands::kv;
 use crate::terminal::message;
 
 const MAX_PAIRS: usize = 10000;
@@ -28,8 +29,8 @@ pub fn write_json(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
 }
 
 fn write_bulk(namespace_id: &str, pairs: Vec<KeyValuePair>) -> Result<(), failure::Error> {
-    let client = super::api_client()?;
-    let account_id = super::account_id()?;
+    let client = kv::api_client()?;
+    let account_id = kv::account_id()?;
 
     // Validate that bulk upload is within size constraints
     if pairs.len() > MAX_PAIRS {
@@ -48,7 +49,7 @@ fn write_bulk(namespace_id: &str, pairs: Vec<KeyValuePair>) -> Result<(), failur
 
     match response {
         Ok(_success) => message::success("Success"),
-        Err(e) => super::print_error(e),
+        Err(e) => kv::print_error(e),
     }
 
     Ok(())

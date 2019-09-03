@@ -9,6 +9,7 @@ use std::path::Path;
 use cloudflare::endpoints::workerskv::delete_bulk::DeleteBulk;
 use failure::bail;
 
+use crate::commands::kv;
 use crate::terminal::message;
 
 const MAX_PAIRS: usize = 10000;
@@ -27,8 +28,8 @@ pub fn delete_json(namespace_id: &str, filename: &Path) -> Result<(), failure::E
 }
 
 fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Error> {
-    let client = super::api_client()?;
-    let account_id = super::account_id()?;
+    let client = kv::api_client()?;
+    let account_id = kv::account_id()?;
 
     // Check number of pairs is under limit
     if keys.len() > MAX_PAIRS {
@@ -47,7 +48,7 @@ fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Err
 
     match response {
         Ok(_success) => message::success("Success"),
-        Err(e) => super::print_error(e),
+        Err(e) => kv::print_error(e),
     }
 
     Ok(())

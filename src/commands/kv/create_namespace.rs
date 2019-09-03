@@ -3,11 +3,12 @@ use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::endpoints::workerskv::create_namespace::CreateNamespace;
 use cloudflare::endpoints::workerskv::create_namespace::CreateNamespaceParams;
 
+use crate::commands::kv;
 use crate::terminal::message;
 
 pub fn create_namespace(title: &str) -> Result<(), failure::Error> {
-    let client = super::api_client()?;
-    let account_id = super::account_id()?;
+    let client = kv::api_client()?;
+    let account_id = kv::account_id()?;
 
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
@@ -21,7 +22,7 @@ pub fn create_namespace(title: &str) -> Result<(), failure::Error> {
 
     match response {
         Ok(success) => message::success(&format!("Success: {:#?}", success.result)),
-        Err(e) => super::print_error(e),
+        Err(e) => kv::print_error(e),
     }
 
     Ok(())

@@ -7,12 +7,14 @@ use cloudflare::framework::apiclient::ApiClient;
 use failure::bail;
 use serde_json::value::Value as JsonValue;
 
+use crate::commands::kv;
+
 // Note: this function only prints keys in json form, given that
 // the number of entries in each json blob is variable (so csv and tsv
 // representation won't make sense)
 pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
-    let client = super::api_client()?;
-    let account_id = super::account_id()?;
+    let client = kv::api_client()?;
+    let account_id = kv::account_id()?;
 
     let params = ListNamespaceKeysParams {
         limit: None, // Defaults to 1000 (the maximum)

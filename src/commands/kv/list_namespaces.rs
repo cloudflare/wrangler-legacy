@@ -4,11 +4,12 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use prettytable::{Cell, Row, Table};
 
+use crate::commands::kv;
 use crate::terminal::message;
 
 pub fn list_namespaces() -> Result<(), failure::Error> {
-    let client = super::api_client()?;
-    let account_id = super::account_id()?;
+    let client = kv::api_client()?;
+    let account_id = kv::account_id()?;
 
     message::working("Fetching namespaces...");
 
@@ -21,7 +22,7 @@ pub fn list_namespaces() -> Result<(), failure::Error> {
             let table = namespace_table(success.result);
             message::success(&format!("Success: \n{}", table));
         }
-        Err(e) => super::print_error(e),
+        Err(e) => kv::print_error(e),
     }
 
     Ok(())

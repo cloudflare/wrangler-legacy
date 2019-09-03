@@ -119,20 +119,20 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                         )
                         .arg(
-                            Arg::with_name("expiration")
-                            .help("Number of seconds since the UNIX epoch, indicating when the key-value pair should expire")
-                            .short("e")
-                            .long("expiration")
-                            .takes_value(true)
-                            .value_name("SECONDS")
-                        )
-                        .arg(
                             Arg::with_name("expiration-ttl")
                             .help("Number of seconds for which the entries should be visible before they expire. At least 60")
                             .short("t")
                             .long("ttl")
                             .value_name("SECONDS")
                             .takes_value(true)
+                        )
+                        .arg(
+                            Arg::with_name("expiration")
+                            .help("Number of seconds since the UNIX epoch, indicating when the key-value pair should expire")
+                            .short("e")
+                            .long("expiration")
+                            .takes_value(true)
+                            .value_name("SECONDS")
                         )
                         .arg(
                             Arg::with_name("file")
@@ -162,11 +162,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
-<<<<<<< HEAD
                         .about("Delete a key and its value from a namespace")
-=======
-                        .about("Delete a key (and its value) from a namespace")
->>>>>>> Use new kv:<object> subcommand syntax, and fill out help and about entries for all subcommands and arguments. Still treats namespace-id arg as required, because the default env logic is not complete yet
                         .arg(
                             Arg::with_name("namespace-id")
                             .help("The ID of the namespace this action applies to")
@@ -231,11 +227,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
-<<<<<<< HEAD
                         .about("Delete multiple keys and their values from a namespace")
-=======
-                        .about("Delete multiple keys (and their values) from a namespace")
->>>>>>> Use new kv:<object> subcommand syntax, and fill out help and about entries for all subcommands and arguments. Still treats namespace-id arg as required, because the default env logic is not complete yet
                         .arg(
                             Arg::with_name("namespace-id")
                             .help("The ID of the namespace this action applies to")

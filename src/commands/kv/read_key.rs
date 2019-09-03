@@ -5,6 +5,7 @@
 
 use cloudflare::framework::response::ApiFailure;
 
+use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
@@ -19,7 +20,7 @@ pub fn read_key(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
         project.account_id,
         id,
-        super::url_encode_key(key)
+        kv::url_encode_key(key)
     );
 
     let client = http::auth_client(user);
@@ -36,7 +37,7 @@ pub fn read_key(
         // it will be redundant when we switch to using cloudflare-rs for all API requests.
         let parsed = res.json();
         let errors = parsed.unwrap_or_default();
-        super::print_error(ApiFailure::Error(res.status(), errors));
+        kv::print_error(ApiFailure::Error(res.status(), errors));
     }
 
     Ok(())
