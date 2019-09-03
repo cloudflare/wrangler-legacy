@@ -9,7 +9,7 @@ pub fn delete_key(id: &str, key: &str, force: bool) -> Result<(), failure::Error
     let account_id = kv::account_id()?;
 
     if !force {
-        match kv::interactive_delete(&format!("Are you sure you want to delete key {}?", key)) {
+        match kv::interactive_delete(&format!("Are you sure you want to delete key \"{}\"?", key)) {
             Ok(true) => (),
             Ok(false) => {
                 message::info(&format!("Not deleting key \"{}\"", key));
