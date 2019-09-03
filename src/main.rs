@@ -99,7 +99,7 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("env")
                         .help("environment to build")
                         .short("e")
-                        .long("environment")
+                        .long("env")
                         .takes_value(true)
                 ),
         )
@@ -216,19 +216,15 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
         commands::init(name, project_type)?;
-    } else if matches.subcommand_matches("build").is_some() {
+    } else if let Some(matches) = matches.subcommand_matches("build") {
         info!("Getting project settings");
-        let project = if matches.is_present("env") {
-            let environment = matches.value_of("env").unwrap();
-            settings::project::Project::new_from_environment(environment)?
-        } else {
-            settings::project::Project::new()?
-        };
-
-        commands::build(&project)?;
+        let manifest = settings::project::Manifest::new()?;
+        let target = &manifest.get_target(matches.value_of("env"))?;
+        commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
+        let manifest = settings::project::Manifest::new()?;
+        let target = manifest.get_target(matches.value_of("env"))?;
 
         // the preview command can be called with or without a Global User having been config'd
         // so we convert this Result into an Option
@@ -243,7 +239,7 @@ fn run() -> Result<(), failure::Error> {
 
         let watch = matches.is_present("watch");
 
-        commands::preview(project, user, method, body, watch)?;
+        commands::preview(target, user, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -255,22 +251,22 @@ fn run() -> Result<(), failure::Error> {
 
         info!("Getting project settings");
         if matches.is_present("env") && matches.is_present("release") {
-            failure::bail!("You can only pass --environment or --release, not both")
+            failure::bail!("You can only pass --env or --release, not both")
         }
         if matches.is_present("env") {
             let environment = matches.value_of("env").unwrap();
-            let project = settings::project::Project::new_from_environment(environment)?;
+            let project = settings::project::Target::new_from_environment(environment)?;
             commands::publish_environment(&user, &project)?;
         } else if matches.is_present("release") {
-            let project = settings::project::Project::new()?;
+            let project = settings::project::Target::new()?;
             commands::publish(&user, &project, true)?;
         } else {
-            let project = settings::project::Project::new()?;
+            let project = settings::project::Target::new()?;
             commands::publish(&user, &project, false)?;
         }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
+        let project = settings::project::Target::new()?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

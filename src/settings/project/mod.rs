@@ -8,50 +8,152 @@ use crate::terminal::emoji;
 use crate::terminal::message;
 
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 use log::info;
 
-use config::{Config, Environment, File, Value};
+use config::{Config, File};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Project {
+pub struct Target {
+    pub account_id: String,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: String,
     #[serde(rename = "type")]
     pub project_type: ProjectType,
-    pub zone_id: Option<String>,
-    pub private: Option<bool>,
-    pub webpack_config: Option<String>,
-    pub account_id: String,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
-    #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub webpack_config: Option<String>,
+    pub workers_dot_dev: bool,
+    pub zone_id: Option<String>,
 }
 
-impl Project {
+impl Target {
+    pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
+        self.kv_namespaces.clone().unwrap_or_else(Vec::new)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Environment {
+    pub account_id: Option<String>,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub name: Option<String>,
+    pub route: Option<String>,
+    pub routes: Option<HashMap<String, String>>,
+    pub webpack_config: Option<String>,
+    pub workers_dot_dev: Option<bool>,
+    pub zone_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Manifest {
+    pub account_id: String,
+    pub environments: HashMap<String, Environment>,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub name: String,
+    pub private: Option<bool>,
+    #[serde(rename = "type")]
+    pub project_type: ProjectType,
+    pub route: Option<String>,
+    pub routes: Option<HashMap<String, String>>,
+    pub webpack_config: Option<String>,
+    pub workers_dot_dev: Option<bool>,
+    pub zone_id: Option<String>,
+}
+
+impl Manifest {
+    pub fn new() -> Result<Self, failure::Error> {
+        get_manifest(Path::new("./wrangler.toml"))
+    }
+
+    pub fn get_target(
+        &self,
+        environment_name: Option<&str>,
+        release: bool,
+    ) -> Result<Target, failure::Error> {
+        if release && self.workers_dot_dev.is_some() {
+            failure::bail!("The --release flag is deprecated with use of the workers_dot_dev field")
+        }
+        let environment = if environment_name.is_none() {
+            None
+        } else {
+            let environment_name = environment_name.unwrap();
+            let environment = self.environments.get(environment_name);
+            if environment.is_none() {
+                failure::bail!(format!(
+                    "{} Could not find environment with name {}",
+                    emoji::WARN,
+                    environment_name
+                ))
+            }
+            Some(environment.unwrap())
+        };
+        let workers_dot_dev = if environment.is_none() {
+            // wrangler publish --release
+            if release {
+                // not workers.dev
+                false
+            // wrangler publish
+            } else {
+                if self.workers_dot_dev.is_none() {
+                    // workers.dev
+                    true
+                } else {
+                    // use .toml value
+                    self.workers_dot_dev.unwrap()
+                }
+            }
+        } else {
+            // wrangler publish --env foo
+            let environment = environment.unwrap();
+            if environment.workers_dot_dev.is_none() {
+                // not workers.dev
+                false
+            } else {
+                // use .toml value
+                environment.workers_dot_dev.unwrap()
+            }
+        };
+
+        Ok(Target {
+            account_id: self.account_id,
+            kv_namespaces: self.kv_namespaces,
+            name: self.name,
+            project_type: self.project_type,
+            route: self.route,
+            routes: self.routes,
+            webpack_config: self.webpack_config,
+            workers_dot_dev,
+            zone_id: self.zone_id,
+        })
+    }
+
     pub fn generate(
         name: String,
         project_type: ProjectType,
         init: bool,
-    ) -> Result<Project, failure::Error> {
-        let project = Project {
-            name: name.clone(),
-            project_type: project_type.clone(),
-            private: Some(false),
-            zone_id: Some(String::new()),
+    ) -> Result<Manifest, failure::Error> {
+        let manifest = Manifest {
             account_id: String::new(),
+            environments: HashMap::new(),
+            kv_namespaces: None,
+            name: name.clone(),
+            private: None,
+            project_type: project_type.clone(),
             route: Some(String::new()),
             routes: None,
-            kv_namespaces: None,
             webpack_config: None,
+            workers_dot_dev: Some(false),
+            zone_id: Some(String::new()),
         };
 
-        let toml = toml::to_string(&project)?;
+        let toml = toml::to_string(&manifest)?;
         let config_path = if init {
             PathBuf::from("./")
         } else {
@@ -61,41 +163,27 @@ impl Project {
 
         info!("Writing a wrangler.toml file at {}", config_file.display());
         fs::write(&config_file, &toml)?;
-        Ok(project)
-    }
-
-    pub fn new() -> Result<Self, failure::Error> {
-        let config_path = Path::new("./wrangler.toml");
-        get_project_config(None, config_path)
-    }
-
-    pub fn new_from_environment(environment: &str) -> Result<Self, failure::Error> {
-        let config_path = Path::new("./wrangler.toml");
-        get_project_config(Some(environment), config_path)
-    }
-
-    pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
-        self.kv_namespaces.clone().unwrap_or_else(Vec::new)
+        Ok(manifest)
     }
 }
 
-fn get_project_config(
-    environment_name: Option<&str>,
-    config_path: &Path,
-) -> Result<Project, failure::Error> {
-    let mut s = Config::new();
+fn read_config(config_path: &Path) -> Result<Config, failure::Error> {
+    let mut config = Config::new();
 
     let config_str = config_path
         .to_str()
         .expect("project config path should be a string");
-    s.merge(File::with_name(config_str))?;
+    config.merge(File::with_name(config_str))?;
 
     // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
-    s.merge(Environment::with_prefix("CF"))?;
+    config.merge(config::Environment::with_prefix("CF"))?;
 
-    // check for pre 1.1.0 KV namespace format
-    let kv_namespaces: Result<Vec<config::Value>, config::ConfigError> = s.get("kv-namespaces");
+    Ok(config)
+}
 
+fn validate_kv_namespaces_config(
+    kv_namespaces: Result<Vec<config::Value>, config::ConfigError>,
+) -> Result<(), failure::Error> {
     if let Ok(values) = kv_namespaces {
         let old_format = values.iter().any(|val| val.clone().into_str().is_ok());
 
@@ -118,35 +206,20 @@ id = "0f2ac74b498b48028cb68387c421e279"
             failure::bail!(msg)
         }
     }
+    Ok(())
+}
 
-    let environments = s.get_table("env");
-    if environments.is_err() {
-        let project: Result<Project, config::ConfigError> = s.try_into();
-        return project.map_err(|e| {
-            let msg = format!(
-                "{} Your project config has an error, check your `wrangler.toml`: {}",
-                emoji::WARN,
-                e
-            );
-            failure::err_msg(msg)
-        });
-    }
-    if environment_name.is_none() {
-        failure::bail!("There are no environments in your `wrangler.toml`!")
-    }
-    let environments = environments.unwrap();
-    let environment_name = environment_name.unwrap();
-    let environment = match environments.get(environment_name) {
-        Some(e) => e,
-        None => failure::bail!(format!(
-            "{0} Your `wrangler.toml` does not contain a `{1}` environment {0}",
-            emoji::WARN,
-            environment_name
-        )),
-    };
+fn get_manifest(config_path: &Path) -> Result<Manifest, failure::Error> {
+    let mut config = read_config(config_path)?;
 
-    let project = environment.clone().try_into()?;
-    Ok(project)
+    // check for pre 1.1.0 KV namespace format
+    let kv_namespaces: Result<Vec<config::Value>, config::ConfigError> =
+        config.get("kv-namespaces");
+
+    validate_kv_namespaces_config(kv_namespaces)?;
+
+    let manifest = config.try_into()?;
+    Ok(manifest)
 }
 
 #[cfg(test)]

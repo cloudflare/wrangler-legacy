@@ -3,7 +3,7 @@ pub use watcher::wait_for_changes;
 
 use crate::commands::build::{command, wranglerjs};
 use crate::commands::publish::Package;
-use crate::settings::project::{Project, ProjectType};
+use crate::settings::project::{ProjectType, Target};
 use crate::terminal::message;
 use crate::{commands, install};
 
@@ -18,10 +18,10 @@ pub const COOLDOWN_PERIOD: Duration = Duration::from_millis(2000);
 /// watch a project for changes and re-build it when necessary,
 /// outputting a build event to tx.
 pub fn watch_and_build(
-    project: &Project,
+    target: &Target,
     tx: Option<mpsc::Sender<()>>,
 ) -> Result<(), failure::Error> {
-    let project_type = &project.project_type;
+    let project_type = &target.project_type;
     match project_type {
         ProjectType::JavaScript => {
             let package = Package::new("./")?;
@@ -81,7 +81,7 @@ pub fn watch_and_build(
             });
         }
         ProjectType::Webpack => {
-            wranglerjs::run_build_and_watch(project, tx)?;
+            wranglerjs::run_build_and_watch(target, tx)?;
         }
     }
 

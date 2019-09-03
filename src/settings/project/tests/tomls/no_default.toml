@@ -1,10 +1,12 @@
+[env.production]
 type = "webpack"
-name = "worker"
+name = "staging-worker"
 zone_id = ""
+private = false
 account_id = ""
 route = ""
 
-[env.production]
+[env.staging]
 type = "webpack"
 name = "staging-worker"
 zone_id = ""

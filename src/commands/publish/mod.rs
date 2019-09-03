@@ -14,23 +14,23 @@ use crate::commands;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::project::Target;
 use crate::terminal::message;
 
-pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
+pub fn publish(user: &GlobalUser, target: &Target, release: bool) -> Result<(), failure::Error> {
     info!("release = {}", release);
 
     if release {
-        message::warn("--release will be deprecated, please use --environment instead!");
+        message::warn("--release will be deprecated, please use --environment or specify the workersdotdev boolean in the top of your `wrangler.toml`");
     }
 
-    validate_project(project, release)?;
-    commands::build(&project)?;
-    publish_script(&user, &project, release)?;
+    validate_target(target, release)?;
+    commands::build(&target)?;
+    publish_script(&user, &target, release)?;
     if release {
         info!("release mode detected, making a route...");
-        let route = Route::new(&project)?;
-        Route::publish(&user, &project, &route)?;
+        let route = Route::new(&target)?;
+        Route::publish(&user, &target, &route)?;
         let msg = format!(
             "Success! Your worker was successfully published. You can view it at {}.",
             &route.pattern
@@ -42,12 +42,12 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     Ok(())
 }
 
-pub fn publish_environment(user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
-    validate_project(project, true)?;
-    commands::build(&project)?;
-    publish_script(&user, &project, true)?;
-    let route = Route::new(&project)?;
-    Route::publish(&user, &project, &route)?;
+pub fn publish_environment(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    validate_target(target, true)?;
+    commands::build(&target)?;
+    publish_script(&user, &target, true)?;
+    let route = Route::new(&target)?;
+    Route::publish(&user, &target, &route)?;
     message::success(
         &format!(
             "Success! Your worker was successfully published. You can view it at {}.",
@@ -59,19 +59,15 @@ pub fn publish_environment(user: &GlobalUser, project: &Project) -> Result<(), f
     Ok(())
 }
 
-fn publish_script(
-    user: &GlobalUser,
-    project: &Project,
-    release: bool,
-) -> Result<(), failure::Error> {
+fn publish_script(user: &GlobalUser, target: &Target, release: bool) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
-        project.account_id, project.name,
+        target.account_id, target.name,
     );
 
     let client = http::auth_client(user);
 
-    let script_upload_form = build_script_upload_form(project)?;
+    let script_upload_form = build_script_upload_form(target)?;
 
     let mut res = client
         .put(&worker_addr)
@@ -89,10 +85,10 @@ fn publish_script(
     }
 
     if !release {
-        let private = project.private.unwrap_or(false);
+        let private = target.private.unwrap_or(false);
         if !private {
             info!("--release not passed, publishing to subdomain");
-            make_public_on_subdomain(project, user)?;
+            make_public_on_subdomain(target, user)?;
         }
     }
 
@@ -100,16 +96,16 @@ fn publish_script(
 }
 
 fn build_subdomain_request() -> String {
-    serde_json::json!({ "enabled":true}).to_string()
+    serde_json::json!({ "enabled": true }).to_string()
 }
 
-fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), failure::Error> {
+fn make_public_on_subdomain(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     info!("checking that subdomain is registered");
-    let subdomain = Subdomain::get(&project.account_id, user)?;
+    let subdomain = Subdomain::get(&target.account_id, user)?;
 
     let sd_worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
-        project.account_id, project.name,
+        target.account_id, target.name,
     );
 
     let client = http::auth_client(user);
@@ -124,7 +120,7 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
     if res.status().is_success() {
         let msg = format!(
             "Successfully made your script available at https://{}.{}.workers.dev",
-            project.name, subdomain
+            target.name, subdomain
         );
         message::success(&msg)
     } else {
@@ -137,17 +133,17 @@ fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), 
     Ok(())
 }
 
-fn validate_project(project: &Project, release: bool) -> Result<(), failure::Error> {
+fn validate_target(target: &Target, release: bool) -> Result<(), failure::Error> {
     let mut missing_fields = Vec::new();
 
-    if project.account_id.is_empty() {
+    if target.account_id.is_empty() {
         missing_fields.push("account_id")
     };
-    if project.name.is_empty() {
+    if target.name.is_empty() {
         missing_fields.push("name")
     };
 
-    match &project.kv_namespaces {
+    match &target.kv_namespaces {
         Some(kv_namespaces) => {
             for kv in kv_namespaces {
                 if kv.binding.is_empty() {
@@ -163,8 +159,8 @@ fn validate_project(project: &Project, release: bool) -> Result<(), failure::Err
     }
 
     let destination = if release {
-        //check required fields for release
-        if project
+        // check required fields for release
+        if target
             .zone_id
             .as_ref()
             .unwrap_or(&"".to_string())
@@ -172,13 +168,13 @@ fn validate_project(project: &Project, release: bool) -> Result<(), failure::Err
         {
             missing_fields.push("zone_id")
         };
-        if project.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
+        if target.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
             missing_fields.push("route")
         };
-        //zoned deploy destination
+        // zoned deploy destination
         "a route"
     } else {
-        //zoneless deploy destination
+        // zoneless deploy destination
         "your subdomain"
     };
 
