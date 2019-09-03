@@ -71,13 +71,6 @@ fn run() -> Result<(), failure::Error> {
                             .help("The ID of the namespace this action applies to")
                             .required(true)
                         )
-                        .arg(
-                            Arg::with_name("force")
-                            .help("Force delete key-value pair")
-                            .short("f")
-                            .long("force")
-                            .takes_value(false)
-                        )
                 )
                 .subcommand(
                     SubCommand::with_name("rename")
@@ -142,10 +135,10 @@ fn run() -> Result<(), failure::Error> {
                             .value_name("SECONDS")
                         )
                         .arg(
-                            Arg::with_name("file")
-                            .help("The value passed in is a filename; open and upload its contents")
-                            .short("f")
-                            .long("file")
+                            Arg::with_name("path")
+                            .help("The value passed in is a path to a file; open and upload its contents")
+                            .short("p")
+                            .long("path")
                             .takes_value(false)
                         )
                 )
@@ -183,13 +176,6 @@ fn run() -> Result<(), failure::Error> {
                             Arg::with_name("key")
                             .help("Key whose value to delete")
                             .required(true)
-                        )
-                        .arg(
-                            Arg::with_name("force")
-                            .help("Force delete key-value pair")
-                            .short("f")
-                            .long("force")
-                            .takes_value(false)
                         )
                 )
                 .subcommand(
@@ -255,13 +241,6 @@ fn run() -> Result<(), failure::Error> {
                             Arg::with_name("path")
                             .help("the JSON file of key-value pairs to upload, in form [\"<example-key>\", ...]")
                             .required(true)
-                        )
-                        .arg(
-                            Arg::with_name("force")
-                            .help("Force delete key-value pair")
-                            .short("f")
-                            .long("force")
-                            .takes_value(false)
                         )
                 )
         )
@@ -475,11 +454,7 @@ fn run() -> Result<(), failure::Error> {
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
-                let force = match delete_matches.occurrences_of("force") {
-                    1 => true,
-                    _ => false,
-                };
-                commands::kv::delete_namespace(id, force)?;
+                commands::kv::delete_namespace(id)?;
             }
             ("rename", Some(rename_matches)) => {
                 let id = rename_matches.value_of("namespace-id").unwrap();
@@ -507,7 +482,7 @@ fn run() -> Result<(), failure::Error> {
                 let id = write_key_matches.value_of("namespace-id").unwrap();
                 let key = write_key_matches.value_of("key").unwrap();
                 let value = write_key_matches.value_of("value").unwrap();
-                let is_file = match write_key_matches.occurrences_of("file") {
+                let is_file = match write_key_matches.occurrences_of("path") {
                     1 => true,
                     _ => false,
                 };
@@ -518,11 +493,7 @@ fn run() -> Result<(), failure::Error> {
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let key = delete_matches.value_of("key").unwrap();
-                let force = match delete_matches.occurrences_of("force") {
-                    1 => true,
-                    _ => false,
-                };
-                commands::kv::delete_key(id, key, force)?;
+                commands::kv::delete_key(id, key)?;
             }
             ("list", Some(list_keys_matches)) => {
                 let id = list_keys_matches.value_of("namespace-id").unwrap();
@@ -542,12 +513,7 @@ fn run() -> Result<(), failure::Error> {
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let path = delete_matches.value_of("path").unwrap();
-
-                let force = match delete_matches.occurrences_of("force") {
-                    1 => true,
-                    _ => false,
-                };
-                commands::kv::delete_json(id, Path::new(path), force)?;
+                commands::kv::delete_json(id, Path::new(path))?;
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),

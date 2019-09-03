@@ -13,19 +13,17 @@ use crate::terminal::message;
 
 const MAX_PAIRS: usize = 10000;
 
-pub fn delete_json(namespace_id: &str, filename: &Path, force: bool) -> Result<(), failure::Error> {
-    if !force {
-        match kv::interactive_delete(&format!(
-            "Are you sure you want to delete all keys in {}?",
-            filename.display()
-        )) {
-            Ok(true) => (),
-            Ok(false) => {
-                message::info(&format!("Not deleting keys in {}", filename.display()));
-                return Ok(());
-            }
-            Err(e) => failure::bail!(e),
+pub fn delete_json(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
+    match kv::interactive_delete(&format!(
+        "Are you sure you want to delete all keys in {}?",
+        filename.display()
+    )) {
+        Ok(true) => (),
+        Ok(false) => {
+            message::info(&format!("Not deleting keys in {}", filename.display()));
+            return Ok(());
         }
+        Err(e) => failure::bail!(e),
     }
 
     let keys: Result<Vec<String>, failure::Error> = match metadata(filename) {
