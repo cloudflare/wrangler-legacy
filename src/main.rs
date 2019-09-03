@@ -124,7 +124,7 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("env")
                         .help("environment to preview")
                         .short("e")
-                        .long("environment")
+                        .long("env")
                         .takes_value(true)
                 )
                 .arg(
@@ -144,13 +144,13 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("release")
                         .long("release")
                         .takes_value(false)
-                        .help("[this will be deprecated, use --environment instead]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
+                        .help("[this will be deprecated, use --env instead]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
                 )
                 .arg(
                     Arg::with_name("env")
                         .help("environments to publish to")
                         .short("e")
-                        .long("environment")
+                        .long("env")
                         .takes_value(true)
                 ),
         )

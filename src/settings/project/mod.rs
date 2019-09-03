@@ -78,7 +78,6 @@ impl Manifest {
         validate_kv_namespaces_config(kv_namespaces)?;
 
         let manifest = config.try_into()?;
-        println!("{:#?}", manifest);
         Ok(manifest)
     }
 
@@ -118,8 +117,7 @@ impl Manifest {
             None => None,
         };
 
-        let release_deprecate_warning =
-            "--release will be deprecated, please specify workers_dot_dev in your wrangler.toml";
+        let deprecate_warning = "please specify workers_dot_dev in your wrangler.toml";
 
         let workers_dot_dev = match environment {
             // environment specified
@@ -131,14 +129,14 @@ impl Manifest {
             None => {
                 match release {
                     true => {
-                        message::warn(release_deprecate_warning);
+                        message::warn(deprecate_warning);
                         false // --release means not workers.dev
                     }
                     false => {
                         match self.workers_dot_dev {
                             Some(wdd) => wdd,
                             None => {
-                                message::warn(release_deprecate_warning);
+                                message::warn(deprecate_warning);
                                 true // no --release means workers.dev
                             }
                         }
@@ -155,16 +153,70 @@ impl Manifest {
             None => self.kv_namespaces.clone(),
         };
 
+        let account_id = match environment {
+            Some(environment) => match &environment.account_id {
+                Some(a) => a.clone(),
+                None => self.account_id.clone(),
+            },
+            None => self.account_id.clone(),
+        };
+
+        let name = match environment {
+            Some(environment) => match &environment.name {
+                Some(name) => {
+                    let name = name.clone();
+                    if name == self.name {
+                        failure::bail!("Each `name` in your wrangler.toml must be unique")
+                    }
+                    name
+                }
+                None => failure::bail!("You must specify `name` in your wrangler.toml"),
+            },
+            None => self.name.clone(),
+        };
+
+        let route = match environment {
+            Some(environment) => match &environment.route {
+                Some(route) => Some(route.clone()),
+                None => None,
+            },
+            None => self.route.clone(),
+        };
+
+        let routes = match environment {
+            Some(environment) => match &environment.routes {
+                Some(routes) => Some(routes.clone()),
+                None => None,
+            },
+            None => self.routes.clone(),
+        };
+
+        let webpack_config = match environment {
+            Some(environment) => match &environment.webpack_config {
+                Some(webpack_config) => Some(webpack_config.clone()),
+                None => self.webpack_config.clone(),
+            },
+            None => self.webpack_config.clone(),
+        };
+
+        let zone_id = match environment {
+            Some(environment) => match &environment.zone_id {
+                Some(zone_id) => Some(zone_id.clone()),
+                None => self.zone_id.clone(),
+            },
+            None => self.zone_id.clone(),
+        };
+
         Ok(Target {
-            account_id: self.account_id.clone(),
-            kv_namespaces,
-            name: self.name.clone(),
-            project_type: self.project_type.clone(),
-            route: self.route.clone(),
-            routes: self.routes.clone(),
-            webpack_config: self.webpack_config.clone(),
-            workers_dot_dev,
-            zone_id: self.zone_id.clone(),
+            account_id,                              // inherit
+            kv_namespaces,                           // enforce explicit definition per environment
+            name,                                    // don't inherit
+            project_type: self.project_type.clone(), // enforce inheritance
+            route,                                   // don't inherit
+            routes,                                  // don't inherit
+            webpack_config,                          // inherit
+            workers_dot_dev,                         // don't inherit,
+            zone_id,                                 // inherit
         })
     }
 

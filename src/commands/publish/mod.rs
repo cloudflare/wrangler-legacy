@@ -62,7 +62,7 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
     };
     info!("{}", &pattern);
     message::success(&format!(
-        "Success! Your worker was successfully published. You can view it at {}.",
+        "Success! Your worker was successfully published. You can view it at {}",
         &pattern
     ));
 
