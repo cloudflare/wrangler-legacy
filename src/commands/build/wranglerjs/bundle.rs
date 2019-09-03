@@ -38,8 +38,6 @@ impl Bundle {
         }
 
         let mut script_file = File::create(self.script_path())?;
-        let mut script = create_prologue();
-        script += &wranglerjs_output.script;
 
         if let Some(encoded_wasm) = &wranglerjs_output.wasm {
             let wasm = decode(encoded_wasm).expect("could not decode Wasm in base64");
@@ -47,7 +45,7 @@ impl Bundle {
             wasm_file.write_all(&wasm)?;
         }
 
-        script_file.write_all(script.as_bytes())?;
+        script_file.write_all(wranglerjs_output.script.as_bytes())?;
 
         Ok(())
     }
@@ -79,15 +77,6 @@ impl Bundle {
             .unwrap()
             .to_string()
     }
-}
-
-// We inject some code at the top-level of the Worker; called {prologue}.
-// This aims to provide additional support, for instance providing {window}.
-pub fn create_prologue() -> String {
-    r#"
-        const window = this;
-    "#
-    .to_string()
 }
 
 #[cfg(test)]
