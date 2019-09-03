@@ -3,6 +3,7 @@ use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
 use failure::bail;
 use http::status::StatusCode;
+use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
 use crate::settings;
 use crate::terminal::message;
@@ -59,6 +60,10 @@ fn print_error(e: ApiFailure) {
         }
         ApiFailure::Invalid(reqwest_err) => message::warn(&format!("Error: {}", reqwest_err)),
     }
+}
+
+fn url_encode_key(key: &str) -> String {
+    percent_encode(key.as_bytes(), PATH_SEGMENT_ENCODE_SET).to_string()
 }
 
 // For handling cases where the API gateway returns errors via HTTP status codes
