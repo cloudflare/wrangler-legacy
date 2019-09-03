@@ -175,7 +175,7 @@ impl Manifest {
     ) -> Result<Manifest, failure::Error> {
         let manifest = Manifest {
             account_id: String::new(),
-            env: Some(HashMap::new()),
+            env: None,
             kv_namespaces: None,
             name: name.clone(),
             private: None,
@@ -183,7 +183,7 @@ impl Manifest {
             route: Some(String::new()),
             routes: None,
             webpack_config: None,
-            workers_dot_dev: Some(false),
+            workers_dot_dev: Some(true),
             zone_id: Some(String::new()),
         };
 
