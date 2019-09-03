@@ -61,7 +61,10 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
         publish_to_subdomain(target, user)?
     };
     info!("{}", &pattern);
-    message::success(&format!("Success! Your worker was successfully published. You can view it at {}.", &pattern));
+    message::success(&format!(
+        "Success! Your worker was successfully published. You can view it at {}.",
+        &pattern
+    ));
 
     Ok(())
 }

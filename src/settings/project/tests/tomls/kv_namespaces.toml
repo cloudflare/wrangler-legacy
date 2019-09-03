@@ -9,22 +9,25 @@ name = "staging-worker"
 zone_id = ""
 account_id = ""
 route = ""
-    [[kv-namespaces]]
-    id = "somecrazylongidentifierstring"
-    binding = "prodKV-1"
-    [[kv-namespaces]]
-    id = "anotherwaytoolongidstring"
-    binding = "prodKV-2"
 
+[[env.production.kv-namespaces]]
+id = "somecrazylongidentifierstring"
+binding = "prodKV-1"
+
+[[env.production.kv-namespaces]]
+id = "anotherwaytoolongidstring"
+binding = "prodKV-2"
 
 [env.staging]
 name = "staging-worker"
 zone_id = ""
 account_id = ""
 route = ""
-    [[kv-namespaces]]
-    id = "somecrazylongidentifierstring"
-    binding = "stagingKV-1"
-    [[kv-namespaces]]
-    id = "anotherwaytoolongidstring"
-    binding = "stagingKV-2"
+
+[[env.staging.kv-namespaces]]
+id = "somecrazylongidentifierstring"
+binding = "stagingKV-1"
+
+[[env.staging.kv-namespaces]]
+id = "anotherwaytoolongidstring"
+binding = "stagingKV-2"

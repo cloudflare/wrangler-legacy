@@ -78,6 +78,7 @@ impl Manifest {
         validate_kv_namespaces_config(kv_namespaces)?;
 
         let manifest = config.try_into()?;
+        println!("{:#?}", manifest);
         Ok(manifest)
     }
 
@@ -109,13 +110,12 @@ impl Manifest {
                         )),
                     }
                 }
-                None => {
-                    failure::bail!(format!(
-                        "{} There are no environments specified in your wrangler.toml",
-                        emoji::WARN))
-                },
+                None => failure::bail!(format!(
+                    "{} There are no environments specified in your wrangler.toml",
+                    emoji::WARN
+                )),
             },
-            None => None
+            None => None,
         };
 
         let release_deprecate_warning =
@@ -152,7 +152,7 @@ impl Manifest {
                 Some(kv) => Some(kv.clone()),
                 None => None,
             },
-            None => None,
+            None => self.kv_namespaces.clone(),
         };
 
         Ok(Target {
