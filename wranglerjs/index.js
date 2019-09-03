@@ -44,6 +44,16 @@ function filterByExtension(ext) {
     );
   }
 
+  if (config.target !== undefined && config.target !== "webworker") {
+    throw error(
+      "Building a Cloudflare Worker with target " +
+        JSON.stringify(config.target) +
+        " is not supported. Wrangler will set webworker by default, please remove " +
+        "the `target` key in your webpack configuration."
+    );
+  }
+  config.target = "webworker";
+
   const compiler = webpack(config);
   const fullConfig = compiler.options;
 
