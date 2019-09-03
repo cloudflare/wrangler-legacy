@@ -3,9 +3,6 @@ name = "worker"
 zone_id = ""
 account_id = ""
 route = ""
-    [[kv-namespaces]]
-    id = "somecrazylongidentifierstring"
-    binding = "prodKV"
 
 [env.production]
 name = "staging-worker"
@@ -13,5 +10,21 @@ zone_id = ""
 account_id = ""
 route = ""
     [[kv-namespaces]]
+    id = "somecrazylongidentifierstring"
+    binding = "prodKV-1"
+    [[kv-namespaces]]
     id = "anotherwaytoolongidstring"
-    binding = "stagingKV"
+    binding = "prodKV-2"
+
+
+[env.staging]
+name = "staging-worker"
+zone_id = ""
+account_id = ""
+route = ""
+    [[kv-namespaces]]
+    id = "somecrazylongidentifierstring"
+    binding = "stagingKV-1"
+    [[kv-namespaces]]
+    id = "anotherwaytoolongidstring"
+    binding = "stagingKV-2"

@@ -10,29 +10,6 @@ use std::str;
 
 const BUNDLE_OUT: &str = "./worker";
 
-macro_rules! multiple_env_settings {
-    ( $f:expr, $x:expr ) => {
-        let file_path = fixture_path($f).join("wrangler.toml");
-        let mut file = File::create(file_path).unwrap();
-        let content = format!(
-            r#"
-            [env.default]
-            name = "prod-test"
-            zone_id = ""
-            account_id = ""
-            {}
-            [env.staging]
-            name = "staging-test"
-            zone_id = ""
-            account_id = ""
-            {}
-        "#,
-            $x, $x
-        );
-        file.write_all(content.as_bytes()).unwrap();
-    };
-}
-
 macro_rules! single_env_settings {
     ( $f:expr, $x:expr ) => {
         let file_path = fixture_path($f).join("wrangler.toml");

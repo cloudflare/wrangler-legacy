@@ -4,6 +4,7 @@
 extern crate text_io;
 
 use std::env;
+use std::path::Path;
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
@@ -179,6 +180,8 @@ fn run() -> Result<(), failure::Error> {
         )))
         .get_matches();
 
+    let config_path = Path::new("./wrangler.toml");
+
     if let Some(_matches) = matches.subcommand_matches("config") {
         println!("Enter email: ");
         let mut email: String = read!("{}\n");
@@ -218,13 +221,13 @@ fn run() -> Result<(), failure::Error> {
         commands::init(name, project_type)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
         info!("Getting project settings");
-        let manifest = settings::project::Manifest::new()?;
-        let target = &manifest.get_target(matches.value_of("env"))?;
+        let manifest = settings::project::Manifest::new(config_path)?;
+        let target = &manifest.get_target(matches.value_of("env"), false)?;
         commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
-        let manifest = settings::project::Manifest::new()?;
-        let target = manifest.get_target(matches.value_of("env"))?;
+        let manifest = settings::project::Manifest::new(config_path)?;
+        let target = manifest.get_target(matches.value_of("env"), false)?;
 
         // the preview command can be called with or without a Global User having been config'd
         // so we convert this Result into an Option
@@ -253,20 +256,21 @@ fn run() -> Result<(), failure::Error> {
         if matches.is_present("env") && matches.is_present("release") {
             failure::bail!("You can only pass --env or --release, not both")
         }
+        let manifest = settings::project::Manifest::new(config_path)?;
         if matches.is_present("env") {
-            let environment = matches.value_of("env").unwrap();
-            let project = settings::project::Target::new_from_environment(environment)?;
-            commands::publish_environment(&user, &project)?;
+            let target = manifest.get_target(matches.value_of("env"), false)?;
+            commands::publish(&user, &target)?;
         } else if matches.is_present("release") {
-            let project = settings::project::Target::new()?;
-            commands::publish(&user, &project, true)?;
+            let target = manifest.get_target(None, true)?;
+            commands::publish(&user, &target)?;
         } else {
-            let project = settings::project::Target::new()?;
-            commands::publish(&user, &project, false)?;
+            let target = manifest.get_target(None, false)?;
+            commands::publish(&user, &target)?;
         }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
-        let project = settings::project::Target::new()?;
+        let manifest = settings::project::Manifest::new(config_path)?;
+        let target = manifest.get_target(matches.value_of("env"), false)?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -275,7 +279,7 @@ fn run() -> Result<(), failure::Error> {
             .value_of("name")
             .expect("The subdomain name you are requesting must be provided.");
 
-        commands::subdomain(name, &user, &project)?;
+        commands::subdomain(name, &user, &target)?;
     }
     Ok(())
 }

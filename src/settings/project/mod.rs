@@ -53,7 +53,7 @@ pub struct Environment {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Manifest {
     pub account_id: String,
-    pub environments: HashMap<String, Environment>,
+    pub env: Option<HashMap<String, Environment>>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: String,
@@ -68,8 +68,17 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    pub fn new() -> Result<Self, failure::Error> {
-        get_manifest(Path::new("./wrangler.toml"))
+    pub fn new(config_path: &Path) -> Result<Self, failure::Error> {
+        let config = read_config(config_path)?;
+
+        // check for pre 1.1.0 KV namespace format
+        let kv_namespaces: Result<Vec<config::Value>, config::ConfigError> =
+            config.get("kv-namespaces");
+
+        validate_kv_namespaces_config(kv_namespaces)?;
+
+        let manifest = config.try_into()?;
+        Ok(manifest)
     }
 
     pub fn get_target(
@@ -78,59 +87,84 @@ impl Manifest {
         release: bool,
     ) -> Result<Target, failure::Error> {
         if release && self.workers_dot_dev.is_some() {
-            failure::bail!("The --release flag is deprecated with use of the workers_dot_dev field")
+            failure::bail!(
+                "The --release flag is not compatible with use of the workers_dot_dev field"
+            )
         }
-        let environment = if environment_name.is_none() {
-            None
-        } else {
-            let environment_name = environment_name.unwrap();
-            let environment = self.environments.get(environment_name);
-            if environment.is_none() {
-                failure::bail!(format!(
-                    "{} Could not find environment with name {}",
-                    emoji::WARN,
-                    environment_name
-                ))
-            }
-            Some(environment.unwrap())
-        };
-        let workers_dot_dev = if environment.is_none() {
-            // wrangler publish --release
-            if release {
-                // not workers.dev
-                false
-            // wrangler publish
-            } else {
-                if self.workers_dot_dev.is_none() {
-                    // workers.dev
-                    true
-                } else {
-                    // use .toml value
-                    self.workers_dot_dev.unwrap()
+
+        if release {
+            message::warn("--release will be deprecated, please use --env or specify workers_dot_dev in your `wrangler.toml`");
+        }
+
+        let environment = match environment_name {
+            Some(environment_name) => match &self.env {
+                Some(environment_table) => {
+                    let environment = environment_table.get(environment_name);
+                    match environment {
+                        Some(environment) => Some(environment),
+                        None => failure::bail!(format!(
+                            "{} Could not find environment with name {}",
+                            emoji::WARN,
+                            environment_name
+                        )),
+                    }
                 }
-            }
-        } else {
-            // wrangler publish --env foo
-            let environment = environment.unwrap();
-            if environment.workers_dot_dev.is_none() {
-                // not workers.dev
-                false
-            } else {
-                // use .toml value
-                environment.workers_dot_dev.unwrap()
+                None => {
+                    failure::bail!(format!(
+                        "{} There are no environments specified in your wrangler.toml",
+                        emoji::WARN))
+                },
+            },
+            None => None
+        };
+
+        let release_deprecate_warning =
+            "--release will be deprecated, please specify workers_dot_dev in your wrangler.toml";
+
+        let workers_dot_dev = match environment {
+            // environment specified
+            Some(environment) => match environment.workers_dot_dev {
+                Some(wdd) => wdd,
+                None => false,
+            },
+            // top level (legacy)
+            None => {
+                match release {
+                    true => {
+                        message::warn(release_deprecate_warning);
+                        false // --release means not workers.dev
+                    }
+                    false => {
+                        match self.workers_dot_dev {
+                            Some(wdd) => wdd,
+                            None => {
+                                message::warn(release_deprecate_warning);
+                                true // no --release means workers.dev
+                            }
+                        }
+                    }
+                }
             }
         };
 
+        let kv_namespaces = match environment {
+            Some(environment) => match &environment.kv_namespaces {
+                Some(kv) => Some(kv.clone()),
+                None => None,
+            },
+            None => None,
+        };
+
         Ok(Target {
-            account_id: self.account_id,
-            kv_namespaces: self.kv_namespaces,
-            name: self.name,
-            project_type: self.project_type,
-            route: self.route,
-            routes: self.routes,
-            webpack_config: self.webpack_config,
+            account_id: self.account_id.clone(),
+            kv_namespaces,
+            name: self.name.clone(),
+            project_type: self.project_type.clone(),
+            route: self.route.clone(),
+            routes: self.routes.clone(),
+            webpack_config: self.webpack_config.clone(),
             workers_dot_dev,
-            zone_id: self.zone_id,
+            zone_id: self.zone_id.clone(),
         })
     }
 
@@ -141,7 +175,7 @@ impl Manifest {
     ) -> Result<Manifest, failure::Error> {
         let manifest = Manifest {
             account_id: String::new(),
-            environments: HashMap::new(),
+            env: Some(HashMap::new()),
             kv_namespaces: None,
             name: name.clone(),
             private: None,
@@ -207,19 +241,6 @@ id = "0f2ac74b498b48028cb68387c421e279"
         }
     }
     Ok(())
-}
-
-fn get_manifest(config_path: &Path) -> Result<Manifest, failure::Error> {
-    let mut config = read_config(config_path)?;
-
-    // check for pre 1.1.0 KV namespace format
-    let kv_namespaces: Result<Vec<config::Value>, config::ConfigError> =
-        config.get("kv-namespaces");
-
-    validate_kv_namespaces_config(kv_namespaces)?;
-
-    let manifest = config.try_into()?;
-    Ok(manifest)
 }
 
 #[cfg(test)]

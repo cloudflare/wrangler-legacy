@@ -17,49 +17,16 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Target;
 use crate::terminal::message;
 
-pub fn publish(user: &GlobalUser, target: &Target, release: bool) -> Result<(), failure::Error> {
-    info!("release = {}", release);
+pub fn publish(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    info!("workers_dot_dev = {}", target.workers_dot_dev);
 
-    if release {
-        message::warn("--release will be deprecated, please use --environment or specify the workersdotdev boolean in the top of your `wrangler.toml`");
-    }
-
-    validate_target(target, release)?;
+    validate_target(target)?;
     commands::build(&target)?;
-    publish_script(&user, &target, release)?;
-    if release {
-        info!("release mode detected, making a route...");
-        let route = Route::new(&target)?;
-        Route::publish(&user, &target, &route)?;
-        let msg = format!(
-            "Success! Your worker was successfully published. You can view it at {}.",
-            &route.pattern
-        );
-        message::success(&msg);
-    } else {
-        message::success("Success! Your worker was successfully published.");
-    }
+    publish_script(&user, &target)?;
     Ok(())
 }
 
-pub fn publish_environment(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    validate_target(target, true)?;
-    commands::build(&target)?;
-    publish_script(&user, &target, true)?;
-    let route = Route::new(&target)?;
-    Route::publish(&user, &target, &route)?;
-    message::success(
-        &format!(
-            "Success! Your worker was successfully published. You can view it at {}.",
-            &route.pattern
-        )
-        .to_owned(),
-    );
-
-    Ok(())
-}
-
-fn publish_script(user: &GlobalUser, target: &Target, release: bool) -> Result<(), failure::Error> {
+fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         target.account_id, target.name,
@@ -84,13 +51,17 @@ fn publish_script(user: &GlobalUser, target: &Target, release: bool) -> Result<(
         )
     }
 
-    if !release {
-        let private = target.private.unwrap_or(false);
-        if !private {
-            info!("--release not passed, publishing to subdomain");
-            make_public_on_subdomain(target, user)?;
-        }
-    }
+    let pattern = if !target.workers_dot_dev {
+        let route = Route::new(&target)?;
+        Route::publish(&user, &target, &route)?;
+        info!("publishing to route");
+        route.pattern
+    } else {
+        info!("publishing to subdomain");
+        publish_to_subdomain(target, user)?
+    };
+    info!("{}", &pattern);
+    message::success(&format!("Success! Your worker was successfully published. You can view it at {}.", &pattern));
 
     Ok(())
 }
@@ -99,7 +70,7 @@ fn build_subdomain_request() -> String {
     serde_json::json!({ "enabled": true }).to_string()
 }
 
-fn make_public_on_subdomain(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, failure::Error> {
     info!("checking that subdomain is registered");
     let subdomain = Subdomain::get(&target.account_id, user)?;
 
@@ -117,23 +88,17 @@ fn make_public_on_subdomain(target: &Target, user: &GlobalUser) -> Result<(), fa
         .body(build_subdomain_request())
         .send()?;
 
-    if res.status().is_success() {
-        let msg = format!(
-            "Successfully made your script available at https://{}.{}.workers.dev",
-            target.name, subdomain
-        );
-        message::success(&msg)
-    } else {
+    if !res.status().is_success() {
         failure::bail!(
             "Something went wrong! Status: {}, Details {}",
             res.status(),
             res.text()?
         )
     }
-    Ok(())
+    Ok(format!("https://{}.{}.workers.dev", target.name, subdomain))
 }
 
-fn validate_target(target: &Target, release: bool) -> Result<(), failure::Error> {
+fn validate_target(target: &Target) -> Result<(), failure::Error> {
     let mut missing_fields = Vec::new();
 
     if target.account_id.is_empty() {
@@ -158,7 +123,7 @@ fn validate_target(target: &Target, release: bool) -> Result<(), failure::Error>
         None => {}
     }
 
-    let destination = if release {
+    let destination = if !target.workers_dot_dev {
         // check required fields for release
         if target
             .zone_id
