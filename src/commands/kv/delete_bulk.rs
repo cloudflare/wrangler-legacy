@@ -26,7 +26,7 @@ pub fn delete_json(namespace_id: &str, filename: &Path) -> Result<(), failure::E
     delete_bulk(namespace_id, keys?)
 }
 
-fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Error> {
+pub fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Error> {
     let client = super::api_client()?;
     let account_id = super::account_id()?;
 

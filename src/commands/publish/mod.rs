@@ -93,7 +93,7 @@ fn upload_bucket(project: &Project) -> Result<(), failure::Error> {
                 Ok(ref file_type) if file_type.is_dir() => {
                     println!("Publishing contents of directory {:?}", path.as_os_str());
 
-                    kv::write_bulk(&namespace.id, Path::new(&path))?;
+                    kv::bucket::upload(&namespace.id, Path::new(&path))?;
                 }
                 Ok(file_type) => {
                     // any other file types (namely, symlinks)

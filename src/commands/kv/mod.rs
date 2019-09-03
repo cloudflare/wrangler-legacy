@@ -7,6 +7,7 @@ use http::status::StatusCode;
 use crate::settings;
 use crate::terminal::message;
 
+pub mod bucket;
 mod create_namespace;
 mod delete_bulk;
 mod delete_key;

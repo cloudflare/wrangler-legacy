@@ -27,7 +27,7 @@ pub fn write_json(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
     write_bulk(namespace_id, pairs?)
 }
 
-fn write_bulk(namespace_id: &str, pairs: Vec<KeyValuePair>) -> Result<(), failure::Error> {
+pub fn write_bulk(namespace_id: &str, pairs: Vec<KeyValuePair>) -> Result<(), failure::Error> {
     let client = super::api_client()?;
     let account_id = super::account_id()?;
 
