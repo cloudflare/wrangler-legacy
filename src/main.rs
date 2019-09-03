@@ -120,7 +120,7 @@ fn run() -> Result<(), failure::Error> {
                         )
                         .arg(
                             Arg::with_name("expiration-ttl")
-                            .help("Number of seconds for which the entries should be visible before they expire. At least 60")
+                            .help("Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option")
                             .short("t")
                             .long("ttl")
                             .value_name("SECONDS")
