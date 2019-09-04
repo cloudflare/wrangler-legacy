@@ -22,7 +22,7 @@ impl GlobalUser {
 
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
-        Credentials::User {
+        Credentials::UserAuthKey {
             key: user.api_key,
             email: user.email,
         }
