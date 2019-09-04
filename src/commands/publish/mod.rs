@@ -58,6 +58,9 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
         route.pattern
     } else {
         info!("publishing to subdomain");
+        if target.route.is_some() || target.zone_id.is_some() {
+            message::warn("Your environment should only include `workers_dot_dev` or both `route` and `zone_id`");
+        }
         publish_to_subdomain(target, user)?
     };
     info!("{}", &pattern);
