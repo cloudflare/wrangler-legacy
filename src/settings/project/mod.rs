@@ -204,16 +204,18 @@ impl Manifest {
             None => self.zone_id.clone(),
         };
 
+        let project_type = self.project_type.clone();
+
         Ok(Target {
-            account_id,                              // inherit
-            kv_namespaces,                           // enforce explicit definition per environment
-            name,                                    // don't inherit
-            project_type: self.project_type.clone(), // enforce inheritance
-            route,                                   // don't inherit
-            routes,                                  // don't inherit
-            webpack_config,                          // inherit
-            workers_dot_dev,                         // don't inherit,
-            zone_id,                                 // inherit
+            project_type,    // MUST inherit
+            account_id,      // MAY inherit
+            webpack_config,  // MAY inherit
+            zone_id,         // MAY inherit
+            kv_namespaces,   // MUST NOT inherit
+            name,            // MUST NOT inherit
+            route,           // MUST NOT inherit
+            routes,          // MUST NOT inherit
+            workers_dot_dev, // MUST NOT inherit,
         })
     }
 
