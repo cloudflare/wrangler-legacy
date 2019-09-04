@@ -19,7 +19,7 @@ pub fn upload(namespace_id: &str, filename: &Path) -> Result<(), failure::Error>
     let pairs: Result<Vec<KeyValuePair>, failure::Error> = match metadata(filename) {
         Ok(ref file_type) if file_type.is_dir() => parse_directory(filename),
         Ok(_file_type) => {
-            // any other file types (namely, symlinks)
+            // any other file types (files, symlinks)
             bail!("wrangler kv:bucket upload takes a directory",)
         }
         Err(e) => bail!(e),
@@ -37,7 +37,7 @@ pub fn delete(namespace_id: &str, filename: &Path) -> Result<(), failure::Error>
                 .map(|kv| kv.key.clone())
                 .collect::<Vec<_>>())
         }
-        Ok(_file_type) => {
+        Ok(_) => {
             // any other file types (namely, symlinks)
             bail!(
                 "{} should be a file or directory, but is a symlink",
