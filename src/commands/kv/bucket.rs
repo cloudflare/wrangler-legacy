@@ -11,8 +11,6 @@ use std::ffi::OsString;
 use std::fs::metadata;
 use std::path::Path;
 
-use failure::bail;
-
 use crate::terminal::message;
 
 pub fn upload(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
@@ -20,9 +18,9 @@ pub fn upload(namespace_id: &str, filename: &Path) -> Result<(), failure::Error>
         Ok(ref file_type) if file_type.is_dir() => parse_directory(filename),
         Ok(_file_type) => {
             // any other file types (files, symlinks)
-            bail!("wrangler kv:bucket upload takes a directory",)
+            failure::bail!("wrangler kv:bucket upload takes a directory")
         }
-        Err(e) => bail!(e),
+        Err(e) => failure::bail!(e),
     };
 
     write_bulk(namespace_id, pairs?)
@@ -39,12 +37,12 @@ pub fn delete(namespace_id: &str, filename: &Path) -> Result<(), failure::Error>
         }
         Ok(_) => {
             // any other file types (namely, symlinks)
-            bail!(
+            failure::bail!(
                 "{} should be a file or directory, but is a symlink",
                 filename.display()
             )
         }
-        Err(e) => bail!(e),
+        Err(e) => failure::bail!(e),
     };
 
     delete_bulk(namespace_id, keys?)
