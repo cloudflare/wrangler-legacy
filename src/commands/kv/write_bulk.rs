@@ -8,7 +8,6 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
-use failure::bail;
 
 use crate::commands::kv;
 use crate::terminal::message;
@@ -21,8 +20,8 @@ pub fn write_json(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
             let data = fs::read_to_string(filename)?;
             Ok(serde_json::from_str(&data)?)
         }
-        Ok(_) => bail!("{} should be a JSON file, but is not", filename.display()),
-        Err(e) => bail!(e),
+        Ok(_) => failure::bail!("{} should be a JSON file, but is not", filename.display()),
+        Err(e) => failure::bail!(e),
     };
 
     write_bulk(namespace_id, pairs?)
@@ -34,7 +33,7 @@ fn write_bulk(namespace_id: &str, pairs: Vec<KeyValuePair>) -> Result<(), failur
 
     // Validate that bulk upload is within size constraints
     if pairs.len() > MAX_PAIRS {
-        bail!(
+        failure::bail!(
             "Number of key-value pairs to upload ({}) exceeds max of {}",
             pairs.len(),
             MAX_PAIRS

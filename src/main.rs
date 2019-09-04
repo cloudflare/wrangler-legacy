@@ -135,10 +135,10 @@ fn run() -> Result<(), failure::Error> {
                             .value_name("SECONDS")
                         )
                         .arg(
-                            Arg::with_name("file")
-                            .help("The value passed in is a filename; open and upload its contents")
-                            .short("f")
-                            .long("file")
+                            Arg::with_name("path")
+                            .help("The value passed in is a path to a file; open and upload its contents")
+                            .short("p")
+                            .long("path")
                             .takes_value(false)
                         )
                 )
@@ -482,7 +482,7 @@ fn run() -> Result<(), failure::Error> {
                 let id = write_key_matches.value_of("namespace-id").unwrap();
                 let key = write_key_matches.value_of("key").unwrap();
                 let value = write_key_matches.value_of("value").unwrap();
-                let is_file = match write_key_matches.occurrences_of("file") {
+                let is_file = match write_key_matches.occurrences_of("path") {
                     1 => true,
                     _ => false,
                 };

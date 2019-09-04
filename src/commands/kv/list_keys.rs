@@ -4,7 +4,6 @@ use cloudflare::endpoints::workerskv::list_namespace_keys::ListNamespaceKeys;
 use cloudflare::endpoints::workerskv::list_namespace_keys::ListNamespaceKeysParams;
 use cloudflare::endpoints::workerskv::Key;
 use cloudflare::framework::apiclient::ApiClient;
-use failure::bail;
 use serde_json::value::Value as JsonValue;
 
 use crate::commands::kv;
@@ -40,7 +39,7 @@ pub fn list_keys(id: &str, prefix: Option<&str>) -> Result<(), failure::Error> {
                 success.result,
                 get_cursor_from_result_info(success.result_info.clone()),
             ),
-            Err(e) => bail!(e),
+            Err(e) => failure::bail!(e),
         };
 
         match cursor {

@@ -17,7 +17,7 @@ Creates a new namespace.
 
 ```sh
 $ wrangler kv:namespace create "new kv namespace"
-🌀  Creating namespace with title "new kv namespace" 🌀 
+🌀  Creating namespace with title "new kv namespace"
 ✨  Success: WorkersKVNamespace {
     id: "f7b02e7fc70443149ac906dd81ec1791",
     title: "new kv namespace",
@@ -30,7 +30,9 @@ $ wrangler kv:namespace create "new kv namespace"
 
 ```sh
 $ wrangler kv:namespace delete f7b02e7fc70443149ac906dd81ec1791
-🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791 🌀 
+Are you sure you want to delete namespace f7b02e7fc70443149ac906dd81ec1791? [y/n]
+yes
+🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791
 ✨  Success
 ```
 
@@ -52,7 +54,7 @@ Outputs a list of all KV namespaces associated with your account id.
 
 ```sh
 $ wrangler kv:namespace list
-🌀  Retrieving namespaces 🌀 
+🌀  Retrieving namespaces
 ✨  Success:
 +------------------+----------------------------------+
 | TITLE            | ID                               |
@@ -91,6 +93,10 @@ Removes a single key value pair from the given namespace.
 
 ```sh
 $ wrangler kv:key delete f7b02e7fc70443149ac906dd81ec1791 "key"
+Are you sure you want to delete key "key"? [y/n]
+yes
+🌀  Deleting key "key"
+✨  Success
 ```
 
 ### `list`
@@ -101,7 +107,7 @@ Outputs a list of all KV namespaces associated with your account id.
 
 ```sh
 $ wrangler kv:key list f7b02e7fc70443149ac906dd81ec1791 --prefix="public"
-🌀  Retrieving keys 🌀 
+🌀  Retrieving keys
 ✨  Success:
 +------------------+----------------------------------+
 | KEY              | EXPIRATION                       |
@@ -144,5 +150,8 @@ Deletes all specified keys within a given namespace.
 
 ```sh
 $ wrangler kv:bulk delete f7b02e7fc70443149ac906dd81ec1791 ./allthethings.json
+Are you sure you want to delete all keys in ./allthethings.json? [y/n]
+yes
+✨  Success
 ```
 
