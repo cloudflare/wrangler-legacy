@@ -190,6 +190,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
         This key is optional if you are using a workers.dev subdomain and is only required for `publish --release`.
     - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and
         defaults to `webpack.config.js`
+    - `workers_dot_dev`: This is a boolean that specifies whether your worker should be deployed to `subdomain.workers.dev`. This is optional and defaults to `true`.
     - `[[kv-namespaces]]`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) namespaces you want to access from
         inside your Worker. Each namespace you include should have an entry in your wrangler.toml that includes:
 
