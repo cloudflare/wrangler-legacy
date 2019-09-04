@@ -127,18 +127,15 @@ impl Manifest {
             },
             // top level (legacy)
             None => {
-                match release {
-                    true => {
-                        message::warn(deprecate_warning);
-                        false // --release means not workers.dev
-                    }
-                    false => {
-                        match self.workers_dot_dev {
-                            Some(wdd) => wdd,
-                            None => {
-                                message::warn(deprecate_warning);
-                                true // no --release means workers.dev
-                            }
+                if release {
+                    message::warn(deprecate_warning);
+                    false // --release means not workers.dev
+                } else {
+                    match self.workers_dot_dev {
+                        Some(wdd) => wdd,
+                        None => {
+                            message::warn(deprecate_warning);
+                            true // no --release means workers.dev
                         }
                     }
                 }
