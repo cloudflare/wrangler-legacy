@@ -65,16 +65,16 @@ zone_id = "09876543210987654321"
 route = "dev.example.com/*"
 workers_dot_dev = false
 
-[env.production]
-name = "my-worker"
-route = "example.com/*"
-
 [env.staging]
 name = "my-worker-staging"
 route = "staging.example.com/*"
+
+[env.production]
+name = "my-worker"
+route = "example.com/*"
 ```
 
-In order to use environments with this configuration, you can pass the name of the environment via the `--env` flag.
+In order to use environments with this configuration, you can pass the name of the environment via the `---envnv` flag.
 
 With this configuration, Wrangler will behave in the following manner:
 
@@ -85,19 +85,15 @@ $ wrangler publish
 ✨  Success! Your worker was successfully published. You can view it at dev.example.com/*
 ```
 
-<!-- TODO: remove these error messages -->
-
 ```sh
-$ wrangler publish --env staging
-⚠️  Your environment should only include `workers_dot_dev` or both `route`
+$ wrangler publish ---envnv staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at staging.example.com/*
 ```
 
 ```sh
-$ wrangler publish --env production
-⚠️  Your environment should only include `workers_dot_dev` or both `route`
+$ wrangler publish ---envnv production
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at example.com/*
@@ -129,7 +125,7 @@ $ wrangler publish
 ```
 
 ```sh
-$ wrangler publish -e staging
+$ wrangler publish ---envnv staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.subdomain.workers.dev
@@ -162,14 +158,14 @@ $ wrangler publish
 ```
 
 ```sh
-$ wrangler publish -e staging
+$ wrangler publish ---envnv staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.subdomain.workers.dev
 ```
 
 ```sh
-$ wrangler publish -e production
+$ wrangler publish ---envnv production
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker.subdomain.workers.dev
@@ -205,6 +201,7 @@ type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
+workers_dot_dev = false
 
 [env.staging]
 name = "my-worker"
@@ -221,8 +218,8 @@ $ wrangler publish
 <!-- TODO: Add emoji to this error message -->
 
 ```sh
-$ wrangler publish -e staging
-Error: Each `name` in your wrangler.toml must be unique
+$ wrangler publish --env staging
+Error: ⚠️  Each `name` in your wrangler.toml must be unique
 ```
 
 ### Ambiguous top level configuration
@@ -237,6 +234,14 @@ route = "example.com/*
 
 You will be warned if `workers_dot_dev` is left out of the top level configuration because if it is not specified, it is unclear what the behavior of `wrangler publish` should be. See [the section on backwards compatibility](#Backwards-compatibility) for more information.
 
+```sh
+$ wrangler publish
+⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml
+✨  Built successfully, built project size is 517 bytes.
+✨  Successfully published your script.
+✨  Success! Your worker was successfully published. You can view it at https://my-worker.avery.workers.dev
+```
+
 ### Defining workers_dot_dev and route
 
 ```toml
@@ -245,26 +250,26 @@ type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*
+workers_dot_dev = true
 
 [env.staging]
 workers_dot_dev = true
 route = "staging.example.com/*"
 ```
 
-<!-- TODO: actually bail in this case -->
-
-Wrangler will fail to publish to an environment where `route` is defined alongside `workers_dot_dev = true`. The reason for the warning is because it is unclear what the intended behavior of the environment should be. Wrangler will assume you mean to deploy to `workers.dev`.
+Wrangler will fail to publish to an environment where `route` is defined alongside `workers_dot_dev = true`.
 
 ```sh
-$ wrangler publish -e staging
-⚠️  Your environment should only include `workers_dot_dev` or both `route`
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at staging.example.com/*
+$ wrangler publish
+Error: ⚠️  Your environment should only include `workers_dot_dev` or `route`
+```
+
+```sh
+$ wrangler publish --env staging
+Error: ⚠️  Your environment should only include `workers_dot_dev` or `route`
 ```
 
 ## Backwards compatibility
-
 
 Legacy `wrangler.toml` files will still work as expected during the initial rollout of this feature, however you will notice warnings when your configuration is ambigious. One of the goals of environments is to make it more obvious when you are deploying to a traditional worker with routes, and when you are deploying to a subdomain on workers.dev.
 
@@ -281,9 +286,23 @@ route = "example.com/*
 
 With this configuration, Wrangler will behave in the following manner:
 
-<!-- TODO: currently these both deploy to the route, fix it -->
+```sh
+$ wrangler publish
+⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml
+✨  Built successfully, built project size is 517 bytes.
+✨  Successfully published your script.
+✨  Success! Your worker was successfully published. You can view it at https://my-worker.subdomain.workers.dev
+```
 
-`wrangler publish` will publish your worker to `my-worker.subdomain.workers.dev`
-`wrangler publish --release` will publish your worker to your route at `example.com/*`.
+```sh
+$ wrangler publish --release
+⚠️  --release will be deprecated
+⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml
+✨  Built successfully, built project size is 517 bytes.
+✨  Successfully published your script.
+✨  Success! Your worker was successfully published. You can view it at example.com/*
+```
+
+This backwards compatibility is the reason that a warning is thrown if `workers_dot_dev` is not specified at the top of `wrangler.toml`.
 
 It is important to note that both of these commands will issue a deprecation warning. To remove these warnings, you can configure Wrangler with the `workers_dot_dev` boolean to separate deploys to workers.dev from deploys to workers routes.
