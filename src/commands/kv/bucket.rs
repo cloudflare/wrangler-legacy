@@ -15,7 +15,7 @@ use crate::terminal::message;
 
 pub fn upload(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
     let pairs: Result<Vec<KeyValuePair>, failure::Error> = match &metadata(filename) {
-        Ok(file_type) if file_type.is_dir() => parse_directory(filename),
+        Ok(file_type) if file_type.is_dir() => directory_keys_values(filename),
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             failure::bail!("wrangler kv:bucket upload takes a directory")
@@ -28,13 +28,7 @@ pub fn upload(namespace_id: &str, filename: &Path) -> Result<(), failure::Error>
 
 pub fn delete(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
     let keys: Result<Vec<String>, failure::Error> = match &metadata(filename) {
-        Ok(file_type) if file_type.is_dir() => {
-            let key_value_pairs = parse_directory(filename)?;
-            Ok(key_value_pairs
-                .iter()
-                .map(|kv| kv.key.clone())
-                .collect::<Vec<_>>())
-        }
+        Ok(file_type) if file_type.is_dir() => directory_keys_only(filename),
         Ok(_) => {
             // any other file types (namely, symlinks)
             failure::bail!(
@@ -48,7 +42,7 @@ pub fn delete(namespace_id: &str, filename: &Path) -> Result<(), failure::Error>
     delete_bulk(namespace_id, keys?)
 }
 
-fn parse_directory(directory: &Path) -> Result<Vec<KeyValuePair>, failure::Error> {
+fn directory_keys_values(directory: &Path) -> Result<Vec<KeyValuePair>, failure::Error> {
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     for entry in WalkDir::new(directory) {
         let entry = entry.unwrap();
@@ -68,6 +62,20 @@ fn parse_directory(directory: &Path) -> Result<Vec<KeyValuePair>, failure::Error
                 expiration_ttl: None,
                 base64: Some(true),
             });
+        }
+    }
+    Ok(upload_vec)
+}
+
+fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> {
+    let mut upload_vec: Vec<String> = Vec::new();
+    for entry in WalkDir::new(directory) {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if path.is_file() {
+            let key = generate_key(path, directory)?;
+
+            upload_vec.push(key);
         }
     }
     Ok(upload_vec)
