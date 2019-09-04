@@ -93,7 +93,7 @@ impl Manifest {
         }
 
         if release {
-            message::warn("--release will be deprecated, please use --env or specify workers_dot_dev in your `wrangler.toml`");
+            message::warn("--release will be deprecated");
         }
 
         let environment = match environment_name {
@@ -117,40 +117,63 @@ impl Manifest {
             None => None,
         };
 
-        let deprecate_warning = "please specify workers_dot_dev in your wrangler.toml";
-        let wdd_warning = "Your environment should only include `workers_dot_dev` or both `route`";
+        let deprecate_warning =
+            "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml";
+        let wdd_failure = format!(
+            "{} Your environment should only include `workers_dot_dev` or `route`",
+            emoji::WARN
+        );
 
         let workers_dot_dev = match environment {
-            // environment specified
-            Some(environment) => match environment.workers_dot_dev {
-                Some(wdd) => wdd,
-                None => {
-                    match self.workers_dot_dev {
-                        Some(wdd) => {
-                            if environment.route.is_some() {
-                                message::warn(wdd_warning);
-                            }
-                            wdd
-                        } // inherit from top level
-                        None => false,
-                    }
-                }
-            },
-            // top level (legacy)
+            // top level configuration
             None => {
                 if release {
-                    message::warn(deprecate_warning);
-                    false // --release means not workers.dev
+                    match self.workers_dot_dev {
+                        Some(_) => failure::bail!(deprecate_warning),
+                        None => {
+                            message::warn(deprecate_warning);
+                            false // --release means not workers.dev
+                        }
+                    }
                 } else {
                     match self.workers_dot_dev {
-                        Some(wdd) => wdd,
+                        Some(wdd) => {
+                            if wdd && self.route.is_some() {
+                                failure::bail!(wdd_failure)
+                            }
+                            wdd
+                        }
                         None => {
+                            println!("{:#?}", "wrangler publish with base environment");
                             message::warn(deprecate_warning);
                             true // no --release means workers.dev
                         }
                     }
                 }
             }
+
+            // environment configuration
+            Some(environment) => match environment.workers_dot_dev {
+                Some(wdd) => {
+                    if wdd && environment.route.is_some() {
+                        failure::bail!(wdd_failure)
+                    }
+                    wdd
+                }
+                None => {
+                    match self.workers_dot_dev {
+                        Some(wdd) => {
+                            let wdd = if wdd && environment.route.is_some() {
+                                false // use route if workers_dot_dev = true is inherited
+                            } else {
+                                wdd
+                            };
+                            wdd // inherit from top level
+                        }
+                        None => false,
+                    }
+                }
+            },
         };
 
         let kv_namespaces = match environment {
@@ -174,7 +197,10 @@ impl Manifest {
                 Some(name) => {
                     let name = name.clone();
                     if name == self.name {
-                        failure::bail!("Each `name` in your wrangler.toml must be unique")
+                        failure::bail!(format!(
+                            "{} Each `name` in your wrangler.toml must be unique",
+                            emoji::WARN
+                        ))
                     }
                     name
                 }
@@ -188,12 +214,16 @@ impl Manifest {
 
         let route = match environment {
             Some(environment) => match &environment.route {
-                Some(route) => {
-                    if environment.workers_dot_dev.is_some() {
-                        message::warn(wdd_warning);
+                Some(route) => match environment.workers_dot_dev {
+                    Some(wdd) => {
+                        if wdd {
+                            failure::bail!(wdd_failure);
+                        } else {
+                            Some(route.clone())
+                        }
                     }
-                    Some(route.clone())
-                }
+                    None => Some(route.clone()),
+                },
                 None => None,
             },
             None => self.route.clone(),

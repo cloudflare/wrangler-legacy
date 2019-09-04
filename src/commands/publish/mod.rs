@@ -15,7 +15,7 @@ use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Target;
-use crate::terminal::{emoji, message};
+use crate::terminal::message;
 
 pub fn publish(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     info!("workers_dot_dev = {}", target.workers_dot_dev);
@@ -51,20 +51,16 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
         )
     }
 
-    let pattern = if target.route.is_some() {
+    let pattern = if !target.workers_dot_dev {
         let route = Route::new(&target)?;
         Route::publish(&user, &target, &route)?;
         info!("publishing to route");
         route.pattern
-    } else if target.workers_dot_dev {
+    } else {
         info!("publishing to subdomain");
         publish_to_subdomain(target, user)?
-    } else {
-        failure::bail!(format!(
-            "{} you must either define a route or make workers_dot_dev true",
-            emoji::WARN
-        ))
     };
+
     info!("{}", &pattern);
     message::success(&format!(
         "Success! Your worker was successfully published. You can view it at {}",
