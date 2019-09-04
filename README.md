@@ -81,11 +81,6 @@ General documentation surrounding workers development and using `wrangler` can b
     wrangler publish
     ```
 
-    By default, `publish` will make your worker available at `<project-name>.<subdomain>.workers.dev`.
-    To disable publishing to your workers.dev subdomain, set `private = true` in your `wrangler.toml`.
-    This setting prevents the `publish` command from making your worker publicly available. To
-    explicitly enable deployment to `<project-name>.<subdomain>.workers.dev`, you can set `private = false`.
-
     To use this command, you'll need to have the following keys in your `wrangler.toml`:
 
     - `name`
@@ -177,10 +172,6 @@ There are two types of configuration that `wrangler` uses: global user and per p
     edit this file to add these values before you can publish.
 
     - `name`: This is the name of your project. It will be the name of your script.
-    - `private`: This is a boolean. If set to `true`, when using `wrangler publish`, it will push your script but
-        not make it publically available. This does not affect publishing in `--release` mode to a registered
-        domain. Those pushes are *always* public. If this is not in your `wrangler.toml` it is assumed your
-        project is public.
     - `type`: This key tells `wrangler build` how to build your project. There are currently 3 options, but we
         expect there to be more as the community grows.
         - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
@@ -213,6 +204,8 @@ There are two types of configuration that `wrangler` uses: global user and per p
         ```
 
         Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
+
+    Additionally, you can configure Wrangler to publish to multiple environments. Read more [here](/docs/environments.md).
 
 ## Additional Installation Instructions
 
