@@ -52,7 +52,7 @@ route = "dev.example.com/*"
 
 [env.production]
 name = "my-worker"
-route = "dev.example.com/*"
+route = "example.com/*"
 
 [env.staging]
 name = "my-worker-staging"
@@ -67,7 +67,7 @@ With this configuration, Wrangler will behave in the following manner:
 `wrangler publish --env staging` will publish your worker to the `staging.example.com/*`.
 `wrangler publish --env production` will publish your worker to the `example.com/*` route.
 
-#### workers.dev Environment
+#### Staging Environment with workers.dev
 
 In order to deploy your code to workers.dev, you must include `workers_dot_dev = true` in the desired environment. Your `wrangler.toml` may look like this:
 
@@ -87,7 +87,7 @@ With this configuration, Wrangler will behave in the following manner:
 `wrangler publish` will publish your project to `example.com/*`
 `wrangler publish --environment staging` will publish your project to `my-worker-staging.yoursubdomain.workers.dev`
 
-#### workers.dev by default
+#### workers.dev as a first class target
 
 If you only want to deploy to workers.dev you can configure Wrangler like so:
 
@@ -187,7 +187,7 @@ route = "example.com/*
 
 With this configuration, Wrangler will behave in the following manner:
 
-`wrangler publish` will publish your worker to your subdomain on workers.dev
+`wrangler publish` will publish your worker to `my-worker.subdomain.workers.dev`
 `wrangler publish --release` will publish your worker to your route at `example.com/*`.
 
 It is important to note that both of these commands will issue a deprecation warning. To remove these warnings, you can configure Wrangler with the `workers_dot_dev` boolean to separate deploys to workers.dev from deploys to workers routes.
