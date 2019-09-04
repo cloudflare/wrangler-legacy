@@ -14,21 +14,21 @@ use std::path::Path;
 use crate::terminal::message;
 
 pub fn upload(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
-    let pairs: Result<Vec<KeyValuePair>, failure::Error> = match metadata(filename) {
-        Ok(ref file_type) if file_type.is_dir() => parse_directory(filename),
+    let pairs: Result<Vec<KeyValuePair>, failure::Error> = match &metadata(filename) {
+        Ok(file_type) if file_type.is_dir() => parse_directory(filename),
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             failure::bail!("wrangler kv:bucket upload takes a directory")
         }
-        Err(e) => failure::bail!(e),
+        Err(e) => failure::bail!("{}", e),
     };
 
     write_bulk(namespace_id, pairs?)
 }
 
 pub fn delete(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
-    let keys: Result<Vec<String>, failure::Error> = match metadata(filename) {
-        Ok(ref file_type) if file_type.is_dir() => {
+    let keys: Result<Vec<String>, failure::Error> = match &metadata(filename) {
+        Ok(file_type) if file_type.is_dir() => {
             let key_value_pairs = parse_directory(filename)?;
             Ok(key_value_pairs
                 .iter()
@@ -42,7 +42,7 @@ pub fn delete(namespace_id: &str, filename: &Path) -> Result<(), failure::Error>
                 filename.display()
             )
         }
-        Err(e) => failure::bail!(e),
+        Err(e) => failure::bail!("{}", e),
     };
 
     delete_bulk(namespace_id, keys?)
