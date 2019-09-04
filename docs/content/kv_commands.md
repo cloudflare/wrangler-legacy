@@ -146,3 +146,25 @@ Deletes all specified keys within a given namespace.
 $ wrangler kv:bulk delete f7b02e7fc70443149ac906dd81ec1791 ./allthethings.json
 ```
 
+## `kv:bucket`
+
+### `upload`
+
+Walks the given directory and runs a bulk upload, using the path to an asset as its `key` and the asset as its `value`.
+
+#### Usage
+
+```sh
+$ wrangler kv:bucket upload f7b02e7fc70443149ac906dd81ec1791 ./public
+```
+
+### `delete`
+
+Walks the given directory and runs a bulk delete, using the paths to assets as the `key`s to delete.
+
+#### Usage
+
+```sh
+$ wrangler kv:bucket upload f7b02e7fc70443149ac906dd81ec1791 ./public
+```
+

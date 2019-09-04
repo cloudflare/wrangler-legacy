@@ -245,6 +245,51 @@ fn run() -> Result<(), failure::Error> {
                 )
         )
         .subcommand(
+            SubCommand::with_name("kv:bucket")
+                .about(&*format!(
+                    "{} Use KV as bucket-style storage",
+                    emoji::KV
+                ))
+                .subcommand(
+                    SubCommand::with_name("upload")
+                        .about("Upload the contents of a directory keyed on path")
+                        .arg(
+                            Arg::with_name("namespace-id")
+                                .help("The ID of the namespace this action applies to")
+                                .required(true)
+                                // .short("n")
+                                // .long("namespace-id")
+                                // .value_name("<ID>")
+                                // .takes_value(true)
+                        )
+                        .arg(
+                            Arg::with_name("path")
+                            .help("the directory to be uploaded to KV")
+                            .required(true)
+                            .index(2),
+                        )
+                )
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .about("Delete the contents of a directory keyed on path")
+                        .arg(
+                            Arg::with_name("namespace-id")
+                                .help("The ID of the namespace this action applies to")
+                                .required(true)
+                                // .short("n")
+                                // .long("namespace-id")
+                                // .value_name("<ID>")
+                                // .takes_value(true)
+                        )
+                        .arg(
+                            Arg::with_name("path")
+                            .help("the directory to be deleted from KV")
+                            .required(true)
+                            .index(2),
+                        )
+                )
+        )
+        .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
                     "{} Generate a new worker project",
@@ -516,6 +561,21 @@ fn run() -> Result<(), failure::Error> {
                 commands::kv::delete_json(id, Path::new(path))?;
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
+            _ => unreachable!(),
+        }
+    } else if let Some(kv_matches) = matches.subcommand_matches("kv:bucket") {
+        match kv_matches.subcommand() {
+            ("upload", Some(write_bulk_matches)) => {
+                let id = write_bulk_matches.value_of("namespace-id").unwrap();
+                let path = write_bulk_matches.value_of("path").unwrap();
+                commands::kv::bucket::upload(id, Path::new(path))?;
+            }
+            ("delete", Some(delete_matches)) => {
+                let id = delete_matches.value_of("namespace-id").unwrap();
+                let path = delete_matches.value_of("path").unwrap();
+                commands::kv::bucket::delete(id, Path::new(path))?;
+            }
+            ("", None) => message::warn("kv:bucket expects a subcommand"),
             _ => unreachable!(),
         }
     }
