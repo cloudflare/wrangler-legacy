@@ -118,12 +118,23 @@ impl Manifest {
         };
 
         let deprecate_warning = "please specify workers_dot_dev in your wrangler.toml";
+        let wdd_warning = "Your environment should only include `workers_dot_dev` or both `route`";
 
         let workers_dot_dev = match environment {
             // environment specified
             Some(environment) => match environment.workers_dot_dev {
                 Some(wdd) => wdd,
-                None => false,
+                None => {
+                    match self.workers_dot_dev {
+                        Some(wdd) => {
+                            if environment.route.is_some() {
+                                message::warn(wdd_warning);
+                            }
+                            wdd
+                        } // inherit from top level
+                        None => false,
+                    }
+                }
             },
             // top level (legacy)
             None => {
@@ -177,7 +188,12 @@ impl Manifest {
 
         let route = match environment {
             Some(environment) => match &environment.route {
-                Some(route) => Some(route.clone()),
+                Some(route) => {
+                    if environment.workers_dot_dev.is_some() {
+                        message::warn(wdd_warning);
+                    }
+                    Some(route.clone())
+                }
                 None => None,
             },
             None => self.route.clone(),
@@ -210,17 +226,17 @@ impl Manifest {
         let project_type = self.project_type.clone();
 
         Ok(Target {
-            project_type,   // MUST inherit
-            account_id,     // MAY inherit
-            webpack_config, // MAY inherit
-            zone_id,        // MAY inherit
+            project_type,    // MUST inherit
+            account_id,      // MAY inherit
+            webpack_config,  // MAY inherit
+            zone_id,         // MAY inherit
+            workers_dot_dev, // MAY inherit,
             // importantly, the top level name will be modified
             // to include the name of the environment
-            name,            // MAY inherit
-            kv_namespaces,   // MUST NOT inherit
-            route,           // MUST NOT inherit
-            routes,          // MUST NOT inherit
-            workers_dot_dev, // MUST NOT inherit,
+            name,          // MAY inherit
+            kv_namespaces, // MUST NOT inherit
+            route,         // MUST NOT inherit
+            routes,        // MUST NOT inherit
         })
     }
 
