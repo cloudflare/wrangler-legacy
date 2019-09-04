@@ -30,6 +30,8 @@ $ wrangler kv:namespace create "new kv namespace"
 
 ```sh
 $ wrangler kv:namespace delete f7b02e7fc70443149ac906dd81ec1791
+Are you sure you want to delete namespace f7b02e7fc70443149ac906dd81ec1791? [y/n]
+yes
 🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791 🌀 
 ✨  Success
 ```
@@ -91,6 +93,10 @@ Removes a single key value pair from the given namespace.
 
 ```sh
 $ wrangler kv:key delete f7b02e7fc70443149ac906dd81ec1791 "key"
+Are you sure you want to delete key "key"? [y/n]
+yes
+🌀  Deleting key "key" 🌀
+✨  Success
 ```
 
 ### `list`
@@ -144,5 +150,8 @@ Deletes all specified keys within a given namespace.
 
 ```sh
 $ wrangler kv:bulk delete f7b02e7fc70443149ac906dd81ec1791 ./allthethings.json
+Are you sure you want to delete all keys in ./allthethings.json? [y/n]
+yes
+✨  Success
 ```
 
