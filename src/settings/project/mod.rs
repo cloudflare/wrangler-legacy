@@ -144,7 +144,6 @@ impl Manifest {
                             wdd
                         }
                         None => {
-                            println!("{:#?}", "wrangler publish with base environment");
                             message::warn(deprecate_warning);
                             true // no --release means workers.dev
                         }
