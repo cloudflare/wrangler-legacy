@@ -167,7 +167,10 @@ impl Manifest {
                     }
                     name
                 }
-                None => failure::bail!("You must specify `name` in your wrangler.toml"),
+                None => match environment_name {
+                    Some(environment_name) => format!("{}-{}", self.name, environment_name),
+                    None => failure::bail!("You must specify `name` in your wrangler.toml"),
+                },
             },
             None => self.name.clone(),
         };
@@ -207,12 +210,14 @@ impl Manifest {
         let project_type = self.project_type.clone();
 
         Ok(Target {
-            project_type,    // MUST inherit
-            account_id,      // MAY inherit
-            webpack_config,  // MAY inherit
-            zone_id,         // MAY inherit
+            project_type,   // MUST inherit
+            account_id,     // MAY inherit
+            webpack_config, // MAY inherit
+            zone_id,        // MAY inherit
+            // importantly, the top level name will be modified
+            // to include the name of the environment
+            name,            // MAY inherit
             kv_namespaces,   // MUST NOT inherit
-            name,            // MUST NOT inherit
             route,           // MUST NOT inherit
             routes,          // MUST NOT inherit
             workers_dot_dev, // MUST NOT inherit,
