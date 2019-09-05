@@ -5,7 +5,7 @@ account_id = ""
 route = ""
 
 [env.production]
-name = "staging-worker"
+name = "production-worker"
 zone_id = ""
 account_id = ""
 route = ""

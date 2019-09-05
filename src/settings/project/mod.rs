@@ -381,7 +381,7 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
     let duplicate_message = match duplicate_names.len() {
         1 => Some(format!("this name is duplicated: {}", duplicate_names[0])),
         n if n >= 2 => Some(format!("these names are duplicated: {:?}", duplicate_names)),
-        _ => None
+        _ => None,
     };
     match duplicate_message {
         Some(msg) => failure::bail!(format!(
@@ -389,7 +389,7 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
             emoji::WARN,
             msg
         )),
-        None => Ok(())
+        None => Ok(()),
     }
 }
 
