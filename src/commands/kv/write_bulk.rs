@@ -10,11 +10,18 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
 
 use crate::commands::kv;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::project::Project;
 use crate::terminal::message;
 
 const MAX_PAIRS: usize = 10000;
 
-pub fn write_json(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
+pub fn write_json(
+    project: &Project,
+    user: GlobalUser,
+    namespace_id: &str,
+    filename: &Path,
+) -> Result<(), failure::Error> {
     let pairs: Result<Vec<KeyValuePair>, failure::Error> = match metadata(filename) {
         Ok(ref file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
@@ -24,12 +31,16 @@ pub fn write_json(namespace_id: &str, filename: &Path) -> Result<(), failure::Er
         Err(e) => failure::bail!(e),
     };
 
-    write_bulk(namespace_id, pairs?)
+    write_bulk(project, user, namespace_id, pairs?)
 }
 
-fn write_bulk(namespace_id: &str, pairs: Vec<KeyValuePair>) -> Result<(), failure::Error> {
-    let client = kv::api_client()?;
-    let account_id = kv::account_id()?;
+fn write_bulk(
+    project: &Project,
+    user: GlobalUser,
+    namespace_id: &str,
+    pairs: Vec<KeyValuePair>,
+) -> Result<(), failure::Error> {
+    let client = kv::api_client(user)?;
 
     // Validate that bulk upload is within size constraints
     if pairs.len() > MAX_PAIRS {
@@ -41,7 +52,7 @@ fn write_bulk(namespace_id: &str, pairs: Vec<KeyValuePair>) -> Result<(), failur
     }
 
     let response = client.request(&WriteBulk {
-        account_identifier: &account_id,
+        account_identifier: &project.account_id,
         namespace_identifier: namespace_id,
         bulk_key_value_pairs: pairs,
     });

@@ -4,7 +4,7 @@ use cloudflare::framework::HttpApiClient;
 use http::status::StatusCode;
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
-use crate::settings;
+use crate::settings::global_user::GlobalUser;
 use crate::terminal::message;
 
 mod create_namespace;
@@ -34,19 +34,8 @@ const INTERACTIVE_RESPONSE_LEN: usize = 1;
 const YES: &str = "y";
 const NO: &str = "n";
 
-fn api_client() -> Result<HttpApiClient, failure::Error> {
-    let user = settings::global_user::GlobalUser::new()?;
-
+fn api_client(user: GlobalUser) -> Result<HttpApiClient, failure::Error> {
     Ok(HttpApiClient::new(Credentials::from(user)))
-}
-
-fn account_id() -> Result<String, failure::Error> {
-    let project = settings::project::Project::new()?;
-    // we need to be certain that account id is present to make kv calls
-    if project.account_id.is_empty() {
-        failure::bail!("Your wrangler.toml is missing the account_id field which is required to create KV namespaces!");
-    }
-    Ok(project.account_id)
 }
 
 fn print_error(e: ApiFailure) {
