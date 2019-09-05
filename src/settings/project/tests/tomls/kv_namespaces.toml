@@ -1,21 +1,33 @@
-[env.default]
 type = "webpack"
 name = "worker"
 zone_id = ""
-private = false
 account_id = ""
 route = ""
-    [[kv-namespaces]]
-    id = "somecrazylongidentifierstring"
-    binding = "prodKV"
 
-[env.kv_namespaces]
-type = "webpack"
+[env.production]
 name = "staging-worker"
 zone_id = ""
-private = false
 account_id = ""
 route = ""
-    [[kv-namespaces]]
-    id = "anotherwaytoolongidstring"
-    binding = "stagingKV"
+
+[[env.production.kv-namespaces]]
+id = "somecrazylongidentifierstring"
+binding = "prodKV-1"
+
+[[env.production.kv-namespaces]]
+id = "anotherwaytoolongidstring"
+binding = "prodKV-2"
+
+[env.staging]
+name = "staging-worker"
+zone_id = ""
+account_id = ""
+route = ""
+
+[[env.staging.kv-namespaces]]
+id = "somecrazylongidentifierstring"
+binding = "stagingKV-1"
+
+[[env.staging.kv-namespaces]]
+id = "anotherwaytoolongidstring"
+binding = "stagingKV-2"
