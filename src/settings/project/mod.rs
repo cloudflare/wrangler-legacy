@@ -162,12 +162,11 @@ impl Manifest {
                 None => {
                     match self.workers_dot_dev {
                         Some(wdd) => {
-                            let wdd = if wdd && environment.route.is_some() {
+                            if wdd && environment.route.is_some() {
                                 false // use route if workers_dot_dev = true is inherited
                             } else {
-                                wdd
-                            };
-                            wdd // inherit from top level
+                                wdd // inherit from top level
+                            }
                         }
                         None => false,
                     }

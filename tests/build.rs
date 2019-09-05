@@ -45,7 +45,7 @@ fn it_builds_with_webpack_function_config_js() {
     let fixture = "webpack_function_config_js";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -59,7 +59,7 @@ fn it_builds_with_webpack_promise_config_js() {
     let fixture = "webpack_promise_config_js";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -73,7 +73,7 @@ fn it_builds_with_webpack_function_promise_config_js() {
     let fixture = "webpack_function_promise_config_js";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -182,7 +182,7 @@ fn it_fails_with_webpack_target_web() {
           target: "node",
         }"#,
     );
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "webpack"
     "#};
 
@@ -205,7 +205,7 @@ fn it_builds_with_webpack_target_webworker() {
           target: "webworker",
         }"#,
     );
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "webpack"
     "#};
 
