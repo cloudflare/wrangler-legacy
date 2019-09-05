@@ -1,19 +1,25 @@
 extern crate base64;
 
-use cloudflare::framework::apiclient::ApiClient;
-
 use std::fs;
 use std::fs::metadata;
 use std::path::Path;
 
 use cloudflare::endpoints::workerskv::delete_bulk::DeleteBulk;
+use cloudflare::framework::apiclient::ApiClient;
 
 use crate::commands::kv;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::project::Project;
 use crate::terminal::message;
 
 const MAX_PAIRS: usize = 10000;
 
-pub fn delete_json(namespace_id: &str, filename: &Path) -> Result<(), failure::Error> {
+pub fn delete_json(
+    project: &Project,
+    user: GlobalUser,
+    namespace_id: &str,
+    filename: &Path,
+) -> Result<(), failure::Error> {
     match kv::interactive_delete(&format!(
         "Are you sure you want to delete all keys in {}?",
         filename.display()
@@ -35,12 +41,16 @@ pub fn delete_json(namespace_id: &str, filename: &Path) -> Result<(), failure::E
         Err(e) => failure::bail!(e),
     };
 
-    delete_bulk(namespace_id, keys?)
+    delete_bulk(project, user, namespace_id, keys?)
 }
 
-fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Error> {
-    let client = kv::api_client()?;
-    let account_id = kv::account_id()?;
+fn delete_bulk(
+    project: &Project,
+    user: GlobalUser,
+    namespace_id: &str,
+    keys: Vec<String>,
+) -> Result<(), failure::Error> {
+    let client = kv::api_client(user)?;
 
     // Check number of pairs is under limit
     if keys.len() > MAX_PAIRS {
@@ -52,7 +62,7 @@ fn delete_bulk(namespace_id: &str, keys: Vec<String>) -> Result<(), failure::Err
     }
 
     let response = client.request(&DeleteBulk {
-        account_identifier: &account_id,
+        account_identifier: &project.account_id,
         namespace_identifier: namespace_id,
         bulk_keys: keys,
     });

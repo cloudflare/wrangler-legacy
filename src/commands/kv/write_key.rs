@@ -15,7 +15,7 @@ use crate::terminal::message;
 
 pub fn write_key(
     project: &Project,
-    user: &GlobalUser,
+    user: GlobalUser,
     id: &str,
     key: &str,
     value: &str,
@@ -51,7 +51,7 @@ pub fn write_key(
         body_text = value.to_string();
     }
 
-    let client = http::auth_client(user);
+    let client = http::auth_client(&user);
 
     let url_into_str = url?.into_string();
     let mut res = client.put(&url_into_str).body(body_text).send()?;

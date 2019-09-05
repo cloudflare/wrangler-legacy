@@ -1,13 +1,17 @@
+use cloudflare::endpoints::workerskv::remove_namespace::RemoveNamespace;
 use cloudflare::framework::apiclient::ApiClient;
 
-use cloudflare::endpoints::workerskv::remove_namespace::RemoveNamespace;
-
 use crate::commands::kv;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::project::Project;
 use crate::terminal::message;
 
-pub fn delete_namespace(id: &str) -> Result<(), failure::Error> {
-    let client = kv::api_client()?;
-    let account_id = kv::account_id()?;
+pub fn delete_namespace(
+    project: &Project,
+    user: GlobalUser,
+    id: &str,
+) -> Result<(), failure::Error> {
+    let client = kv::api_client(user)?;
 
     match kv::interactive_delete(&format!(
         "Are you sure you want to delete namespace {}?",
@@ -25,7 +29,7 @@ pub fn delete_namespace(id: &str) -> Result<(), failure::Error> {
     message::working(&msg);
 
     let response = client.request(&RemoveNamespace {
-        account_identifier: &account_id,
+        account_identifier: &project.account_id,
         namespace_identifier: id,
     });
 

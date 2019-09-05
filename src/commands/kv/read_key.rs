@@ -12,7 +12,7 @@ use crate::settings::project::Project;
 
 pub fn read_key(
     project: &Project,
-    user: &GlobalUser,
+    user: GlobalUser,
     id: &str,
     key: &str,
 ) -> Result<(), failure::Error> {
@@ -23,7 +23,7 @@ pub fn read_key(
         kv::url_encode_key(key)
     );
 
-    let client = http::auth_client(user);
+    let client = http::auth_client(&user);
 
     let mut res = client.get(&api_endpoint).send()?;
 
