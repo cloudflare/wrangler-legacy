@@ -124,28 +124,40 @@ impl Manifest {
             emoji::WARN
         );
 
+        // TODO: deprecate --release, remove warnings and parsing
+        // switch wrangler publish behavior to act the same at top level
+        // and environments
+        // brace yourself, this is hairy
         let workers_dot_dev = match environment {
             // top level configuration
             None => {
                 if release {
+                    // --release means zoned, not workers.dev
                     match self.workers_dot_dev {
                         Some(_) => failure::bail!(deprecate_warning),
                         None => {
                             message::warn(deprecate_warning);
-                            false // --release means not workers.dev
+                            false // workers_dot_dev defaults to false when it's top level and --release is passed
                         }
                     }
                 } else {
                     match self.workers_dot_dev {
                         Some(wdd) => {
-                            if wdd && self.route.is_some() {
-                                failure::bail!(wdd_failure)
+                            if wdd {
+                                match &self.route {
+                                    Some(route) => {
+                                        if !route.is_empty() {
+                                            failure::bail!(wdd_failure)
+                                        }
+                                    }
+                                    None => (),
+                                }
                             }
                             wdd
                         }
                         None => {
                             message::warn(deprecate_warning);
-                            true // no --release means workers.dev
+                            true // workers_dot_dev defaults to true when it's top level and --release is not passed
                         }
                     }
                 }
