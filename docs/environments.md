@@ -1,6 +1,6 @@
 # Environments
 
-Environments is a feature that allows you to deploy the same project to multiple places under multiple names. 
+Environments is a feature that allows you to deploy the same project to multiple places under multiple names.
 
 ## Usage
 
@@ -74,7 +74,7 @@ name = "my-worker"
 route = "example.com/*"
 ```
 
-In order to use environments with this configuration, you can pass the name of the environment via the `---envnv` flag.
+In order to use environments with this configuration, you can pass the name of the environment via the `--env` flag.
 
 With this configuration, Wrangler will behave in the following manner:
 
@@ -86,14 +86,14 @@ $ wrangler publish
 ```
 
 ```sh
-$ wrangler publish ---envnv staging
+$ wrangler publish --env staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at staging.example.com/*
 ```
 
 ```sh
-$ wrangler publish ---envnv production
+$ wrangler publish --env production
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at example.com/*
@@ -125,7 +125,7 @@ $ wrangler publish
 ```
 
 ```sh
-$ wrangler publish ---envnv staging
+$ wrangler publish --env staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.subdomain.workers.dev
@@ -158,14 +158,14 @@ $ wrangler publish
 ```
 
 ```sh
-$ wrangler publish ---envnv staging
+$ wrangler publish --env staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.subdomain.workers.dev
 ```
 
 ```sh
-$ wrangler publish ---envnv production
+$ wrangler publish --env production
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker.subdomain.workers.dev
@@ -210,16 +210,12 @@ workers_dot_dev = true
 
 ```sh
 $ wrangler publish
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at example.com/*
+Error: ⚠️  Each name in your `wrangler.toml` must be unique, this name is duplicated: my-worker
 ```
-
-<!-- TODO: Add emoji to this error message -->
 
 ```sh
 $ wrangler publish --env staging
-Error: ⚠️  Each `name` in your wrangler.toml must be unique
+Error: ⚠️  Each name in your `wrangler.toml` must be unique, this name is duplicated: my-worker
 ```
 
 ### Ambiguous top level configuration
