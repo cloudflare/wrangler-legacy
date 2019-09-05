@@ -7,6 +7,7 @@ use std::fs;
 use cloudflare::framework::response::ApiFailure;
 use url::Url;
 
+use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
@@ -14,7 +15,7 @@ use crate::terminal::message;
 
 pub fn write_key(
     project: &Project,
-    user: &GlobalUser,
+    user: GlobalUser,
     id: &str,
     key: &str,
     value: &str,
@@ -24,7 +25,9 @@ pub fn write_key(
 ) -> Result<(), failure::Error> {
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        project.account_id, id, key
+        project.account_id,
+        id,
+        kv::url_encode_key(key)
     );
 
     // Add expiration and expiration_ttl query options as necessary.
@@ -48,7 +51,7 @@ pub fn write_key(
         body_text = value.to_string();
     }
 
-    let client = http::auth_client(user);
+    let client = http::auth_client(&user);
 
     let url_into_str = url?.into_string();
     let mut res = client.put(&url_into_str).body(body_text).send()?;
@@ -60,7 +63,7 @@ pub fn write_key(
         // it will be redundant when we switch to using cloudflare-rs for all API requests.
         let parsed = res.json();
         let errors = parsed.unwrap_or_default();
-        super::print_error(ApiFailure::Error(res.status(), errors));
+        kv::print_error(ApiFailure::Error(res.status(), errors));
     }
 
     Ok(())

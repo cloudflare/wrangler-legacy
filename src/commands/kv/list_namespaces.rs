@@ -4,16 +4,18 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use prettytable::{Cell, Row, Table};
 
+use crate::commands::kv;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::project::Project;
 use crate::terminal::message;
 
-pub fn list_namespaces() -> Result<(), failure::Error> {
-    let client = super::api_client()?;
-    let account_id = super::account_id()?;
+pub fn list_namespaces(project: &Project, user: GlobalUser) -> Result<(), failure::Error> {
+    let client = kv::api_client(user)?;
 
     message::working("Fetching namespaces...");
 
     let response = client.request(&ListNamespaces {
-        account_identifier: &account_id,
+        account_identifier: &project.account_id,
     });
 
     match response {
@@ -21,7 +23,7 @@ pub fn list_namespaces() -> Result<(), failure::Error> {
             let table = namespace_table(success.result);
             message::success(&format!("Success: \n{}", table));
         }
-        Err(e) => super::print_error(e),
+        Err(e) => kv::print_error(e),
     }
 
     Ok(())
