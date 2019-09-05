@@ -77,7 +77,10 @@ impl Manifest {
 
         validate_kv_namespaces_config(kv_namespaces)?;
 
-        let manifest = config.try_into()?;
+        let manifest: Manifest = config.try_into()?;
+
+        check_for_duplicate_names(&manifest)?;
+
         Ok(manifest)
     }
 
@@ -353,6 +356,41 @@ id = "0f2ac74b498b48028cb68387c421e279"
         }
     }
     Ok(())
+}
+
+fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> {
+    let mut names: Vec<String> = Vec::new();
+    let mut duplicate_names: Vec<String> = Vec::new();
+    names.push(manifest.name.to_string());
+    match &manifest.env {
+        Some(environments) => {
+            for (_, environment) in environments.iter() {
+                match &environment.name {
+                    Some(name) => {
+                        if names.contains(name) && !duplicate_names.contains(name) {
+                            duplicate_names.push(name.to_string());
+                        }
+                        names.push(name.to_string());
+                    }
+                    None => (),
+                }
+            }
+        }
+        None => (),
+    }
+    let duplicate_message = match duplicate_names.len() {
+        1 => Some(format!("this name is duplicated: {}", duplicate_names[0])),
+        n if n >= 2 => Some(format!("these names are duplicated: {:?}", duplicate_names)),
+        _ => None
+    };
+    match duplicate_message {
+        Some(msg) => failure::bail!(format!(
+            "{} Each name in your `wrangler.toml` must be unique, {}",
+            emoji::WARN,
+            msg
+        )),
+        None => Ok(())
+    }
 }
 
 #[cfg(test)]
