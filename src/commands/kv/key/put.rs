@@ -13,7 +13,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-pub fn write_key(
+pub fn put(
     project: &Project,
     user: GlobalUser,
     id: &str,
