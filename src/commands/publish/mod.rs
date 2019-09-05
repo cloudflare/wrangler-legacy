@@ -15,7 +15,7 @@ use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Target;
-use crate::terminal::message;
+use crate::terminal::{emoji, message};
 
 pub fn publish(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     info!("workers_dot_dev = {}", target.workers_dot_dev);
@@ -155,7 +155,8 @@ fn validate_target(target: &Target) -> Result<(), failure::Error> {
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
+            "{} Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
+            emoji::WARN,
             field_pluralization,
             missing_fields,
             is_are,
