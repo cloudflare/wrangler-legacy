@@ -33,5 +33,9 @@ pub fn list(
     }
     print!("]"); // Close json list bracket
 
+    if let Some(error) = key_list.error {
+        failure::bail!("There was an error downloading your keys: {}", error);
+    }
+
     Ok(())
 }
