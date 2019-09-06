@@ -373,13 +373,20 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
             }
         }
     }
-    let duplicate_names = duplicate_names
+    let duplicate_name_string = duplicate_names
+        .clone()
         .into_iter()
         .collect::<Vec<String>>()
         .join(", ");
     let duplicate_message = match duplicate_names.len() {
-        1 => Some(format!("this name is duplicated: {}", duplicate_names)),
-        n if n >= 2 => Some(format!("these names are duplicated: {}", duplicate_names)),
+        1 => Some(format!(
+            "this name is duplicated: {}",
+            duplicate_name_string
+        )),
+        n if n >= 2 => Some(format!(
+            "these names are duplicated: {}",
+            duplicate_name_string
+        )),
         _ => None,
     };
     match duplicate_message {
