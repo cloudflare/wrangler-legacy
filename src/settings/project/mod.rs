@@ -85,6 +85,117 @@ impl Manifest {
         Ok(manifest)
     }
 
+    fn get_environment(
+        &self,
+        environment_name: Option<&str>,
+    ) -> Result<Option<&Environment>, failure::Error> {
+        if let Some(environment_name) = environment_name {
+            if let Some(environment_table) = &self.env {
+                if let Some(environment) = environment_table.get(environment_name) {
+                    Ok(Some(environment))
+                } else {
+                    failure::bail!(format!(
+                        "{} Could not find environment with name {}",
+                        emoji::WARN,
+                        environment_name
+                    ))
+                }
+            } else {
+                failure::bail!(format!(
+                    "{} There are no environments specified in your wrangler.toml",
+                    emoji::WARN
+                ))
+            }
+        } else {
+            Ok(None)
+        }
+    }
+
+    // TODO: when --release is deprecated, this will be much easier
+    fn zoneless_or_dot_dev(
+        &self,
+        environment: Option<&Environment>,
+        release: bool,
+    ) -> Result<(Option<String>, bool), failure::Error> {
+        let use_dot_dev_warning =
+            "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml";
+        let wdd_failure = format!(
+            "{} Your environment should only include `workers_dot_dev` or `route`",
+            emoji::WARN
+        );
+
+        // TODO: deprecate --release, remove warnings and parsing
+        // switch wrangler publish behavior to act the same at top level
+        // and environments
+        // brace yourself, this is hairy
+        let workers_dot_dev: bool = match environment {
+            // top level configuration
+            None => {
+                if release {
+                    // --release means zoned, not workers.dev
+                    match self.workers_dot_dev {
+                        Some(_) => failure::bail!(use_dot_dev_warning),
+                        None => {
+                            message::warn(use_dot_dev_warning);
+                            false // workers_dot_dev defaults to false when it's top level and --release is passed
+                        }
+                    }
+                } else {
+                    if let Some(wdd) = self.workers_dot_dev {
+                        if wdd {
+                            if let Some(route) = &self.route {
+                                if !route.is_empty() {
+                                    failure::bail!(wdd_failure)
+                                }
+                            }
+                        }
+                        wdd
+                    } else {
+                        message::warn(use_dot_dev_warning);
+                        true
+                    }
+                }
+            }
+
+            // environment configuration
+            Some(environment) => {
+                if let Some(wdd) = environment.workers_dot_dev {
+                    if wdd && environment.route.is_some() {
+                        failure::bail!(wdd_failure)
+                    }
+                    wdd
+                } else {
+                    if let Some(wdd) = self.workers_dot_dev {
+                        if wdd && environment.route.is_some() {
+                            false // allow route to override workers_dot_dev = true if wdd is inherited
+                        } else {
+                            wdd // inherit from top level
+                        }
+                    } else {
+                        false // if absent -> false
+                    }
+                }
+            }
+        };
+
+        let route = if let Some(environment) = environment {
+            if let Some(route) = &environment.route {
+                if let Some(wdd) = environment.workers_dot_dev {
+                    if wdd {
+                        failure::bail!(wdd_failure);
+                    }
+                }
+                Some(route.clone())
+            } else {
+                None
+            }
+        } else {
+            self.route.clone()
+        };
+
+        Ok((route, workers_dot_dev))
+    }
+
     pub fn get_target(
         &self,
         environment_name: Option<&str>,
@@ -100,27 +211,8 @@ impl Manifest {
             message::warn("--release will be deprecated");
         }
 
-        let environment = match environment_name {
-            Some(environment_name) => match &self.env {
-                Some(environment_table) => {
-                    let environment = environment_table.get(environment_name);
-                    match environment {
-                        Some(environment) => Some(environment),
-                        None => failure::bail!(format!(
-                            "{} Could not find environment with name {}",
-                            emoji::WARN,
-                            environment_name
-                        )),
-                    }
-                }
-                None => failure::bail!(format!(
-                    "{} There are no environments specified in your wrangler.toml",
-                    emoji::WARN
-                )),
-            },
-            None => None,
-        };
-
+        let environment = self.get_environment(environment_name)?;
+        let (route, workers_dot_dev) = self.zoneless_or_dot_dev(environment, release)?;
         let deprecate_private_warning = "The 'private' field is now considered deprecated; please use \
         workers_dot_dev to toggle between publishing to your workers.dev subdomain and your own domain.";
 
@@ -135,75 +227,6 @@ impl Manifest {
                 message::warn(deprecate_private_warning);
             }
         }
-
-        let use_dot_dev_warning =
-            "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml";
-        let wdd_failure = format!(
-            "{} Your environment should only include `workers_dot_dev` or `route`",
-            emoji::WARN
-        );
-
-        // TODO: deprecate --release, remove warnings and parsing
-        // switch wrangler publish behavior to act the same at top level
-        // and environments
-        // brace yourself, this is hairy
-        let workers_dot_dev = match environment {
-            // top level configuration
-            None => {
-                if release {
-                    // --release means zoned, not workers.dev
-                    match self.workers_dot_dev {
-                        Some(_) => failure::bail!(use_dot_dev_warning),
-                        None => {
-                            message::warn(use_dot_dev_warning);
-                            false // workers_dot_dev defaults to false when it's top level and --release is passed
-                        }
-                    }
-                } else {
-                    match self.workers_dot_dev {
-                        Some(wdd) => {
-                            if wdd {
-                                match &self.route {
-                                    Some(route) => {
-                                        if !route.is_empty() {
-                                            failure::bail!(wdd_failure)
-                                        }
-                                    }
-                                    None => (),
-                                }
-                            }
-                            wdd
-                        }
-                        None => {
-                            message::warn(use_dot_dev_warning);
-                            true // workers_dot_dev defaults to true when it's top level and --release is not passed
-                        }
-                    }
-                }
-            }
-
-            // environment configuration
-            Some(environment) => match environment.workers_dot_dev {
-                Some(wdd) => {
-                    if wdd && environment.route.is_some() {
-                        failure::bail!(wdd_failure)
-                    }
-                    wdd
-                }
-                None => {
-                    match self.workers_dot_dev {
-                        Some(wdd) => {
-                            if wdd && environment.route.is_some() {
-                                false // use route if workers_dot_dev = true is inherited
-                            } else {
-                                wdd // inherit from top level
-                            }
-                        }
-                        None => false,
-                    }
-                }
-            },
-        };
 
         let kv_namespaces = match environment {
             Some(environment) => match &environment.kv_namespaces {
@@ -221,41 +244,24 @@ impl Manifest {
             None => self.account_id.clone(),
         };
 
-        let name = match environment {
-            Some(environment) => match &environment.name {
-                Some(name) => {
-                    let name = name.clone();
-                    if name == self.name {
-                        failure::bail!(format!(
-                            "{} Each `name` in your wrangler.toml must be unique",
-                            emoji::WARN
-                        ))
-                    }
-                    name
+        let name = if let Some(environment) = environment {
+            if let Some(name) = &environment.name {
+                let name = name.clone();
+                if name == self.name {
+                    failure::bail!(format!(
+                        "{} Each `name` in your wrangler.toml must be unique",
+                        emoji::WARN
+                    ))
                 }
-                None => match environment_name {
+                name
+            } else {
+                match environment_name {
                     Some(environment_name) => format!("{}-{}", self.name, environment_name),
                     None => failure::bail!("You must specify `name` in your wrangler.toml"),
-                },
-            },
-            None => self.name.clone(),
-        };
-
-        let route = match environment {
-            Some(environment) => match &environment.route {
-                Some(route) => match environment.workers_dot_dev {
-                    Some(wdd) => {
-                        if wdd {
-                            failure::bail!(wdd_failure);
-                        } else {
-                            Some(route.clone())
-                        }
-                    }
-                    None => Some(route.clone()),
-                },
-                None => None,
-            },
-            None => self.route.clone(),
+                }
+            }
+        } else {
+            self.name.clone()
         };
 
         let routes = match environment {
