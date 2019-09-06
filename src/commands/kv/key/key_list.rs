@@ -53,6 +53,7 @@ impl KeyList {
         let response = self.client.request(&self.request_params());
 
         let (mut result, error) = match response {
+            // if we succeed, we need to store the cursor, and extract the keys
             Ok(success) => {
                 self.cursor = extract_cursor(success.result_info.clone());
                 log::info!("{:?}", self.cursor);
@@ -61,8 +62,11 @@ impl KeyList {
             Err(e) => (Vec::new(), Some(e)),
         };
 
+        // if the API comes back with an error, we should pass it up to the caller
         if let Some(error) = error {
             Some(Err(error))
+        // otherwise, we can return the first element of the returned list now,
+        // and store the remainder for subsequent `next`s
         } else {
             let key = result.pop()?;
             self.keys_result = Some(result);
@@ -77,22 +81,26 @@ impl Iterator for KeyList {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.keys_result.to_owned() {
+            // if this is None, we have not made a request yet
+            None => self.get_batch(),
+            // if this is Some, we can start doling out keys
             Some(mut keys) => {
                 let key = keys.pop();
                 self.keys_result = Some(keys);
 
                 if let Some(k) = key {
                     Some(Ok(k))
+                // if the key vec is empty, we should check for a cursor from the last request
                 } else {
-                    if self.cursor.is_none() {
-                        None
-                    } else {
+                    // if there's a cursor, we need to ask the API for more keys
+                    if self.cursor.is_some() {
                         self.get_batch()
+                    // if not, this is the end of the list
+                    } else {
+                        None
                     }
                 }
             }
-            // if this is None, we have not made a request yet
-            None => self.get_batch(),
         }
     }
 }
