@@ -38,7 +38,7 @@ impl KeyList {
     fn request_params(&self) -> ListNamespaceKeys {
         let params = ListNamespaceKeysParams {
             limit: None, // Defaults to 1000 (the maximum)
-            cursor: None,
+            cursor: self.cursor.to_owned(),
             prefix: self.prefix.to_owned(),
         };
 
@@ -55,6 +55,7 @@ impl KeyList {
         let (mut result, error) = match response {
             Ok(success) => {
                 self.cursor = extract_cursor(success.result_info.clone());
+                log::info!("{:?}", self.cursor);
                 (success.result, None)
             }
             Err(e) => (Vec::new(), Some(e)),
@@ -80,14 +81,14 @@ impl Iterator for KeyList {
                 let key = keys.pop();
                 self.keys_result = Some(keys);
 
-                if key.is_none() {
+                if let Some(k) = key {
+                    Some(Ok(k))
+                } else {
                     if self.cursor.is_none() {
                         None
                     } else {
                         self.get_batch()
                     }
-                } else {
-                    Some(Ok(key?))
                 }
             }
             // if this is None, we have not made a request yet
