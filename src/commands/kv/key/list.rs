@@ -13,7 +13,7 @@ use crate::settings::project::Project;
 // Note: this function only prints keys in json form, given that
 // the number of entries in each json blob is variable (so csv and tsv
 // representation won't make sense)
-pub fn list_keys(
+pub fn list(
     project: &Project,
     user: GlobalUser,
     id: &str,
