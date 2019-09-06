@@ -120,7 +120,7 @@ impl Manifest {
         let use_dot_dev_warning =
             "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml";
         let wdd_failure = format!(
-            "{} Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, add `workers_dot_dev = true`, if you are trying to publish to your own domain, add a route.",
+            "{} Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.",
             emoji::WARN
         );
 
@@ -254,17 +254,17 @@ impl Manifest {
                     None => failure::bail!("You must specify `name` in your wrangler.toml"),
                 }
             };
-            if environment.account_id.is_some() {
-                target.account_id = environment.account_id.clone().unwrap();
+            if let Some(account_id) = &environment.account_id {
+                target.account_id = account_id.clone();
             }
             if environment.routes.is_some() {
-                target.routes = environment.routes.clone()
+                target.routes = environment.routes.clone();
             }
             if environment.webpack_config.is_some() {
-                target.webpack_config = environment.webpack_config.clone()
+                target.webpack_config = environment.webpack_config.clone();
             }
             if environment.zone_id.is_some() {
-                target.zone_id = environment.zone_id.clone()
+                target.zone_id = environment.zone_id.clone();
             }
             target.kv_namespaces = environment.kv_namespaces.clone();
         }
