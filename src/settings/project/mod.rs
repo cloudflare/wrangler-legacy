@@ -211,8 +211,22 @@ impl Manifest {
             message::warn("--release will be deprecated");
         }
 
+        let mut target = Target {
+            project_type: self.project_type.clone(),     // MUST inherit
+            account_id: self.account_id.clone(),         // MAY inherit
+            webpack_config: self.webpack_config.clone(), // MAY inherit
+            zone_id: self.zone_id.clone(),               // MAY inherit
+            workers_dot_dev: true,                       // MAY inherit,
+            // importantly, the top level name will be modified
+            // to include the name of the environment
+            name: self.name.clone(),                   // MAY inherit
+            kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
+            route: None,                               // MUST NOT inherit
+            routes: self.routes.clone(),               // MUST NOT inherit
+        };
+
         let environment = self.get_environment(environment_name)?;
-        let (route, workers_dot_dev) = self.zoneless_or_dot_dev(environment, release)?;
+
         let deprecate_private_warning = "The 'private' field is now considered deprecated; please use \
         workers_dot_dev to toggle between publishing to your workers.dev subdomain and your own domain.";
 
@@ -228,81 +242,34 @@ impl Manifest {
             }
         }
 
-        let kv_namespaces = match environment {
-            Some(environment) => match &environment.kv_namespaces {
-                Some(kv) => Some(kv.clone()),
-                None => None,
-            },
-            None => self.kv_namespaces.clone(),
-        };
-
-        let account_id = match environment {
-            Some(environment) => match &environment.account_id {
-                Some(a) => a.clone(),
-                None => self.account_id.clone(),
-            },
-            None => self.account_id.clone(),
-        };
-
-        let name = if let Some(environment) = environment {
-            if let Some(name) = &environment.name {
-                let name = name.clone();
-                if name == self.name {
-                    failure::bail!(format!(
-                        "{} Each `name` in your wrangler.toml must be unique",
-                        emoji::WARN
-                    ))
-                }
-                name
+        let (route, workers_dot_dev) = self.zoneless_or_dot_dev(environment, release)?;
+        target.route = route;
+        target.workers_dot_dev = workers_dot_dev;
+        if let Some(environment) = environment {
+            target.name = if let Some(name) = &environment.name {
+                name.clone()
             } else {
                 match environment_name {
                     Some(environment_name) => format!("{}-{}", self.name, environment_name),
                     None => failure::bail!("You must specify `name` in your wrangler.toml"),
                 }
+            };
+            if environment.account_id.is_some() {
+                target.account_id = environment.account_id.clone().unwrap();
             }
-        } else {
-            self.name.clone()
-        };
+            if environment.routes.is_some() {
+                target.routes = environment.routes.clone()
+            }
+            if environment.webpack_config.is_some() {
+                target.webpack_config = environment.webpack_config.clone()
+            }
+            if environment.zone_id.is_some() {
+                target.zone_id = environment.zone_id.clone()
+            }
+            target.kv_namespaces = environment.kv_namespaces.clone();
+        }
 
-        let routes = match environment {
-            Some(environment) => match &environment.routes {
-                Some(routes) => Some(routes.clone()),
-                None => None,
-            },
-            None => self.routes.clone(),
-        };
-
-        let webpack_config = match environment {
-            Some(environment) => match &environment.webpack_config {
-                Some(webpack_config) => Some(webpack_config.clone()),
-                None => self.webpack_config.clone(),
-            },
-            None => self.webpack_config.clone(),
-        };
-
-        let zone_id = match environment {
-            Some(environment) => match &environment.zone_id {
-                Some(zone_id) => Some(zone_id.clone()),
-                None => self.zone_id.clone(),
-            },
-            None => self.zone_id.clone(),
-        };
-
-        let project_type = self.project_type.clone();
-
-        Ok(Target {
-            project_type,    // MUST inherit
-            account_id,      // MAY inherit
-            webpack_config,  // MAY inherit
-            zone_id,         // MAY inherit
-            workers_dot_dev, // MAY inherit,
-            // importantly, the top level name will be modified
-            // to include the name of the environment
-            name,          // MAY inherit
-            kv_namespaces, // MUST NOT inherit
-            route,         // MUST NOT inherit
-            routes,        // MUST NOT inherit
-        })
+        Ok(target)
     }
 
     pub fn generate(
