@@ -20,15 +20,15 @@ pub fn list(
 
     print!("["); // Open json list bracket
 
-    let mut first_page = true;
+    let mut first_key = true;
 
     for key_result in key_list {
         match key_result {
             Ok(key) => {
-                if !(first_page) {
-                    print!(",");
+                if first_key {
+                    first_key = false;
                 } else {
-                    first_page = false;
+                    print!(",");
                 }
 
                 print!("{}", serde_json::to_string(&key)?);
