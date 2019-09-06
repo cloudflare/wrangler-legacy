@@ -16,7 +16,7 @@ pub struct KeyList {
     project: Project,
     namespace_id: String,
     cursor: Option<String>,
-    error: Option<ApiFailure>,
+    pub error: Option<ApiFailure>,
 }
 
 impl KeyList {
