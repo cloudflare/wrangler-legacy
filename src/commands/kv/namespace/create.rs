@@ -7,11 +7,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-pub fn create_namespace(
-    project: &Project,
-    user: GlobalUser,
-    title: &str,
-) -> Result<(), failure::Error> {
+pub fn create(project: &Project, user: GlobalUser, title: &str) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
     let msg = format!("Creating namespace with title \"{}\"", title);

@@ -8,27 +8,9 @@ use crate::settings::global_user::GlobalUser;
 use crate::terminal::message;
 
 pub mod bucket;
-mod create_namespace;
-mod delete_bulk;
-mod delete_key;
-mod delete_namespace;
-mod list_keys;
-mod list_namespaces;
-mod read_key;
-mod rename_namespace;
-mod write_bulk;
-mod write_key;
-
-pub use create_namespace::create_namespace;
-pub use delete_bulk::delete_json;
-pub use delete_key::delete_key;
-pub use delete_namespace::delete_namespace;
-pub use list_keys::list_keys;
-pub use list_namespaces::list_namespaces;
-pub use read_key::read_key;
-pub use rename_namespace::rename_namespace;
-pub use write_bulk::write_json;
-pub use write_key::write_key;
+pub mod bulk;
+pub mod key;
+pub mod namespace;
 
 // Truncate all "yes", "no" responses for itneractive delete prompt to just "y" or "n".
 const INTERACTIVE_RESPONSE_LEN: usize = 1;

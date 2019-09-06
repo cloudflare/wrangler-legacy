@@ -1,22 +1,20 @@
 extern crate base64;
 
-use cloudflare::framework::apiclient::ApiClient;
-
 use std::fs;
 use std::fs::metadata;
 use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
+use cloudflare::framework::apiclient::ApiClient;
 
 use crate::commands::kv;
+use crate::commands::kv::bulk::MAX_PAIRS;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-const MAX_PAIRS: usize = 10000;
-
-pub fn write_json(
+pub fn put(
     project: &Project,
     user: GlobalUser,
     namespace_id: &str,
@@ -31,10 +29,10 @@ pub fn write_json(
         Err(e) => failure::bail!(e),
     };
 
-    write_bulk(project, user, namespace_id, pairs?)
+    put_bulk(project, user, namespace_id, pairs?)
 }
 
-pub fn write_bulk(
+pub fn put_bulk(
     project: &Project,
     user: GlobalUser,
     namespace_id: &str,

@@ -24,7 +24,7 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     info!("release = {}", release);
 
     validate_project(project, release)?;
-    upload_bucket(project)?;
+    upload_bucket(project, user)?;
     commands::build(&project)?;
     publish_script(&user, &project, release)?;
     if release {
@@ -82,7 +82,7 @@ fn publish_script(
     Ok(())
 }
 
-fn upload_bucket(project: &Project) -> Result<(), failure::Error> {
+fn upload_bucket(project: &Project, user: &GlobalUser) -> Result<(), failure::Error> {
     for namespace in &project.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
             let path = Path::new(&bucket);
@@ -93,7 +93,7 @@ fn upload_bucket(project: &Project) -> Result<(), failure::Error> {
                 Ok(ref file_type) if file_type.is_dir() => {
                     println!("Publishing contents of directory {:?}", path.as_os_str());
 
-                    kv::bucket::upload(&namespace.id, Path::new(&path))?;
+                    kv::bucket::upload(project, user.to_owned(), &namespace.id, Path::new(&path))?;
                 }
                 Ok(file_type) => {
                     // any other file types (namely, symlinks)

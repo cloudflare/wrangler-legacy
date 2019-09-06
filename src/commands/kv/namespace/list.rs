@@ -9,7 +9,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-pub fn list_namespaces(project: &Project, user: GlobalUser) -> Result<(), failure::Error> {
+pub fn list(project: &Project, user: GlobalUser) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
     message::working("Fetching namespaces...");

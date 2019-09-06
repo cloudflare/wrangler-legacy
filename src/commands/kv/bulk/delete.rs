@@ -8,13 +8,12 @@ use cloudflare::endpoints::workerskv::delete_bulk::DeleteBulk;
 use cloudflare::framework::apiclient::ApiClient;
 
 use crate::commands::kv;
+use crate::commands::kv::bulk::MAX_PAIRS;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::project::Project;
 use crate::terminal::message;
 
-const MAX_PAIRS: usize = 10000;
-
-pub fn delete_json(
+pub fn delete(
     project: &Project,
     user: GlobalUser,
     namespace_id: &str,

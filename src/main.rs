@@ -498,19 +498,19 @@ fn run() -> Result<(), failure::Error> {
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
                 let title = create_matches.value_of("title").unwrap();
-                commands::kv::create_namespace(&project, user, title)?;
+                commands::kv::namespace::create(&project, user, title)?;
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
-                commands::kv::delete_namespace(&project, user, id)?;
+                commands::kv::namespace::delete(&project, user, id)?;
             }
             ("rename", Some(rename_matches)) => {
                 let id = rename_matches.value_of("namespace-id").unwrap();
                 let title = rename_matches.value_of("title").unwrap();
-                commands::kv::rename_namespace(&project, user, id, title)?;
+                commands::kv::namespace::rename(&project, user, id, title)?;
             }
             ("list", Some(_list_matches)) => {
-                commands::kv::list_namespaces(&project, user)?;
+                commands::kv::namespace::list(&project, user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
             _ => unreachable!(),
@@ -520,32 +520,32 @@ fn run() -> Result<(), failure::Error> {
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
-            ("get", Some(read_key_matches)) => {
-                let id = read_key_matches.value_of("namespace-id").unwrap();
-                let key = read_key_matches.value_of("key").unwrap();
-                commands::kv::read_key(&project, user, id, key)?;
+            ("get", Some(get_key_matches)) => {
+                let id = get_key_matches.value_of("namespace-id").unwrap();
+                let key = get_key_matches.value_of("key").unwrap();
+                commands::kv::key::get(&project, user, id, key)?;
             }
-            ("put", Some(write_key_matches)) => {
-                let id = write_key_matches.value_of("namespace-id").unwrap();
-                let key = write_key_matches.value_of("key").unwrap();
-                let value = write_key_matches.value_of("value").unwrap();
-                let is_file = match write_key_matches.occurrences_of("path") {
+            ("put", Some(put_key_matches)) => {
+                let id = put_key_matches.value_of("namespace-id").unwrap();
+                let key = put_key_matches.value_of("key").unwrap();
+                let value = put_key_matches.value_of("value").unwrap();
+                let is_file = match put_key_matches.occurrences_of("path") {
                     1 => true,
                     _ => false,
                 };
-                let expiration = write_key_matches.value_of("expiration");
-                let ttl = write_key_matches.value_of("expiration-ttl");
-                commands::kv::write_key(&project, user, id, key, value, is_file, expiration, ttl)?;
+                let expiration = put_key_matches.value_of("expiration");
+                let ttl = put_key_matches.value_of("expiration-ttl");
+                commands::kv::key::put(&project, user, id, key, value, is_file, expiration, ttl)?;
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let key = delete_matches.value_of("key").unwrap();
-                commands::kv::delete_key(&project, user, id, key)?;
+                commands::kv::key::delete(&project, user, id, key)?;
             }
             ("list", Some(list_keys_matches)) => {
                 let id = list_keys_matches.value_of("namespace-id").unwrap();
                 let prefix = list_keys_matches.value_of("prefix");
-                commands::kv::list_keys(&project, user, id, prefix)?;
+                commands::kv::key::list(&project, user, id, prefix)?;
             }
             ("", None) => message::warn("kv:key expects a subcommand"),
             _ => unreachable!(),
@@ -555,30 +555,33 @@ fn run() -> Result<(), failure::Error> {
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
-            ("put", Some(write_bulk_matches)) => {
-                let id = write_bulk_matches.value_of("namespace-id").unwrap();
-                let path = write_bulk_matches.value_of("path").unwrap();
-                commands::kv::write_json(&project, user, id, Path::new(path))?;
+            ("put", Some(put_bulk_matches)) => {
+                let id = put_bulk_matches.value_of("namespace-id").unwrap();
+                let path = put_bulk_matches.value_of("path").unwrap();
+                commands::kv::bulk::put(&project, user, id, Path::new(path))?;
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let path = delete_matches.value_of("path").unwrap();
-                commands::kv::delete_json(&project, user, id, Path::new(path))?;
+                commands::kv::bulk::delete(&project, user, id, Path::new(path))?;
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bucket") {
+        let project = settings::project::Project::new()?;
+        let user = settings::global_user::GlobalUser::new()?;
+
         match kv_matches.subcommand() {
             ("upload", Some(write_bulk_matches)) => {
                 let id = write_bulk_matches.value_of("namespace-id").unwrap();
                 let path = write_bulk_matches.value_of("path").unwrap();
-                commands::kv::bucket::upload(id, Path::new(path))?;
+                commands::kv::bucket::upload(&project, user, id, Path::new(path))?;
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let path = delete_matches.value_of("path").unwrap();
-                commands::kv::bucket::delete(id, Path::new(path))?;
+                commands::kv::bucket::delete(&project, user, id, Path::new(path))?;
             }
             ("", None) => message::warn("kv:bucket expects a subcommand"),
             _ => unreachable!(),
