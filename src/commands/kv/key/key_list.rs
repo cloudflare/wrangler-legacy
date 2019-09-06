@@ -13,10 +13,9 @@ pub struct KeyList {
     keys_result: Option<Vec<Key>>,
     prefix: Option<String>,
     client: HttpApiClient,
-    project: Project,
+    account_id: String,
     namespace_id: String,
     cursor: Option<String>,
-    pub error: Option<ApiFailure>,
 }
 
 impl KeyList {
@@ -30,44 +29,35 @@ impl KeyList {
             keys_result: None,
             prefix: prefix.map(str::to_string),
             client,
-            project: project.to_owned(),
+            account_id: project.account_id.to_owned(),
             namespace_id: namespace_id.to_string(),
             cursor: None,
-            error: None,
         }
     }
 
     fn request_params(&self) -> ListNamespaceKeys {
-        ListNamespaceKeys {
-            account_identifier: &self.project.account_id,
-            namespace_identifier: &self.namespace_id,
-            params: self.params(),
-        }
-    }
-
-    fn params(&self) -> ListNamespaceKeysParams {
-        ListNamespaceKeysParams {
+        let params = ListNamespaceKeysParams {
             limit: None, // Defaults to 1000 (the maximum)
             cursor: None,
             prefix: self.prefix.to_owned(),
+        };
+
+        ListNamespaceKeys {
+            account_identifier: &self.account_id,
+            namespace_identifier: &self.namespace_id,
+            params: params,
         }
     }
 
     fn get_batch(&mut self) -> Option<Result<Key, ApiFailure>> {
         let response = self.client.request(&self.request_params());
 
-        let mut result;
-        let mut error = None;
-
-        match response {
+        let (mut result, error) = match response {
             Ok(success) => {
-                result = success.result;
                 self.cursor = extract_cursor(success.result_info.clone());
+                (success.result, None)
             }
-            Err(e) => {
-                result = Vec::new();
-                error = Some(e);
-            }
+            Err(e) => (Vec::new(), Some(e)),
         };
 
         if let Some(error) = error {
