@@ -14,6 +14,7 @@ use std::thread;
 use std::time::Duration;
 
 pub const COOLDOWN_PERIOD: Duration = Duration::from_millis(2000);
+const JAVASCRIPT_PATH: &str = "./";
 
 /// watch a project for changes and re-build it when necessary,
 /// outputting a build event to tx.
@@ -24,17 +25,12 @@ pub fn watch_and_build(
     let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
-            let path = "./";
-            let package = Package::new(path)?;
-            // Confirm entrypoint is provided
-            package.main()?;
-
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-                watcher.watch(&path, RecursiveMode::Recursive).unwrap();
-                message::info(&format!("watching {:?}", &path));
+                watcher.watch(JAVASCRIPT_PATH, RecursiveMode::Recursive).unwrap();
+                message::info(&format!("watching {:?}", &JAVASCRIPT_PATH));
 
                 loop {
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
