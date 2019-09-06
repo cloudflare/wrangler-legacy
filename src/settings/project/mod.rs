@@ -7,7 +7,7 @@ pub use project_type::ProjectType;
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -77,7 +77,10 @@ impl Manifest {
 
         validate_kv_namespaces_config(kv_namespaces)?;
 
-        let manifest = config.try_into()?;
+        let manifest: Manifest = config.try_into()?;
+
+        check_for_duplicate_names(&manifest)?;
+
         Ok(manifest)
     }
 
@@ -351,6 +354,42 @@ id = "0f2ac74b498b48028cb68387c421e279"
             let msg = format!("{0} Your project config has an error {0}", emoji::WARN);
             failure::bail!(msg)
         }
+    }
+    Ok(())
+}
+
+fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> {
+    let mut names: HashSet<String> = HashSet::new();
+    let mut duplicate_names: HashSet<String> = HashSet::new();
+    names.insert(manifest.name.to_string());
+    if let Some(environments) = &manifest.env {
+        for (_, environment) in environments.iter() {
+            if let Some(name) = &environment.name {
+                if names.contains(name) && !duplicate_names.contains(name) {
+                    duplicate_names.insert(name.to_string());
+                } else {
+                    names.insert(name.to_string());
+                }
+            }
+        }
+    }
+    let duplicate_name_string = duplicate_names
+        .clone()
+        .into_iter()
+        .collect::<Vec<String>>()
+        .join(", ");
+    let duplicate_message = match duplicate_names.len() {
+        1 => Some("this name is duplicated".to_string()),
+        n if n >= 2 => Some("these names are duplicated".to_string()),
+        _ => None,
+    };
+    if let Some(message) = duplicate_message {
+        failure::bail!(format!(
+            "{} Each name in your `wrangler.toml` must be unique, {}: {}",
+            emoji::WARN,
+            message,
+            duplicate_name_string
+        ))
     }
     Ok(())
 }
