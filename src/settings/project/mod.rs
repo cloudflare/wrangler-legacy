@@ -379,8 +379,8 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
         .collect::<Vec<String>>()
         .join(", ");
     let duplicate_message = match duplicate_names.len() {
-        1 => Some(format!("this name is duplicated")),
-        n if n >= 2 => Some(format!("these names are duplicated")),
+        1 => Some("this name is duplicated".to_string()),
+        n if n >= 2 => Some("these names are duplicated".to_string()),
         _ => None,
     };
     if let Some(message) = duplicate_message {
