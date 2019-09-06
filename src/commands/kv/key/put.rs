@@ -2,8 +2,6 @@
 // when https://github.com/cloudflare/cloudflare-rs/issues/26 is handled (this is
 // because the SET key request body is not json--it is the raw value).
 
-use std::fs;
-
 use cloudflare::framework::response::ApiFailure;
 use url::Url;
 
@@ -18,8 +16,7 @@ pub fn put(
     user: GlobalUser,
     id: &str,
     key: &str,
-    value: &str,
-    is_file: bool,
+    value: String,
     expiration: Option<&str>,
     expiration_ttl: Option<&str>,
 ) -> Result<(), failure::Error> {
@@ -32,29 +29,21 @@ pub fn put(
 
     // Add expiration and expiration_ttl query options as necessary.
     let mut query_params: Vec<(&str, &str)> = vec![];
-    match expiration {
-        Some(exp) => query_params.push(("expiration", exp)),
-        None => (),
-    }
-    match expiration_ttl {
-        Some(ttl) => query_params.push(("expiration_ttl", ttl)),
-        None => (),
-    }
-    let url = Url::parse_with_params(&api_endpoint, query_params);
 
-    // If is_file is true, overwrite value to be the contents of the given
-    // filename in the 'value' arg.
-    let mut body_text: String;
-    if is_file {
-        body_text = fs::read_to_string(value)?;
-    } else {
-        body_text = value.to_string();
+    if let Some(exp) = expiration {
+        query_params.push(("expiration", exp))
     }
+
+    if let Some(ttl) = expiration_ttl {
+        query_params.push(("expiration_ttl", ttl))
+    }
+
+    let url = Url::parse_with_params(&api_endpoint, query_params);
 
     let client = http::auth_client(&user);
 
     let url_into_str = url?.into_string();
-    let mut res = client.put(&url_into_str).body(body_text).send()?;
+    let mut res = client.put(&url_into_str).body(value).send()?;
 
     if res.status().is_success() {
         message::success("Success")

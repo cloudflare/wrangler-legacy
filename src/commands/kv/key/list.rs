@@ -30,7 +30,7 @@ pub fn list(
     let mut request_params = ListNamespaceKeys {
         account_identifier: &project.account_id,
         namespace_identifier: id,
-        params: params,
+        params,
     };
 
     let mut response = client.request(&request_params);

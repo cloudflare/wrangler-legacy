@@ -61,9 +61,8 @@ fn url_encode_key(key: &str) -> String {
 // For handling cases where the API gateway returns errors via HTTP status codes
 // (no KV error code is given).
 fn give_status_code_context(status_code: StatusCode) {
-    match status_code {
-        StatusCode::PAYLOAD_TOO_LARGE => message::warn("Returned status code 413, Payload Too Large. Make sure your upload is less than 100MB in size"),
-        _ => (),
+    if let StatusCode::PAYLOAD_TOO_LARGE = status_code {
+        message::warn("Returned status code 413, Payload Too Large. Make sure your upload is less than 100MB in size")
     }
 }
 
