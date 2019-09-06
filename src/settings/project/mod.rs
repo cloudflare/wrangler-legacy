@@ -140,20 +140,18 @@ impl Manifest {
                             false // workers_dot_dev defaults to false when it's top level and --release is passed
                         }
                     }
-                } else {
-                    if let Some(wdd) = self.workers_dot_dev {
-                        if wdd {
-                            if let Some(route) = &self.route {
-                                if !route.is_empty() {
-                                    failure::bail!(wdd_failure)
-                                }
+                } else if let Some(wdd) = self.workers_dot_dev {
+                    if wdd {
+                        if let Some(route) = &self.route {
+                            if !route.is_empty() {
+                                failure::bail!(wdd_failure)
                             }
                         }
-                        wdd
-                    } else {
-                        message::warn(use_dot_dev_warning);
-                        true
                     }
+                    wdd
+                } else {
+                    message::warn(use_dot_dev_warning);
+                    true
                 }
             }
 
@@ -164,16 +162,14 @@ impl Manifest {
                         failure::bail!(wdd_failure)
                     }
                     wdd
-                } else {
-                    if let Some(wdd) = self.workers_dot_dev {
-                        if wdd && environment.route.is_some() {
-                            false // allow route to override workers_dot_dev = true if wdd is inherited
-                        } else {
-                            wdd // inherit from top level
-                        }
+                } else if let Some(wdd) = self.workers_dot_dev {
+                    if wdd && environment.route.is_some() {
+                        false // allow route to override workers_dot_dev = true if wdd is inherited
                     } else {
-                        false // if absent -> false
+                        wdd // inherit from top level
                     }
+                } else {
+                    false // if absent -> false
                 }
             }
         };
