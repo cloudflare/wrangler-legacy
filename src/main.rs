@@ -4,6 +4,7 @@
 extern crate text_io;
 
 use std::env;
+use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -528,14 +529,22 @@ fn run() -> Result<(), failure::Error> {
             ("put", Some(put_key_matches)) => {
                 let id = put_key_matches.value_of("namespace-id").unwrap();
                 let key = put_key_matches.value_of("key").unwrap();
-                let value = put_key_matches.value_of("value").unwrap();
                 let is_file = match put_key_matches.occurrences_of("path") {
                     1 => true,
                     _ => false,
                 };
+
+                // If is_file is true, overwrite value to be the contents of the given
+                // filename in the 'value' arg.
+                let value_arg = put_key_matches.value_of("value").unwrap();
+                let value = if is_file {
+                    fs::read_to_string(value_arg)?
+                } else {
+                    value_arg.to_string()
+                };
                 let expiration = put_key_matches.value_of("expiration");
                 let ttl = put_key_matches.value_of("expiration-ttl");
-                commands::kv::key::put(&project, user, id, key, value, is_file, expiration, ttl)?;
+                commands::kv::key::put(&project, user, id, key, value, expiration, ttl)?;
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();

@@ -29,7 +29,7 @@ fn directory_keys_values(directory: &Path) -> Result<Vec<KeyValuePair>, failure:
             let b64_value = base64::encode(&value);
             message::working(&format!("Parsing {}...", key.clone()));
             upload_vec.push(KeyValuePair {
-                key: key,
+                key,
                 value: b64_value,
                 expiration: None,
                 expiration_ttl: None,
@@ -73,10 +73,9 @@ fn generate_key(path: &Path, directory: &Path) -> Result<String, failure::Error>
     }
 
     // if we have a non-utf8 path here, it will fail, but that's not realistically going to happen
-    let path = path_with_forward_slash.to_str().expect(&format!(
-        "found a non-UTF-8 path, {:?}",
-        path_with_forward_slash
-    ));
+    let path = path_with_forward_slash
+        .to_str()
+        .unwrap_or_else(|| panic!("found a non-UTF-8 path, {:?}", path_with_forward_slash));
 
     Ok(path.to_string())
 }

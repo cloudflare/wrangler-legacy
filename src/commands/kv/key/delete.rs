@@ -29,7 +29,7 @@ pub fn delete(
     let response = client.request(&DeleteKey {
         account_identifier: &project.account_id,
         namespace_identifier: id,
-        key: key, // this is url encoded within cloudflare-rs
+        key, // this is url encoded within cloudflare-rs
     });
 
     match response {
