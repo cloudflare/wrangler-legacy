@@ -120,7 +120,7 @@ impl Manifest {
         let use_dot_dev_warning =
             "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml";
         let wdd_failure = format!(
-            "{} Your environment should only include `workers_dot_dev` or `route`",
+            "{} Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, add `workers_dot_dev = true`, if you are trying to publish to your own domain, add a route.",
             emoji::WARN
         );
 
