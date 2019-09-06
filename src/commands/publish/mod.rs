@@ -6,7 +6,7 @@ mod upload_form;
 
 pub use package::Package;
 use route::Route;
-use std::fs::metadata;
+
 use upload_form::build_script_upload_form;
 
 use log::info;
@@ -24,7 +24,7 @@ pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<()
     info!("release = {}", release);
 
     validate_project(project, release)?;
-    upload_bucket(project, user)?;
+    upload_buckets(project, user)?;
     commands::build(&project)?;
     publish_script(&user, &project, release)?;
     if release {
@@ -82,29 +82,11 @@ fn publish_script(
     Ok(())
 }
 
-fn upload_bucket(project: &Project, user: &GlobalUser) -> Result<(), failure::Error> {
+fn upload_buckets(project: &Project, user: &GlobalUser) -> Result<(), failure::Error> {
     for namespace in &project.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
             let path = Path::new(&bucket);
-            match metadata(path) {
-                Ok(ref file_type) if file_type.is_file() => {
-                    panic!("bucket should point to a directory");
-                }
-                Ok(ref file_type) if file_type.is_dir() => {
-                    println!("Publishing contents of directory {:?}", path.as_os_str());
-
-                    kv::bucket::upload(project, user.to_owned(), &namespace.id, Path::new(&path))?;
-                }
-                Ok(file_type) => {
-                    // any other file types (namely, symlinks)
-                    panic!(
-                        "Cannot upload a file of type {:?}: {}",
-                        file_type,
-                        path.display()
-                    )
-                }
-                Err(e) => panic!(e),
-            }
+            kv::bucket::upload(project, user.to_owned(), &namespace.id, path)?;
         }
     }
 
