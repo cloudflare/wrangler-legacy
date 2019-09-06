@@ -24,14 +24,17 @@ pub fn watch_and_build(
     let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
-            let package = Package::new("./")?;
-            let entry = package.main()?;
+            let path = "./";
+            let package = Package::new(path)?;
+            // Confirm entrypoint is provided
+            package.main()?;
+
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
-                message::info(&format!("watching {:?}", &entry));
+                watcher.watch(&path, RecursiveMode::Recursive).unwrap();
+                message::info(&format!("watching {:?}", &path));
 
                 loop {
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
