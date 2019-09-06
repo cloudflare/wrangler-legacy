@@ -7,7 +7,7 @@ pub use project_type::ProjectType;
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -359,28 +359,27 @@ id = "0f2ac74b498b48028cb68387c421e279"
 }
 
 fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> {
-    let mut names: Vec<String> = Vec::new();
-    let mut duplicate_names: Vec<String> = Vec::new();
-    names.push(manifest.name.to_string());
-    match &manifest.env {
-        Some(environments) => {
-            for (_, environment) in environments.iter() {
-                match &environment.name {
-                    Some(name) => {
-                        if names.contains(name) && !duplicate_names.contains(name) {
-                            duplicate_names.push(name.to_string());
-                        }
-                        names.push(name.to_string());
-                    }
-                    None => (),
+    let mut names: HashSet<String> = HashSet::new();
+    let mut duplicate_names: HashSet<String> = HashSet::new();
+    names.insert(manifest.name.to_string());
+    if let Some(environments) = &manifest.env {
+        for (_, environment) in environments.iter() {
+            if let Some(name) = &environment.name {
+                if names.contains(name) && !duplicate_names.contains(name) {
+                    duplicate_names.insert(name.to_string());
+                } else {
+                    names.insert(name.to_string());
                 }
             }
         }
-        None => (),
     }
+    let duplicate_names = duplicate_names
+        .into_iter()
+        .collect::<Vec<String>>()
+        .join(", ");
     let duplicate_message = match duplicate_names.len() {
-        1 => Some(format!("this name is duplicated: {}", duplicate_names[0])),
-        n if n >= 2 => Some(format!("these names are duplicated: {:?}", duplicate_names)),
+        1 => Some(format!("this name is duplicated: {}", duplicate_names)),
+        n if n >= 2 => Some(format!("these names are duplicated: {}", duplicate_names)),
         _ => None,
     };
     match duplicate_message {
