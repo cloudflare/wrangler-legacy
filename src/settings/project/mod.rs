@@ -379,24 +379,19 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
         .collect::<Vec<String>>()
         .join(", ");
     let duplicate_message = match duplicate_names.len() {
-        1 => Some(format!(
-            "this name is duplicated: {}",
-            duplicate_name_string
-        )),
-        n if n >= 2 => Some(format!(
-            "these names are duplicated: {}",
-            duplicate_name_string
-        )),
+        1 => Some(format!("this name is duplicated")),
+        n if n >= 2 => Some(format!("these names are duplicated")),
         _ => None,
     };
-    match duplicate_message {
-        Some(msg) => failure::bail!(format!(
-            "{} Each name in your `wrangler.toml` must be unique, {}",
+    if let Some(message) = duplicate_message {
+        failure::bail!(format!(
+            "{} Each name in your `wrangler.toml` must be unique, {}: {}",
             emoji::WARN,
-            msg
-        )),
-        None => Ok(()),
+            message,
+            duplicate_name_string
+        ))
     }
+    Ok(())
 }
 
 #[cfg(test)]
