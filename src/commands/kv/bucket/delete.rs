@@ -14,13 +14,7 @@ pub fn delete(
 ) -> Result<(), failure::Error> {
     let keys: Result<Vec<String>, failure::Error> = match &metadata(filename) {
         Ok(file_type) if file_type.is_dir() => directory_keys_only(filename),
-        Ok(_) => {
-            // any other file types (namely, symlinks)
-            failure::bail!(
-                "{} should be a file or directory, but is a symlink",
-                filename.display()
-            )
-        }
+        Ok(_) => failure::bail!("{} should be a directory", filename.display()),
         Err(e) => failure::bail!("{}", e),
     };
 
