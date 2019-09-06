@@ -16,26 +16,28 @@ pub fn list(
 ) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
-    let key_list = KeyList::fetch(project, client, namespace_id, prefix)?;
+    let key_list = KeyList::fetch(project, client, namespace_id, prefix);
 
     print!("["); // Open json list bracket
 
     let mut first_page = true;
 
-    for key in key_list {
-        if !(first_page) {
-            print!(",");
-        } else {
-            first_page = false;
+    for key_result in key_list {
+        match key_result {
+            Ok(key) => {
+                if !(first_page) {
+                    print!(",");
+                } else {
+                    first_page = false;
+                }
+
+                print!("{}", serde_json::to_string(&key)?);
+            }
+            Err(e) => kv::print_error(e),
         }
-
-        print!("{}", serde_json::to_string(&key)?);
     }
+
     print!("]"); // Close json list bracket
-
-    if let Some(error) = key_list.error {
-        failure::bail!("There was an error downloading your keys: {}", error);
-    }
 
     Ok(())
 }

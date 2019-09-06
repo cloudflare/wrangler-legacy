@@ -25,8 +25,8 @@ impl KeyList {
         client: HttpApiClient,
         namespace_id: &str,
         prefix: Option<&str>,
-    ) -> Result<KeyList, failure::Error> {
-        let key_list = KeyList {
+    ) -> KeyList {
+        KeyList {
             keys_result: None,
             prefix: prefix.map(str::to_string),
             client,
@@ -34,9 +34,7 @@ impl KeyList {
             namespace_id: namespace_id.to_string(),
             cursor: None,
             error: None,
-        };
-
-        Ok(key_list)
+        }
     }
 
     fn request_params(&self) -> ListNamespaceKeys {
@@ -55,10 +53,11 @@ impl KeyList {
         }
     }
 
-    fn get_batch(&mut self) -> Option<Key> {
+    fn get_batch(&mut self) -> Option<Result<Key, ApiFailure>> {
         let response = self.client.request(&self.request_params());
 
         let mut result;
+        let mut error = None;
 
         match response {
             Ok(success) => {
@@ -67,23 +66,23 @@ impl KeyList {
             }
             Err(e) => {
                 result = Vec::new();
-                self.error = Some(e);
+                error = Some(e);
             }
         };
 
-        if self.error.is_some() {
-            None
+        if let Some(error) = error {
+            Some(Err(error))
         } else {
-            let key = result.pop();
+            let key = result.pop()?;
             self.keys_result = Some(result);
 
-            key
+            Some(Ok(key))
         }
     }
 }
 
 impl Iterator for KeyList {
-    type Item = Key;
+    type Item = Result<Key, ApiFailure>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.keys_result.to_owned() {
@@ -98,7 +97,7 @@ impl Iterator for KeyList {
                         self.get_batch()
                     }
                 } else {
-                    key
+                    Some(Ok(key?))
                 }
             }
             // if this is None, we have not made a request yet
