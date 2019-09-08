@@ -43,6 +43,7 @@ pub struct Environment {
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: Option<String>,
+    pub private: Option<bool>,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
@@ -120,7 +121,21 @@ impl Manifest {
             None => None,
         };
 
-        let deprecate_warning =
+        let deprecate_private_warning = "The 'private' field is now considered deprecated; please use \
+        workers_dot_dev to toggle between publishing to your workers.dev subdomain and your own domain.";
+
+        // Check for the presence of the 'private' field in top-level config; if present, warn.
+        if let Some(_) = self.private {
+            message::warn(deprecate_private_warning);
+        }
+        // Also check for presence of 'private' field in a provided environment; if present, warn
+        if let Some(e) = environment {
+            if let Some(_) = e.private {
+                message::warn(deprecate_private_warning);
+            }
+        }
+
+        let use_dot_dev_warning =
             "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml";
         let wdd_failure = format!(
             "{} Your environment should only include `workers_dot_dev` or `route`",
@@ -137,9 +152,9 @@ impl Manifest {
                 if release {
                     // --release means zoned, not workers.dev
                     match self.workers_dot_dev {
-                        Some(_) => failure::bail!(deprecate_warning),
+                        Some(_) => failure::bail!(use_dot_dev_warning),
                         None => {
-                            message::warn(deprecate_warning);
+                            message::warn(use_dot_dev_warning);
                             false // workers_dot_dev defaults to false when it's top level and --release is passed
                         }
                     }
@@ -159,7 +174,7 @@ impl Manifest {
                             wdd
                         }
                         None => {
-                            message::warn(deprecate_warning);
+                            message::warn(use_dot_dev_warning);
                             true // workers_dot_dev defaults to true when it's top level and --release is not passed
                         }
                     }
