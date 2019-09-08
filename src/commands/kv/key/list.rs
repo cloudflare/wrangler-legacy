@@ -16,7 +16,7 @@ pub fn list(
 ) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
-    let key_list = KeyList::fetch(project, client, namespace_id, prefix);
+    let key_list = KeyList::new(project, client, namespace_id, prefix);
 
     print!("["); // Open json list bracket
 
