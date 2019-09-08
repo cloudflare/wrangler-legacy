@@ -16,10 +16,11 @@ pub struct KeyList {
     account_id: String,
     namespace_id: String,
     cursor: Option<String>,
+    init_fetch: bool,
 }
 
 impl KeyList {
-    pub fn fetch(
+    pub fn new(
         project: &Project,
         client: HttpApiClient,
         namespace_id: &str,
@@ -32,6 +33,7 @@ impl KeyList {
             account_id: project.account_id.to_owned(),
             namespace_id: namespace_id.to_string(),
             cursor: None,
+            init_fetch: false,
         }
     }
 
@@ -49,29 +51,16 @@ impl KeyList {
         }
     }
 
-    fn get_batch(&mut self) -> Option<Result<Key, ApiFailure>> {
+    fn get_batch(&mut self) -> Result<Vec<Key>, ApiFailure> {
         let response = self.client.request(&self.request_params());
 
-        let (mut result, error) = match response {
-            // if we succeed, we need to store the cursor, and extract the keys
+        match response {
             Ok(success) => {
                 self.cursor = extract_cursor(success.result_info.clone());
                 log::info!("{:?}", self.cursor);
-                (success.result, None)
+                Ok(success.result)
             }
-            Err(e) => (Vec::new(), Some(e)),
-        };
-
-        // if the API comes back with an error, we should pass it up to the caller
-        if let Some(error) = error {
-            Some(Err(error))
-        // otherwise, we can return the first element of the returned list now,
-        // and store the remainder for subsequent `next`s
-        } else {
-            let key = result.pop()?;
-            self.keys_result = Some(result);
-
-            Some(Ok(key))
+            Err(e) => Err(e),
         }
     }
 }
@@ -80,26 +69,35 @@ impl Iterator for KeyList {
     type Item = Result<Key, ApiFailure>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.keys_result.to_owned() {
-            // if this is None, we have not made a request yet
-            None => self.get_batch(),
-            // if this is Some, we can start doling out keys
-            Some(mut keys) => {
-                let key = keys.pop();
-                self.keys_result = Some(keys);
+        // Attempt to extract next key from vector of keys in KeyList.
+        // If no key vector or no keys left, go to fallback case below to
+        // attempt to fetch the next page of keys from the Workers KV API.
+        if let Some(mut keys) = self.keys_result.to_owned() {
+            let key = keys.pop();
+            self.keys_result = Some(keys);
 
-                if let Some(k) = key {
-                    Some(Ok(k))
-                // if the key vec is empty, we should check for a cursor from the last request
-                } else {
-                    // if there's a cursor, we need to ask the API for more keys
-                    if self.cursor.is_some() {
-                        self.get_batch()
-                    // if not, this is the end of the list
-                    } else {
-                        None
+            if let Some(k) = key {
+                return Some(Ok(k));
+            }
+        }
+        // Fallback case (if no remaining keys are found)
+        if self.cursor.is_none() && self.init_fetch {
+            None // Nothing left to fetch
+        } else {
+            if !self.init_fetch {
+                // At this point, initial fetch is being performed.
+                self.init_fetch = true;
+            }
+            match self.get_batch() {
+                Ok(mut keys) => {
+                    let key = keys.pop();
+                    self.keys_result = Some(keys);
+                    match key {
+                        Some(k) => Some(Ok(k)),
+                        None => None,
                     }
                 }
+                Err(e) => Some(Err(e)),
             }
         }
     }
