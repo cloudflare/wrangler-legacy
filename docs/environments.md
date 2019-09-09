@@ -54,7 +54,7 @@ route = "example.com/*"
 workers_dot_dev = false # this field specifies that the worker should not be deployed to workers.dev
 ```
 
-```sh
+```console
 $ wrangler publish
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
@@ -72,7 +72,7 @@ account_id = "12345678901234567890"
 workers_dot_dev = true # this field specifies that the worker should be deployed to workers.dev
 ```
 
-```sh
+```console
 $ wrangler publish
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
@@ -104,21 +104,21 @@ In order to use environments with this configuration, you can pass the name of t
 
 With this configuration, Wrangler will behave in the following manner:
 
-```sh
+```console
 $ wrangler publish
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at dev.example.com/*
 ```
 
-```sh
+```console
 $ wrangler publish --env staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at staging.example.com/*
 ```
 
-```sh
+```console
 $ wrangler publish --env production
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
@@ -143,14 +143,14 @@ workers_dot_dev = true
 
 With this configuration, Wrangler will behave in the following manner:
 
-```sh
+```console
 $ wrangler publish
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at example.com/*
 ```
 
-```sh
+```console
 $ wrangler publish --env staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
@@ -176,21 +176,21 @@ name = "my-worker-staging"
 
 With this configuration, Wrangler will behave in the following manner:
 
-```sh
+```console
 $ wrangler publish
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker-dev.subdomain.workers.dev
 ```
 
-```sh
+```console
 $ wrangler publish --env staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.subdomain.workers.dev
 ```
 
-```sh
+```console
 $ wrangler publish --env production
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
@@ -234,12 +234,12 @@ name = "my-worker"
 workers_dot_dev = true
 ```
 
-```sh
+```console
 $ wrangler publish
 Error: ⚠️  Each name in your `wrangler.toml` must be unique, this name is duplicated: my-worker
 ```
 
-```sh
+```console
 $ wrangler publish --env staging
 Error: ⚠️  Each name in your `wrangler.toml` must be unique, this name is duplicated: my-worker
 ```
@@ -256,7 +256,7 @@ route = "example.com/*
 
 You will be warned if `workers_dot_dev` is left out of the top level configuration because if it is not specified, it is unclear what the behavior of `wrangler publish` should be. See [the section on backwards compatibility](#Backwards-compatibility) for more information.
 
-```sh
+```console
 $ wrangler publish
 ⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.
 ⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
@@ -282,12 +282,12 @@ route = "staging.example.com/*"
 
 Wrangler will fail to publish to an environment where `route` is defined alongside `workers_dot_dev = true`.
 
-```sh
+```console
 $ wrangler publish
 Error: ⚠️  Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.
 ```
 
-```sh
+```console
 $ wrangler publish --env staging
 Error: ⚠️  Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.
 ```
@@ -311,7 +311,7 @@ route = "example.com/*
 
 With this configuration, Wrangler will behave in the following manner:
 
-```sh
+```console
 $ wrangler publish
 ⚠️  The `private` field is deprecated; please use `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
 ⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.
@@ -321,7 +321,7 @@ $ wrangler publish
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker.subdomain.workers.dev
 ```
 
-```sh
+```console
 $ wrangler publish --release
 ⚠️  --release will be deprecated.
 ⚠️  The `private` field is deprecated; please use `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
