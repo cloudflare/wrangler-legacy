@@ -63,7 +63,7 @@ $ wrangler publish
 
 ##### workers.dev
 
-This `wrangler.toml` has no environments defined and will publish `my-worker` to `my-worker.subdomain.workers.dev`
+This `wrangler.toml` has no environments defined and will publish `my-worker` to `my-worker.<your-subdomain>.workers.dev`
 
 ```toml
 type = "webpack"
@@ -76,7 +76,7 @@ workers_dot_dev = true # this field specifies that the worker should be deployed
 $ wrangler publish
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.subdomain.workers.dev`
+✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev`
 ```
 
 #### Introducing Environments
@@ -154,7 +154,7 @@ $ wrangler publish
 $ wrangler publish --env staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.subdomain.workers.dev
+✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.<your-subdomain>.workers.dev
 ```
 
 #### workers.dev as a first class target
@@ -180,21 +180,21 @@ With this configuration, Wrangler will behave in the following manner:
 $ wrangler publish
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker-dev.subdomain.workers.dev
+✨  Success! Your worker was successfully published. You can view it at https://my-worker-dev.<your-subdomain>.workers.dev
 ```
 
 ```console
 $ wrangler publish --env staging
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.subdomain.workers.dev
+✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.<your-subdomain>.workers.dev
 ```
 
 ```console
 $ wrangler publish --env production
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.subdomain.workers.dev
+✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
 ```
 
 ### Custom webpack configurations
@@ -339,7 +339,7 @@ $ wrangler publish
 ⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.subdomain.workers.dev
+✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
 ```
 
 ```console
