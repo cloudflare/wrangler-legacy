@@ -2,18 +2,18 @@ mod watcher;
 pub use watcher::wait_for_changes;
 
 use crate::commands::build::{command, wranglerjs};
-use crate::commands::publish::Package;
 use crate::settings::project::{Project, ProjectType};
 use crate::terminal::message;
 use crate::{commands, install};
 
 use notify::{self, RecursiveMode, Watcher};
-use std::env;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
 pub const COOLDOWN_PERIOD: Duration = Duration::from_millis(2000);
+const JAVASCRIPT_PATH: &str = "./";
+const RUST_PATH: &str = "./";
 
 /// watch a project for changes and re-build it when necessary,
 /// outputting a build event to tx.
@@ -24,14 +24,14 @@ pub fn watch_and_build(
     let project_type = &project.project_type;
     match project_type {
         ProjectType::JavaScript => {
-            let package = Package::new("./")?;
-            let entry = package.main()?;
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
-                message::info(&format!("watching {:?}", &entry));
+                watcher
+                    .watch(JAVASCRIPT_PATH, RecursiveMode::Recursive)
+                    .unwrap();
+                message::info(&format!("watching {:?}", &JAVASCRIPT_PATH));
 
                 loop {
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
@@ -50,19 +50,12 @@ pub fn watch_and_build(
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
-            let package = Package::new("./")?;
-            let entry = package.main()?;
-
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-                let mut path = env::current_dir().expect("current dir");
-                path.push("src");
-
-                watcher.watch(&path, RecursiveMode::Recursive).unwrap();
-                watcher.watch(&entry, RecursiveMode::Recursive).unwrap();
-                message::info(&format!("watching {:?} and {:?}", &path, &entry));
+                watcher.watch(RUST_PATH, RecursiveMode::Recursive).unwrap();
+                message::info(&format!("watching {:?}", &RUST_PATH));
 
                 loop {
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
