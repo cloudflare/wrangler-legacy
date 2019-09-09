@@ -24,7 +24,7 @@ pub fn list(
     let params = ListNamespaceKeysParams {
         limit: None, // Defaults to 1000 (the maximum)
         cursor: None,
-        prefix: prefix.map(str::to_string),
+        prefix: prefix.map(kv::url_encode_key),
     };
 
     let mut request_params = ListNamespaceKeys {
