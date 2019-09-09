@@ -295,6 +295,8 @@ Error: ⚠️  Your environment should only include `workers_dot_dev` or `route`
 
 Legacy `wrangler.toml` files will still work as expected during the initial rollout of this feature, however you will notice warnings when your configuration is ambigious. One of the goals of environments is to make it more obvious when you are deploying to a traditional worker with routes, and when you are deploying to a subdomain on workers.dev.
 
+**⚠️ Please note that this behavior will not be supported past v1.5.0!! ⚠️**
+
 A `wrangler.toml` before this release looks like this:
 
 ```toml
