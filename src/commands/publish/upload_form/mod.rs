@@ -10,19 +10,19 @@ use std::path::Path;
 use crate::commands::build::wranglerjs;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
-use crate::settings::project::kv_namespace;
-use crate::settings::project::{Project, ProjectType};
+use crate::settings::target::kv_namespace;
+use crate::settings::target::{Target, TargetType};
 
 use project_assets::ProjectAssets;
 use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Error> {
-    let project_type = &project.project_type;
-    let kv_namespaces = project.kv_namespaces();
-    match project_type {
-        ProjectType::Rust => {
+pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error> {
+    let target_type = &target.target_type;
+    let kv_namespaces = target.kv_namespaces();
+    match target_type {
+        TargetType::Rust => {
             info!("Rust project detected. Publishing...");
             let name = krate::Krate::new("./")?.name.replace("-", "_");
             // TODO: move into build?
@@ -39,7 +39,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
 
             build_form(&assets)
         }
-        ProjectType::JavaScript => {
+        TargetType::JavaScript => {
             info!("JavaScript project detected. Publishing...");
             let package = Package::new("./")?;
 
@@ -49,7 +49,7 @@ pub fn build_script_upload_form(project: &Project) -> Result<Form, failure::Erro
 
             build_form(&assets)
         }
-        ProjectType::Webpack => {
+        TargetType::Webpack => {
             info!("Webpack project detected. Publishing...");
             // FIXME(sven): shouldn't new
             let bundle = wranglerjs::Bundle::new();
