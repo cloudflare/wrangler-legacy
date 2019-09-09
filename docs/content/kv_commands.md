@@ -86,16 +86,20 @@ yes
 Outputs a list of all KV namespaces associated with your account id.
 
 #### Usage
+The example below uses Python's JSON pretty-printing command line tool to pretty-print output.
 
 ```sh
-$ wrangler kv:namespace list
-🌀  Retrieving namespaces
-✨  Success:
-+---------------+----------------------------------+
-| TITLE         | ID                               |
-+---------------+----------------------------------+
-| New Namespace | f7b02e7fc70443149ac906dd81ec1791 |
-+---------------+----------------------------------+
+$ wrangler kv:namespace list | python -m json.tool
+[
+    {
+        "id": "06779da6940b431db6e566b4846d64db",
+        "title": "TEST_NAMESPACE"
+    },
+    {
+        "id": "32ac1b3c2ed34ed3b397268817dea9ea",
+        "title": "STATIC_CONTENT"
+    }
+]
 ```
 
 ## `kv:key`
