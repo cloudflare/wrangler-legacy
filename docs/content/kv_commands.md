@@ -94,7 +94,7 @@ Reads a single value by key from the given namespace.
 
 ```sh
 $ wrangler kv:key get f7b02e7fc70443149ac906dd81ec1791 "key"
-value
+=> value
 ```
 
 ### `delete`
