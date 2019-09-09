@@ -136,7 +136,7 @@ $ wrangler kv:key list f7b02e7fc70443149ac906dd81ec1791 --prefix="public" | pyth
 
 ### `put`
 
-Writes a file full of key/value pairs to the given namespace. Takes as an argument a JSON file with a list of key-value pairs to upload (see JSON spec above). An example of json input:
+Writes a file full of key/value pairs to the given namespace. Takes as an argument a JSON file with a list of key-value pairs to upload (see JSON spec above). An example of JSON input:
 ```json
 [
     {
