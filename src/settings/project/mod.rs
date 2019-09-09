@@ -113,7 +113,7 @@ impl Manifest {
     }
 
     // TODO: when --release is deprecated, this will be much easier
-    fn zoneless_or_dot_dev(
+    fn negotiate_zoneless(
         &self,
         environment: Option<&Environment>,
         release: bool,
@@ -243,7 +243,7 @@ impl Manifest {
 
         self.check_private(environment);
 
-        let (route, workers_dot_dev) = self.zoneless_or_dot_dev(environment, release)?;
+        let (route, workers_dot_dev) = self.negotiate_zoneless(environment, release)?;
         target.route = route;
         target.workers_dot_dev = workers_dot_dev;
         if let Some(environment) = environment {
