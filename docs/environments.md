@@ -1,6 +1,6 @@
 # Environments
 
-Environments is a feature that allows you to deploy the same project to multiple places under multiple names.
+Environments is a feature that allows you to deploy the same project to multiple places under multiple names. These environments are utilized with the `--env` or `-e` flag on `wrangler build`, `wrangler preview`, and `wrangler publish`.
 
 ## Concepts
 
@@ -196,6 +196,27 @@ $ wrangler publish --env production
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker.subdomain.workers.dev
 ```
+
+### Custom webpack configurations
+
+You can specify different webpack configurations for different environments.
+
+```toml
+name = "my-worker-dev"
+type = "webpack"
+account_id = "12345678901234567890"
+workers_dot_dev = true
+webpack_config = "webpack.dev.js"
+
+[env.production]
+name = "my-worker"
+webpack_config = "webpack.config.js"
+
+[env.staging]
+name = "my-worker-staging"
+```
+
+Your default `wrangler build`, `wrangler preview`, and `wrangler publish` commands will all build with `webpack.dev.js`, as will `wrangler build -e staging`, `wrangler preview -e staging`, and `wrangler publish -e staging`. `wrangler build -e production`, `wrangler preview -e production`, and `wrangler publish -e production` would all use your `webpack.config.js` file.
 
 ## Invalid configurations
 
