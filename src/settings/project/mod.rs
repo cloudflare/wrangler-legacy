@@ -221,7 +221,7 @@ impl Manifest {
         }
 
         if release {
-            message::warn("--release will be deprecated");
+            message::warn("--release will be deprecated in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information");
         }
 
         let mut target = Target {
