@@ -14,7 +14,7 @@ use crate::commands;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Target;
+use crate::settings::target::Target;
 use crate::terminal::{emoji, message};
 
 pub fn publish(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {

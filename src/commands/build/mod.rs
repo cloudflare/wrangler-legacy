@@ -3,7 +3,7 @@ pub mod wranglerjs;
 mod watch;
 pub use watch::watch_and_build;
 
-use crate::settings::project::{ProjectType, Target};
+use crate::settings::target::{Target, TargetType};
 use crate::terminal::message;
 use crate::{commands, install};
 
@@ -11,12 +11,12 @@ use std::path::PathBuf;
 use std::process::Command;
 
 pub fn build(target: &Target) -> Result<(), failure::Error> {
-    let project_type = &target.project_type;
-    match project_type {
-        ProjectType::JavaScript => {
+    let target_type = &target.target_type;
+    match target_type {
+        TargetType::JavaScript => {
             message::info("JavaScript project found. Skipping unnecessary build!")
         }
-        ProjectType::Rust => {
+        TargetType::Rust => {
             let tool_name = "wasm-pack";
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
@@ -26,7 +26,7 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
 
             commands::run(command, &command_name)?;
         }
-        ProjectType::Webpack => {
+        TargetType::Webpack => {
             wranglerjs::run_build(target)?;
         }
     }

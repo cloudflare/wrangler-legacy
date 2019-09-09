@@ -20,7 +20,7 @@ mod settings;
 mod terminal;
 mod util;
 
-use crate::settings::project::ProjectType;
+use crate::settings::target::TargetType;
 use exitfailure::ExitFailure;
 use terminal::emoji;
 
@@ -193,15 +193,15 @@ fn run() -> Result<(), failure::Error> {
         commands::global_config(email, api_key)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
-        let project_type = match matches.value_of("type") {
-            Some(s) => Some(ProjectType::from_str(&s.to_lowercase())?),
+        let target_type = match matches.value_of("type") {
+            Some(s) => Some(TargetType::from_str(&s.to_lowercase())?),
             None => None,
         };
 
         let default_template = "https://github.com/cloudflare/worker-template";
-        let template = matches.value_of("template").unwrap_or(match project_type {
+        let template = matches.value_of("template").unwrap_or(match target_type {
             Some(ref pt) => match pt {
-                ProjectType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
+                TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
                 _ => default_template,
             },
             _ => default_template,
@@ -211,22 +211,22 @@ fn run() -> Result<(), failure::Error> {
             "Generate command called with template {}, and name {}",
             template, name
         );
-        commands::generate(name, template, project_type)?;
+        commands::generate(name, template, target_type)?;
     } else if let Some(matches) = matches.subcommand_matches("init") {
         let name = matches.value_of("name");
-        let project_type = match matches.value_of("type") {
-            Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
+        let target_type = match matches.value_of("type") {
+            Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
             None => None,
         };
-        commands::init(name, project_type)?;
+        commands::init(name, target_type)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
         info!("Getting project settings");
-        let manifest = settings::project::Manifest::new(config_path)?;
+        let manifest = settings::target::Manifest::new(config_path)?;
         let target = &manifest.get_target(matches.value_of("env"), false)?;
         commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
-        let manifest = settings::project::Manifest::new(config_path)?;
+        let manifest = settings::target::Manifest::new(config_path)?;
         let target = manifest.get_target(matches.value_of("env"), false)?;
 
         // the preview command can be called with or without a Global User having been config'd
@@ -256,7 +256,7 @@ fn run() -> Result<(), failure::Error> {
         if matches.is_present("env") && matches.is_present("release") {
             failure::bail!("You can only pass --env or --release, not both")
         }
-        let manifest = settings::project::Manifest::new(config_path)?;
+        let manifest = settings::target::Manifest::new(config_path)?;
         if matches.is_present("env") {
             let target = manifest.get_target(matches.value_of("env"), false)?;
             commands::publish(&user, &target)?;
@@ -269,7 +269,7 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
-        let manifest = settings::project::Manifest::new(config_path)?;
+        let manifest = settings::target::Manifest::new(config_path)?;
         let target = manifest.get_target(matches.value_of("env"), false)?;
 
         info!("Getting User settings");

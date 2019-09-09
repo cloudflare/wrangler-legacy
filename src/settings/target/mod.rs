@@ -1,8 +1,8 @@
 pub mod kv_namespace;
-mod project_type;
+mod target_type;
 
 pub use kv_namespace::KvNamespace;
-pub use project_type::ProjectType;
+pub use target_type::TargetType;
 
 use crate::terminal::emoji;
 use crate::terminal::message;
@@ -23,7 +23,7 @@ pub struct Target {
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: String,
     #[serde(rename = "type")]
-    pub project_type: ProjectType,
+    pub target_type: TargetType,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
@@ -60,7 +60,7 @@ pub struct Manifest {
     pub name: String,
     pub private: Option<bool>,
     #[serde(rename = "type")]
-    pub project_type: ProjectType,
+    pub target_type: TargetType,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
@@ -230,7 +230,7 @@ impl Manifest {
         }
 
         let mut target = Target {
-            project_type: self.project_type.clone(),     // MUST inherit
+            target_type: self.target_type.clone(),       // MUST inherit
             account_id: self.account_id.clone(),         // MAY inherit
             webpack_config: self.webpack_config.clone(), // MAY inherit
             zone_id: self.zone_id.clone(),               // MAY inherit
@@ -280,7 +280,7 @@ impl Manifest {
 
     pub fn generate(
         name: String,
-        project_type: ProjectType,
+        target_type: TargetType,
         init: bool,
     ) -> Result<Manifest, failure::Error> {
         let manifest = Manifest {
@@ -289,7 +289,7 @@ impl Manifest {
             kv_namespaces: None,
             name: name.clone(),
             private: None,
-            project_type: project_type.clone(),
+            target_type: target_type.clone(),
             route: Some(String::new()),
             routes: None,
             webpack_config: None,

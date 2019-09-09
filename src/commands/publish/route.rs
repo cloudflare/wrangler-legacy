@@ -1,6 +1,6 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Target;
+use crate::settings::target::Target;
 use crate::terminal::emoji;
 use reqwest::header::CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
