@@ -133,12 +133,11 @@ impl Manifest {
             // top level configuration
             None => {
                 if release {
-                    // --release means zoned, not workers.dev
                     match self.workers_dot_dev {
                         Some(_) => failure::bail!(use_dot_dev_warning),
                         None => {
                             message::warn(use_dot_dev_warning);
-                            false // workers_dot_dev defaults to false when it's top level and --release is passed
+                            false // wrangler publish --release w/o workers_dot_dev is zoned deploy
                         }
                     }
                 } else if let Some(wdd) = self.workers_dot_dev {
@@ -152,7 +151,7 @@ impl Manifest {
                     wdd
                 } else {
                     message::warn(use_dot_dev_warning);
-                    true
+                    true // wrangler publish w/o workers_dot_dev is zoneless deploy
                 }
             }
 
