@@ -197,7 +197,7 @@ impl Manifest {
     }
 
     fn check_private(&self, environment: Option<&Environment>) {
-        let deprecate_private_warning = "The 'private' field is deprecated; please use \
+        let deprecate_private_warning = "The `private` field is deprecated; please use \
         `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.";
 
         // Check for the presence of the 'private' field in top-level config; if present, warn.
