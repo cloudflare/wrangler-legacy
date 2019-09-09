@@ -3,10 +3,10 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn delete(project: &Project, user: GlobalUser, id: &str) -> Result<(), failure::Error> {
+pub fn delete(project: &Target, user: GlobalUser, id: &str) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
     match kv::interactive_delete(&format!(

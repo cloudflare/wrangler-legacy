@@ -478,38 +478,42 @@ fn run() -> Result<(), failure::Error> {
 
         commands::subdomain(name, &user, &target)?;
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
-        let project = settings::project::Project::new()?;
+        let manifest = settings::target::Manifest::new(config_path)?;
+        let target = manifest.get_target(matches.value_of("env"), false)?;
+
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
                 let title = create_matches.value_of("title").unwrap();
-                commands::kv::namespace::create(&project, user, title)?;
+                commands::kv::namespace::create(&target, user, title)?;
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
-                commands::kv::namespace::delete(&project, user, id)?;
+                commands::kv::namespace::delete(&target, user, id)?;
             }
             ("rename", Some(rename_matches)) => {
                 let id = rename_matches.value_of("namespace-id").unwrap();
                 let title = rename_matches.value_of("title").unwrap();
-                commands::kv::namespace::rename(&project, user, id, title)?;
+                commands::kv::namespace::rename(&target, user, id, title)?;
             }
             ("list", Some(_list_matches)) => {
-                commands::kv::namespace::list(&project, user)?;
+                commands::kv::namespace::list(&target, user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
-        let project = settings::project::Project::new()?;
+        let manifest = settings::target::Manifest::new(config_path)?;
+        let target = manifest.get_target(matches.value_of("env"), false)?;
+
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
             ("get", Some(get_key_matches)) => {
                 let id = get_key_matches.value_of("namespace-id").unwrap();
                 let key = get_key_matches.value_of("key").unwrap();
-                commands::kv::key::get(&project, user, id, key)?;
+                commands::kv::key::get(&target, user, id, key)?;
             }
             ("put", Some(put_key_matches)) => {
                 let id = put_key_matches.value_of("namespace-id").unwrap();
@@ -521,35 +525,37 @@ fn run() -> Result<(), failure::Error> {
                 };
                 let expiration = put_key_matches.value_of("expiration");
                 let ttl = put_key_matches.value_of("expiration-ttl");
-                commands::kv::key::put(&project, user, id, key, value, is_file, expiration, ttl)?;
+                commands::kv::key::put(&target, user, id, key, value, is_file, expiration, ttl)?;
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let key = delete_matches.value_of("key").unwrap();
-                commands::kv::key::delete(&project, user, id, key)?;
+                commands::kv::key::delete(&target, user, id, key)?;
             }
             ("list", Some(list_keys_matches)) => {
                 let id = list_keys_matches.value_of("namespace-id").unwrap();
                 let prefix = list_keys_matches.value_of("prefix");
-                commands::kv::key::list(&project, user, id, prefix)?;
+                commands::kv::key::list(&target, user, id, prefix)?;
             }
             ("", None) => message::warn("kv:key expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
-        let project = settings::project::Project::new()?;
+        let manifest = settings::target::Manifest::new(config_path)?;
+        let target = manifest.get_target(matches.value_of("env"), false)?;
+
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
             ("put", Some(put_bulk_matches)) => {
                 let id = put_bulk_matches.value_of("namespace-id").unwrap();
                 let path = put_bulk_matches.value_of("path").unwrap();
-                commands::kv::bulk::put(&project, user, id, Path::new(path))?;
+                commands::kv::bulk::put(&target, user, id, Path::new(path))?;
             }
             ("delete", Some(delete_matches)) => {
                 let id = delete_matches.value_of("namespace-id").unwrap();
                 let path = delete_matches.value_of("path").unwrap();
-                commands::kv::bulk::delete(&project, user, id, Path::new(path))?;
+                commands::kv::bulk::delete(&target, user, id, Path::new(path))?;
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),

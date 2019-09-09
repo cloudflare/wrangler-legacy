@@ -11,11 +11,11 @@ use cloudflare::framework::apiclient::ApiClient;
 use crate::commands::kv;
 use crate::commands::kv::bulk::MAX_PAIRS;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn put(
-    project: &Project,
+    project: &Target,
     user: GlobalUser,
     namespace_id: &str,
     filename: &Path,
@@ -33,7 +33,7 @@ pub fn put(
 }
 
 fn put_bulk(
-    project: &Project,
+    project: &Target,
     user: GlobalUser,
     namespace_id: &str,
     pairs: Vec<KeyValuePair>,

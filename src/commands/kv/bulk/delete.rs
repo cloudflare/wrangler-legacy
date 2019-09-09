@@ -10,11 +10,11 @@ use cloudflare::framework::apiclient::ApiClient;
 use crate::commands::kv;
 use crate::commands::kv::bulk::MAX_PAIRS;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn delete(
-    project: &Project,
+    project: &Target,
     user: GlobalUser,
     namespace_id: &str,
     filename: &Path,
@@ -44,7 +44,7 @@ pub fn delete(
 }
 
 fn delete_bulk(
-    project: &Project,
+    project: &Target,
     user: GlobalUser,
     namespace_id: &str,
     keys: Vec<String>,

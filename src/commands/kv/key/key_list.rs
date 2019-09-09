@@ -7,7 +7,7 @@ use cloudflare::framework::HttpApiClient;
 
 use serde_json::value::Value as JsonValue;
 
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 
 pub struct KeyList {
     keys_result: Option<Vec<Key>>,
@@ -21,7 +21,7 @@ pub struct KeyList {
 
 impl KeyList {
     pub fn new(
-        project: &Project,
+        project: &Target,
         client: HttpApiClient,
         namespace_id: &str,
         prefix: Option<&str>,

@@ -10,11 +10,11 @@ use url::Url;
 use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn put(
-    project: &Project,
+    project: &Target,
     user: GlobalUser,
     id: &str,
     key: &str,

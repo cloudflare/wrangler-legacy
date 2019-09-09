@@ -3,13 +3,13 @@ extern crate serde_json;
 use crate::commands::kv;
 use crate::commands::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 
 // Note: this function only prints keys in json form, given that
 // the number of entries in each json blob is variable (so csv and tsv
 // representation won't make sense)
 pub fn list(
-    project: &Project,
+    project: &Target,
     user: GlobalUser,
     namespace_id: &str,
     prefix: Option<&str>,
