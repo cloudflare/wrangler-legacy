@@ -118,8 +118,10 @@ impl Manifest {
         environment: Option<&Environment>,
         release: bool,
     ) -> Result<(Option<String>, bool), failure::Error> {
+        let use_dot_dev_failure =
+            "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.";
         let use_dot_dev_warning =
-            format!("Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.\n{} This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.", emoji::WARN);
+            format!("{}\n{} This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.", use_dot_dev_failure, emoji::WARN);
         let wdd_failure = format!(
             "{} Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.",
             emoji::WARN
@@ -134,7 +136,9 @@ impl Manifest {
             None => {
                 if release {
                     match self.workers_dot_dev {
-                        Some(_) => failure::bail!(use_dot_dev_warning),
+                        Some(_) => {
+                            failure::bail!(format!("{} {}", emoji::WARN, use_dot_dev_failure))
+                        }
                         None => {
                             message::warn(&use_dot_dev_warning);
                             false // wrangler publish --release w/o workers_dot_dev is zoned deploy
@@ -193,8 +197,8 @@ impl Manifest {
     }
 
     fn check_private(&self, environment: Option<&Environment>) {
-        let deprecate_private_warning = "The 'private' field is now considered deprecated; please use \
-        workers_dot_dev to toggle between publishing to your workers.dev subdomain and your own domain.";
+        let deprecate_private_warning = "The 'private' field is deprecated; please use \
+        `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.";
 
         // Check for the presence of the 'private' field in top-level config; if present, warn.
         if self.private.is_some() {
@@ -215,9 +219,10 @@ impl Manifest {
         release: bool,
     ) -> Result<Target, failure::Error> {
         if release && self.workers_dot_dev.is_some() {
-            failure::bail!(
-                "The --release flag is not compatible with use of the workers_dot_dev field."
-            )
+            failure::bail!(format!(
+                "{} The --release flag is not compatible with use of the workers_dot_dev field.",
+                emoji::WARN
+            ))
         }
 
         if release {
