@@ -2,14 +2,40 @@
 
 Environments is a feature that allows you to deploy the same project to multiple places under multiple names.
 
-## Usage
-
-A common use case that this feature enables is deploying your worker to a staging subdomain before pushing your worker to production. The top-level configuration will be used when running `wrangler publish`. In addition, you can specify multiple environments that you would like to deploy code to. Each environment can inherit properties from the configuration at the top level. `type` will always be inherited from the top-level configuration, you cannot specify different types for different environments. `name` is inherited and modified if left out of the environment configuration, a worker named `my-worker` with an environment `[env.dev]` would become `my-worker-dev`. Fields that can be inherited from the top level configuration are `account_id`, `zone_id`, `workers_dot_dev`, and `webpack_config`. `kv_namespaces` and `route` must be defined for each environment and will not be inherited.
-
-### Concepts
+## Concepts
 
 "top level configuration" refers to the configuration values you specify at the top of your `wrangler.toml`
 "environment configuration" refers to the configuration values you specify under an `[env.name]` in your `wrangler.toml`
+
+Here is an example `wrangler.toml` to illustrate
+
+```toml
+# top level configruation
+type = "webpack"
+name = "my-worker-dev"
+account_id = "12345678901234567890"
+zone_id = "09876543210987654321"
+route = "dev.example.com/*"
+workers_dot_dev = false
+
+# environment configuration
+[env.staging]
+name = "my-worker-staging"
+route = "staging.example.com/*"
+
+# environment configuration
+[env.production]
+name = "my-worker"
+route = "example.com/*"
+```
+
+## Usage
+
+The most common use case for environments is deploying to a staging subdomain before your production environment. `wrangler publish` will look at your top level configuration, and you can specify other environments beneath it. Each of these environments will inherit the values from the top level configuration if they are not specified, with the following caveats.
+
+* `type` will always be inherited from the top-level configuration; you cannot specify different types for different environments.
+* Fields that can be inherited from the top level are `account_id`, `zone_id`, `workers_dot_dev`, and `webpack_config`. `kv_namespaces` and `route` must be defined for each environment and will not be inherited.
+* `name` is inherited. If left out of the environment configuration, a Worker project named `my-worker` with an environment `[env.dev]` would become `my-worker-dev`.
 
 ### Examples
 

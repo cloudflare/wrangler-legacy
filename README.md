@@ -206,7 +206,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
         Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
 
-    Additionally, you can configure Wrangler to publish to multiple environments. Read more [here](/docs/environments.md).
+    Additionally, you can configure Wrangler to publish to multiple environments. This means that your same codebase can be deployed to multiple places on your [workers.dev](https://workers.dev) subdomain, across multiple accounts, zones, and routes. Read more [here](/docs/environments.md).
 
 ## Additional Installation Instructions
 
