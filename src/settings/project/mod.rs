@@ -125,12 +125,13 @@ impl Manifest {
         workers_dot_dev to toggle between publishing to your workers.dev subdomain and your own domain.";
 
         // Check for the presence of the 'private' field in top-level config; if present, warn.
-        if let Some(_) = self.private {
+        if self.private.is_some() {
             message::warn(deprecate_private_warning);
         }
+
         // Also check for presence of 'private' field in a provided environment; if present, warn
         if let Some(e) = environment {
-            if let Some(_) = e.private {
+            if e.private.is_some() {
                 message::warn(deprecate_private_warning);
             }
         }
