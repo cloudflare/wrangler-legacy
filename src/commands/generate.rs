@@ -1,4 +1,4 @@
-use crate::settings::project::{Project, ProjectType};
+use crate::settings::project::{Manifest, ProjectType};
 use crate::{commands, install};
 use std::path::PathBuf;
 use std::process::Command;
@@ -16,7 +16,7 @@ pub fn generate(name: &str, template: &str, pt: Option<ProjectType>) -> Result<(
     let command_name = format!("{:?}", command);
 
     commands::run(command, &command_name)?;
-    Project::generate(name.to_string(), pt, false)?;
+    Manifest::generate(name.to_string(), pt, false)?;
     Ok(())
 }
 

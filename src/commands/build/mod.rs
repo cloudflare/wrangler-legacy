@@ -3,15 +3,15 @@ pub mod wranglerjs;
 mod watch;
 pub use watch::watch_and_build;
 
-use crate::settings::project::{Project, ProjectType};
+use crate::settings::project::{ProjectType, Target};
 use crate::terminal::message;
 use crate::{commands, install};
 
 use std::path::PathBuf;
 use std::process::Command;
 
-pub fn build(project: &Project) -> Result<(), failure::Error> {
-    let project_type = &project.project_type;
+pub fn build(target: &Target) -> Result<(), failure::Error> {
+    let project_type = &target.project_type;
     match project_type {
         ProjectType::JavaScript => {
             message::info("JavaScript project found. Skipping unnecessary build!")
@@ -27,7 +27,7 @@ pub fn build(project: &Project) -> Result<(), failure::Error> {
             commands::run(command, &command_name)?;
         }
         ProjectType::Webpack => {
-            wranglerjs::run_build(project)?;
+            wranglerjs::run_build(target)?;
         }
     }
 

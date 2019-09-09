@@ -1,4 +1,4 @@
-use crate::settings::project::{Project, ProjectType};
+use crate::settings::project::{Manifest, ProjectType};
 use crate::terminal::message;
 use std::path::Path;
 
@@ -9,7 +9,7 @@ pub fn init(name: Option<&str>, project_type: Option<ProjectType>) -> Result<(),
     let dirname = get_current_dirname()?;
     let name = name.unwrap_or_else(|| &dirname);
     let project_type = project_type.unwrap_or_default();
-    Project::generate(name.to_string(), project_type, true)?;
+    Manifest::generate(name.to_string(), project_type, true)?;
     message::success("Succesfully created a `wrangler.toml`");
     Ok(())
 }

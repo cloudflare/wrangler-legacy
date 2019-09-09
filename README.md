@@ -81,11 +81,6 @@ General documentation surrounding workers development and using `wrangler` can b
     wrangler publish
     ```
 
-    By default, `publish` will make your worker available at `<project-name>.<subdomain>.workers.dev`.
-    To disable publishing to your workers.dev subdomain, set `private = true` in your `wrangler.toml`.
-    This setting prevents the `publish` command from making your worker publicly available. To
-    explicitly enable deployment to `<project-name>.<subdomain>.workers.dev`, you can set `private = false`.
-
     To use this command, you'll need to have the following keys in your `wrangler.toml`:
 
     - `name`
@@ -177,10 +172,6 @@ There are two types of configuration that `wrangler` uses: global user and per p
     edit this file to add these values before you can publish.
 
     - `name`: This is the name of your project. It will be the name of your script.
-    - `private`: This is a boolean. If set to `true`, when using `wrangler publish`, it will push your script but
-        not make it publically available. This does not affect publishing in `--release` mode to a registered
-        domain. Those pushes are *always* public. If this is not in your `wrangler.toml` it is assumed your
-        project is public.
     - `type`: This key tells `wrangler build` how to build your project. There are currently 3 options, but we
         expect there to be more as the community grows.
         - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
@@ -189,16 +180,17 @@ There are two types of configuration that `wrangler` uses: global user and per p
             WebAssembly. Rust files will be built with `wasm-pack`.
             This project type uses webpack and webpack plugins in the background to build your worker.
     - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you
-        are using a workers.dev subdomain and is only reuqired for `publish --release`.
+        are using a workers.dev subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
     - `account_id`: This is the ID of the account associated with your zone. You might have more than one account,
         so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
     - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
         - `*example.com/*`
         - `http://example.com/hello`
         
-        This key is optional if you are using a workers.dev subdomain and is only required for `publish --release`.
+        This key is optional if you are using a workers.dev subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md). 
     - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and
         defaults to `webpack.config.js`
+    - `workers_dot_dev`: This is an optional (but recommended due to impending deprecation of the `--release` flag boolean that specifies whether your worker should be deployed to `<your-project>.<your-subdomain>.workers.dev`. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
     - `[[kv-namespaces]]`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) namespaces you want to access from
         inside your Worker. Each namespace you include should have an entry in your wrangler.toml that includes:
 
@@ -213,6 +205,8 @@ There are two types of configuration that `wrangler` uses: global user and per p
         ```
 
         Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
+
+    Additionally, you can configure Wrangler to publish to multiple environments. This means that your same codebase can be deployed to multiple places on your [workers.dev](https://workers.dev) subdomain, across multiple accounts, zones, and routes. Read more [here](/docs/environments.md).
 
 ## Additional Installation Instructions
 
