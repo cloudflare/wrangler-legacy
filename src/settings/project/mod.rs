@@ -271,6 +271,7 @@ impl Manifest {
             if environment.zone_id.is_some() {
                 target.zone_id = environment.zone_id.clone();
             }
+            // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
             target.kv_namespaces = environment.kv_namespaces.clone();
         }
 
