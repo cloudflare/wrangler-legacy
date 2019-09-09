@@ -4,7 +4,6 @@ use cloudflare::framework::apiclient::ApiClient;
 use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
-use crate::terminal::message;
 
 pub fn list(target: &Target, user: GlobalUser) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
