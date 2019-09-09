@@ -71,7 +71,7 @@ $ wrangler kv:namespace list
 
 Writes a single key/value pair to the given namespace. Optional params include 
 1. `--ttl`: Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option.
-2. `--expiration`: Number of seconds since the UNIX epoch, indicating when the key-value pair should expire.
+1. `--expiration`: Number of seconds since the UNIX epoch, indicating when the key-value pair should expire.
 3. `--path`: Read value from the file at a given path. *This is good for security-sensitive operations, like uploading keys to KV; uploading from a file prevents a key value from being saved in areas like your terminal history.*
 
 
