@@ -67,12 +67,16 @@ $ wrangler kv:namespace list
 
 ### `put`
 
-Writes a single key/value pair to the given namespace.
+Writes a single key/value pair to the given namespace. Optional params include 
+1. `--ttl`: Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option.
+2. `--expiration`: Number of seconds since the UNIX epoch, indicating when the key-value pair should expire.
+
 
 #### Usage
 
 ```sh
 $ wrangler kv:key put f7b02e7fc70443149ac906dd81ec1791 "key" "value" --ttl=10000
+✨  Success
 ```
 
 ### `get`
@@ -83,6 +87,7 @@ Reads a single value by key from the given namespace.
 
 ```sh
 $ wrangler kv:key get f7b02e7fc70443149ac906dd81ec1791 "key"
+value
 ```
 
 ### `delete`
@@ -101,19 +106,22 @@ yes
 
 ### `list`
 
-Outputs a list of all KV namespaces associated with your account id.
+Outputs a list of all keys in a given namespace. Optional params include
+1. `--prefix`: A prefix to filter listed keys
 
 #### Usage
 
 ```sh
-$ wrangler kv:key list f7b02e7fc70443149ac906dd81ec1791 --prefix="public"
-🌀  Retrieving keys
-✨  Success:
-+------------------+----------------------------------+
-| KEY              | EXPIRATION                       |
-+------------------+----------------------------------+
-| "key"            | Wed Aug 28 10:28:44 CDT 2019     |
-+------------------+----------------------------------+
+$ wrangler kv:key list f7b02e7fc70443149ac906dd81ec1791 --prefix="public" | python -m json.tool
+[
+    {
+        "name": "public_key"
+    }, 
+    {
+        "name": "public_key_with_expiration",
+        "expiration": 1568014518
+    } 
+]
 ```
 
 ## `kv:bulk`
