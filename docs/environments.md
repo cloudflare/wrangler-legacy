@@ -245,7 +245,7 @@ name = "my-worker"
 type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
-route = "example.com/*
+route = "example.com/*"
 workers_dot_dev = true
 
 [env.staging]
