@@ -25,6 +25,7 @@ $ wrangler kv:namespace create "new kv namespace"
 ```
 
 ### `delete`
+Deletes a given namespace.
 
 #### Usage
 
@@ -37,6 +38,7 @@ yes
 ```
 
 ### `rename`
+Renames a given namespace.
 
 #### Usage
 
@@ -67,12 +69,21 @@ $ wrangler kv:namespace list
 
 ### `put`
 
-Writes a single key/value pair to the given namespace.
+Writes a single key/value pair to the given namespace. Optional params include 
+1. `--ttl`: Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option.
+1. `--expiration`: Number of seconds since the UNIX epoch, indicating when the key-value pair should expire.
+1. `--path`: Read value from the file at a given path. *This is good for security-sensitive operations, like uploading keys to KV; uploading from a file prevents a key value from being saved in areas like your terminal history.*
+
 
 #### Usage
 
 ```sh
 $ wrangler kv:key put f7b02e7fc70443149ac906dd81ec1791 "key" "value" --ttl=10000
+✨  Success
+```
+```sh
+$ wrangler kv:key put f7b02e7fc70443149ac906dd81ec1791 "key" value.txt --path
+✨  Success
 ```
 
 ### `get`
@@ -83,6 +94,7 @@ Reads a single value by key from the given namespace.
 
 ```sh
 $ wrangler kv:key get f7b02e7fc70443149ac906dd81ec1791 "key"
+=> value
 ```
 
 ### `delete`
@@ -101,26 +113,41 @@ yes
 
 ### `list`
 
-Outputs a list of all KV namespaces associated with your account id.
+Outputs a list of all keys in a given namespace. Optional params include
+1. `--prefix`: A prefix to filter listed keys
 
 #### Usage
+The example below uses Python's JSON pretty-printing command line tool to pretty-print output.
 
 ```sh
-$ wrangler kv:key list f7b02e7fc70443149ac906dd81ec1791 --prefix="public"
-🌀  Retrieving keys
-✨  Success:
-+------------------+----------------------------------+
-| KEY              | EXPIRATION                       |
-+------------------+----------------------------------+
-| "key"            | Wed Aug 28 10:28:44 CDT 2019     |
-+------------------+----------------------------------+
+$ wrangler kv:key list f7b02e7fc70443149ac906dd81ec1791 --prefix="public" | python -m json.tool
+[
+    {
+        "name": "public_key"
+    }, 
+    {
+        "name": "public_key_with_expiration",
+        "expiration": 1568014518
+    } 
+]
 ```
 
 ## `kv:bulk`
 
-### JSON body
+### `put`
 
-Bulk operations take as an argument a pre-built JSON file, which should be a list of objects with the following schema:
+Writes a file full of key/value pairs to the given namespace. Takes as an argument a JSON file with a list of key-value pairs to upload (see JSON spec above). An example of JSON input:
+```json
+[
+    {
+        "key": "test_key",
+        "value": "test_value",
+        "expiration_ttl": 3600
+    }
+]
+```
+
+The schema below is the full schema for key-value entries uploaded via the bulk API:
 
 | **Name**                       | **Description**                                              | Optional |
 | ------------------------------ | ------------------------------------------------------------ | -------- |
@@ -132,25 +159,29 @@ Bulk operations take as an argument a pre-built JSON file, which should be a lis
 
 If both `expiration` and `expiration_ttl` are specified for a given key, the API will prefer `expiration_ttl`.
 
-### `put`
-
-Writes a file full of key/value pairs to the given namespace. Takes as its argument a giant json with a list of keys to upload (see JSON spec).
-
 #### Usage
 
 ```sh
-$ wrangler kv:bulk put f7b02e7fc70443149ac906dd81ec1791 ./allthethings.json
+$ wrangler kv:bulk put f7b02e7fc70443149ac906dd81ec1791 allthethingsupload.json
+✨  Success
 ```
 
 ### `delete`
 
 Deletes all specified keys within a given namespace.
+Takes as an argument a JSON file with a list of keys to delete; for example:
+```json
+[
+    "key1",
+    "key2"
+]
+```
 
 #### Usage
 
 ```sh
-$ wrangler kv:bulk delete f7b02e7fc70443149ac906dd81ec1791 ./allthethings.json
-Are you sure you want to delete all keys in ./allthethings.json? [y/n]
+$ wrangler kv:bulk delete f7b02e7fc70443149ac906dd81ec1791 allthethingsdelete.json
+Are you sure you want to delete all keys in allthethingsdelete.json? [y/n]
 yes
 ✨  Success
 ```
