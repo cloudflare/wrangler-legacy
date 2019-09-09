@@ -119,7 +119,7 @@ impl Manifest {
         release: bool,
     ) -> Result<(Option<String>, bool), failure::Error> {
         let use_dot_dev_warning =
-            "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml";
+            format!("Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.\n{} This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.", emoji::WARN);
         let wdd_failure = format!(
             "{} Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.",
             emoji::WARN
@@ -136,7 +136,7 @@ impl Manifest {
                     match self.workers_dot_dev {
                         Some(_) => failure::bail!(use_dot_dev_warning),
                         None => {
-                            message::warn(use_dot_dev_warning);
+                            message::warn(&use_dot_dev_warning);
                             false // wrangler publish --release w/o workers_dot_dev is zoned deploy
                         }
                     }
@@ -150,7 +150,7 @@ impl Manifest {
                     }
                     wdd
                 } else {
-                    message::warn(use_dot_dev_warning);
+                    message::warn(&use_dot_dev_warning);
                     true // wrangler publish w/o workers_dot_dev is zoneless deploy
                 }
             }
@@ -216,12 +216,12 @@ impl Manifest {
     ) -> Result<Target, failure::Error> {
         if release && self.workers_dot_dev.is_some() {
             failure::bail!(
-                "The --release flag is not compatible with use of the workers_dot_dev field"
+                "The --release flag is not compatible with use of the workers_dot_dev field."
             )
         }
 
         if release {
-            message::warn("--release will be deprecated in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information");
+            message::warn("--release will be deprecated.");
         }
 
         let mut target = Target {
