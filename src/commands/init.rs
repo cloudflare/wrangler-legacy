@@ -1,15 +1,15 @@
-use crate::settings::project::{Manifest, ProjectType};
+use crate::settings::target::{Manifest, TargetType};
 use crate::terminal::message;
 use std::path::Path;
 
-pub fn init(name: Option<&str>, project_type: Option<ProjectType>) -> Result<(), failure::Error> {
+pub fn init(name: Option<&str>, target_type: Option<TargetType>) -> Result<(), failure::Error> {
     if Path::new("./wrangler.toml").exists() {
         failure::bail!("A wrangler.toml file already exists! Please remove it before running this command again.");
     }
     let dirname = get_current_dirname()?;
     let name = name.unwrap_or_else(|| &dirname);
-    let project_type = project_type.unwrap_or_default();
-    Manifest::generate(name.to_string(), project_type, true)?;
+    let target_type = target_type.unwrap_or_default();
+    Manifest::generate(name.to_string(), target_type, true)?;
     message::success("Succesfully created a `wrangler.toml`");
     Ok(())
 }

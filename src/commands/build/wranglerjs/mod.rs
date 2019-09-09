@@ -20,7 +20,7 @@ use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::settings::project::Target;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 use notify::{self, RecursiveMode, Watcher};

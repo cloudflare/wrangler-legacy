@@ -1,7 +1,7 @@
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Target;
+use crate::settings::target::Target;
 use crate::terminal::message;
 use reqwest::Client;
 use serde::Deserialize;
