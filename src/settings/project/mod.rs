@@ -89,6 +89,7 @@ impl Manifest {
         &self,
         environment_name: Option<&str>,
     ) -> Result<Option<&Environment>, failure::Error> {
+        // check for user-specified environment name
         if let Some(environment_name) = environment_name {
             if let Some(environment_table) = &self.env {
                 if let Some(environment) = environment_table.get(environment_name) {
@@ -128,7 +129,7 @@ impl Manifest {
         // switch wrangler publish behavior to act the same at top level
         // and environments
         // brace yourself, this is hairy
-        let workers_dot_dev: bool = match environment {
+        let workers_dot_dev = match environment {
             // top level configuration
             None => {
                 if release {
@@ -192,6 +193,23 @@ impl Manifest {
         Ok((route, workers_dot_dev))
     }
 
+    fn check_private(&self, environment: Option<&Environment>) {
+        let deprecate_private_warning = "The 'private' field is now considered deprecated; please use \
+        workers_dot_dev to toggle between publishing to your workers.dev subdomain and your own domain.";
+
+        // Check for the presence of the 'private' field in top-level config; if present, warn.
+        if self.private.is_some() {
+            message::warn(deprecate_private_warning);
+        }
+
+        // Also check for presence of 'private' field in a provided environment; if present, warn
+        if let Some(e) = environment {
+            if e.private.is_some() {
+                message::warn(deprecate_private_warning);
+            }
+        }
+    }
+
     pub fn get_target(
         &self,
         environment_name: Option<&str>,
@@ -223,20 +241,7 @@ impl Manifest {
 
         let environment = self.get_environment(environment_name)?;
 
-        let deprecate_private_warning = "The 'private' field is now considered deprecated; please use \
-        workers_dot_dev to toggle between publishing to your workers.dev subdomain and your own domain.";
-
-        // Check for the presence of the 'private' field in top-level config; if present, warn.
-        if self.private.is_some() {
-            message::warn(deprecate_private_warning);
-        }
-
-        // Also check for presence of 'private' field in a provided environment; if present, warn
-        if let Some(e) = environment {
-            if e.private.is_some() {
-                message::warn(deprecate_private_warning);
-            }
-        }
+        self.check_private(environment);
 
         let (route, workers_dot_dev) = self.zoneless_or_dot_dev(environment, release)?;
         target.route = route;
