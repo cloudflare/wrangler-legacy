@@ -73,14 +73,14 @@ General documentation surrounding workers development and using `wrangler` can b
 
 - ### ☁️ 🆙 `publish`
 
-  Publish your Worker to Cloudflare. This uses several keys in your `wrangler.toml` depending on whether
-  you are publishing to a workers.dev subdomain or your own domain, registered with Cloudflare.
+  Publish your Worker to Cloudflare. Several keys in your `wrangler.toml` determine whether
+  you are publishing to a workers.dev subdomain or your own registered domain - proxied with Cloudflare.
 
   ```bash
   wrangler publish
   ```
 
-  To use this command, you'll need to have the following information in your `wrangler.toml` no matter where you want to publish your worker
+  To use this command, the following fields are required in your `wrangler.toml`.
 
   | Key        | Value                                                                     | Example                                           |
   | ---------- | ------------------------------------------------------------------------- | ------------------------------------------------- |
