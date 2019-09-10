@@ -11,7 +11,7 @@ pub mod bulk;
 pub mod key;
 pub mod namespace;
 
-// Truncate all "yes", "no" responses for itneractive delete prompt to just "y" or "n".
+// Truncate all "yes", "no" responses for interactive delete prompt to just "y" or "n".
 const INTERACTIVE_RESPONSE_LEN: usize = 1;
 const YES: &str = "y";
 const NO: &str = "n";
