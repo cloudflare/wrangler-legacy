@@ -90,6 +90,8 @@ General documentation surrounding workers development and using `wrangler` can b
 
   From here, you have two options, you can choose to publish to your own domain or you can choose to publish to [\<your-worker\>.\<your-subdomain\>.workers.dev](https://workers.dev).
 
+  #### Publishing to workers.dev
+
   If you want to publish to [workers.dev](https://workers.dev), you will first need to have a [workers.dev](https://workers.dev) subdomain registered. You can register a subdomain by executing:
 
   ```bash
@@ -102,13 +104,17 @@ General documentation surrounding workers development and using `wrangler` can b
 | --------------- | ----- | ------------------------ |
 | workers_dot_dev | true  | `workers_dot_dev = true` |
 
-If you would like to publish to your own domain, add this to your `wrangler.toml`
+#### Publishing to your own domain
+
+If you would like to publish to your own domain, you will need to specify these three fields in your `wrangler.toml`.
 
 | Key             | Value                                                                  | Example                                        |
 | --------------- | ---------------------------------------------------------------------- | ---------------------------------------------- |
 | workers_dot_dev | false                                                                  | `workers_dot_dev = false`                      |
 | route           | The route you would like to publish to                                 | `route = "example.com/my-worker/*"`            |
 | zone_id         | Your Cloudflare zone ID, this can be found in the Cloudflare dashboard | `zone_id = "b6558acaf2b4cad1f2b51c5236a6b972"` |
+
+#### Publishing the same code to multiple places
 
 If you would like to be able to publish your code to multiple places, please see the documentation for [environments](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
 
