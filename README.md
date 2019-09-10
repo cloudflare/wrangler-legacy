@@ -25,7 +25,7 @@ npm i @cloudflare/wrangler -g
 cargo install wrangler
 ```
 
-If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](#additional-installation-instructions)
+If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](#additional-installation-instructions).
 
 ## Updating
 
