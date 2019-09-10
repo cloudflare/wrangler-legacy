@@ -31,13 +31,13 @@ pub fn delete(
         Err(e) => failure::bail!(e),
     }
 
-    let keys: Result<Vec<String>, failure::Error> = match metadata(filename) {
-        Ok(ref file_type) if file_type.is_file() => {
+    let keys: Result<Vec<String>, failure::Error> = match &metadata(filename) {
+        Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
             Ok(serde_json::from_str(&data)?)
         }
         Ok(_) => failure::bail!("{} should be a JSON file, but is not", filename.display()),
-        Err(e) => failure::bail!(e),
+        Err(e) => failure::bail!("{}", e),
     };
 
     delete_bulk(target, user, namespace_id, keys?)
@@ -67,7 +67,7 @@ fn delete_bulk(
     });
 
     match response {
-        Ok(_success) => message::success("Success"),
+        Ok(_) => message::success("Success"),
         Err(e) => kv::print_error(e),
     }
 
