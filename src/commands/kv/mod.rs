@@ -5,6 +5,7 @@ use http::status::StatusCode;
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
 use crate::settings::global_user::GlobalUser;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub mod bulk;
@@ -15,6 +16,19 @@ pub mod namespace;
 const INTERACTIVE_RESPONSE_LEN: usize = 1;
 const YES: &str = "y";
 const NO: &str = "n";
+
+
+// Get namespace id for a given binding name.
+pub fn get_namespace_id(target: &Target, title: &str) -> Option<String> {
+    if let Some(namespaces) = &target.kv_namespaces {
+        for namespace in namespaces {
+            if namespace.binding == title {
+                return Some(namespace.id.to_string());
+            }
+        }
+    }
+    None
+}
 
 fn api_client(user: GlobalUser) -> Result<HttpApiClient, failure::Error> {
     Ok(HttpApiClient::new(Credentials::from(user)))
@@ -71,9 +85,9 @@ fn help(error_code: u16) -> &'static str {
     match error_code {
         // namespace errors
         10010 | 10011 | 10012 | 10013 | 10014 | 10018 => {
-            "Run `wrangler kv list` to see your existing namespaces with IDs"
+            "Run `wrangler kv:namespace list` to see your existing namespaces with IDs"
         }
-        10009 => "Run `wrangler kv list <namespaceID>` to see your existing keys", // key errors
+        10009 => "Run `wrangler kv:key list <namespaceID>` to see your existing keys", // key errors
         // TODO: link to more info
         // limit errors
         10022 | 10024 | 10030 => "See documentation",

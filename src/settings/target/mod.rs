@@ -96,7 +96,7 @@ impl Manifest {
                     Ok(Some(environment))
                 } else {
                     failure::bail!(format!(
-                        "{} Could not find environment with name {}",
+                        "{} Could not find environment with name \"{}\"",
                         emoji::WARN,
                         environment_name
                     ))
@@ -123,7 +123,7 @@ impl Manifest {
         let use_dot_dev_warning =
             format!("{}\n{} This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.", use_dot_dev_failure, emoji::WARN);
         let wdd_failure = format!(
-            "{} Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.",
+            "{} Your environment should only include \"workers_dot_dev\" or \"route\". If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.",
             emoji::WARN
         );
 

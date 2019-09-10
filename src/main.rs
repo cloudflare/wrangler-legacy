@@ -61,29 +61,49 @@ fn run() -> Result<(), failure::Error> {
                             Arg::with_name("title")
                             .help("The name for your new namespace")
                             .required(true)
+                            .index(1)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete namespace")
                         .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            Arg::with_name("namespace")
+                            .help("The title of the namespace this action applies to")
                             .required(true)
+                            .index(1)
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT_NAME")
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("rename")
                         .about("Rename a namespace")
                         .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            Arg::with_name("namespace")
+                            .help("The title of the namespace this action applies to")
                             .required(true)
+                            .index(1)
                         )
                         .arg(
                             Arg::with_name("title")
                             .help("New title for the namespace")
                             .required(true)
+                            .index(2)
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT_NAME")
                         )
                 )
                 .subcommand(
@@ -100,23 +120,22 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("put")
                         .about("Put a key-value pair into a namespace")
                         .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            Arg::with_name("namespace")
+                            .help("The title of the namespace this action applies to")
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
+                            .index(1)
                         )
                         .arg(
                             Arg::with_name("key")
                             .help("Key to write value to")
                             .required(true)
+                            .index(2)
                         )
                         .arg(
                             Arg::with_name("value")
                             .help("Value for key")
                             .required(true)
+                            .index(3)
                         )
                         .arg(
                             Arg::with_name("expiration-ttl")
@@ -129,7 +148,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(
                             Arg::with_name("expiration")
                             .help("Number of seconds since the UNIX epoch, indicating when the key-value pair should expire")
-                            .short("e")
+                            .short("x")
                             .long("expiration")
                             .takes_value(true)
                             .value_name("SECONDS")
@@ -141,54 +160,71 @@ fn run() -> Result<(), failure::Error> {
                             .long("path")
                             .takes_value(false)
                         )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT_NAME")
+                        )
                 )
                 .subcommand(
                     SubCommand::with_name("get")
                         .about("Get a key's value from a namespace")
                         .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            Arg::with_name("namespace")
+                            .help("The title of the namespace this action applies to")
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
+                            .index(1)
                         )
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to get")
                             .required(true)
+                            .index(2)
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT_NAME")
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete a key and its value from a namespace")
                         .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            Arg::with_name("namespace")
+                            .help("The title of the namespace this action applies to")
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
+                            .index(1)
                         )
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to delete")
                             .required(true)
+                            .index(2)
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT_NAME")
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all keys in a namespace. Produces JSON output")
                         .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            Arg::with_name("namespace")
+                            .help("The title of the namespace this action applies to")
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
+                            .index(1)
                         )
                         .arg(
                             Arg::with_name("prefix")
@@ -197,6 +233,14 @@ fn run() -> Result<(), failure::Error> {
                             .long("prefix")
                             .value_name("STRING")
                             .takes_value(true),
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT_NAME")
                         )
                 )
         )
@@ -210,37 +254,48 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("put")
                         .about("Upload multiple key-value pairs to a namespace")
                         .arg(
-                            Arg::with_name("namespace-id")
-                                .help("The ID of the namespace this action applies to")
+                            Arg::with_name("namespace")
+                                .help("The title of the namespace this action applies to")
                                 .required(true)
-                                // .short("n")
-                                // .long("namespace-id")
-                                // .value_name("<ID>")
-                                // .takes_value(true)
+                                .index(1)
                         )
                         .arg(
                             Arg::with_name("path")
                             .help("the JSON file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...]")
                             .required(true)
-                            .index(2),
+                            .index(2)
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT_NAME")
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete multiple keys and their values from a namespace")
                         .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            Arg::with_name("namespace")
+                            .help("The title of the namespace this action applies to")
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
+                            .index(1)
                         )
                         .arg(
                             Arg::with_name("path")
                             .help("the JSON file of key-value pairs to upload, in form [\"<example-key>\", ...]")
                             .required(true)
+                            .index(2)
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT_NAME")
                         )
                 )
         )
@@ -479,25 +534,39 @@ fn run() -> Result<(), failure::Error> {
         commands::subdomain(name, &user, &target)?;
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"), false)?;
-
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
+                let target = manifest.get_target(create_matches.value_of("env"), false)?;
+
                 let title = create_matches.value_of("title").unwrap();
                 commands::kv::namespace::create(&target, user, title)?;
             }
             ("delete", Some(delete_matches)) => {
-                let id = delete_matches.value_of("namespace-id").unwrap();
-                commands::kv::namespace::delete(&target, user, id)?;
+                let target = manifest.get_target(delete_matches.value_of("env"), false)?;
+
+                let namespace_binding = delete_matches.value_of("namespace").unwrap();
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                match namespace_id {
+                    Some(namespace_id) => commands::kv::namespace::delete(&target, user, &namespace_id)?,
+                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
+                }
             }
             ("rename", Some(rename_matches)) => {
-                let id = rename_matches.value_of("namespace-id").unwrap();
+                let target = manifest.get_target(rename_matches.value_of("env"), false)?;
+
+                let namespace_binding = rename_matches.value_of("namespace").unwrap();
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
                 let title = rename_matches.value_of("title").unwrap();
-                commands::kv::namespace::rename(&target, user, id, title)?;
+                match namespace_id {
+                    Some(namespace_id) => commands::kv::namespace::rename(&target, user, &namespace_id, title)?,
+                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
+                }
             }
-            ("list", Some(_list_matches)) => {
+            ("list", Some(list_matches)) => {
+                let target = manifest.get_target(list_matches.value_of("env"), false)?;
+
                 commands::kv::namespace::list(&target, user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
@@ -505,18 +574,25 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"), false)?;
-
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
             ("get", Some(get_key_matches)) => {
-                let id = get_key_matches.value_of("namespace-id").unwrap();
+                let target = manifest.get_target(get_key_matches.value_of("env"), false)?;
+
+                let namespace_binding = get_key_matches.value_of("namespace").unwrap();
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
                 let key = get_key_matches.value_of("key").unwrap();
-                commands::kv::key::get(&target, user, id, key)?;
+                match namespace_id {
+                    Some(namespace_id) => commands::kv::key::get(&target, user, &namespace_id, key)?,
+                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
+                }
             }
             ("put", Some(put_key_matches)) => {
-                let id = put_key_matches.value_of("namespace-id").unwrap();
+                let target = manifest.get_target(put_key_matches.value_of("env"), false)?;
+
+                let namespace_binding = put_key_matches.value_of("namespace").unwrap();
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
                 let key = put_key_matches.value_of("key").unwrap();
                 let value = put_key_matches.value_of("value").unwrap();
                 let is_file = match put_key_matches.occurrences_of("path") {
@@ -525,37 +601,62 @@ fn run() -> Result<(), failure::Error> {
                 };
                 let expiration = put_key_matches.value_of("expiration");
                 let ttl = put_key_matches.value_of("expiration-ttl");
-                commands::kv::key::put(&target, user, id, key, value, is_file, expiration, ttl)?;
+                match namespace_id {
+                    Some(namespace_id) => commands::kv::key::put(&target, user, &namespace_id, key, value, is_file, expiration, ttl)?,
+                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
+                }
             }
-            ("delete", Some(delete_matches)) => {
-                let id = delete_matches.value_of("namespace-id").unwrap();
-                let key = delete_matches.value_of("key").unwrap();
-                commands::kv::key::delete(&target, user, id, key)?;
+            ("delete", Some(delete_key_matches)) => {
+                let target = manifest.get_target(delete_key_matches.value_of("env"), false)?;
+
+                let namespace_binding = delete_key_matches.value_of("namespace").unwrap();
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let key = delete_key_matches.value_of("key").unwrap();
+                match namespace_id {
+                    Some(namespace_id) => commands::kv::key::delete(&target, user, &namespace_id, key)?,
+                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
+                }
             }
-            ("list", Some(list_keys_matches)) => {
-                let id = list_keys_matches.value_of("namespace-id").unwrap();
-                let prefix = list_keys_matches.value_of("prefix");
-                commands::kv::key::list(&target, user, id, prefix)?;
+            ("list", Some(list_key_matches)) => {
+                let target = manifest.get_target(list_key_matches.value_of("env"), false)?;
+
+                let namespace_binding = list_key_matches.value_of("namespace").unwrap();
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let prefix = list_key_matches.value_of("prefix");
+                match namespace_id {
+                    Some(namespace_id) => commands::kv::key::list(&target, user, &namespace_id, prefix)?,
+                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
+                }
             }
             ("", None) => message::warn("kv:key expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"), false)?;
-
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
             ("put", Some(put_bulk_matches)) => {
-                let id = put_bulk_matches.value_of("namespace-id").unwrap();
+                let target = manifest.get_target(put_bulk_matches.value_of("env"), false)?;
+
+                let namespace_binding = put_bulk_matches.value_of("namespace").unwrap();
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
                 let path = put_bulk_matches.value_of("path").unwrap();
-                commands::kv::bulk::put(&target, user, id, Path::new(path))?;
+                match namespace_id {
+                    Some(namespace_id) => commands::kv::bulk::put(&target, user, &namespace_id, Path::new(path))?,
+                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
+                }
             }
-            ("delete", Some(delete_matches)) => {
-                let id = delete_matches.value_of("namespace-id").unwrap();
-                let path = delete_matches.value_of("path").unwrap();
-                commands::kv::bulk::delete(&target, user, id, Path::new(path))?;
+            ("delete", Some(delete_bulk_matches)) => {
+                let target = manifest.get_target(delete_bulk_matches.value_of("env"), false)?;
+
+                let namespace_binding = delete_bulk_matches.value_of("namespace").unwrap();
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let path = delete_bulk_matches.value_of("path").unwrap();
+                match namespace_id {
+                    Some(namespace_id) => commands::kv::bulk::delete(&target, user, &namespace_id, Path::new(path))?,
+                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
+                }
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),

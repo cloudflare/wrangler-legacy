@@ -7,7 +7,7 @@ use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn delete(
-    project: &Target,
+    project: &Target, //TODO(gabbi): replace all project: with target:
     user: GlobalUser,
     id: &str,
     key: &str,
