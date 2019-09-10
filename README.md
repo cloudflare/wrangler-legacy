@@ -196,9 +196,12 @@ There are two types of configuration that `wrangler` uses: global user and per p
   - `account_id`: This is the ID of the account associated with your zone. You might have more than one account,
     so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
   - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
+
     - `*example.com/*`
     - `http://example.com/hello`
+
     This key is optional if you are using a workers.dev subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
+
   - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and
     defaults to `webpack.config.js`
   - `workers_dot_dev`: This is an optional (but recommended due to impending deprecation of the `--release` flag boolean that specifies whether your worker should be deployed to `<your-project>.<your-subdomain>.workers.dev`. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
