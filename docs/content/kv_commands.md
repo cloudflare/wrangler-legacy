@@ -193,7 +193,7 @@ $ wrangler kv:key list --binding=MY_NAMESPACE --prefix="public" | python -m json
     }, 
     {
         "name": "public_key_with_expiration",
-        "expiration": 1568014518
+        "expiration": "2019-09-10T23:18:58Z"
     } 
 ]
 ```
