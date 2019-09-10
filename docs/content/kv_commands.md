@@ -29,7 +29,7 @@ kv-namespaces = [
 ```
 
 With the wrangler.toml above, you can specify `--env production` when you want to perform a KV action on
-the namespace `KV` under `env.production`.
+the namespace `KV` under `env.production`. To learn more about environments, check out the [environments documentation](./environments).
 
 ## `kv:namespace`
 
@@ -50,7 +50,7 @@ $ wrangler kv:namespace create "new kv namespace"
 
 ### `delete`
 Deletes a given namespace.
-Takes an optional `--env` argument.
+Takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
@@ -64,7 +64,7 @@ yes
 
 ### `rename`
 Renames a given namespace.
-Takes an optional `--env` argument.
+Takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
@@ -96,7 +96,7 @@ $ wrangler kv:namespace list
 ### `put`
 
 Writes a single key/value pair to the given namespace. Optional params include 
-1. `--env`: The environment argument.
+1. `--env`: The [environment](./environments) argument.
 1. `--ttl`: Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option.
 1. `--expiration`: Number of seconds since the UNIX epoch, indicating when the key-value pair should expire.
 1. `--path`: Read value from the file at a given path. *This is good for security-sensitive operations, like uploading keys to KV; uploading from a file prevents a key value from being saved in areas like your terminal history.*
@@ -116,7 +116,7 @@ $ wrangler kv:key put MY_NAMESPACE "key" value.txt --path
 ### `get`
 
 Reads a single value by key from the given namespace.
-Takes an optional `--env` argument.
+Takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
@@ -128,7 +128,7 @@ $ wrangler kv:key get MY_NAMESPACE "key"
 ### `delete`
 
 Removes a single key value pair from the given namespace.
-Takes an optional `--env` argument.
+Takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
@@ -143,7 +143,7 @@ yes
 ### `list`
 
 Outputs a list of all keys in a given namespace. Optional params include
-1. `--env`: The environment argument.
+1. `--env`: The [environment](./environments) argument.
 1. `--prefix`: A prefix to filter listed keys.
 
 #### Usage
@@ -189,7 +189,7 @@ The schema below is the full schema for key-value entries uploaded via the bulk 
 
 If both `expiration` and `expiration_ttl` are specified for a given key, the API will prefer `expiration_ttl`.
 
-The `put` command also takes an optional `--env` argument.
+The `put` command also takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
@@ -209,7 +209,7 @@ Takes as an argument a JSON file with a list of keys to delete; for example:
 ]
 ```
 
-The `delete` command also takes an optional `--env` argument.
+The `delete` command also takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
