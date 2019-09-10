@@ -222,7 +222,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("List all keys in a namespace. Produces JSON output")
                         .arg(
                             Arg::with_name("namespace")
-                            .help("The title of the namespace this action applies to")
+                            .help("The binding of the namespace this action applies to")
                             .required(true)
                             .index(1)
                         )
