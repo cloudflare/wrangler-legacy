@@ -24,7 +24,7 @@ kv-namespaces = [
 [env.production]
 route = "example.com/*"
 kv-namespaces = [
-	{ binding = "PRODUCTION_NAMESPACE", id = "06779da6940b431db6e566b4846d64db" }
+	{ binding = "KV", id = "07bc1f3d1f2a4fd8a45a7e026e2681c6" }
 ]
 ```
 
