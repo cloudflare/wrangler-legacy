@@ -21,7 +21,7 @@ pub struct KeyList {
 
 impl KeyList {
     pub fn new(
-        project: &Target,
+        target: &Target,
         client: HttpApiClient,
         namespace_id: &str,
         prefix: Option<&str>,
@@ -30,7 +30,7 @@ impl KeyList {
             keys_result: None,
             prefix: prefix.map(str::to_string),
             client,
-            account_id: project.account_id.to_owned(),
+            account_id: target.account_id.to_owned(),
             namespace_id: namespace_id.to_string(),
             cursor: None,
             init_fetch: false,

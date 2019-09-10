@@ -8,7 +8,7 @@ use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn rename(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     id: &str,
     title: &str,
@@ -19,7 +19,7 @@ pub fn rename(
     message::working(&msg);
 
     let response = client.request(&RenameNamespace {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         namespace_identifier: &id,
         params: RenameNamespaceParams {
             title: title.to_string(),

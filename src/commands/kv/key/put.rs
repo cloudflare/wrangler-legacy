@@ -14,7 +14,7 @@ use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn put(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     id: &str,
     key: &str,
@@ -25,7 +25,7 @@ pub fn put(
 ) -> Result<(), failure::Error> {
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        project.account_id,
+        target.account_id,
         id,
         kv::url_encode_key(key)
     );

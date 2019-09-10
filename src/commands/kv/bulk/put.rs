@@ -15,7 +15,7 @@ use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn put(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     filename: &Path,
@@ -29,11 +29,11 @@ pub fn put(
         Err(e) => failure::bail!(e),
     };
 
-    put_bulk(project, user, namespace_id, pairs?)
+    put_bulk(target, user, namespace_id, pairs?)
 }
 
 fn put_bulk(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     pairs: Vec<KeyValuePair>,
@@ -50,7 +50,7 @@ fn put_bulk(
     }
 
     let response = client.request(&WriteBulk {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         namespace_identifier: namespace_id,
         bulk_key_value_pairs: pairs,
     });

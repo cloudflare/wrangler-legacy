@@ -14,7 +14,7 @@ use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn delete(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     filename: &Path,
@@ -40,11 +40,11 @@ pub fn delete(
         Err(e) => failure::bail!(e),
     };
 
-    delete_bulk(project, user, namespace_id, keys?)
+    delete_bulk(target, user, namespace_id, keys?)
 }
 
 fn delete_bulk(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     keys: Vec<String>,
@@ -61,7 +61,7 @@ fn delete_bulk(
     }
 
     let response = client.request(&DeleteBulk {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         namespace_identifier: namespace_id,
         bulk_keys: keys,
     });
