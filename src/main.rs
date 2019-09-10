@@ -564,38 +564,36 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::target::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
-        match kv_matches.subcommand() {
+        // Get environment and bindings
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
+        let (target, namespace_id) = match subcommand_matches {
+            Some(subcommand_matches) => {
+                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
+                let namespace_id = match subcommand_matches.value_of("binding") {
+                    Some(namespace_binding) => {
+                        commands::kv::get_namespace_id(&target, namespace_binding)?
+                    }
+                    None => kv_matches
+                        .value_of("namespace-id")
+                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
+                        .to_string(),
+                };
+                (target, namespace_id.to_string())
+            }
+            None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
+        };
+
+        match (subcommand, subcommand_matches) {
             ("create", Some(create_matches)) => {
-                let target = manifest.get_target(create_matches.value_of("env"), false)?;
                 let title = create_matches.value_of("title").unwrap();
                 commands::kv::namespace::create(&target, user, title)?;
             }
-            ("delete", Some(delete_matches)) => {
-                let target = manifest.get_target(delete_matches.value_of("env"), false)?;
-                let namespace_id = match delete_matches.value_of("binding") {
-                    Some(namespace_binding) => {
-                        commands::kv::get_namespace_id(&target, namespace_binding)?
-                    }
-                    None => delete_matches.value_of("namespace-id").unwrap().to_string(),
-                    // unwrap() in the None case is okay; clap configs ensure that if "binding" isn't present,"namespace-id" must be.
-                };
-                commands::kv::namespace::delete(&target, user, &namespace_id)?
-            }
+            ("delete", Some(_)) => commands::kv::namespace::delete(&target, user, &namespace_id)?,
             ("rename", Some(rename_matches)) => {
-                let target = manifest.get_target(rename_matches.value_of("env"), false)?;
-                let namespace_id = match rename_matches.value_of("binding") {
-                    Some(namespace_binding) => {
-                        commands::kv::get_namespace_id(&target, namespace_binding)?
-                    }
-                    None => rename_matches.value_of("namespace-id").unwrap().to_string(),
-                    // unwrap() in the None case is okay; clap configs ensure that if "binding" isn't present,"namespace-id" must be.
-                };
                 let title = rename_matches.value_of("title").unwrap();
                 commands::kv::namespace::rename(&target, user, &namespace_id, title)?
             }
-            ("list", Some(list_matches)) => {
-                let target = manifest.get_target(list_matches.value_of("env"), false)?;
-
+            ("list", Some(_)) => {
                 commands::kv::namespace::list(&target, user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
@@ -605,36 +603,31 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::target::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
-        match kv_matches.subcommand() {
-            ("get", Some(get_key_matches)) => {
-                let target = manifest.get_target(get_key_matches.value_of("env"), false)?;
-                let namespace_id = match get_key_matches.value_of("binding") {
+        // Get environment and bindings
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
+        let (target, namespace_id) = match subcommand_matches {
+            Some(subcommand_matches) => {
+                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
+                let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
                     }
-                    None => get_key_matches
+                    None => kv_matches
                         .value_of("namespace-id")
-                        .unwrap()
+                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                         .to_string(),
-                    // unwrap() in the None case is okay; clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                 };
+                (target, namespace_id.to_string())
+            }
+            None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
+        };
 
+        match (subcommand, subcommand_matches) {
+            ("get", Some(get_key_matches)) => {
                 let key = get_key_matches.value_of("key").unwrap();
                 commands::kv::key::get(&target, user, &namespace_id, key)?
             }
             ("put", Some(put_key_matches)) => {
-                let target = manifest.get_target(put_key_matches.value_of("env"), false)?;
-                let namespace_id = match put_key_matches.value_of("binding") {
-                    Some(namespace_binding) => {
-                        commands::kv::get_namespace_id(&target, namespace_binding)?
-                    }
-                    None => put_key_matches
-                        .value_of("namespace-id")
-                        .unwrap()
-                        .to_string(),
-                    // unwrap() in the None case is okay; clap configs ensure that if "binding" isn't present,"namespace-id" must be.
-                };
-
                 let key = put_key_matches.value_of("key").unwrap();
                 let value = put_key_matches.value_of("value").unwrap();
                 let is_file = match put_key_matches.occurrences_of("path") {
@@ -655,32 +648,10 @@ fn run() -> Result<(), failure::Error> {
                 )?
             }
             ("delete", Some(delete_key_matches)) => {
-                let target = manifest.get_target(delete_key_matches.value_of("env"), false)?;
-                let namespace_id = match delete_key_matches.value_of("binding") {
-                    Some(namespace_binding) => {
-                        commands::kv::get_namespace_id(&target, namespace_binding)?
-                    }
-                    None => delete_key_matches
-                        .value_of("namespace-id")
-                        .unwrap()
-                        .to_string(),
-                    // unwrap() in the None case is okay; clap configs ensure that if "binding" isn't present,"namespace-id" must be.
-                };
                 let key = delete_key_matches.value_of("key").unwrap();
                 commands::kv::key::delete(&target, user, &namespace_id, key)?
             }
             ("list", Some(list_key_matches)) => {
-                let target = manifest.get_target(list_key_matches.value_of("env"), false)?;
-                let namespace_id = match list_key_matches.value_of("binding") {
-                    Some(namespace_binding) => {
-                        commands::kv::get_namespace_id(&target, namespace_binding)?
-                    }
-                    None => list_key_matches
-                        .value_of("namespace-id")
-                        .unwrap()
-                        .to_string(),
-                    // unwrap() in the None case is okay; clap configs ensure that if "binding" isn't present,"namespace-id" must be.
-                };
                 let prefix = list_key_matches.value_of("prefix");
                 commands::kv::key::list(&target, user, &namespace_id, prefix)?
             }
@@ -691,34 +662,31 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::target::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
-        match kv_matches.subcommand() {
-            ("put", Some(put_bulk_matches)) => {
-                let target = manifest.get_target(put_bulk_matches.value_of("env"), false)?;
-                let namespace_id = match put_bulk_matches.value_of("binding") {
+        // Get environment and bindings
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
+        let (target, namespace_id) = match subcommand_matches {
+            Some(subcommand_matches) => {
+                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
+                let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
                     }
-                    None => put_bulk_matches
+                    None => kv_matches
                         .value_of("namespace-id")
-                        .unwrap()
+                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                         .to_string(),
-                    // unwrap() in the None case is okay; clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                 };
+                (target, namespace_id.to_string())
+            }
+            None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
+        };
+
+        match (subcommand, subcommand_matches) {
+            ("put", Some(put_bulk_matches)) => {
                 let path = put_bulk_matches.value_of("path").unwrap();
                 commands::kv::bulk::put(&target, user, &namespace_id, Path::new(path))?
             }
             ("delete", Some(delete_bulk_matches)) => {
-                let target = manifest.get_target(delete_bulk_matches.value_of("env"), false)?;
-                let namespace_id = match delete_bulk_matches.value_of("binding") {
-                    Some(namespace_binding) => {
-                        commands::kv::get_namespace_id(&target, namespace_binding)?
-                    }
-                    None => delete_bulk_matches
-                        .value_of("namespace-id")
-                        .unwrap()
-                        .to_string(),
-                    // unwrap() in the None case is okay; clap configs ensure that if "binding" isn't present,"namespace-id" must be.
-                };
                 let path = delete_bulk_matches.value_of("path").unwrap();
                 commands::kv::bulk::delete(&target, user, &namespace_id, Path::new(path))?
             }
