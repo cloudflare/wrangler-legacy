@@ -147,7 +147,7 @@ fn run() -> Result<(), failure::Error> {
         )
             .subcommand(SubCommand::with_name("kv:key")
                 .about(&*format!(
-                    "{} Interact with your Workers KV Key-Value Pairs",
+                    "{} Individually manage Workers KV key-value pairs",
                     emoji::KV
                 ))
                 .arg(
@@ -268,7 +268,7 @@ fn run() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("kv:bulk")
                 .about(&*format!(
-                    "{} Interact with your Workers KV Key-Value Pairs",
+                    "{} Interact with multiple Workers KV key-value pairs at once",
                     emoji::KV
                 ))
                 .arg(
