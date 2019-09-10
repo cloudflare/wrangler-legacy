@@ -198,7 +198,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Delete a key and its value from a namespace")
                         .arg(
                             Arg::with_name("namespace")
-                            .help("The title of the namespace this action applies to")
+                            .help("The binding of the namespace this action applies to")
                             .required(true)
                             .index(1)
                         )
