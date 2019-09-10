@@ -69,7 +69,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Delete namespace")
                         .arg(
                             Arg::with_name("namespace")
-                            .help("The title of the namespace this action applies to")
+                            .help("The binding of the namespace this action applies to")
                             .required(true)
                             .index(1)
                         )
