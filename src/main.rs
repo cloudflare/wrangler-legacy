@@ -610,13 +610,11 @@ fn run() -> Result<(), failure::Error> {
 
         // Get environment and bindings
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
-        println!("{:?}", subcommand_matches);
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
                 let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
-                        println!("here");
                         commands::kv::get_namespace_id(&target, namespace_binding)?
                     }
                     None => subcommand_matches
