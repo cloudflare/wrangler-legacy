@@ -1,37 +1,40 @@
 pub mod wranglerjs;
 
-use crate::settings::project::{Project, ProjectType};
+mod watch;
+pub use watch::watch_and_build;
+
+use crate::settings::target::{Target, TargetType};
+use crate::terminal::message;
 use crate::{commands, install};
+
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::terminal::message;
-
-pub fn build(project: &Project) -> Result<(), failure::Error> {
-    let project_type = &project.project_type;
-    match project_type {
-        ProjectType::JavaScript => {
+pub fn build(target: &Target) -> Result<(), failure::Error> {
+    let target_type = &target.target_type;
+    match target_type {
+        TargetType::JavaScript => {
             message::info("JavaScript project found. Skipping unnecessary build!")
         }
-        ProjectType::Rust => {
+        TargetType::Rust => {
             let tool_name = "wasm-pack";
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
-            let command = command(&args, binary_path);
+            let command = command(&args, &binary_path);
             let command_name = format!("{:?}", command);
 
             commands::run(command, &command_name)?;
         }
-        ProjectType::Webpack => {
-            wranglerjs::run_build(project)?;
+        TargetType::Webpack => {
+            wranglerjs::run_build(target)?;
         }
     }
 
     Ok(())
 }
 
-fn command(args: &[&str], binary_path: PathBuf) -> Command {
+pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
     message::working("Compiling your project to WebAssembly...");
 
     let mut c = if cfg!(target_os = "windows") {

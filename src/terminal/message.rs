@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use super::emoji;
 
 fn message(msg: &str) {

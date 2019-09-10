@@ -38,7 +38,7 @@ impl Package {
 
         let package_json: String = fs::read_to_string(manifest_path.clone())?.parse()?;
         let package: Package = serde_json::from_str(&package_json)
-            .expect(&format!("could not parse {:?}", manifest_path));
+            .unwrap_or_else(|_| panic!("could not parse {:?}", manifest_path));
 
         Ok(package)
     }

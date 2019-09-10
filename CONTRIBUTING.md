@@ -1,7 +1,7 @@
 # Contributing
 
 Wrangler is an open source project because we believe that folks should have access, insight,
-and the opportunity to contirbute to their developer tools. Wrangler is also a product
+and the opportunity to contribute to their developer tools. Wrangler is also a product
 delivered by Cloudflare, so it's important to clarify how we think about issue triage and
 contributions.
 

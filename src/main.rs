@@ -4,6 +4,7 @@
 extern crate text_io;
 
 use std::env;
+use std::path::Path;
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, SubCommand};
@@ -17,8 +18,9 @@ mod install;
 mod installer;
 mod settings;
 mod terminal;
+mod util;
 
-use crate::settings::project::ProjectType;
+use crate::settings::target::TargetType;
 use exitfailure::ExitFailure;
 use terminal::emoji;
 
@@ -93,8 +95,14 @@ fn run() -> Result<(), failure::Error> {
                 .about(&*format!(
                     "{} Build your worker",
                     emoji::CRAB
-                )
-            ),
+                ))
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to build")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                ),
         )
         .subcommand(
             SubCommand::with_name("preview")
@@ -111,19 +119,40 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("body")
                         .help("Body string to post to your preview worker request")
                         .index(2),
+                )
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to preview")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("watch")
+                        .help("watch your project for changes and update the preview automagically")
+                        .long("watch")
+                        .takes_value(false),
                 ),
         )
         .subcommand(
-            SubCommand::with_name("publish").about(&*format!(
-                "{} Publish your worker to the orange cloud",
-                emoji::UP
-            ))
-            .arg(
-                Arg::with_name("release")
-                    .long("release")
-                    .takes_value(false)
-                    .help("should this be published to a workers.dev subdomain or a domain name you have registered"),
-             ),
+            SubCommand::with_name("publish")
+                .about(&*format!(
+                    "{} Publish your worker to the orange cloud",
+                    emoji::UP
+                ))
+                .arg(
+                    Arg::with_name("release")
+                        .long("release")
+                        .takes_value(false)
+                        .help("[planned deprecation in v1.5.0, use --env instead. see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
+                )
+                .arg(
+                    Arg::with_name("env")
+                        .help("environments to publish to")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                ),
         )
         .subcommand(
             SubCommand::with_name("config")
@@ -151,6 +180,8 @@ fn run() -> Result<(), failure::Error> {
         )))
         .get_matches();
 
+    let config_path = Path::new("./wrangler.toml");
+
     if let Some(_matches) = matches.subcommand_matches("config") {
         println!("Enter email: ");
         let mut email: String = read!("{}\n");
@@ -162,15 +193,15 @@ fn run() -> Result<(), failure::Error> {
         commands::global_config(email, api_key)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
-        let project_type = match matches.value_of("type") {
-            Some(s) => Some(ProjectType::from_str(&s.to_lowercase())?),
+        let target_type = match matches.value_of("type") {
+            Some(s) => Some(TargetType::from_str(&s.to_lowercase())?),
             None => None,
         };
 
         let default_template = "https://github.com/cloudflare/worker-template";
-        let template = matches.value_of("template").unwrap_or(match project_type {
+        let template = matches.value_of("template").unwrap_or(match target_type {
             Some(ref pt) => match pt {
-                ProjectType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
+                TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
                 _ => default_template,
             },
             _ => default_template,
@@ -180,52 +211,66 @@ fn run() -> Result<(), failure::Error> {
             "Generate command called with template {}, and name {}",
             template, name
         );
-        commands::generate(name, template, project_type)?;
+        commands::generate(name, template, target_type)?;
     } else if let Some(matches) = matches.subcommand_matches("init") {
         let name = matches.value_of("name");
-        let project_type = match matches.value_of("type") {
-            Some(s) => Some(settings::project::ProjectType::from_str(&s.to_lowercase())?),
+        let target_type = match matches.value_of("type") {
+            Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
             None => None,
         };
-        commands::init(name, project_type)?;
-    } else if matches.subcommand_matches("build").is_some() {
+        commands::init(name, target_type)?;
+    } else if let Some(matches) = matches.subcommand_matches("build") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
-        commands::build(&project)?;
+        let manifest = settings::target::Manifest::new(config_path)?;
+        let target = &manifest.get_target(matches.value_of("env"), false)?;
+        commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
+        let manifest = settings::target::Manifest::new(config_path)?;
+        let target = manifest.get_target(matches.value_of("env"), false)?;
 
-        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"));
+        // the preview command can be called with or without a Global User having been config'd
+        // so we convert this Result into an Option
+        let user = settings::global_user::GlobalUser::new().ok();
+
+        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
             None => None,
         };
 
-        commands::preview(&project, method, body)?;
+        let watch = matches.is_present("watch");
+
+        commands::preview(target, user, method, body, watch)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
         commands::whoami(&user);
     } else if let Some(matches) = matches.subcommand_matches("publish") {
-        info!("Getting project settings");
-        let project = settings::project::Project::new()?;
-
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        info!("{}", matches.occurrences_of("release"));
-        let release = match matches.occurrences_of("release") {
-            1 => true,
-            _ => false,
-        };
-
-        commands::publish(&user, &project, release)?;
+        info!("Getting project settings");
+        if matches.is_present("env") && matches.is_present("release") {
+            failure::bail!("You can only pass --env or --release, not both")
+        }
+        let manifest = settings::target::Manifest::new(config_path)?;
+        if matches.is_present("env") {
+            let target = manifest.get_target(matches.value_of("env"), false)?;
+            commands::publish(&user, &target)?;
+        } else if matches.is_present("release") {
+            let target = manifest.get_target(None, true)?;
+            commands::publish(&user, &target)?;
+        } else {
+            let target = manifest.get_target(None, false)?;
+            commands::publish(&user, &target)?;
+        }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
-        let project = settings::project::Project::new()?;
+        let manifest = settings::target::Manifest::new(config_path)?;
+        let target = manifest.get_target(matches.value_of("env"), false)?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -234,7 +279,7 @@ fn run() -> Result<(), failure::Error> {
             .value_of("name")
             .expect("The subdomain name you are requesting must be provided.");
 
-        commands::subdomain(name, &user, &project)?;
+        commands::subdomain(name, &user, &target)?;
     }
     Ok(())
 }

@@ -10,18 +10,16 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
       - script: rustup component add rustfmt
         displayName: rustup component add rustfmt
       - script: cargo fmt --all -- --check
-        displayName: "cargo fmt"
+        displayName: "cargo fmt --all -- --check"
       - script: rustup component add clippy
         displayName: rustup component add clippy
       - script: cargo clippy
-        displayName: "cargo clippy"
+        displayName: "cargo clippy --all --all-features -- -D warnings"
 
   - job: test_wrangler_windows
     displayName: "Run wrangler tests (Windows)"
@@ -30,8 +28,6 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
         env:
@@ -45,8 +41,6 @@ jobs:
         parameters:
           toolchain: nightly
       - template: ci/azure-install-node.yml
-      - script: cargo install cargo-generate
-        displayName: "cargo install cargo-generate"
       - script: cargo test --locked
         displayName: "cargo test --locked"
         env:

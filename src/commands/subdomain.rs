@@ -1,6 +1,6 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::{emoji, message};
 
 use serde::{Deserialize, Serialize};
@@ -58,8 +58,8 @@ fn subdomain_addr(account_id: &str) -> String {
     )
 }
 
-pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(), failure::Error> {
-    if project.account_id.is_empty() {
+pub fn subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    if target.account_id.is_empty() {
         failure::bail!(format!(
             "{} You must provide an account_id in your wrangler.toml before creating a subdomain!",
             emoji::WARN
@@ -70,7 +70,7 @@ pub fn subdomain(name: &str, user: &GlobalUser, project: &Project) -> Result<(),
         name
     );
     message::working(&msg);
-    let account_id = &project.account_id;
+    let account_id = &target.account_id;
     let addr = subdomain_addr(account_id);
     let sd = Subdomain {
         subdomain: name.to_string(),

@@ -63,8 +63,8 @@ impl WranglerjsOutput {
         };
 
         match compressed_size {
-            WARN_THRESHOLD...MAX_PROJECT_SIZE => format!("{}. {2} Your built project is {} away from reaching the 1MiB size limit. {2}", human_size, human_leftover.expect("failed to get leftover bytes"), emoji::WARN),
-            0...MAX_BEFORE_WARN => format!("{}.", human_size),
+            WARN_THRESHOLD..=MAX_PROJECT_SIZE => format!("{}. {2} Your built project is {} away from reaching the 1MiB size limit. {2}", human_size, human_leftover.expect("failed to get leftover bytes"), emoji::WARN),
+            0..=MAX_BEFORE_WARN => format!("{}.", human_size),
             _ => format!("{}. {1} Your built project has grown past the 1MiB size limit and may fail to deploy. {1}", human_size, emoji::WARN)
         }
     }
