@@ -90,19 +90,25 @@ General documentation surrounding workers development and using `wrangler` can b
 
   From here, you have two options, you can choose to publish to your own domain or you can choose to publish to [\<your-worker\>.\<your-subdomain\>.workers.dev](https://workers.dev).
 
-  If you want to publish to [workers.dev](https://workers.dev), add this to your `wrangler.toml`.
+  ##### Workers.dev
 
-  First you will need to have a [workers.dev](https://workers.dev) subdomain registered. You can register a subdomain by executing:
+  If you want to publish to [workers.dev](https://workers.dev):
+
+  * First you will need to have a [workers.dev](https://workers.dev) subdomain registered. You can register a subdomain by executing:
 
   ```bash
   wrangler subdomain <name>
   ```
 
+	* Add to your `wrangler.toml` a `workers_dot_dev` field:
+
   | Key             | Value | Example                  |
   | --------------- | ----- | ------------------------ |
   | workers_dot_dev | true  | `workers_dot_dev = true` |
 
-  If you would like to publish to your own domain, add this to your `wrangler.toml`
+  ##### Registered Domain 
+  
+   If you would like to publish to your own domain, add to your `wrangler.toml`:
 
   | Key             | Value                                                                  | Example                                        |
   | --------------- | ---------------------------------------------------------------------- | ---------------------------------------------- |
@@ -110,7 +116,9 @@ General documentation surrounding workers development and using `wrangler` can b
   | route           | The route you would like to publish to                                 | `route = "example.com/my-worker/*"`            |
   | zone_id         | Your Cloudflare zone ID, this can be found in the Cloudflare dashboard | `zone_id = "b6558acaf2b4cad1f2b51c5236a6b972"` |
 
-  If you would like to be able to publish your code to multiple places, please see the documentation for [environments](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
+  ##### Multiple Environments
+  
+  If you would like to be able to publish your code to multiple routes or domains, please see the documentation for [environments](./docs/environments.md).
 
 - ### 🔬 `preview`
 
