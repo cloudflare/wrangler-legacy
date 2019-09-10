@@ -69,8 +69,8 @@ Takes an optional `--env` [environment](./environments) argument.
 #### Usage
 
 ```sh
-$ wrangler kv:namespace rename OLD_NAMESPACE NEW_NAMESPACE
-🌀  Renaming namespace f7b02e7fc70443149ac906dd81ec1791 with title "NEW_NAMESPACE"
+$ wrangler kv:namespace rename OLD_NAMESPACE "New Namespace"
+🌀  Renaming namespace f7b02e7fc70443149ac906dd81ec1791 with title "New Namespace"
 ✨  Success
 ```
 
@@ -87,7 +87,7 @@ $ wrangler kv:namespace list
 +---------------+----------------------------------+
 | TITLE         | ID                               |
 +---------------+----------------------------------+
-| NEW_NAMESPACE | f7b02e7fc70443149ac906dd81ec1791 |
+| New Namespace | f7b02e7fc70443149ac906dd81ec1791 |
 +---------------+----------------------------------+
 ```
 
