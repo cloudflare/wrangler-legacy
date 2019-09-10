@@ -8,6 +8,8 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
+use std::collections::HashSet;
+
 pub mod bulk;
 pub mod key;
 pub mod namespace;
@@ -17,17 +19,45 @@ const INTERACTIVE_RESPONSE_LEN: usize = 1;
 const YES: &str = "y";
 const NO: &str = "n";
 
+fn check_duplicate_namespaces(target: &Target) -> bool {
+    // HashSet for detecting duplicate namespace bindings
+    let mut binding_names: HashSet<String> = HashSet::new();
 
-// Get namespace id for a given binding name.
-pub fn get_namespace_id(target: &Target, title: &str) -> Option<String> {
     if let Some(namespaces) = &target.kv_namespaces {
         for namespace in namespaces {
-            if namespace.binding == title {
-                return Some(namespace.id.to_string());
+            // Check if this is a duplicate binding
+            if binding_names.contains(&namespace.binding) {
+                return true;
+            } else {
+                binding_names.insert(namespace.binding.clone());
             }
         }
     }
-    None
+    false
+}
+
+// Get namespace id for a given binding name.
+pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failure::Error> {
+    if check_duplicate_namespaces(&target) {
+        failure::bail!(
+            "Namespace binding \"{}\" is duplicated in \"{}\"",
+            binding,
+            target.name
+        )
+    }
+
+    if let Some(namespaces) = &target.kv_namespaces {
+        for namespace in namespaces {
+            if namespace.binding == binding {
+                return Ok(namespace.id.to_string());
+            }
+        }
+    }
+    failure::bail!(
+        "Namespace binding \"{}\" not found in \"{}\"",
+        binding,
+        target.name
+    )
 }
 
 fn api_client(user: GlobalUser) -> Result<HttpApiClient, failure::Error> {
@@ -97,5 +127,36 @@ fn help(error_code: u16) -> &'static str {
         // cloudflare account errors
         10017 | 10026 => "Workers KV is a paid feature, please upgrade your account (https://www.cloudflare.com/products/workers-kv/)",
         _ => "",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::commands::kv;
+    use crate::settings::target::{KvNamespace, Target, TargetType};
+
+    #[test]
+    fn it_can_detect_duplicate_bindings() {
+        let target_with_dup_kv_bindings = Target {
+            account_id: "".to_string(),
+            kv_namespaces: Some(vec![
+                KvNamespace {
+                    id: "fake".to_string(),
+                    binding: "KV".to_string(),
+                },
+                KvNamespace {
+                    id: "fake".to_string(),
+                    binding: "KV".to_string(),
+                },
+            ]),
+            name: "test-target".to_string(),
+            target_type: TargetType::Webpack,
+            route: None,
+            routes: None,
+            webpack_config: None,
+            workers_dot_dev: false,
+            zone_id: None,
+        };
+        assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }
 }

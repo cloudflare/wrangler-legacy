@@ -547,22 +547,16 @@ fn run() -> Result<(), failure::Error> {
                 let target = manifest.get_target(delete_matches.value_of("env"), false)?;
 
                 let namespace_binding = delete_matches.value_of("namespace").unwrap();
-                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
-                match namespace_id {
-                    Some(namespace_id) => commands::kv::namespace::delete(&target, user, &namespace_id)?,
-                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
-                }
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding)?;
+                commands::kv::namespace::delete(&target, user, &namespace_id)?
             }
             ("rename", Some(rename_matches)) => {
                 let target = manifest.get_target(rename_matches.value_of("env"), false)?;
 
                 let namespace_binding = rename_matches.value_of("namespace").unwrap();
-                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding)?;
                 let title = rename_matches.value_of("title").unwrap();
-                match namespace_id {
-                    Some(namespace_id) => commands::kv::namespace::rename(&target, user, &namespace_id, title)?,
-                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
-                }
+                commands::kv::namespace::rename(&target, user, &namespace_id, title)?
             }
             ("list", Some(list_matches)) => {
                 let target = manifest.get_target(list_matches.value_of("env"), false)?;
@@ -581,18 +575,15 @@ fn run() -> Result<(), failure::Error> {
                 let target = manifest.get_target(get_key_matches.value_of("env"), false)?;
 
                 let namespace_binding = get_key_matches.value_of("namespace").unwrap();
-                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding)?;
                 let key = get_key_matches.value_of("key").unwrap();
-                match namespace_id {
-                    Some(namespace_id) => commands::kv::key::get(&target, user, &namespace_id, key)?,
-                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
-                }
+                commands::kv::key::get(&target, user, &namespace_id, key)?
             }
             ("put", Some(put_key_matches)) => {
                 let target = manifest.get_target(put_key_matches.value_of("env"), false)?;
 
                 let namespace_binding = put_key_matches.value_of("namespace").unwrap();
-                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding)?;
                 let key = put_key_matches.value_of("key").unwrap();
                 let value = put_key_matches.value_of("value").unwrap();
                 let is_file = match put_key_matches.occurrences_of("path") {
@@ -601,32 +592,32 @@ fn run() -> Result<(), failure::Error> {
                 };
                 let expiration = put_key_matches.value_of("expiration");
                 let ttl = put_key_matches.value_of("expiration-ttl");
-                match namespace_id {
-                    Some(namespace_id) => commands::kv::key::put(&target, user, &namespace_id, key, value, is_file, expiration, ttl)?,
-                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
-                }
+                commands::kv::key::put(
+                    &target,
+                    user,
+                    &namespace_id,
+                    key,
+                    value,
+                    is_file,
+                    expiration,
+                    ttl,
+                )?
             }
             ("delete", Some(delete_key_matches)) => {
                 let target = manifest.get_target(delete_key_matches.value_of("env"), false)?;
 
                 let namespace_binding = delete_key_matches.value_of("namespace").unwrap();
-                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding)?;
                 let key = delete_key_matches.value_of("key").unwrap();
-                match namespace_id {
-                    Some(namespace_id) => commands::kv::key::delete(&target, user, &namespace_id, key)?,
-                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
-                }
+                commands::kv::key::delete(&target, user, &namespace_id, key)?
             }
             ("list", Some(list_key_matches)) => {
                 let target = manifest.get_target(list_key_matches.value_of("env"), false)?;
 
                 let namespace_binding = list_key_matches.value_of("namespace").unwrap();
-                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding)?;
                 let prefix = list_key_matches.value_of("prefix");
-                match namespace_id {
-                    Some(namespace_id) => commands::kv::key::list(&target, user, &namespace_id, prefix)?,
-                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
-                }
+                commands::kv::key::list(&target, user, &namespace_id, prefix)?
             }
             ("", None) => message::warn("kv:key expects a subcommand"),
             _ => unreachable!(),
@@ -640,23 +631,17 @@ fn run() -> Result<(), failure::Error> {
                 let target = manifest.get_target(put_bulk_matches.value_of("env"), false)?;
 
                 let namespace_binding = put_bulk_matches.value_of("namespace").unwrap();
-                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding)?;
                 let path = put_bulk_matches.value_of("path").unwrap();
-                match namespace_id {
-                    Some(namespace_id) => commands::kv::bulk::put(&target, user, &namespace_id, Path::new(path))?,
-                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
-                }
+                commands::kv::bulk::put(&target, user, &namespace_id, Path::new(path))?
             }
             ("delete", Some(delete_bulk_matches)) => {
                 let target = manifest.get_target(delete_bulk_matches.value_of("env"), false)?;
 
                 let namespace_binding = delete_bulk_matches.value_of("namespace").unwrap();
-                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding);
+                let namespace_id = commands::kv::get_namespace_id(&target, namespace_binding)?;
                 let path = delete_bulk_matches.value_of("path").unwrap();
-                match namespace_id {
-                    Some(namespace_id) => commands::kv::bulk::delete(&target, user, &namespace_id, Path::new(path))?,
-                    None => failure::bail!("Namespace \"{}\" not found", namespace_binding),
-                }
+                commands::kv::bulk::delete(&target, user, &namespace_id, Path::new(path))?
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
