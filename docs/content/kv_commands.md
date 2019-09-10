@@ -7,7 +7,17 @@ The `kv` subcommand allows you to store application data in the Cloudflare netwo
 * have a Wrangler project set up with your `account_id` configured in the `wrangler.toml`
 * call commands from within a Wrangler project directory.
 
-Most `kv` subcommands allow you to specify an `--env`, or environment, variable. This allows you to gate
+Most `kv` commands require you to specify a namespace. A namespace can be specified in two ways:
+1. With a `--binding`: 
+    ```sh
+    $ wrangler kv:key get --binding=KV "my key"
+    ```
+1. With a `--namespace_id`:
+    ```sh
+    $ wrangler kv:key get --namespace-id=06779da6940b431db6e566b4846d64db "my key"
+    ```
+
+Most `kv` subcommands allow you to specify an optional `--env`, or environment, variable. This allows you to gate
 distinct namespaces within their own environments. For example, you could use seperate staging and production
 namespaces for KV data in your wrangler.toml:
 ```toml
@@ -29,7 +39,13 @@ kv-namespaces = [
 ```
 
 With the wrangler.toml above, you can specify `--env production` when you want to perform a KV action on
-the namespace `KV` under `env.production`. To learn more about environments, check out the [environments documentation](./environments).
+the namespace `KV` under `env.production`. For example, with the wrangler.toml above, you can get a value
+out of a production KV instance with:
+```sh
+$ wrangler kv:key get --namespace-id=06779da6940b431db6e566b4846d64db --env=production "my key"
+```
+
+To learn more about environments, check out the [environments documentation](./environments).
 
 ## `kv:namespace`
 
@@ -50,12 +66,15 @@ $ wrangler kv:namespace create "new kv namespace"
 
 ### `delete`
 Deletes a given namespace.
+
+Requires `--binding` or `--namespace-id` argument.
+
 Takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
 ```sh
-$ wrangler kv:namespace delete MY_NAMESPACE
+$ wrangler kv:namespace delete --binding=MY_NAMESPACE
 Are you sure you want to delete namespace f7b02e7fc70443149ac906dd81ec1791? [y/n]
 yes
 🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791
@@ -64,12 +83,15 @@ yes
 
 ### `rename`
 Renames a given namespace.
+
+Requires `--binding` or `--namespace-id` argument.
+
 Takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
 ```sh
-$ wrangler kv:namespace rename OLD_NAMESPACE "New Namespace"
+$ wrangler kv:namespace rename --binding=OLD_NAMESPACE "New Namespace"
 🌀  Renaming namespace f7b02e7fc70443149ac906dd81ec1791 with title "New Namespace"
 ✨  Success
 ```
@@ -95,7 +117,11 @@ $ wrangler kv:namespace list
 
 ### `put`
 
-Writes a single key/value pair to the given namespace. Optional params include 
+Writes a single key/value pair to the given namespace. 
+
+Requires `--binding` or `--namespace-id` argument.
+
+Optional params include 
 1. `--env`: The [environment](./environments) argument.
 1. `--ttl`: Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option.
 1. `--expiration`: Number of seconds since the UNIX epoch, indicating when the key-value pair should expire.
@@ -105,35 +131,41 @@ Writes a single key/value pair to the given namespace. Optional params include
 #### Usage
 
 ```sh
-$ wrangler kv:key put MY_NAMESPACE "key" "value" --ttl=10000
+$ wrangler kv:key put --binding=MY_NAMESPACE "key" "value" --ttl=10000
 ✨  Success
 ```
 ```sh
-$ wrangler kv:key put MY_NAMESPACE "key" value.txt --path
+$ wrangler kv:key put --binding=MY_NAMESPACE "key" value.txt --path
 ✨  Success
 ```
 
 ### `get`
 
 Reads a single value by key from the given namespace.
+
+Requires `--binding` or `--namespace-id` argument.
+
 Takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
 ```sh
-$ wrangler kv:key get MY_NAMESPACE "key"
+$ wrangler kv:key get --binding=MY_NAMESPACE "key"
 => value
 ```
 
 ### `delete`
 
 Removes a single key value pair from the given namespace.
+
+Requires `--binding` or `--namespace-id` argument.
+
 Takes an optional `--env` [environment](./environments) argument.
 
 #### Usage
 
 ```sh
-$ wrangler kv:key delete MY_NAMESPACE "key"
+$ wrangler kv:key delete --binding=MY_NAMESPACE "key"
 Are you sure you want to delete key "key"? [y/n]
 yes
 🌀  Deleting key "key"
@@ -142,7 +174,11 @@ yes
 
 ### `list`
 
-Outputs a list of all keys in a given namespace. Optional params include
+Outputs a list of all keys in a given namespace. 
+
+Requires `--binding` or `--namespace-id` argument.
+
+Optional params include
 1. `--env`: The [environment](./environments) argument.
 1. `--prefix`: A prefix to filter listed keys.
 
@@ -150,7 +186,7 @@ Outputs a list of all keys in a given namespace. Optional params include
 The example below uses Python's JSON pretty-printing command line tool to pretty-print output.
 
 ```sh
-$ wrangler kv:key list MY_NAMESPACE --prefix="public" | python -m json.tool
+$ wrangler kv:key list --binding=MY_NAMESPACE --prefix="public" | python -m json.tool
 [
     {
         "name": "public_key"
@@ -165,6 +201,8 @@ $ wrangler kv:key list MY_NAMESPACE --prefix="public" | python -m json.tool
 ## `kv:bulk`
 
 ### `put`
+
+Requires `--binding` or `--namespace-id` argument.
 
 Writes a file full of key/value pairs to the given namespace. Takes as an argument a JSON file with a list of key-value pairs to upload (see JSON spec above). An example of JSON input:
 ```json
@@ -194,11 +232,13 @@ The `put` command also takes an optional `--env` [environment](./environments) a
 #### Usage
 
 ```sh
-$ wrangler kv:bulk put MY_NAMESPACE allthethingsupload.json
+$ wrangler kv:bulk put --binding=MY_NAMESPACE allthethingsupload.json
 ✨  Success
 ```
 
 ### `delete`
+
+Requires `--binding` or `--namespace-id` argument.
 
 Deletes all specified keys within a given namespace.
 Takes as an argument a JSON file with a list of keys to delete; for example:
@@ -214,7 +254,7 @@ The `delete` command also takes an optional `--env` [environment](./environments
 #### Usage
 
 ```sh
-$ wrangler kv:bulk delete MY_NAMESPACE allthethingsdelete.json
+$ wrangler kv:bulk delete --binding=MY_NAMESPACE allthethingsdelete.json
 Are you sure you want to delete all keys in allthethingsdelete.json? [y/n]
 yes
 ✨  Success
