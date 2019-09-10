@@ -29,7 +29,7 @@ kv-namespaces = [
 ```
 
 With the wrangler.toml above, you can specify `--env production` when you want to perform a KV action on
-the PRODUCTION_NAMESPACE.
+the namespace `KV` under `env.production`.
 
 ## `kv:namespace`
 
