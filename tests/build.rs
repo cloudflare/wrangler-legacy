@@ -10,7 +10,7 @@ use std::str;
 
 const BUNDLE_OUT: &str = "./worker";
 
-macro_rules! settings {
+macro_rules! single_env_settings {
     ( $f:expr, $x:expr ) => {
         let file_path = fixture_path($f).join("wrangler.toml");
         let mut file = File::create(file_path).unwrap();
@@ -31,8 +31,7 @@ macro_rules! settings {
 fn it_builds_with_webpack_single_js() {
     let fixture = "webpack_simple_js";
     create_temporary_copy(fixture);
-
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -46,7 +45,7 @@ fn it_builds_with_webpack_function_config_js() {
     let fixture = "webpack_function_config_js";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -60,7 +59,7 @@ fn it_builds_with_webpack_promise_config_js() {
     let fixture = "webpack_promise_config_js";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -74,7 +73,7 @@ fn it_builds_with_webpack_function_promise_config_js() {
     let fixture = "webpack_function_promise_config_js";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -88,7 +87,7 @@ fn it_builds_with_webpack_single_js_use_package_main() {
     let fixture = "webpack_single_js_use_package_main";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -102,7 +101,7 @@ fn it_builds_with_webpack_specify_configs() {
     let fixture = "webpack_specify_config";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
         webpack_config = "webpack.worker.js"
     "#};
@@ -117,7 +116,7 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
     let fixture = "webpack_single_js_missing_package_main";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -133,7 +132,7 @@ fn it_fails_with_multiple_webpack_configs() {
     let fixture = "webpack_multiple_config";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -146,7 +145,7 @@ fn it_fails_with_multiple_specify_webpack_configs() {
     let fixture = "webpack_multiple_specify_config";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
         webpack_config = "webpack.worker.js"
     "#};
@@ -160,7 +159,7 @@ fn it_builds_with_webpack_wast() {
     let fixture = "webpack_wast";
     create_temporary_copy(fixture);
 
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "Webpack"
     "#};
 
@@ -183,7 +182,7 @@ fn it_fails_with_webpack_target_web() {
           target: "node",
         }"#,
     );
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "webpack"
     "#};
 
@@ -206,7 +205,7 @@ fn it_builds_with_webpack_target_webworker() {
           target: "webworker",
         }"#,
     );
-    settings! {fixture, r#"
+    single_env_settings! {fixture, r#"
         type = "webpack"
     "#};
 
