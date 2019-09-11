@@ -218,6 +218,47 @@ name = "my-worker-staging"
 
 Your default `wrangler build`, `wrangler preview`, and `wrangler publish` commands will all build with `webpack.dev.js`, as will `wrangler build -e staging`, `wrangler preview -e staging`, and `wrangler publish -e staging`. `wrangler build -e production`, `wrangler preview -e production`, and `wrangler publish -e production` would all use your `webpack.config.js` file.
 
+### KV Namespaces with environments
+
+You can specify different kv namespaces for different environments. There are two options for this configuration
+
+#### Option 1 (recommended)
+
+```toml
+name = "my-worker"
+type = "webpack"
+account_id = "12345678901234567890"
+workers_dot_dev = true
+kv-namespaces = [
+    { binding = "KV", id = "06779da6940b431db6e566b4846d64db" }
+]
+
+[env.production]
+kv-namespaces = [
+    { binding = "KV", id = "bd46d6484b665e6bd134b0496ad97760" }
+]
+```
+
+#### Option 2
+
+```toml
+name = "my-worker"
+type = "webpack"
+account_id = "12345678901234567890"
+workers_dot_dev = true
+
+[[kv_namespaces]]
+binding = "KV"
+id = "06779da6940b431db6e566b4846d64db"
+
+[env.production]
+name = "my-worker"
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "bd46d6484b665e6bd134b0496ad97760"
+```
+
 ## Invalid configurations
 
 ### Multiple types
