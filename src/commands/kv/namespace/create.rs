@@ -16,7 +16,9 @@ pub fn create(
     let client = kv::api_client(user)?;
 
     if !validate_binding(binding) {
-        failure::bail!("A binding can only have alphabetical and _ characters");
+        failure::bail!(
+            "A binding can only have alphanumeric and _ characters, and cannot begin with a number"
+        );
     }
 
     let title = format!("{}-{}", target.name, binding);
@@ -74,7 +76,7 @@ pub fn create(
 
 fn validate_binding(binding: &str) -> bool {
     use regex::Regex;
-    let re = Regex::new(r"^[a-zA-Z_]+$").unwrap();
+    let re = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
     re.is_match(binding)
 }
 
@@ -92,8 +94,8 @@ mod tests {
 
     #[test]
     fn it_can_detect_valid_binding() {
-        let invalid_bindings = vec!["ONE", "TWO_TWO"];
-        for binding in invalid_bindings {
+        let valid_bindings = vec!["ONE", "TWO_TWO", "__private_variable", "rud3_var"];
+        for binding in valid_bindings {
             assert!(validate_binding(binding));
         }
     }
