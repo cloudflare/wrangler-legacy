@@ -100,47 +100,6 @@ fn run() -> Result<(), failure::Error> {
                         )
                 )
                 .subcommand(
-                    SubCommand::with_name("rename")
-                        .about("Rename a namespace")
-                        .arg(
-                            Arg::with_name("binding")
-                            .help("The binding of the namespace this action applies to")
-                            .short("b")
-                            .long("binding")
-                            .value_name("BINDING NAME")
-                            .takes_value(true)
-                            .global(true)
-                        )
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The id of the namespace this action applies to")
-                            .short("n")
-                            .long("namespace-id")
-                            .value_name("ID")
-                            .takes_value(true)
-                            .global(true)
-                        )
-                        .arg(
-                            Arg::with_name("env")
-                            .help("Environment to use")
-                            .short("e")
-                            .long("env")
-                            .takes_value(true)
-                            .value_name("ENVIRONMENT NAME")
-                            .global(true)
-                        )
-                        .group(ArgGroup::with_name("namespace-specifier")
-                            .args(&["binding", "namespace-id"])
-                            .required(true)
-                        )
-                        .arg(
-                            Arg::with_name("title")
-                            .help("New title for the namespace")
-                            .required(true)
-                            .index(1)
-                        )
-                )
-                .subcommand(
                     SubCommand::with_name("list")
                         .about("List all namespaces on your Cloudflare account")
                 )
@@ -582,20 +541,6 @@ fn run() -> Result<(), failure::Error> {
                         .to_string(),
                 };
                 commands::kv::namespace::delete(&target, user, &namespace_id)?;
-            }
-            ("rename", Some(rename_matches)) => {
-                let target = manifest.get_target(rename_matches.value_of("env"), false)?;
-                let namespace_id = match rename_matches.value_of("binding") {
-                    Some(namespace_binding) => {
-                        commands::kv::get_namespace_id(&target, namespace_binding)?
-                    }
-                    None => rename_matches
-                        .value_of("namespace-id")
-                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
-                        .to_string(),
-                };
-                let title = rename_matches.value_of("title").unwrap();
-                commands::kv::namespace::rename(&target, user, &namespace_id, title)?
             }
             ("list", Some(list_matches)) => {
                 let target = manifest.get_target(list_matches.value_of("env"), false)?;

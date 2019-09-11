@@ -81,21 +81,6 @@ yes
 ✨  Success
 ```
 
-### `rename`
-Renames a given namespace.
-
-Requires `--binding` or `--namespace-id` argument.
-
-Takes an optional `--env` [environment](./environments.md) argument.
-
-#### Usage
-
-```sh
-$ wrangler kv:namespace rename --binding=OLD_NAMESPACE "New Namespace"
-🌀  Renaming namespace f7b02e7fc70443149ac906dd81ec1791 with title "New Namespace"
-✨  Success
-```
-
 ### `list`
 
 Outputs a list of all KV namespaces associated with your account id.
