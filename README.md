@@ -183,46 +183,42 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
 - ### Per Project
 
-  Your project will need to have several things configured before you can publish your worker. These values
-  are stored in a `wrangler.toml` file that `wrangler generate` will make for you. You will need to manually
-  edit this file to add these values before you can publish.
+    Your project will need to have several things configured before you can publish your worker. These values are stored in a `wrangler.toml` file that `wrangler generate` will make for you. You will need to manually edit this file to add these values before you can publish.
 
-  - `name`: This is the name of your project. It will be the name of your script.
-  - `type`: This key tells `wrangler build` how to build your project. There are currently 3 options, but we
-    expect there to be more as the community grows.
-    - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
-    - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
-    - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
-      WebAssembly. Rust files will be built with `wasm-pack`.
-      This project type uses webpack and webpack plugins in the background to build your worker.
-  - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you
-    are using a workers.dev subdomain and is only required when `workers_dot_dev` is false, or left out of any given [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md) configuration.
-  - `account_id`: This is the ID of the account associated with your zone. You might have more than one account,
-    so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
-  - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
+    - `name`: This is the name of your project. It will be the name of your script.
+    - `type`: This key tells `wrangler build` how to build your project. There are currently 3 options, but we expect there to be more as the community grows.
+        - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
+        - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
+        - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
+            WebAssembly. Rust files will be built with `wasm-pack`.
+            This project type uses webpack and webpack plugins in the background to build your worker.
+    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md) configuration.
+    - `account_id`: This is the ID of the account associated with your zone. You might have more than one account, so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
+    - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
 
-    - `*example.com/*`
-    - `http://example.com/hello`
+        - `*example.com/*`
+        - `http://example.com/hello`
+        
+        This key is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md). 
 
-    This key is optional if you are using a workers.dev subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
+    - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and defaults to `webpack.config.js`
+    - `workers_dot_dev`: This is a boolean flag that specifies if your worker will be deployed to your [workers.dev](https://workers.dev) subdomain. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
+    - `kv-namespaces`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) Namespaces you want to access from
+        inside your Worker. Each namespace you include should have an entry in your `wrangler.toml` that includes:
 
-  - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and
-    defaults to `webpack.config.js`
-  - `workers_dot_dev`: This is an optional (but recommended due to impending deprecation of the `--release` flag boolean that specifies whether your worker should be deployed to `<your-project>.<your-subdomain>.workers.dev`. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
-  - `[[kv-namespaces]]`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) namespaces you want to access from
-    inside your Worker. Each namespace you include should have an entry in your wrangler.toml that includes:
+        - `binding`: the name you want to bind to in your script
+        - `id`: the namespace_id assigned to your KV Namespace upon creation.
 
-    - `binding`: the name you want to bind to in your script
-    - `id`: the namespace_id assigned to your kv namespace upon creation.
-      e.g. (per namespace):
+        For example:
 
-    ```toml
-    [[kv-namespaces]]
-    binding = "FOO"
-    id = "0f2ac74b498b48028cb68387c421e279"
-    ```
+        ```toml
+        kv-namespaces = [
+            { binding = "FOO", id = "0f2ac74b498b48028cb68387c421e279" },
+            { binding = "BAR", id = "068c101e168d03c65bddf4ba75150fb0" }
+        ]
+        ```
 
-    Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
+        Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
 
     #### Environments
 
