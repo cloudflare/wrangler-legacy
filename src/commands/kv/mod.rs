@@ -117,7 +117,7 @@ fn help(error_code: u16) -> &'static str {
         10010 | 10011 | 10012 | 10013 | 10014 | 10018 => {
             "Run `wrangler kv:namespace list` to see your existing namespaces with IDs"
         }
-        10009 => "Run `wrangler kv:key list <namespaceID>` to see your existing keys", // key errors
+        10009 => "Run `wrangler kv:key list` to see your existing keys", // key errors
         // TODO: link to more info
         // limit errors
         10022 | 10024 | 10030 => "See documentation",
