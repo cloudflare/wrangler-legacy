@@ -27,16 +27,19 @@ pub fn create(
     });
 
     match response {
-        Ok(_) => {
-            message::success("Success");
+        Ok(success) => {
+            message::success(&format!("Success: {:#?}", success.result));
             match env {
-                Some(env) => println!("Add the following to your TOML under [env.{}]:", env),
-                None => println!("Add the following to your TOML:"),
+                Some(env) => message::success(&format!(
+                    "Add the following to your TOML under [env.{}]:",
+                    env
+                )),
+                None => message::success(&format!("Add the following to your TOML:")),
             };
             println!(
                 "kv-namespaces = [ \n\
-                \t {{ binding: \"myblogassets\", id: \"2ce8545fc04147fab45aaceb9fb9393f\" }} \n\
-                ]"
+                 \t {{ binding: \"myblogassets\", id: \"2ce8545fc04147fab45aaceb9fb9393f\" }} \n\
+                 ]"
             );
         }
         Err(e) => kv::print_error(e),
