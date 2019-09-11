@@ -7,9 +7,15 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn create(target: &Target, user: GlobalUser, title: &str) -> Result<(), failure::Error> {
+pub fn create(
+    target: &Target,
+    env: Option<&str>,
+    user: GlobalUser,
+    binding: &str,
+) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
+    let title = format!("{}-{}", target.name, binding);
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
 
@@ -21,7 +27,41 @@ pub fn create(target: &Target, user: GlobalUser, title: &str) -> Result<(), fail
     });
 
     match response {
-        Ok(success) => message::success(&format!("Success: {:#?}", success.result)),
+        Ok(success) => {
+            message::success(&format!("Success: {:#?}", success.result));
+            match target.kv_namespaces {
+                None => {
+                    match env {
+                        Some(env) => message::success(&format!(
+                            "Add the following to your wrangler.toml under [env.{}]:",
+                            env
+                        )),
+                        None => {
+                            message::success(&format!("Add the following to your wrangler.toml:"))
+                        }
+                    };
+                    println!(
+                        "kv-namespaces = [ \n\
+                         \t {{ binding: \"{}\", id: \"{}\" }} \n\
+                         ]",
+                        binding, success.result.id
+                    );
+                }
+                Some(_) => {
+                    match env {
+                        Some(env) => message::success(&format!(
+                            "Add the following to your wrangler.toml's \"kv-namespaces\" array in [env.{}]:",
+                            env
+                        )),
+                        None => message::success(&format!("Add the following to your wrangler.toml's \"kv-namespaces\" array:")),
+                    };
+                    println!(
+                        "{{ binding: \"{}\", id: \"{}\" }}",
+                        binding, success.result.id
+                    );
+                }
+            }
+        }
         Err(e) => kv::print_error(e),
     }
 
