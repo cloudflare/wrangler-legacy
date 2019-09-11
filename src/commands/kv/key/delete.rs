@@ -7,7 +7,7 @@ use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn delete(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     id: &str,
     key: &str,
@@ -27,7 +27,7 @@ pub fn delete(
     message::working(&msg);
 
     let response = client.request(&DeleteKey {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         namespace_identifier: id,
         key, // this is url encoded within cloudflare-rs
     });

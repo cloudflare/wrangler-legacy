@@ -7,7 +7,7 @@ use std::env;
 use std::path::Path;
 use std::str::FromStr;
 
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
 
 use log::info;
@@ -61,14 +61,41 @@ fn run() -> Result<(), failure::Error> {
                             Arg::with_name("title")
                             .help("The name for your new namespace")
                             .required(true)
+                            .index(1)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete namespace")
                         .arg(
+                            Arg::with_name("binding")
+                            .help("The binding of the namespace this action applies to")
+                            .short("b")
+                            .long("binding")
+                            .value_name("BINDING NAME")
+                            .takes_value(true)
+                            .global(true)
+                        )
+                        .arg(
                             Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            .help("The id of the namespace this action applies to")
+                            .short("n")
+                            .long("namespace-id")
+                            .value_name("ID")
+                            .takes_value(true)
+                            .global(true)
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT NAME")
+                            .global(true)
+                        )
+                        .group(ArgGroup::with_name("namespace-specifier")
+                            .args(&["binding", "namespace-id"])
                             .required(true)
                         )
                 )
@@ -76,14 +103,41 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("rename")
                         .about("Rename a namespace")
                         .arg(
+                            Arg::with_name("binding")
+                            .help("The binding of the namespace this action applies to")
+                            .short("b")
+                            .long("binding")
+                            .value_name("BINDING NAME")
+                            .takes_value(true)
+                            .global(true)
+                        )
+                        .arg(
                             Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                            .help("The id of the namespace this action applies to")
+                            .short("n")
+                            .long("namespace-id")
+                            .value_name("ID")
+                            .takes_value(true)
+                            .global(true)
+                        )
+                        .arg(
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT NAME")
+                            .global(true)
+                        )
+                        .group(ArgGroup::with_name("namespace-specifier")
+                            .args(&["binding", "namespace-id"])
                             .required(true)
                         )
                         .arg(
                             Arg::with_name("title")
                             .help("New title for the namespace")
                             .required(true)
+                            .index(1)
                         )
                 )
                 .subcommand(
@@ -93,30 +147,54 @@ fn run() -> Result<(), failure::Error> {
         )
             .subcommand(SubCommand::with_name("kv:key")
                 .about(&*format!(
-                    "{} Interact with your Workers KV Key-Value Pairs",
+                    "{} Individually manage Workers KV key-value pairs",
                     emoji::KV
                 ))
+                .arg(
+                    Arg::with_name("binding")
+                    .help("The binding of the namespace this action applies to")
+                    .short("b")
+                    .long("binding")
+                    .value_name("BINDING NAME")
+                    .takes_value(true)
+                    .global(true)
+                )
+                .arg(
+                    Arg::with_name("namespace-id")
+                    .help("The id of the namespace this action applies to")
+                    .short("n")
+                    .long("namespace-id")
+                    .value_name("ID")
+                    .takes_value(true)
+                    .global(true)
+                )
+                .arg(
+                    Arg::with_name("env")
+                    .help("Environment to use")
+                    .short("e")
+                    .long("env")
+                    .takes_value(true)
+                    .value_name("ENVIRONMENT NAME")
+                    .global(true)
+                )
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Put a key-value pair into a namespace")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                        .group(ArgGroup::with_name("namespace-specifier")
+                            .args(&["binding", "namespace-id"])
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
                         )
                         .arg(
                             Arg::with_name("key")
                             .help("Key to write value to")
                             .required(true)
+                            .index(1)
                         )
                         .arg(
                             Arg::with_name("value")
                             .help("Value for key")
                             .required(true)
+                            .index(2)
                         )
                         .arg(
                             Arg::with_name("expiration-ttl")
@@ -129,7 +207,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(
                             Arg::with_name("expiration")
                             .help("Number of seconds since the UNIX epoch, indicating when the key-value pair should expire")
-                            .short("e")
+                            .short("x")
                             .long("expiration")
                             .takes_value(true)
                             .value_name("SECONDS")
@@ -145,50 +223,37 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("get")
                         .about("Get a key's value from a namespace")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                        .group(ArgGroup::with_name("namespace-specifier")
+                            .args(&["binding", "namespace-id"])
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
                         )
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to get")
                             .required(true)
+                            .index(1)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete a key and its value from a namespace")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                        .group(ArgGroup::with_name("namespace-specifier")
+                            .args(&["binding", "namespace-id"])
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
                         )
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to delete")
                             .required(true)
+                            .index(1)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all keys in a namespace. Produces JSON output")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                        .group(ArgGroup::with_name("namespace-specifier")
+                            .args(&["binding", "namespace-id"])
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
                         )
                         .arg(
                             Arg::with_name("prefix")
@@ -203,44 +268,62 @@ fn run() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("kv:bulk")
                 .about(&*format!(
-                    "{} Interact with your Workers KV Key-Value Pairs",
+                    "{} Interact with multiple Workers KV key-value pairs at once",
                     emoji::KV
                 ))
+                .arg(
+                    Arg::with_name("binding")
+                    .help("The binding of the namespace this action applies to")
+                    .short("b")
+                    .long("binding")
+                    .value_name("BINDING NAME")
+                    .takes_value(true)
+                    .global(true)
+                )
+                .arg(
+                    Arg::with_name("namespace-id")
+                    .help("The id of the namespace this action applies to")
+                    .short("n")
+                    .long("namespace-id")
+                    .value_name("ID")
+                    .takes_value(true)
+                    .global(true)
+                )
+                .arg(
+                    Arg::with_name("env")
+                    .help("Environment to use")
+                    .short("e")
+                    .long("env")
+                    .takes_value(true)
+                    .value_name("ENVIROMENT NAME")
+                    .global(true)
+                )
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Upload multiple key-value pairs to a namespace")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                                .help("The ID of the namespace this action applies to")
-                                .required(true)
-                                // .short("n")
-                                // .long("namespace-id")
-                                // .value_name("<ID>")
-                                // .takes_value(true)
+                        .group(ArgGroup::with_name("namespace-specifier")
+                            .args(&["binding", "namespace-id"])
+                            .required(true)
                         )
                         .arg(
                             Arg::with_name("path")
                             .help("the JSON file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...]")
                             .required(true)
-                            .index(2),
+                            .index(1)
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
-                        .about("Delete multiple keys and their values from a namespace")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The ID of the namespace this action applies to")
+                        .group(ArgGroup::with_name("namespace-specifier")
+                            .args(&["binding", "namespace-id"])
                             .required(true)
-                            // .short("n")
-                            // .long("namespace-id")
-                            // .value_name("<ID>")
-                            // .takes_value(true)
                         )
+                        .about("Delete multiple keys and their values from a namespace")
                         .arg(
                             Arg::with_name("path")
                             .help("the JSON file of key-value pairs to upload, in form [\"<example-key>\", ...]")
                             .required(true)
+                            .index(1)
                         )
                 )
         )
@@ -479,25 +562,43 @@ fn run() -> Result<(), failure::Error> {
         commands::subdomain(name, &user, &target)?;
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"), false)?;
-
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
+                let target = manifest.get_target(create_matches.value_of("env"), false)?;
                 let title = create_matches.value_of("title").unwrap();
                 commands::kv::namespace::create(&target, user, title)?;
             }
             ("delete", Some(delete_matches)) => {
-                let id = delete_matches.value_of("namespace-id").unwrap();
-                commands::kv::namespace::delete(&target, user, id)?;
+                let target = manifest.get_target(delete_matches.value_of("env"), false)?;
+                let namespace_id = match delete_matches.value_of("binding") {
+                    Some(namespace_binding) => {
+                        commands::kv::get_namespace_id(&target, namespace_binding)?
+                    }
+                    None => delete_matches
+                        .value_of("namespace-id")
+                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
+                        .to_string(),
+                };
+                commands::kv::namespace::delete(&target, user, &namespace_id)?;
             }
             ("rename", Some(rename_matches)) => {
-                let id = rename_matches.value_of("namespace-id").unwrap();
+                let target = manifest.get_target(rename_matches.value_of("env"), false)?;
+                let namespace_id = match rename_matches.value_of("binding") {
+                    Some(namespace_binding) => {
+                        commands::kv::get_namespace_id(&target, namespace_binding)?
+                    }
+                    None => rename_matches
+                        .value_of("namespace-id")
+                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
+                        .to_string(),
+                };
                 let title = rename_matches.value_of("title").unwrap();
-                commands::kv::namespace::rename(&target, user, id, title)?;
+                commands::kv::namespace::rename(&target, user, &namespace_id, title)?
             }
-            ("list", Some(_list_matches)) => {
+            ("list", Some(list_matches)) => {
+                let target = manifest.get_target(list_matches.value_of("env"), false)?;
                 commands::kv::namespace::list(&target, user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
@@ -505,18 +606,33 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"), false)?;
-
         let user = settings::global_user::GlobalUser::new()?;
 
-        match kv_matches.subcommand() {
+        // Get environment and bindings
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
+        let (target, namespace_id) = match subcommand_matches {
+            Some(subcommand_matches) => {
+                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
+                let namespace_id = match subcommand_matches.value_of("binding") {
+                    Some(namespace_binding) => {
+                        commands::kv::get_namespace_id(&target, namespace_binding)?
+                    }
+                    None => subcommand_matches
+                        .value_of("namespace-id")
+                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
+                        .to_string(),
+                };
+                (target, namespace_id.to_string())
+            }
+            None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
+        };
+
+        match (subcommand, subcommand_matches) {
             ("get", Some(get_key_matches)) => {
-                let id = get_key_matches.value_of("namespace-id").unwrap();
                 let key = get_key_matches.value_of("key").unwrap();
-                commands::kv::key::get(&target, user, id, key)?;
+                commands::kv::key::get(&target, user, &namespace_id, key)?
             }
             ("put", Some(put_key_matches)) => {
-                let id = put_key_matches.value_of("namespace-id").unwrap();
                 let key = put_key_matches.value_of("key").unwrap();
                 let value = put_key_matches.value_of("value").unwrap();
                 let is_file = match put_key_matches.occurrences_of("path") {
@@ -525,37 +641,59 @@ fn run() -> Result<(), failure::Error> {
                 };
                 let expiration = put_key_matches.value_of("expiration");
                 let ttl = put_key_matches.value_of("expiration-ttl");
-                commands::kv::key::put(&target, user, id, key, value, is_file, expiration, ttl)?;
+                commands::kv::key::put(
+                    &target,
+                    user,
+                    &namespace_id,
+                    key,
+                    value,
+                    is_file,
+                    expiration,
+                    ttl,
+                )?
             }
-            ("delete", Some(delete_matches)) => {
-                let id = delete_matches.value_of("namespace-id").unwrap();
-                let key = delete_matches.value_of("key").unwrap();
-                commands::kv::key::delete(&target, user, id, key)?;
+            ("delete", Some(delete_key_matches)) => {
+                let key = delete_key_matches.value_of("key").unwrap();
+                commands::kv::key::delete(&target, user, &namespace_id, key)?
             }
-            ("list", Some(list_keys_matches)) => {
-                let id = list_keys_matches.value_of("namespace-id").unwrap();
-                let prefix = list_keys_matches.value_of("prefix");
-                commands::kv::key::list(&target, user, id, prefix)?;
+            ("list", Some(list_key_matches)) => {
+                let prefix = list_key_matches.value_of("prefix");
+                commands::kv::key::list(&target, user, &namespace_id, prefix)?
             }
             ("", None) => message::warn("kv:key expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"), false)?;
-
         let user = settings::global_user::GlobalUser::new()?;
 
-        match kv_matches.subcommand() {
-            ("put", Some(put_bulk_matches)) => {
-                let id = put_bulk_matches.value_of("namespace-id").unwrap();
-                let path = put_bulk_matches.value_of("path").unwrap();
-                commands::kv::bulk::put(&target, user, id, Path::new(path))?;
+        // Get environment and bindings
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
+        let (target, namespace_id) = match subcommand_matches {
+            Some(subcommand_matches) => {
+                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
+                let namespace_id = match subcommand_matches.value_of("binding") {
+                    Some(namespace_binding) => {
+                        commands::kv::get_namespace_id(&target, namespace_binding)?
+                    }
+                    None => subcommand_matches
+                        .value_of("namespace-id")
+                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
+                        .to_string(),
+                };
+                (target, namespace_id.to_string())
             }
-            ("delete", Some(delete_matches)) => {
-                let id = delete_matches.value_of("namespace-id").unwrap();
-                let path = delete_matches.value_of("path").unwrap();
-                commands::kv::bulk::delete(&target, user, id, Path::new(path))?;
+            None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
+        };
+
+        match (subcommand, subcommand_matches) {
+            ("put", Some(put_bulk_matches)) => {
+                let path = put_bulk_matches.value_of("path").unwrap();
+                commands::kv::bulk::put(&target, user, &namespace_id, Path::new(path))?
+            }
+            ("delete", Some(delete_bulk_matches)) => {
+                let path = delete_bulk_matches.value_of("path").unwrap();
+                commands::kv::bulk::delete(&target, user, &namespace_id, Path::new(path))?
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),

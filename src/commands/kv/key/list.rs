@@ -9,14 +9,14 @@ use crate::settings::target::Target;
 // the number of entries in each json blob is variable (so csv and tsv
 // representation won't make sense)
 pub fn list(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     prefix: Option<&str>,
 ) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
-    let key_list = KeyList::new(project, client, namespace_id, prefix);
+    let key_list = KeyList::new(target, client, namespace_id, prefix);
 
     print!("["); // Open json list bracket
 

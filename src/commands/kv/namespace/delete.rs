@@ -6,7 +6,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn delete(project: &Target, user: GlobalUser, id: &str) -> Result<(), failure::Error> {
+pub fn delete(target: &Target, user: GlobalUser, id: &str) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
     match kv::interactive_delete(&format!(
@@ -25,7 +25,7 @@ pub fn delete(project: &Target, user: GlobalUser, id: &str) -> Result<(), failur
     message::working(&msg);
 
     let response = client.request(&RemoveNamespace {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         namespace_identifier: id,
     });
 

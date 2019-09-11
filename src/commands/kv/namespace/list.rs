@@ -9,13 +9,13 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn list(project: &Target, user: GlobalUser) -> Result<(), failure::Error> {
+pub fn list(target: &Target, user: GlobalUser) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
     message::working("Fetching namespaces...");
 
     let response = client.request(&ListNamespaces {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
     });
 
     match response {

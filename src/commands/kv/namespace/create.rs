@@ -7,14 +7,14 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn create(project: &Target, user: GlobalUser, title: &str) -> Result<(), failure::Error> {
+pub fn create(target: &Target, user: GlobalUser, title: &str) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
 
     let response = client.request(&CreateNamespace {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         params: CreateNamespaceParams {
             title: title.to_string(),
         },

@@ -15,7 +15,7 @@ use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn put(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     filename: &Path,
@@ -23,17 +23,22 @@ pub fn put(
     let pairs: Result<Vec<KeyValuePair>, failure::Error> = match &metadata(filename) {
         Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
-            Ok(serde_json::from_str(&data)?)
+            let data_vec = serde_json::from_str(&data);
+            if data_vec.is_err() {
+                failure::bail!("Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]")
+            } else {
+                Ok(data_vec.unwrap())
+            }
         }
         Ok(_) => failure::bail!("{} should be a JSON file, but is not", filename.display()),
         Err(e) => failure::bail!("{}", e),
     };
 
-    put_bulk(project, user, namespace_id, pairs?)
+    put_bulk(target, user, namespace_id, pairs?)
 }
 
 fn put_bulk(
-    project: &Target,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     pairs: Vec<KeyValuePair>,
@@ -50,7 +55,7 @@ fn put_bulk(
     }
 
     let response = client.request(&WriteBulk {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         namespace_identifier: namespace_id,
         bulk_key_value_pairs: pairs,
     });
