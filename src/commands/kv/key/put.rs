@@ -3,6 +3,7 @@
 // because the SET key request body is not json--it is the raw value).
 
 use std::fs;
+use std::fs::metadata;
 
 use cloudflare::framework::response::ApiFailure;
 use url::Url;
@@ -44,17 +45,22 @@ pub fn put(
 
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
-    let mut body_text: String;
-    if is_file {
-        body_text = fs::read_to_string(value)?;
-    } else {
-        body_text = value.to_string();
-    }
+    let body_text = match is_file {
+        true => match &metadata(value) {
+            Ok(file_type) if file_type.is_file() => fs::read_to_string(value),
+            Ok(file_type) if file_type.is_dir() => {
+                failure::bail!("--path argument takes a file, {} is a directory", value)
+            }
+            Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", value), // last remaining value is symlink
+            Err(e) => failure::bail!("{}", e),
+        },
+        false => Ok(value.to_string()),
+    };
 
     let client = http::auth_client(&user);
 
     let url_into_str = url?.into_string();
-    let mut res = client.put(&url_into_str).body(body_text).send()?;
+    let mut res = client.put(&url_into_str).body(body_text?).send()?;
 
     if res.status().is_success() {
         message::success("Success")
