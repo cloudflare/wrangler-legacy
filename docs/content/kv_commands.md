@@ -45,7 +45,7 @@ out of a production KV instance with:
 $ wrangler kv:key get --namespace-id=06779da6940b431db6e566b4846d64db --env=production "my key"
 ```
 
-To learn more about environments, check out the [environments documentation](./environments).
+To learn more about environments, check out the [environments documentation](./environments.md).
 
 ## `kv:namespace`
 
@@ -69,7 +69,7 @@ Deletes a given namespace.
 
 Requires `--binding` or `--namespace-id` argument.
 
-Takes an optional `--env` [environment](./environments) argument.
+Takes an optional `--env` [environment](./environments.md) argument.
 
 #### Usage
 
@@ -86,7 +86,7 @@ Renames a given namespace.
 
 Requires `--binding` or `--namespace-id` argument.
 
-Takes an optional `--env` [environment](./environments) argument.
+Takes an optional `--env` [environment](./environments.md) argument.
 
 #### Usage
 
@@ -122,7 +122,7 @@ Writes a single key/value pair to the given namespace.
 Requires `--binding` or `--namespace-id` argument.
 
 Optional params include 
-1. `--env`: The [environment](./environments) argument.
+1. `--env`: The [environment](./environments.md) argument.
 1. `--ttl`: Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option.
 1. `--expiration`: Number of seconds since the UNIX epoch, indicating when the key-value pair should expire.
 1. `--path`: Read value from the file at a given path. *This is good for security-sensitive operations, like uploading keys to KV; uploading from a file prevents a key value from being saved in areas like your terminal history.*
@@ -145,7 +145,7 @@ Reads a single value by key from the given namespace.
 
 Requires `--binding` or `--namespace-id` argument.
 
-Takes an optional `--env` [environment](./environments) argument.
+Takes an optional `--env` [environment](./environments.md) argument.
 
 #### Usage
 
@@ -160,7 +160,7 @@ Removes a single key value pair from the given namespace.
 
 Requires `--binding` or `--namespace-id` argument.
 
-Takes an optional `--env` [environment](./environments) argument.
+Takes an optional `--env` [environment](./environments.md) argument.
 
 #### Usage
 
@@ -179,7 +179,7 @@ Outputs a list of all keys in a given namespace.
 Requires `--binding` or `--namespace-id` argument.
 
 Optional params include
-1. `--env`: The [environment](./environments) argument.
+1. `--env`: The [environment](./environments.md) argument.
 1. `--prefix`: A prefix to filter listed keys.
 
 #### Usage
@@ -227,7 +227,7 @@ The schema below is the full schema for key-value entries uploaded via the bulk 
 
 If both `expiration` and `expiration_ttl` are specified for a given key, the API will prefer `expiration_ttl`.
 
-The `put` command also takes an optional `--env` [environment](./environments) argument.
+The `put` command also takes an optional `--env` [environment](./environments.md) argument.
 
 #### Usage
 
@@ -249,7 +249,7 @@ Takes as an argument a JSON file with a list of keys to delete; for example:
 ]
 ```
 
-The `delete` command also takes an optional `--env` [environment](./environments) argument.
+The `delete` command also takes an optional `--env` [environment](./environments.md) argument.
 
 #### Usage
 

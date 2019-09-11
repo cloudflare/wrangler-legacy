@@ -30,7 +30,7 @@ pub fn delete(target: &Target, user: GlobalUser, id: &str) -> Result<(), failure
     });
 
     match response {
-        Ok(_success) => message::success("Success"),
+        Ok(_) => message::success("Success"),
         Err(e) => kv::print_error(e),
     }
 

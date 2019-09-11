@@ -29,11 +29,11 @@ pub fn delete(
     let response = client.request(&DeleteKey {
         account_identifier: &target.account_id,
         namespace_identifier: id,
-        key: key, // this is url encoded within cloudflare-rs
+        key, // this is url encoded within cloudflare-rs
     });
 
     match response {
-        Ok(_success) => message::success("Success"),
+        Ok(_) => message::success("Success"),
         Err(e) => kv::print_error(e),
     }
 
