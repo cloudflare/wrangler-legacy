@@ -195,7 +195,6 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `binding`: the name you want to bind to in your script
         - `id`: the namespace_id assigned to your KV Namespace upon creation.
 
-
         For example:
 
         ```toml
