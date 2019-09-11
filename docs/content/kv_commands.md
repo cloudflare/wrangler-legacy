@@ -7,46 +7,6 @@ The `kv` subcommand allows you to store application data in the Cloudflare netwo
 * have a Wrangler project set up with your `account_id` configured in the `wrangler.toml`
 * call commands from within a Wrangler project directory.
 
-Most `kv` commands require you to specify a namespace. A namespace can be specified in two ways:
-1. With a `--binding`: 
-    ```sh
-    $ wrangler kv:key get --binding=KV "my key"
-    ```
-1. With a `--namespace_id`:
-    ```sh
-    $ wrangler kv:key get --namespace-id=06779da6940b431db6e566b4846d64db "my key"
-    ```
-
-Most `kv` subcommands allow you to specify an optional `--env`, or environment, variable. This allows you to gate
-distinct namespaces within their own environments. For example, you could use seperate staging and production
-namespaces for KV data in your wrangler.toml:
-```toml
-type = "webpack"
-name = "my-worker"
-account_id = "<account id here>"
-route = "staging.example.com/*"
-workers_dot_dev = false
-
-kv-namespaces = [
-	{ binding = "KV", id = "06779da6940b431db6e566b4846d64db" }
-]
-
-[env.production]
-route = "example.com/*"
-kv-namespaces = [
-	{ binding = "KV", id = "07bc1f3d1f2a4fd8a45a7e026e2681c6" }
-]
-```
-
-With the wrangler.toml above, you can specify `--env production` when you want to perform a KV action on
-the namespace `KV` under `env.production`. For example, with the wrangler.toml above, you can get a value
-out of a production KV instance with:
-```sh
-$ wrangler kv:key get --namespace-id=06779da6940b431db6e566b4846d64db --env=production "my key"
-```
-
-To learn more about environments, check out the [environments documentation](./environments.md).
-
 ## `kv:namespace`
 
 ### `create`
@@ -55,30 +15,17 @@ Creates a new namespace.
 
 #### Usage
 
-```sh
+```console
 $ wrangler kv:namespace create "new kv namespace"
-🌀  Creating namespace with title "new kv namespace"
-✨  Success: WorkersKVNamespace {
-    id: "f7b02e7fc70443149ac906dd81ec1791",
-    title: "new kv namespace",
+🌀  Creating namespace with title "worker-new kv namespace"
+✨  Success: WorkersKvNamespace {
+    id: "e29b263ab50e42ce9b637fa8370175e8",
+    title: "worker-new kv namespace",
 }
-```
-
-### `delete`
-Deletes a given namespace.
-
-Requires `--binding` or `--namespace-id` argument.
-
-Takes an optional `--env` [environment](./environments.md) argument.
-
-#### Usage
-
-```sh
-$ wrangler kv:namespace delete --binding=MY_NAMESPACE
-Are you sure you want to delete namespace f7b02e7fc70443149ac906dd81ec1791? [y/n]
-yes
-🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791
-✨  Success
+✨  Add the following to your wrangler.toml:
+kv-namespaces = [
+         { binding: "new kv namespace", id: "e29b263ab50e42ce9b637fa8370175e8" }
+]
 ```
 
 ### `list`
@@ -87,9 +34,9 @@ Outputs a list of all KV namespaces associated with your account id.
 
 #### Usage
 
-```sh
+```console
 $ wrangler kv:namespace list
-🌀  Retrieving namespaces
+🌀  Fetching namespaces...
 ✨  Success:
 +---------------+----------------------------------+
 | TITLE         | ID                               |
@@ -98,30 +45,118 @@ $ wrangler kv:namespace list
 +---------------+----------------------------------+
 ```
 
+Most `kv` commands require you to specify a namespace. A namespace can be specified in two ways:
+
+1. With a `--binding`:
+    ```sh
+    wrangler kv:key get --binding=KV "my key"
+    ```
+1. With a `--namespace_id`:
+    ```sh
+    wrangler kv:key get --namespace-id=06779da6940b431db6e566b4846d64db "my key"
+    ```
+
+### `delete`
+
+Deletes a given namespace.
+
+Requires `--binding` or `--namespace-id` argument.
+
+Takes an optional `--env` [environment](./environments.md) argument.
+
+#### Usage
+
+```console
+$ wrangler kv:namespace delete --binding=KV
+Are you sure you want to delete namespace f7b02e7fc70443149ac906dd81ec1791? [y/n]
+yes
+🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791
+✨  Success
+```
+
+Most `kv` subcommands also allow you to specify an environment with the optional `--env` flag. This allows you to publish workers running the same code but with different namespaces. For example, you could use separate staging and production namespaces for KV data in your `wrangler.toml`:
+
+```toml
+type = "webpack"
+name = "my-worker"
+account_id = "<account id here>"
+route = "staging.example.com/*"
+workers_dot_dev = false
+
+kv-namespaces = [
+    { binding = "KV", id = "06779da6940b431db6e566b4846d64db" }
+]
+
+[env.production]
+route = "example.com/*"
+kv-namespaces = [
+    { binding = "KV", id = "07bc1f3d1f2a4fd8a45a7e026e2681c6" }
+]
+```
+
+With the wrangler.toml above, you can specify `--env production` when you want to perform a KV action on
+the namespace `KV` under `env.production`. For example, with the wrangler.toml above, you can get a value
+out of a production KV instance with:
+
+```console
+wrangler kv:key get --binding "KV" --env=production "my key"
+```
+
+To learn more about environments, check out the [environments documentation](./environments.md).
+
 ## `kv:key`
 
 ### `put`
 
-Writes a single key/value pair to the given namespace. 
+Writes a single key/value pair to the given namespace.
 
 Requires `--binding` or `--namespace-id` argument.
 
-Optional params include 
+Optional params include:
+
 1. `--env`: The [environment](./environments.md) argument.
 1. `--ttl`: Number of seconds for which the entries should be visible before they expire. At least 60. Takes precedence over 'expiration' option.
 1. `--expiration`: Number of seconds since the UNIX epoch, indicating when the key-value pair should expire.
 1. `--path`: Read value from the file at a given path. *This is good for security-sensitive operations, like uploading keys to KV; uploading from a file prevents a key value from being saved in areas like your terminal history.*
 
+#### Usage
+
+```console
+$ wrangler kv:key put --binding=KV "key" "value" --ttl=10000
+✨  Success
+```
+
+```console
+$ wrangler kv:key put --binding=KV "key" value.txt --path
+✨  Success
+```
+
+### `list`
+
+Outputs a list of all keys in a given namespace. 
+
+Requires `--binding` or `--namespace-id` argument.
+
+Optional params include:
+
+1. `--env`: The [environment](./environments.md) argument.
+1. `--prefix`: A prefix to filter listed keys.
 
 #### Usage
 
-```sh
-$ wrangler kv:key put --binding=MY_NAMESPACE "key" "value" --ttl=10000
-✨  Success
-```
-```sh
-$ wrangler kv:key put --binding=MY_NAMESPACE "key" value.txt --path
-✨  Success
+The example below uses Python's JSON pretty-printing command line tool to pretty-print output.
+
+```console
+$ wrangler kv:key list --binding=KV --prefix="public" | python -m json.tool
+[
+    {
+        "name": "public_key"
+    },
+    {
+        "name": "public_key_with_expiration",
+        "expiration": "2019-09-10T23:18:58Z"
+    }
+]
 ```
 
 ### `get`
@@ -134,9 +169,9 @@ Takes an optional `--env` [environment](./environments.md) argument.
 
 #### Usage
 
-```sh
-$ wrangler kv:key get --binding=MY_NAMESPACE "key"
-=> value
+```console
+$ wrangler kv:key get --binding=KV "key"
+value
 ```
 
 ### `delete`
@@ -149,38 +184,12 @@ Takes an optional `--env` [environment](./environments.md) argument.
 
 #### Usage
 
-```sh
-$ wrangler kv:key delete --binding=MY_NAMESPACE "key"
+```console
+$ wrangler kv:key delete --binding=KV "key"
 Are you sure you want to delete key "key"? [y/n]
 yes
 🌀  Deleting key "key"
 ✨  Success
-```
-
-### `list`
-
-Outputs a list of all keys in a given namespace. 
-
-Requires `--binding` or `--namespace-id` argument.
-
-Optional params include
-1. `--env`: The [environment](./environments.md) argument.
-1. `--prefix`: A prefix to filter listed keys.
-
-#### Usage
-The example below uses Python's JSON pretty-printing command line tool to pretty-print output.
-
-```sh
-$ wrangler kv:key list --binding=MY_NAMESPACE --prefix="public" | python -m json.tool
-[
-    {
-        "name": "public_key"
-    }, 
-    {
-        "name": "public_key_with_expiration",
-        "expiration": "2019-09-10T23:18:58Z"
-    } 
-]
 ```
 
 ## `kv:bulk`
@@ -190,6 +199,7 @@ $ wrangler kv:key list --binding=MY_NAMESPACE --prefix="public" | python -m json
 Requires `--binding` or `--namespace-id` argument.
 
 Writes a file full of key/value pairs to the given namespace. Takes as an argument a JSON file with a list of key-value pairs to upload (see JSON spec above). An example of JSON input:
+
 ```json
 [
     {
@@ -216,8 +226,8 @@ The `put` command also takes an optional `--env` [environment](./environments.md
 
 #### Usage
 
-```sh
-$ wrangler kv:bulk put --binding=MY_NAMESPACE allthethingsupload.json
+```console
+$ wrangler kv:bulk put --binding=KV allthethingsupload.json
 ✨  Success
 ```
 
@@ -227,6 +237,7 @@ Requires `--binding` or `--namespace-id` argument.
 
 Deletes all specified keys within a given namespace.
 Takes as an argument a JSON file with a list of keys to delete; for example:
+
 ```json
 [
     "key1",
@@ -238,10 +249,9 @@ The `delete` command also takes an optional `--env` [environment](./environments
 
 #### Usage
 
-```sh
-$ wrangler kv:bulk delete --binding=MY_NAMESPACE allthethingsdelete.json
+```console
+$ wrangler kv:bulk delete --binding=KV allthethingsdelete.json
 Are you sure you want to delete all keys in allthethingsdelete.json? [y/n]
 yes
 ✨  Success
 ```
-
