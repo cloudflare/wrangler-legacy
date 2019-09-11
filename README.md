@@ -71,8 +71,7 @@ General documentation surrounding workers development and using `wrangler` can b
 
 - ### ☁️ 🆙 `publish`
 
-  Publish your Worker to Cloudflare. Several keys in your `wrangler.toml` determine whether
-  you are publishing to a workers.dev subdomain or your own registered domain - proxied with Cloudflare.
+  Publish your Worker to Cloudflare. Several keys in your `wrangler.toml` determine whether you are publishing to a workers.dev subdomain or your own registered domain, proxied through Cloudflare.
 
   ```bash
   wrangler publish
@@ -186,7 +185,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
     Your project will need to have several things configured before you can publish your worker. These values are stored in a `wrangler.toml` file that `wrangler generate` will make for you. You will need to manually edit this file to add these values before you can publish.
 
     - `name`: This is the name of your project. It will be the name of your script.
-    - `type`: This key tells `wrangler build` how to build your project. There are currently 3 options, but we expect there to be more as the community grows.
+    - `type`: This key tells `wrangler build` how to build your project. There are currently three options (`webpack`, `javascript`, and `rust`), but we expect there to be more as the community grows.
         - `javascript`: This project contains a single JavaScript file, defined in `package.json`'s `main` key.
         - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
         - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
