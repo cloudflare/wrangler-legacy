@@ -15,6 +15,10 @@ pub fn create(
 ) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
+    if !validate_binding(binding) {
+        failure::bail!("A binding can only have alphabetical and _ characters");
+    }
+
     let title = format!("{}-{}", target.name, binding);
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
@@ -66,4 +70,31 @@ pub fn create(
     }
 
     Ok(())
+}
+
+fn validate_binding(binding: &str) -> bool {
+    use regex::Regex;
+    let re = Regex::new(r"^[a-zA-Z_]+$").unwrap();
+    re.is_match(binding)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_can_detect_invalid_binding() {
+        let invalid_bindings = vec!["hi there", "1234"];
+        for binding in invalid_bindings {
+            assert!(!validate_binding(binding));
+        }
+    }
+
+    #[test]
+    fn it_can_detect_valid_binding() {
+        let invalid_bindings = vec!["ONE", "TWO_TWO"];
+        for binding in invalid_bindings {
+            assert!(validate_binding(binding));
+        }
+    }
 }
