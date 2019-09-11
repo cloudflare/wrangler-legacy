@@ -193,10 +193,10 @@ There are two types of configuration that `wrangler` uses: global user and per p
         inside your Worker. Each namespace you include should have an entry in your wrangler.toml that includes:
 
         - `binding`: the name you want to bind to in your script
-        - `id`: the namespace_id assigned to your kv namespace upon creation.
+        - `id`: the namespace_id assigned to your KV Namespace upon creation.
             e.g. (per namespace).
 
-        There are two ways to define kv namespaces:
+        There are two ways to define KV Namespaces:
 
         **Option 1 (recommended)**
 
