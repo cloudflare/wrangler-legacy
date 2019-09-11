@@ -194,29 +194,13 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
         - `binding`: the name you want to bind to in your script
         - `id`: the namespace_id assigned to your KV Namespace upon creation.
-            e.g. (per namespace).
-
-        There are two ways to define KV Namespaces:
-
-        **Option 1 (recommended)**
+            e.g. (per namespace)
 
         ```toml
         kv-namespaces = [
             { binding = "FOO", id = "0f2ac74b498b48028cb68387c421e279" },
             { binding = "BAR", id = "068c101e168d03c65bddf4ba75150fb0" }
         ]
-        ```
-
-        **Option 2**
-
-        ```toml
-        [[kv-namespaces]]
-        binding = "FOO"
-        id = "0f2ac74b498b48028cb68387c421e279"
-
-        [[kv-namespaces]]
-        binding = "BAR"
-        id = "068c101e168d03c65bddf4ba75150fb0"
         ```
 
         Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
