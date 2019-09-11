@@ -220,9 +220,7 @@ Your default `wrangler build`, `wrangler preview`, and `wrangler publish` comman
 
 ### KV Namespaces with environments
 
-You can specify different kv namespaces for different environments. There are two options for this configuration
-
-#### Option 1 (recommended)
+You can specify different kv namespaces for different environments.
 
 ```toml
 name = "my-worker"
@@ -237,26 +235,6 @@ kv-namespaces = [
 kv-namespaces = [
     { binding = "KV", id = "bd46d6484b665e6bd134b0496ad97760" }
 ]
-```
-
-#### Option 2
-
-```toml
-name = "my-worker"
-type = "webpack"
-account_id = "12345678901234567890"
-workers_dot_dev = true
-
-[[kv_namespaces]]
-binding = "KV"
-id = "06779da6940b431db6e566b4846d64db"
-
-[env.production]
-name = "my-worker"
-
-[[env.production.kv_namespaces]]
-binding = "KV"
-id = "bd46d6484b665e6bd134b0496ad97760"
 ```
 
 ## Invalid configurations
