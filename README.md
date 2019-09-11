@@ -189,17 +189,34 @@ There are two types of configuration that `wrangler` uses: global user and per p
     - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and
         defaults to `webpack.config.js`
     - `workers_dot_dev`: This is an optional (but recommended due to impending deprecation of the `--release` flag boolean that specifies whether your worker should be deployed to `<your-project>.<your-subdomain>.workers.dev`. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
-    - `[[kv-namespaces]]`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) namespaces you want to access from
+    - `kv-namespaces`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) namespaces you want to access from
         inside your Worker. Each namespace you include should have an entry in your wrangler.toml that includes:
 
         - `binding`: the name you want to bind to in your script
         - `id`: the namespace_id assigned to your kv namespace upon creation.
-            e.g. (per namespace):
+            e.g. (per namespace).
+
+        There are two ways to define kv namespaces:
+
+        **Option 1 (recommended)**
+
+        ```toml
+        kv-namespaces = [
+            { binding = "FOO", id = "0f2ac74b498b48028cb68387c421e279" },
+            { binding = "BAR", id = "068c101e168d03c65bddf4ba75150fb0" }
+        ]
+        ```
+
+        **Option 2**
 
         ```toml
         [[kv-namespaces]]
         binding = "FOO"
         id = "0f2ac74b498b48028cb68387c421e279"
+
+        [[kv-namespaces]]
+        binding = "BAR"
+        id = "068c101e168d03c65bddf4ba75150fb0"
         ```
 
         Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
