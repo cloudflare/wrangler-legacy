@@ -29,19 +29,38 @@ pub fn create(
     match response {
         Ok(success) => {
             message::success(&format!("Success: {:#?}", success.result));
-            match env {
-                Some(env) => message::success(&format!(
-                    "Add the following to your TOML under [env.{}]:",
-                    env
-                )),
-                None => message::success(&format!("Add the following to your TOML:")),
-            };
-            println!(
-                "kv-namespaces = [ \n\
-                 \t {{ binding: \"{}\", id: \"{}\" }} \n\
-                 ]",
-                binding, success.result.id
-            );
+            match target.kv_namespaces {
+                None => {
+                    match env {
+                        Some(env) => message::success(&format!(
+                            "Add the following to your wrangler.toml under [env.{}]:",
+                            env
+                        )),
+                        None => {
+                            message::success(&format!("Add the following to your wrangler.toml:"))
+                        }
+                    };
+                    println!(
+                        "kv-namespaces = [ \n\
+                         \t {{ binding: \"{}\", id: \"{}\" }} \n\
+                         ]",
+                        binding, success.result.id
+                    );
+                }
+                Some(_) => {
+                    match env {
+                        Some(env) => message::success(&format!(
+                            "Add the following to your wrangler.toml's \"kv-namespaces\" array in [env.{}]:",
+                            env
+                        )),
+                        None => message::success(&format!("Add the following to your wrangler.toml's \"kv-namespaces\" array:")),
+                    };
+                    println!(
+                        "{{ binding: \"{}\", id: \"{}\" }}",
+                        binding, success.result.id
+                    );
+                }
+            }
         }
         Err(e) => kv::print_error(e),
     }
