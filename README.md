@@ -88,7 +88,7 @@ General documentation surrounding workers development and using `wrangler` can b
 
   From here, you have two options, you can choose to publish to your own domain or you can choose to publish to [\<your-worker\>.\<your-subdomain\>.workers.dev](https://workers.dev).
 
-  #### Publishing to workers.dev
+#### Publishing to workers.dev
 
   If you want to publish to [workers.dev](https://workers.dev), you will first need to have a [workers.dev](https://workers.dev) subdomain registered. You can register a subdomain by executing:
 
@@ -149,7 +149,7 @@ If you would like to be able to publish your code to multiple places, please see
   wrangler preview post hello=hello
   ```
 
-  Additionally, you can preview different environments. This is useful if you have different builds for different environments, but typically isn't needed. For more information see the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
+  Additionally, you can preview different environments. This is useful if you have different builds for different environments (like staging vs. production), but typically isn't needed. For more information see the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
 
 ## 🔩 Configuration
 
@@ -196,7 +196,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
       WebAssembly. Rust files will be built with `wasm-pack`.
       This project type uses webpack and webpack plugins in the background to build your worker.
   - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you
-    are using a workers.dev subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
+    are using a workers.dev subdomain and is only required when `workers_dot_dev` is false, or left out of any given [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md) configuration.
   - `account_id`: This is the ID of the account associated with your zone. You might have more than one account,
     so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
   - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
