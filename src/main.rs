@@ -58,8 +58,17 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("create")
                         .about("Create a new namespace")
                         .arg(
-                            Arg::with_name("title")
-                            .help("The name for your new namespace")
+                            Arg::with_name("env")
+                            .help("Environment to use")
+                            .short("e")
+                            .long("env")
+                            .takes_value(true)
+                            .value_name("ENVIRONMENT NAME")
+                            .global(true)
+                        )
+                        .arg(
+                            Arg::with_name("binding")
+                            .help("The binding for your new namespace")
                             .required(true)
                             .index(1)
                         )
@@ -525,9 +534,10 @@ fn run() -> Result<(), failure::Error> {
 
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
-                let target = manifest.get_target(create_matches.value_of("env"), false)?;
-                let title = create_matches.value_of("title").unwrap();
-                commands::kv::namespace::create(&target, user, title)?;
+                let env = create_matches.value_of("env");
+                let target = manifest.get_target(env, false)?;
+                let binding = create_matches.value_of("binding").unwrap();
+                commands::kv::namespace::create(&target, env, user, binding)?;
             }
             ("delete", Some(delete_matches)) => {
                 let target = manifest.get_target(delete_matches.value_of("env"), false)?;

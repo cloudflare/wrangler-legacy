@@ -7,9 +7,15 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn create(target: &Target, user: GlobalUser, title: &str) -> Result<(), failure::Error> {
+pub fn create(
+    target: &Target,
+    env: Option<&str>,
+    user: GlobalUser,
+    binding: &str,
+) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
+    let title = format!("{}-{}", target.name, binding);
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
 
@@ -21,7 +27,18 @@ pub fn create(target: &Target, user: GlobalUser, title: &str) -> Result<(), fail
     });
 
     match response {
-        Ok(success) => message::success(&format!("Success: {:#?}", success.result)),
+        Ok(_) => {
+            message::success("Success");
+            match env {
+                Some(env) => println!("Add the following to your TOML under [env.{}]:", env),
+                None => println!("Add the following to your TOML:"),
+            };
+            println!(
+                "kv-namespaces = [ \n\
+                \t {{ binding: \"myblogassets\", id: \"2ce8545fc04147fab45aaceb9fb9393f\" }} \n\
+                ]"
+            );
+        }
         Err(e) => kv::print_error(e),
     }
 
