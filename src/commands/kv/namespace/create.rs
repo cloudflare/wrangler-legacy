@@ -38,8 +38,9 @@ pub fn create(
             };
             println!(
                 "kv-namespaces = [ \n\
-                 \t {{ binding: \"myblogassets\", id: \"2ce8545fc04147fab45aaceb9fb9393f\" }} \n\
-                 ]"
+                 \t {{ binding: \"{}\", id: \"{}\" }} \n\
+                 ]",
+                binding, success.result.id
             );
         }
         Err(e) => kv::print_error(e),
