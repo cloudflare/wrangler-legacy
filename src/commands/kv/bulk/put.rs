@@ -23,7 +23,12 @@ pub fn put(
     let pairs: Result<Vec<KeyValuePair>, failure::Error> = match &metadata(filename) {
         Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
-            Ok(serde_json::from_str(&data)?)
+            let data_vec = serde_json::from_str(&data);
+            if data_vec.is_err() {
+                failure::bail!("Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]")
+            } else {
+                Ok(data_vec.unwrap())
+            }
         }
         Ok(_) => failure::bail!("{} should be a JSON file, but is not", filename.display()),
         Err(e) => failure::bail!("{}", e),

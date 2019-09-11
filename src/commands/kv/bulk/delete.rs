@@ -34,7 +34,12 @@ pub fn delete(
     let keys: Result<Vec<String>, failure::Error> = match &metadata(filename) {
         Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
-            Ok(serde_json::from_str(&data)?)
+            let keys_vec = serde_json::from_str(&data);
+            if keys_vec.is_err() {
+                failure::bail!("Failed to decode JSON. Please make sure to follow the format, [\"test_key_1\", \"test_key_2\", ...]")
+            } else {
+                Ok(keys_vec.unwrap())
+            }
         }
         Ok(_) => failure::bail!("{} should be a JSON file, but is not", filename.display()),
         Err(e) => failure::bail!("{}", e),
