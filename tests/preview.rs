@@ -25,7 +25,7 @@ macro_rules! settings {
             name = "test"
             zone_id = ""
             account_id = ""
-            workers_dot_dev = true
+            workers_dev = true
             {}
         "#,
             $x
