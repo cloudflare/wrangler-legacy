@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use assert_cmd::prelude::*;
 use fs_extra::dir::{copy, CopyOptions};
 use std::env;
@@ -7,6 +10,11 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
+}
 
 const BUNDLE_OUT: &str = "./worker";
 
@@ -19,6 +27,7 @@ macro_rules! single_env_settings {
             name = "test"
             zone_id = ""
             account_id = ""
+            workers_dev = true
             {}
         "#,
             $x
@@ -171,8 +180,8 @@ fn it_builds_with_webpack_wast() {
 }
 
 #[test]
-fn it_fails_with_webpack_target_web() {
-    let fixture = "webpack_target_web";
+fn it_fails_with_webpack_target_node() {
+    let fixture = "webpack_target_node";
     create_temporary_copy(fixture);
 
     webpack_config(
@@ -189,6 +198,29 @@ fn it_fails_with_webpack_target_web() {
     build_fails_with(
         fixture,
         "Building a Cloudflare Worker with target \"node\" is not supported",
+    );
+    cleanup(fixture);
+}
+
+#[test]
+fn it_fails_with_webpack_target_web() {
+    let fixture = "webpack_target_web";
+    create_temporary_copy(fixture);
+
+    webpack_config(
+        fixture,
+        r#"{
+          entry: "./index.js",
+          target: "web",
+        }"#,
+    );
+    single_env_settings! {fixture, r#"
+        type = "webpack"
+    "#};
+
+    build_fails_with(
+        fixture,
+        "Building a Cloudflare Worker with target \"web\" is not supported",
     );
     cleanup(fixture);
 }
@@ -229,12 +261,18 @@ fn cleanup(fixture: &str) {
 }
 
 fn build(fixture: &str) {
+    // Lock to avoid having concurrent builds
+    let _g = BUILD_LOCK.lock().unwrap();
+
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     build.current_dir(fixture_path(fixture));
     build.arg("build").assert().success();
 }
 
 fn build_fails_with(fixture: &str, expected_message: &str) {
+    // Lock to avoid having concurrent builds
+    let _g = BUILD_LOCK.lock().unwrap();
+
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     build.current_dir(fixture_path(fixture));
     build.arg("build");

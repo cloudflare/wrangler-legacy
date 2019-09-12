@@ -99,11 +99,11 @@ General documentation surrounding workers development and using `wrangler` can b
   wrangler subdomain <name>
   ```
 
-  After you have registered a subdomain, add `workers_dot_dev` to your `wrangler.toml`.
+  After you have registered a subdomain, add `workers_dev` to your `wrangler.toml`.
 
 | Key             | Value | Example                  |
 | --------------- | ----- | ------------------------ |
-| workers_dot_dev | true  | `workers_dot_dev = true` |
+| workers_dev | true  | `workers_dev = true` |
 
 #### Publishing to your own domain
 
@@ -111,7 +111,7 @@ If you would like to publish to your own domain, you will need to specify these 
 
 | Key             | Value                                                                  | Example                                        |
 | --------------- | ---------------------------------------------------------------------- | ---------------------------------------------- |
-| workers_dot_dev | false                                                                  | `workers_dot_dev = false`                      |
+| workers_dev | false                                                                  | `workers_dev = false`                      |
 | route           | The route you would like to publish to                                 | `route = "example.com/my-worker/*"`            |
 | zone_id         | Your Cloudflare zone ID, this can be found in the Cloudflare dashboard | `zone_id = "b6558acaf2b4cad1f2b51c5236a6b972"` |
 
@@ -198,17 +198,17 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
             WebAssembly. Rust files will be built with `wasm-pack`.
             This project type uses webpack and webpack plugins in the background to build your worker.
-    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md) configuration.
+    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md) configuration.
     - `account_id`: This is the ID of the account associated with your zone. You might have more than one account, so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
     - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
 
         - `*example.com/*`
         - `http://example.com/hello`
         
-        This key is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md). 
+        This key is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md). 
 
     - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and defaults to `webpack.config.js`
-    - `workers_dot_dev`: This is a boolean flag that specifies if your worker will be deployed to your [workers.dev](https://workers.dev) subdomain. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
+    - `workers_dev`: This is a boolean flag that specifies if your worker will be deployed to your [workers.dev](https://workers.dev) subdomain. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
     - `kv-namespaces`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) Namespaces you want to access from
         inside your Worker. Each namespace you include should have an entry in your `wrangler.toml` that includes:
 

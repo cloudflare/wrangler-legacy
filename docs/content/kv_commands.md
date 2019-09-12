@@ -92,7 +92,7 @@ type = "webpack"
 name = "my-worker"
 account_id = "<account id here>"
 route = "staging.example.com/*"
-workers_dot_dev = false
+workers_dev = false
 
 kv-namespaces = [
     { binding = "KV", id = "06779da6940b431db6e566b4846d64db" }
