@@ -155,7 +155,7 @@ If you would like to be able to publish your code to multiple places, please see
   Additionally, you can preview different environments. This is useful if you have different builds for different environments (like staging vs. production), but typically isn't needed. For more information see the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
 
 - ### 🗂️ `kv`
-  Interact with your Cloudflare Workers KV store. [Check out the docs.](./docs/content/kv)
+  Interact with your Cloudflare Workers KV store. [Check out the docs.](./docs/content/kv_commands.md)
 
 ## 🔩 Configuration
 
@@ -224,7 +224,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
         ]
         ```
 
-        Note: Creating your KV Namespaces should be handled either via the [api](https://workers.cloudflare.com/docs/reference/storage/writing-data/) or via your Cloudflare dashboard.
+        Note: Creating your KV Namespaces should be handled using Wrangler's [KV Commands](./docs/content/kv_commands.md).
 
     #### Environments
 
