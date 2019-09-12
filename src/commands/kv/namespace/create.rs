@@ -48,7 +48,7 @@ pub fn create(
                     };
                     println!(
                         "kv-namespaces = [ \n\
-                         \t {{ binding: \"{}\", id: \"{}\" }} \n\
+                         \t {{ binding = \"{}\", id = \"{}\" }} \n\
                          ]",
                         binding, success.result.id
                     );

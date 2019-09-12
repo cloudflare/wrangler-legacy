@@ -25,7 +25,7 @@ $ wrangler kv:namespace create "MY_KV"
 }
 ✨  Add the following to your wrangler.toml:
 kv-namespaces = [
-         { binding: "MY_KV", id: "e29b263ab50e42ce9b637fa8370175e8" }
+         { binding = "MY_KV", id = "e29b263ab50e42ce9b637fa8370175e8" }
 ]
 ```
 Make sure to add the `kv-namespaces` output above to your `wrangler.toml`. You can now
@@ -53,12 +53,12 @@ one for staging and one for production). So, if you have a `wrangler.toml` with 
 ```toml
 [env.staging]
 kv-namespaces = [
-         { binding: "MY_KV", id: "e29b263ab50e42ce9b637fa8370175e8" }
+         { binding = "MY_KV", id = "e29b263ab50e42ce9b637fa8370175e8" }
 ]
 
 [env.production]
 kv-namespaces = [
-         { binding: "MY_KV", id: "a825455ce00f4f7282403da85269f8ea" }
+         { binding = "MY_KV", id = "a825455ce00f4f7282403da85269f8ea" }
 ]
 ```
 
@@ -134,7 +134,7 @@ $ wrangler kv:namespace create "MY_KV"
 }
 ✨  Add the following to your wrangler.toml:
 kv-namespaces = [
-         { binding: "MY_KV", id: "e29b263ab50e42ce9b637fa8370175e8" }
+         { binding = "MY_KV", id = "e29b263ab50e42ce9b637fa8370175e8" }
 ]
 ```
 
@@ -309,12 +309,15 @@ $ wrangler kv:bulk put --binding=KV allthethingsupload.json
 Requires `--binding` or `--namespace-id` argument.
 
 Deletes all specified keys within a given namespace.
-Takes as an argument a JSON file with a list of keys to delete; for example:
+Takes as an argument a JSON file with a list of key-value pairs to delete (see JSON spec above). An example of JSON input:
 
 ```json
 [
-    "key1",
-    "key2"
+    {
+        "key": "test_key",
+        "value": "test_value",
+        "expiration_ttl": 3600
+    }
 ]
 ```
 
