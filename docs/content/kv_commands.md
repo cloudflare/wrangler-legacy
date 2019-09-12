@@ -2,48 +2,76 @@
 
 ## Overview
 
-The `kv` subcommand allows you to store application data in the Cloudflare network to be accessed from Workers. KV operations are scoped to your account, so in order to use any of these commands, you need to:
+The `kv` subcommand allows you to store application data in the Cloudflare network to be accessed from Workers. 
+KV operations are scoped to your account, so in order to use any of these commands, you need to:
 
 * have a Wrangler project set up with your `account_id` configured in the `wrangler.toml`
 * call commands from within a Wrangler project directory.
 
-## `kv:namespace`
+## Getting Started
 
-### `create`
+To use Workers KV with your Worker, the first thing you must do is create a KV namespace. This is done with
+the `kv:namespace` subcommand.
 
-Creates a new namespace.
-
-#### Usage
-
+The `kv:namepsace` subcommand takes as an argument a new binding name. It will create a Worker KV namespace
+whose title is a concatenation of your Worker's name (from wrangler.toml) and the binding name you provide:
 ```console
-$ wrangler kv:namespace create "new kv namespace"
-🌀  Creating namespace with title "worker-new kv namespace"
+$ wrangler kv:namespace create "MY_KV"
+🌀  Creating namespace with title "worker-MY_KV"
 ✨  Success: WorkersKvNamespace {
     id: "e29b263ab50e42ce9b637fa8370175e8",
-    title: "worker-new kv namespace",
+    title: "worker-MY_KV",
 }
 ✨  Add the following to your wrangler.toml:
 kv-namespaces = [
-         { binding: "new kv namespace", id: "e29b263ab50e42ce9b637fa8370175e8" }
+         { binding: "MY_KV", id: "e29b263ab50e42ce9b637fa8370175e8" }
+]
+```
+Make sure to add the `kv-namespaces` output above to your wrangler.toml. You can now
+access it from a Worker with code like:
+```js
+let value = await MY_KV.get("my-key");
+```
+The full KV API for Workers can be found [here](https://developers.cloudflare.com/workers/reference/storage/).
+
+To put a value to your KV namespace via Wrangler, use the `kv:key put` subcommand.
+```console
+$ wrangler kv:key put --binding=MY_KV "key" "value"
+✨  Success
+```
+You can also specify which namespace to put your key-value pair into using `--namespace-id` instead of `--binding`:
+```console
+$ wrangler kv:key put --namespace-id=e29b263ab50e42ce9b637fa8370175e8 "key" "value"
+✨  Success
+```
+
+Additionally, KV namespaces can be used with [environments](./environments.md)! This is useful for when you have code that refers to
+a KV binding like `MY_KV`, and you want to be able to have these bindings point to different namespaces (like
+one for staging and one for production). So, if you have a toml with two environments:
+
+```toml
+[env.staging]
+kv-namespaces = [
+         { binding: "MY_KV", id: "e29b263ab50e42ce9b637fa8370175e8" }
+]
+
+[env.production]
+kv-namespaces = [
+         { binding: "MY_KV", id: "a825455ce00f4f7282403da85269f8ea" }
 ]
 ```
 
-### `list`
-
-Outputs a list of all KV namespaces associated with your account id.
-
-#### Usage
-
+To insert a value into a specific KV namespace, you can use
 ```console
-$ wrangler kv:namespace list
-🌀  Fetching namespaces...
-✨  Success:
-+---------------+----------------------------------+
-| TITLE         | ID                               |
-+---------------+----------------------------------+
-| New Namespace | f7b02e7fc70443149ac906dd81ec1791 |
-+---------------+----------------------------------+
+$ wrangler kv:key put --env=staging --binding=MY_MV "key" "value"
+✨  Success
 ```
+
+Since `--namespace-id` is always unique (unlike binding names), you don't need to pass environment variables for them (they will be unused).
+
+There are way more helpful Wrangler subcommands for interacting with Workers KV, like ones for bulk uploads and deletes--check them out below!
+
+## Concepts
 
 Most `kv` commands require you to specify a namespace. A namespace can be specified in two ways:
 
@@ -55,24 +83,6 @@ Most `kv` commands require you to specify a namespace. A namespace can be specif
     ```sh
     wrangler kv:key get --namespace-id=06779da6940b431db6e566b4846d64db "my key"
     ```
-
-### `delete`
-
-Deletes a given namespace.
-
-Requires `--binding` or `--namespace-id` argument.
-
-Takes an optional `--env` [environment](./environments.md) argument.
-
-#### Usage
-
-```console
-$ wrangler kv:namespace delete --binding=KV
-Are you sure you want to delete namespace f7b02e7fc70443149ac906dd81ec1791? [y/n]
-yes
-🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791
-✨  Success
-```
 
 Most `kv` subcommands also allow you to specify an environment with the optional `--env` flag. This allows you to publish workers running the same code but with different namespaces. For example, you could use separate staging and production namespaces for KV data in your `wrangler.toml`:
 
@@ -103,6 +113,62 @@ wrangler kv:key get --binding "KV" --env=production "my key"
 ```
 
 To learn more about environments, check out the [environments documentation](./environments.md).
+
+## `kv:namespace`
+
+### `create`
+
+Creates a new namespace.
+
+#### Usage
+
+```console
+$ wrangler kv:namespace create "MY_KV"
+🌀  Creating namespace with title "worker-MY_KV"
+✨  Success: WorkersKvNamespace {
+    id: "e29b263ab50e42ce9b637fa8370175e8",
+    title: "worker-MY_KV",
+}
+✨  Add the following to your wrangler.toml:
+kv-namespaces = [
+         { binding: "MY_KV", id: "e29b263ab50e42ce9b637fa8370175e8" }
+]
+```
+
+### `list`
+
+Outputs a list of all KV namespaces associated with your account id.
+
+#### Usage
+
+```console
+$ wrangler kv:namespace list
+🌀  Fetching namespaces...
+✨  Success:
++---------------+----------------------------------+
+| TITLE         | ID                               |
++---------------+----------------------------------+
+| New Namespace | f7b02e7fc70443149ac906dd81ec1791 |
++---------------+----------------------------------+
+```
+
+### `delete`
+
+Deletes a given namespace.
+
+Requires `--binding` or `--namespace-id` argument.
+
+Takes an optional `--env` [environment](./environments.md) argument.
+
+#### Usage
+
+```console
+$ wrangler kv:namespace delete --binding=KV
+Are you sure you want to delete namespace f7b02e7fc70443149ac906dd81ec1791? [y/n]
+yes
+🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791
+✨  Success
+```
 
 ## `kv:key`
 
