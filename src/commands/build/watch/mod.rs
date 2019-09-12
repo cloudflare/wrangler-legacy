@@ -6,7 +6,7 @@ use crate::settings::target::{Target, TargetType};
 use crate::terminal::message;
 use crate::{commands, install};
 
-use notify::{self, RecursiveMode, Watcher};
+use notify_forked::{self, RecursiveMode, Watcher};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -26,7 +26,7 @@ pub fn watch_and_build(
         TargetType::JavaScript => {
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
-                let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
+                let mut watcher = notify_forked::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
                 watcher
                     .watch(JAVASCRIPT_PATH, RecursiveMode::Recursive)
@@ -52,7 +52,7 @@ pub fn watch_and_build(
 
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
-                let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
+                let mut watcher = notify_forked::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
                 watcher.watch(RUST_PATH, RecursiveMode::Recursive).unwrap();
                 message::info(&format!("watching {:?}", &RUST_PATH));
