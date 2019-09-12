@@ -54,6 +54,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Interact with your Workers KV Namespaces",
                     emoji::KV
                 ))
+                .setting(AppSettings::SubcommandRequired)
                 .subcommand(
                     SubCommand::with_name("create")
                         .about("Create a new namespace")
@@ -118,6 +119,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Individually manage Workers KV key-value pairs",
                     emoji::KV
                 ))
+                .setting(AppSettings::SubcommandRequired)
                 .arg(
                     Arg::with_name("binding")
                     .help("The binding of the namespace this action applies to")
@@ -239,6 +241,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Interact with multiple Workers KV key-value pairs at once",
                     emoji::KV
                 ))
+                .setting(AppSettings::SubcommandRequired)
                 .arg(
                     Arg::with_name("binding")
                     .help("The binding of the namespace this action applies to")
