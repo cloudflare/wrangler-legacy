@@ -121,7 +121,7 @@ impl Manifest {
         let use_dot_dev_failure =
             "Please specify the workers_dev boolean in the top level of your wrangler.toml.";
         let use_dot_dev_warning =
-            format!("{}\n{} If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.", use_dot_dev_failure, emoji::WARN);
+            format!("{}\n{} If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.", use_dot_dev_failure, emoji::WARN);
         let wdd_failure = format!(
             "{} Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.",
             emoji::WARN
