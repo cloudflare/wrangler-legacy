@@ -54,7 +54,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Interact with your Workers KV Namespaces",
                     emoji::KV
                 ))
-                .setting(AppSettings::SubcommandRequired)
+                .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("create")
                         .about("Create a new namespace")
@@ -119,7 +119,26 @@ fn run() -> Result<(), failure::Error> {
                     "{} Individually manage Workers KV key-value pairs",
                     emoji::KV
                 ))
-                .setting(AppSettings::SubcommandRequired)
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                // We use custom error messages because we don't want the global
+                // --binding/--namespace-id/--env options to be used with
+                // kv:key; they should live within the subcommand (e.g. put).
+                .help(&*format!("{} Individually manage Workers KV key-value pairs
+
+USAGE:
+    wrangler kv:key [OPTIONS] <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+SUBCOMMANDS:
+    delete    Delete a key and its value from a namespace
+    get       Get a key's value from a namespace
+    help      Prints this message or the help of the given subcommand(s)
+    list      List all keys in a namespace. Produces JSON output
+    put       Put a key-value pair into a namespace
+", emoji::KV))
                 .arg(
                     Arg::with_name("binding")
                     .help("The binding of the namespace this action applies to")
@@ -241,7 +260,24 @@ fn run() -> Result<(), failure::Error> {
                     "{} Interact with multiple Workers KV key-value pairs at once",
                     emoji::KV
                 ))
-                .setting(AppSettings::SubcommandRequired)
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                // We use custom error messages because we don't want the global
+                // --binding/--namespace-id/--env options to be used with
+                // kv:bulk; they should live within the subcommand (e.g. put).
+                .help(&*format!("{} Interact with multiple Workers KV key-value pairs at once
+
+USAGE:
+    wrangler kv:bulk [OPTIONS] <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+SUBCOMMANDS:
+    delete    Delete multiple keys and their values from a namespace
+    help      Prints this message or the help of the given subcommand(s)
+    put       Upload multiple key-value pairs to a namespace
+", emoji::KV))
                 .arg(
                     Arg::with_name("binding")
                     .help("The binding of the namespace this action applies to")
