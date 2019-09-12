@@ -2,7 +2,8 @@
 
 ## Overview
 
-The `kv` subcommand allows you to store application data in the Cloudflare network to be accessed from Workers. 
+The `kv` subcommand allows you to store application data in the Cloudflare network to be accessed from Workers, using
+[Workers KV](https://www.cloudflare.com/products/workers-kv/).
 KV operations are scoped to your account, so in order to use any of these commands, you need to:
 
 * have a Wrangler project set up with your `account_id` configured in the `wrangler.toml`
