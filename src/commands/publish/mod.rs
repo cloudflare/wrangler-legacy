@@ -18,7 +18,7 @@ use crate::settings::target::Target;
 use crate::terminal::{emoji, message};
 
 pub fn publish(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    info!("workers_dot_dev = {}", target.workers_dot_dev);
+    info!("workers_dev = {}", target.workers_dev);
 
     validate_target(target)?;
     commands::build(&target)?;
@@ -51,7 +51,7 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
         )
     }
 
-    let pattern = if !target.workers_dot_dev {
+    let pattern = if !target.workers_dev {
         let route = Route::new(&target)?;
         Route::publish(&user, &target, &route)?;
         info!("publishing to route");
@@ -127,7 +127,7 @@ fn validate_target(target: &Target) -> Result<(), failure::Error> {
         None => {}
     }
 
-    let destination = if !target.workers_dot_dev {
+    let destination = if !target.workers_dev {
         // check required fields for release
         if target
             .zone_id

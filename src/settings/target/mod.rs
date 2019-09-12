@@ -27,7 +27,7 @@ pub struct Target {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
-    pub workers_dot_dev: bool,
+    pub workers_dev: bool,
     pub zone_id: Option<String>,
 }
 
@@ -47,7 +47,7 @@ pub struct Environment {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
-    pub workers_dot_dev: Option<bool>,
+    pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
 }
 
@@ -64,7 +64,7 @@ pub struct Manifest {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
-    pub workers_dot_dev: Option<bool>,
+    pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
 }
 
@@ -119,11 +119,11 @@ impl Manifest {
         release: bool,
     ) -> Result<(Option<String>, bool), failure::Error> {
         let use_dot_dev_failure =
-            "Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.";
+            "Please specify the workers_dev boolean in the top level of your wrangler.toml.";
         let use_dot_dev_warning =
             format!("{}\n{} If you do not add workers_dot_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.", use_dot_dev_failure, emoji::WARN);
         let wdd_failure = format!(
-            "{} Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.",
+            "{} Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.",
             emoji::WARN
         );
 
@@ -131,20 +131,20 @@ impl Manifest {
         // switch wrangler publish behavior to act the same at top level
         // and environments
         // brace yourself, this is hairy
-        let workers_dot_dev = match environment {
+        let workers_dev = match environment {
             // top level configuration
             None => {
                 if release {
-                    match self.workers_dot_dev {
+                    match self.workers_dev {
                         Some(_) => {
                             failure::bail!(format!("{} {}", emoji::WARN, use_dot_dev_failure))
                         }
                         None => {
                             message::warn(&use_dot_dev_warning);
-                            false // wrangler publish --release w/o workers_dot_dev is zoned deploy
+                            false // wrangler publish --release w/o workers_dev is zoned deploy
                         }
                     }
-                } else if let Some(wdd) = self.workers_dot_dev {
+                } else if let Some(wdd) = self.workers_dev {
                     if wdd {
                         if let Some(route) = &self.route {
                             if !route.is_empty() {
@@ -155,20 +155,20 @@ impl Manifest {
                     wdd
                 } else {
                     message::warn(&use_dot_dev_warning);
-                    true // wrangler publish w/o workers_dot_dev is zoneless deploy
+                    true // wrangler publish w/o workers_dev is zoneless deploy
                 }
             }
 
             // environment configuration
             Some(environment) => {
-                if let Some(wdd) = environment.workers_dot_dev {
+                if let Some(wdd) = environment.workers_dev {
                     if wdd && environment.route.is_some() {
                         failure::bail!(wdd_failure)
                     }
                     wdd
-                } else if let Some(wdd) = self.workers_dot_dev {
+                } else if let Some(wdd) = self.workers_dev {
                     if wdd && environment.route.is_some() {
-                        false // allow route to override workers_dot_dev = true if wdd is inherited
+                        false // allow route to override workers_dev = true if wdd is inherited
                     } else {
                         wdd // inherit from top level
                     }
@@ -180,7 +180,7 @@ impl Manifest {
 
         let route = if let Some(environment) = environment {
             if let Some(route) = &environment.route {
-                if let Some(wdd) = environment.workers_dot_dev {
+                if let Some(wdd) = environment.workers_dev {
                     if wdd {
                         failure::bail!(wdd_failure);
                     }
@@ -193,12 +193,12 @@ impl Manifest {
             self.route.clone()
         };
 
-        Ok((route, workers_dot_dev))
+        Ok((route, workers_dev))
     }
 
     fn check_private(&self, environment: Option<&Environment>) {
         let deprecate_private_warning = "The `private` field is deprecated; please use \
-        `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.";
+        `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.";
 
         // Check for the presence of the 'private' field in top-level config; if present, warn.
         if self.private.is_some() {
@@ -218,9 +218,9 @@ impl Manifest {
         environment_name: Option<&str>,
         release: bool,
     ) -> Result<Target, failure::Error> {
-        if release && self.workers_dot_dev.is_some() {
+        if release && self.workers_dev.is_some() {
             failure::bail!(format!(
-                "{} The --release flag is not compatible with use of the workers_dot_dev field.",
+                "{} The --release flag is not compatible with use of the workers_dev field.",
                 emoji::WARN
             ))
         }
@@ -234,7 +234,7 @@ impl Manifest {
             account_id: self.account_id.clone(),         // MAY inherit
             webpack_config: self.webpack_config.clone(), // MAY inherit
             zone_id: self.zone_id.clone(),               // MAY inherit
-            workers_dot_dev: true,                       // MAY inherit,
+            workers_dev: true,                           // MAY inherit,
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(),                   // MAY inherit
@@ -247,9 +247,9 @@ impl Manifest {
 
         self.check_private(environment);
 
-        let (route, workers_dot_dev) = self.negotiate_zoneless(environment, release)?;
+        let (route, workers_dev) = self.negotiate_zoneless(environment, release)?;
         target.route = route;
-        target.workers_dot_dev = workers_dot_dev;
+        target.workers_dev = workers_dev;
         if let Some(environment) = environment {
             target.name = if let Some(name) = &environment.name {
                 name.clone()
@@ -293,7 +293,7 @@ impl Manifest {
             route: Some(String::new()),
             routes: None,
             webpack_config: None,
-            workers_dot_dev: Some(true),
+            workers_dev: Some(true),
             zone_id: Some(String::new()),
         };
 
