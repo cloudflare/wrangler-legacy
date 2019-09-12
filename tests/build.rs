@@ -27,6 +27,7 @@ macro_rules! single_env_settings {
             name = "test"
             zone_id = ""
             account_id = ""
+            workers_dot_dev = true
             {}
         "#,
             $x
@@ -179,8 +180,8 @@ fn it_builds_with_webpack_wast() {
 }
 
 #[test]
-fn it_fails_with_webpack_target_web() {
-    let fixture = "webpack_target_web";
+fn it_fails_with_webpack_target_node() {
+    let fixture = "webpack_target_node";
     create_temporary_copy(fixture);
 
     webpack_config(
@@ -197,6 +198,29 @@ fn it_fails_with_webpack_target_web() {
     build_fails_with(
         fixture,
         "Building a Cloudflare Worker with target \"node\" is not supported",
+    );
+    cleanup(fixture);
+}
+
+#[test]
+fn it_fails_with_webpack_target_web() {
+    let fixture = "webpack_target_web";
+    create_temporary_copy(fixture);
+
+    webpack_config(
+        fixture,
+        r#"{
+          entry: "./index.js",
+          target: "web",
+        }"#,
+    );
+    single_env_settings! {fixture, r#"
+        type = "webpack"
+    "#};
+
+    build_fails_with(
+        fixture,
+        "Building a Cloudflare Worker with target \"web\" is not supported",
     );
     cleanup(fixture);
 }
