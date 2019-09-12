@@ -120,6 +120,8 @@ To learn more about environments, check out the [environments documentation](./e
 
 Creates a new namespace.
 
+Takes an optional `--env` [environment](./environments.md) argument.
+
 #### Usage
 
 ```console
