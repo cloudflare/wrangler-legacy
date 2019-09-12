@@ -14,8 +14,8 @@ KV operations are scoped to your account, so in order to use any of these comman
 To use Workers KV with your Worker, the first thing you must do is create a KV namespace. This is done with
 the `kv:namespace` subcommand.
 
-The `kv:namepsace` subcommand takes as an argument a new binding name. It will create a Worker KV namespace
-whose title is a concatenation of your Worker's name (from wrangler.toml) and the binding name you provide:
+The `kv:namespace` subcommand takes as a new binding name as an argument. It will create a Worker KV namespace
+whose title is a concatenation of your Worker's name (from `wrangler.toml`) and the binding name you provide:
 ```console
 $ wrangler kv:namespace create "MY_KV"
 🌀  Creating namespace with title "worker-MY_KV"
@@ -48,7 +48,7 @@ $ wrangler kv:key put --namespace-id=e29b263ab50e42ce9b637fa8370175e8 "key" "val
 
 Additionally, KV namespaces can be used with [environments](./environments.md)! This is useful for when you have code that refers to
 a KV binding like `MY_KV`, and you want to be able to have these bindings point to different namespaces (like
-one for staging and one for production). So, if you have a toml with two environments:
+one for staging and one for production). So, if you have a `wrangler.toml` with two environments:
 
 ```toml
 [env.staging]
