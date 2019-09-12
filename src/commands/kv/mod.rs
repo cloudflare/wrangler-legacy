@@ -154,7 +154,7 @@ mod tests {
             route: None,
             routes: None,
             webpack_config: None,
-            workers_dot_dev: false,
+            workers_dev: false,
             zone_id: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());

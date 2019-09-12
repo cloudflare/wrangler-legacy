@@ -198,28 +198,17 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
             WebAssembly. Rust files will be built with `wasm-pack`.
             This project type uses webpack and webpack plugins in the background to build your worker.
-<<<<<<< HEAD
-    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md) configuration.
-=======
     - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md) configuration.
->>>>>>> master
     - `account_id`: This is the ID of the account associated with your zone. You might have more than one account, so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
     - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
 
         - `*example.com/*`
         - `http://example.com/hello`
         
-<<<<<<< HEAD
-        This key is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dot_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md). 
-
-    - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and defaults to `webpack.config.js`
-    - `workers_dot_dev`: This is a boolean flag that specifies if your worker will be deployed to your [workers.dev](https://workers.dev) subdomain. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
-=======
         This key is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md). 
 
     - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and defaults to `webpack.config.js`
     - `workers_dev`: This is a boolean flag that specifies if your worker will be deployed to your [workers.dev](https://workers.dev) subdomain. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
->>>>>>> master
     - `kv-namespaces`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) Namespaces you want to access from
         inside your Worker. Each namespace you include should have an entry in your `wrangler.toml` that includes:
 

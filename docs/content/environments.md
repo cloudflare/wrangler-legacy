@@ -298,18 +298,8 @@ You will be warned if `workers_dev` is left out of the top level configuration b
 
 ```console
 $ wrangler publish
-<<<<<<< HEAD:docs/content/environments.md
-⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.
-⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.
-=======
-<<<<<<< HEAD
-⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
-⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
-=======
 ⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
 ⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
->>>>>>> master
->>>>>>> master:docs/environments.md
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
@@ -363,15 +353,9 @@ With this configuration, Wrangler will behave in the following manner:
 
 ```console
 $ wrangler publish
-<<<<<<< HEAD:docs/content/environments.md
-⚠️  The `private` field is deprecated; please use `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
-⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.
-⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.
-=======
 ⚠️  The `private` field is deprecated; please use `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
 ⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
 ⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
->>>>>>> master:docs/environments.md
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
@@ -380,15 +364,9 @@ $ wrangler publish
 ```console
 $ wrangler publish --release
 ⚠️  --release will be deprecated.
-<<<<<<< HEAD:docs/content/environments.md
-⚠️  The `private` field is deprecated; please use `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
-⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.
-⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.
-=======
 ⚠️  The `private` field is deprecated; please use `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
 ⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
 ⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
->>>>>>> master:docs/environments.md
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at example.com/*
