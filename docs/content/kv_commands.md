@@ -216,10 +216,10 @@ Optional params include:
 
 #### Usage
 
-The example below uses Python's JSON pretty-printing command line tool to pretty-print output.
+The example below uses the `jq` command line tool to pretty-print output.
 
 ```console
-$ wrangler kv:key list --binding=KV --prefix="public" | python -m json.tool
+$ wrangler kv:key list --binding=KV --prefix="public" | jq '.'
 [
     {
         "name": "public_key"
