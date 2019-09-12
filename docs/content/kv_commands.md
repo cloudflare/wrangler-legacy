@@ -28,7 +28,7 @@ kv-namespaces = [
          { binding: "MY_KV", id: "e29b263ab50e42ce9b637fa8370175e8" }
 ]
 ```
-Make sure to add the `kv-namespaces` output above to your wrangler.toml. You can now
+Make sure to add the `kv-namespaces` output above to your `wrangler.toml`. You can now
 access it from a Worker with code like:
 ```js
 let value = await MY_KV.get("my-key");
