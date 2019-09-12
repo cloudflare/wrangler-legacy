@@ -16,7 +16,7 @@ name = "my-worker-dev"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "dev.example.com/*"
-workers_dot_dev = false
+workers_dev = false
 
 # environment configuration
 [env.staging]
@@ -34,7 +34,7 @@ route = "example.com/*"
 The most common use case for environments is deploying to a staging subdomain before your production environment. `wrangler publish` will look at your top level configuration, and you can specify other environments beneath it. Each of these environments will inherit the values from the top level configuration if they are not specified, with the following caveats.
 
 * `type` will always be inherited from the top-level configuration; you cannot specify different types for different environments.
-* Fields that can be inherited from the top level are `account_id`, `zone_id`, `workers_dot_dev`, and `webpack_config`. `kv_namespaces` and `route` must be defined for each environment and will not be inherited.
+* Fields that can be inherited from the top level are `account_id`, `zone_id`, `workers_dev`, and `webpack_config`. `kv_namespaces` and `route` must be defined for each environment and will not be inherited.
 * `name` is inherited. If left out of the environment configuration, a Worker project named `my-worker` with an environment `[env.dev]` would become `my-worker-dev`.
 
 ### Examples
@@ -51,7 +51,7 @@ name = "my-worker"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
-workers_dot_dev = false # this field specifies that the worker should not be deployed to workers.dev
+workers_dev = false # this field specifies that the worker should not be deployed to workers.dev
 ```
 
 ```console
@@ -69,7 +69,7 @@ This `wrangler.toml` has no environments defined and will publish `my-worker` to
 type = "webpack"
 name = "my-worker"
 account_id = "12345678901234567890"
-workers_dot_dev = true # this field specifies that the worker should be deployed to workers.dev
+workers_dev = true # this field specifies that the worker should be deployed to workers.dev
 ```
 
 ```console
@@ -89,7 +89,7 @@ name = "my-worker-dev"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "dev.example.com/*"
-workers_dot_dev = false
+workers_dev = false
 
 [env.staging]
 name = "my-worker-staging"
@@ -127,7 +127,7 @@ $ wrangler publish --env production
 
 #### Staging Environment with workers.dev
 
-In order to deploy your code to workers.dev, you must include `workers_dot_dev = true` in the desired environment. Your `wrangler.toml` may look like this:
+In order to deploy your code to workers.dev, you must include `workers_dev = true` in the desired environment. Your `wrangler.toml` may look like this:
 
 ```toml
 name = "my-worker"
@@ -135,10 +135,10 @@ type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
-workers_dot_dev = false
+workers_dev = false
 
 [env.staging]
-workers_dot_dev = true
+workers_dev = true
 ```
 
 With this configuration, Wrangler will behave in the following manner:
@@ -165,7 +165,7 @@ If you only want to deploy to workers.dev you can configure Wrangler like so:
 name = "my-worker-dev"
 type = "webpack"
 account_id = "12345678901234567890"
-workers_dot_dev = true
+workers_dev = true
 
 [env.production]
 name = "my-worker"
@@ -205,7 +205,7 @@ You can specify different webpack configurations for different environments.
 name = "my-worker-dev"
 type = "webpack"
 account_id = "12345678901234567890"
-workers_dot_dev = true
+workers_dev = true
 webpack_config = "webpack.dev.js"
 
 [env.production]
@@ -226,7 +226,7 @@ You can specify different kv namespaces for different environments.
 name = "my-worker"
 type = "webpack"
 account_id = "12345678901234567890"
-workers_dot_dev = true
+workers_dev = true
 kv-namespaces = [
     { binding = "KV", id = "06779da6940b431db6e566b4846d64db" }
 ]
@@ -249,7 +249,7 @@ type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
-workers_dot_dev = true
+workers_dev = true
 
 [env.staging]
 type = "rust"
@@ -267,11 +267,11 @@ type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
-workers_dot_dev = false
+workers_dev = false
 
 [env.staging]
 name = "my-worker"
-workers_dot_dev = true
+workers_dev = true
 ```
 
 ```console
@@ -294,18 +294,28 @@ zone_id = "09876543210987654321"
 route = "example.com/*
 ```
 
-You will be warned if `workers_dot_dev` is left out of the top level configuration because if it is not specified, it is unclear what the behavior of `wrangler publish` should be. See [the section on backwards compatibility](#Backwards-compatibility) for more information.
+You will be warned if `workers_dev` is left out of the top level configuration because if it is not specified, it is unclear what the behavior of `wrangler publish` should be. See [the section on backwards compatibility](#Backwards-compatibility) for more information.
 
 ```console
 $ wrangler publish
+<<<<<<< HEAD:docs/content/environments.md
 ⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.
 ⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.
+=======
+<<<<<<< HEAD
+⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
+⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
+=======
+⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
+⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
+>>>>>>> master
+>>>>>>> master:docs/environments.md
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.avery.workers.dev
+✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
 ```
 
-### Defining workers_dot_dev and route
+### Defining workers_dev and route
 
 ```toml
 name = "my-worker"
@@ -313,23 +323,23 @@ type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
-workers_dot_dev = true
+workers_dev = true
 
 [env.staging]
-workers_dot_dev = true
+workers_dev = true
 route = "staging.example.com/*"
 ```
 
-Wrangler will fail to publish to an environment where `route` is defined alongside `workers_dot_dev = true`.
+Wrangler will fail to publish to an environment where `route` is defined alongside `workers_dev = true`.
 
 ```console
 $ wrangler publish
-Error: ⚠️  Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.
+Error: ⚠️  Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.
 ```
 
 ```console
 $ wrangler publish --env staging
-Error: ⚠️  Your environment should only include `workers_dot_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dot_dev`.
+Error: ⚠️  Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.
 ```
 
 ## Backwards compatibility
@@ -353,9 +363,15 @@ With this configuration, Wrangler will behave in the following manner:
 
 ```console
 $ wrangler publish
+<<<<<<< HEAD:docs/content/environments.md
 ⚠️  The `private` field is deprecated; please use `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
 ⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.
 ⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.
+=======
+⚠️  The `private` field is deprecated; please use `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
+⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
+⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
+>>>>>>> master:docs/environments.md
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
@@ -364,14 +380,20 @@ $ wrangler publish
 ```console
 $ wrangler publish --release
 ⚠️  --release will be deprecated.
+<<<<<<< HEAD:docs/content/environments.md
 ⚠️  The `private` field is deprecated; please use `workers_dot_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
 ⚠️  Please specify the workers_dot_dev boolean in the top level of your wrangler.toml.
 ⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.
+=======
+⚠️  The `private` field is deprecated; please use `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
+⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
+⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
+>>>>>>> master:docs/environments.md
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at example.com/*
 ```
 
-This backwards compatibility is the reason that a warning is thrown if `workers_dot_dev` is not specified at the top of `wrangler.toml`.
+This backwards compatibility is the reason that a warning is thrown if `workers_dev` is not specified at the top of `wrangler.toml`.
 
-It is important to note that both of these commands will issue a deprecation warning. To remove these warnings, you can configure Wrangler with the `workers_dot_dev` boolean to separate deploys to workers.dev from deploys to workers routes.
+It is important to note that both of these commands will issue a deprecation warning. To remove these warnings, you can configure Wrangler with the `workers_dev` boolean to separate deploys to workers.dev from deploys to workers routes.

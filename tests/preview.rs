@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use assert_cmd::prelude::*;
 use fs_extra::dir::{copy, CopyOptions};
 use std::env;
@@ -7,6 +10,11 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
+}
 
 macro_rules! settings {
     ( $f:expr, $x:expr ) => {
@@ -17,6 +25,7 @@ macro_rules! settings {
             name = "test"
             zone_id = ""
             account_id = ""
+            workers_dev = true
             {}
         "#,
             $x
@@ -59,6 +68,9 @@ fn it_can_preview_rust_project() {
 }
 
 fn preview(fixture: &str) {
+    // Lock to avoid having concurrent builds
+    let _g = BUILD_LOCK.lock().unwrap();
+
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture_path(fixture));
     preview.arg("preview").assert().success();
