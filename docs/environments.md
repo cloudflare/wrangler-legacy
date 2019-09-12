@@ -302,7 +302,7 @@ $ wrangler publish
 ⚠️  If you do not add workers_dot_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.avery.workers.dev
+✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
 ```
 
 ### Defining workers_dot_dev and route
