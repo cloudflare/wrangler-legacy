@@ -46,7 +46,11 @@ General documentation surrounding workers development and using `wrangler` can b
   wrangler generate <name> <template> --type=["webpack", "javascript", "rust"]
   ```
 
-  All of the arguments and flags to this command are optional: - `name`: defaults to `worker` - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template) - `type`: defaults to "webpack"
+  All of the arguments and flags to this command are optional:
+  
+  - `name`: defaults to `worker`
+  - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
+  - `type`: defaults to "webpack"
 
 - ### 📥 `init`
 
@@ -56,7 +60,10 @@ General documentation surrounding workers development and using `wrangler` can b
   wrangler init <name> --type=["webpack", "javascript", "rust"]
   ```
 
-  All of the arguments and flags to this command are options: - `name`: defaults to the name of your working directory - `type`: defaults to "webpack"
+  All of the arguments and flags to this command are options:
+
+  - `name`: defaults to the name of your working directory
+  - `type`: defaults to "webpack"
 
 - ### 🦀⚙️ `build`
 
