@@ -1,4 +1,4 @@
-use notify_forked::DebouncedEvent;
+use notify::DebouncedEvent;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
