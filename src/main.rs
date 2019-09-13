@@ -395,7 +395,7 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("release")
                         .long("release")
                         .takes_value(false)
-                        .help("[planned deprecation in v1.5.0, use --env instead. see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
+                        .help("[planned deprecation in v1.5.0, use --env instead. see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
                 )
                 .arg(
                     Arg::with_name("env")
