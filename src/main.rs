@@ -43,6 +43,9 @@ fn main() -> Result<(), ExitFailure> {
 }
 
 fn run() -> Result<(), failure::Error> {
+    // Define commonly used arguments and arg groups up front for consistency
+
+    // The args below are for KV Subcommands
     let kv_binding_arg = Arg::with_name("binding")
         .help("The binding of the namespace this action applies to")
         .short("b")
@@ -58,6 +61,7 @@ fn run() -> Result<(), failure::Error> {
     let kv_namespace_specifier_group =
         ArgGroup::with_name("namespace-specifier").args(&["binding", "namespace-id"]);
 
+    // This arg is for any action that uses environments (e.g. KV subcommands, publish)
     let environment_arg = Arg::with_name("env")
         .help("Environment to use")
         .short("e")
