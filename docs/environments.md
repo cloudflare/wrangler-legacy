@@ -56,9 +56,8 @@ workers_dev = false # this field specifies that the worker should not be deploye
 
 ```console
 $ wrangler publish
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at example.com/*
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to example.com/*
 ```
 
 ##### workers.dev
@@ -74,9 +73,8 @@ workers_dev = true # this field specifies that the worker should be deployed to 
 
 ```console
 $ wrangler publish
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev`
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to https://my-worker.<your-subdomain>.workers.dev
 ```
 
 #### Introducing Environments
@@ -106,23 +104,20 @@ With this configuration, Wrangler will behave in the following manner:
 
 ```console
 $ wrangler publish
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at dev.example.com/*
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to dev.example.com/*
 ```
 
 ```console
 $ wrangler publish --env staging
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at staging.example.com/*
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to staging.example.com/*
 ```
 
 ```console
 $ wrangler publish --env production
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at example.com/*
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to example.com/*
 ```
 
 #### Staging Environment with workers.dev
@@ -145,16 +140,14 @@ With this configuration, Wrangler will behave in the following manner:
 
 ```console
 $ wrangler publish
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at example.com/*
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to example.com/*
 ```
 
 ```console
 $ wrangler publish --env staging
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.<your-subdomain>.workers.dev
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to https://my-worker-staging.<your-subdomain>.workers.dev
 ```
 
 #### workers.dev as a first class target
@@ -178,23 +171,20 @@ With this configuration, Wrangler will behave in the following manner:
 
 ```console
 $ wrangler publish
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker-dev.<your-subdomain>.workers.dev
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to https://my-worker-dev.<your-subdomain>.workers.dev
 ```
 
 ```console
 $ wrangler publish --env staging
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker-staging.<your-subdomain>.workers.dev
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to https://my-worker-staging.<your-subdomain>.workers.dev
 ```
 
 ```console
 $ wrangler publish --env production
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to https://my-worker.<your-subdomain>.workers.dev
 ```
 
 ### Custom webpack configurations
@@ -298,13 +288,8 @@ You will be warned if `workers_dev` is left out of the top level configuration b
 
 ```console
 $ wrangler publish
-<<<<<<< HEAD
-⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
-⚠️  This command will fail in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
-=======
 ⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
 ⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
->>>>>>> master
 ✨  Built successfully, built project size is 517 bytes.
 ✨  Successfully published your script.
 ✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
@@ -361,9 +346,8 @@ $ wrangler publish
 ⚠️  The `private` field is deprecated; please use `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
 ⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
 ⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to https://my-worker.<your-subdomain>.workers.dev
 ```
 
 ```console
@@ -372,9 +356,8 @@ $ wrangler publish --release
 ⚠️  The `private` field is deprecated; please use `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.
 ⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
 ⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/environments.md for more information.
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at example.com/*
+✨  Built successfully, built project size is 523 bytes.
+✨  Successfully published your script to example.com/*
 ```
 
 This backwards compatibility is the reason that a warning is thrown if `workers_dev` is not specified at the top of `wrangler.toml`.
