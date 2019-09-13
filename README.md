@@ -46,11 +46,15 @@ General documentation surrounding workers development and using `wrangler` can b
   wrangler generate <name> <template> --type=["webpack", "javascript", "rust"]
   ```
 
+<<<<<<< HEAD
   All of the arguments and flags to this command are optional: 
   
   - `name`: defaults to `worker`
   - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
   - `type`: defaults to "webpack"
+=======
+  All of the arguments and flags to this command are optional: - `name`: defaults to `worker` - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template) - `type`: defaults to "webpack"
+>>>>>>> master
 
 - ### 🦀⚙️ `build`
 
@@ -92,6 +96,7 @@ General documentation surrounding workers development and using `wrangler` can b
   From here, you have two options, you can choose to publish to your own domain or you can choose to publish to [\<your-worker\>.\<your-subdomain\>.workers.dev](https://workers.dev).
 
 #### Publishing to workers.dev
+<<<<<<< HEAD
 
   If you want to publish to [workers.dev](https://workers.dev), you will first need to have a [workers.dev](https://workers.dev) subdomain registered. You can register a subdomain by executing:
 
@@ -115,6 +120,31 @@ If you would like to publish to your own domain, you will need to specify these 
 | route           | The route you would like to publish to                                 | `route = "example.com/my-worker/*"`            |
 | zone_id         | Your Cloudflare zone ID, this can be found in the Cloudflare dashboard | `zone_id = "b6558acaf2b4cad1f2b51c5236a6b972"` |
 
+=======
+
+  If you want to publish to [workers.dev](https://workers.dev), you will first need to have a [workers.dev](https://workers.dev) subdomain registered. You can register a subdomain by executing:
+
+  ```bash
+  wrangler subdomain <name>
+  ```
+
+  After you have registered a subdomain, add `workers_dev` to your `wrangler.toml`.
+
+| Key             | Value | Example                  |
+| --------------- | ----- | ------------------------ |
+| workers_dev | true  | `workers_dev = true` |
+
+#### Publishing to your own domain
+
+If you would like to publish to your own domain, you will need to specify these three fields in your `wrangler.toml`.
+
+| Key             | Value                                                                  | Example                                        |
+| --------------- | ---------------------------------------------------------------------- | ---------------------------------------------- |
+| workers_dev | false                                                                  | `workers_dev = false`                      |
+| route           | The route you would like to publish to                                 | `route = "example.com/my-worker/*"`            |
+| zone_id         | Your Cloudflare zone ID, this can be found in the Cloudflare dashboard | `zone_id = "b6558acaf2b4cad1f2b51c5236a6b972"` |
+
+>>>>>>> master
 #### Publishing the same code to multiple places
 
 If you would like to be able to publish your code to multiple places, please see the documentation for [environments](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
@@ -122,6 +152,7 @@ If you would like to be able to publish your code to multiple places, please see
 - ### 🔬 `preview`
 
   Preview your project using the [Cloudflare Workers preview service](https://cloudflareworkers.com/).
+<<<<<<< HEAD
 
   By default, `wrangler preview` will only bundle your project a single time. To enable live preview,
   where Wrangler will continually update the preview service with the newest version of your project,
@@ -156,6 +187,39 @@ If you would like to be able to publish your code to multiple places, please see
 
 - ### 🗂️ `kv`
   Interact with your Cloudflare Workers KV store. [Check out the docs.](./docs/content/kv_commands.md)
+=======
+
+  By default, `wrangler preview` will only bundle your project a single time. To enable live preview,
+  where Wrangler will continually update the preview service with the newest version of your project,
+  pass the `--watch` flag:
+
+  ```bash
+  wrangler preview --watch
+  ```
+
+  You can optionally pass `get` or `post` and a `body` to this command. This will send a request to your
+  worker on the preview service and return the response in your terminal. For example:
+
+  GET requests can be sent with
+
+  ```bash
+  wrangler preview
+  ```
+
+  or
+
+  ```bash
+  wrangler preview get
+  ```
+
+  POST requests can be sent with
+
+  ```bash
+  wrangler preview post hello=hello
+  ```
+
+  Additionally, you can preview different environments. This is useful if you have different builds for different environments (like staging vs. production), but typically isn't needed. For more information see the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md).
+>>>>>>> master
 
 ## 🔩 Configuration
 
@@ -225,6 +289,8 @@ There are two types of configuration that `wrangler` uses: global user and per p
         ```
 
         Note: Creating your KV Namespaces should be handled using Wrangler's [KV Commands](./docs/content/kv_commands.md).
+
+    #### Environments
 
     #### Environments
 
