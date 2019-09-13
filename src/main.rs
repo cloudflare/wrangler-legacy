@@ -43,6 +43,28 @@ fn main() -> Result<(), ExitFailure> {
 }
 
 fn run() -> Result<(), failure::Error> {
+    let kv_binding_arg = Arg::with_name("binding")
+        .help("The binding of the namespace this action applies to")
+        .short("b")
+        .long("binding")
+        .value_name("BINDING NAME")
+        .takes_value(true);
+    let kv_namespace_id_arg = Arg::with_name("namespace-id")
+        .help("The id of the namespace this action applies to")
+        .short("n")
+        .long("namespace-id")
+        .value_name("ID")
+        .takes_value(true);
+    let kv_namespace_specifier_group =
+        ArgGroup::with_name("namespace-specifier").args(&["binding", "namespace-id"]);
+
+    let environment_arg = Arg::with_name("env")
+        .help("Environment to use")
+        .short("e")
+        .long("env")
+        .takes_value(true)
+        .value_name("ENVIRONMENT NAME");
+
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("ashley g williams <ashley666ashley@gmail.com>")
@@ -54,19 +76,11 @@ fn run() -> Result<(), failure::Error> {
                     "{} Interact with your Workers KV Namespaces",
                     emoji::KV
                 ))
-                .setting(AppSettings::SubcommandRequired)
+                .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("create")
                         .about("Create a new namespace")
-                        .arg(
-                            Arg::with_name("env")
-                            .help("Environment to use")
-                            .short("e")
-                            .long("env")
-                            .takes_value(true)
-                            .value_name("ENVIRONMENT NAME")
-                            .global(true)
-                        )
+                        .arg(environment_arg.clone())
                         .arg(
                             Arg::with_name("binding")
                             .help("The binding for your new namespace")
@@ -77,37 +91,10 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete namespace")
-                        .arg(
-                            Arg::with_name("binding")
-                            .help("The binding of the namespace this action applies to")
-                            .short("b")
-                            .long("binding")
-                            .value_name("BINDING NAME")
-                            .takes_value(true)
-                            .global(true)
-                        )
-                        .arg(
-                            Arg::with_name("namespace-id")
-                            .help("The id of the namespace this action applies to")
-                            .short("n")
-                            .long("namespace-id")
-                            .value_name("ID")
-                            .takes_value(true)
-                            .global(true)
-                        )
-                        .arg(
-                            Arg::with_name("env")
-                            .help("Environment to use")
-                            .short("e")
-                            .long("env")
-                            .takes_value(true)
-                            .value_name("ENVIRONMENT NAME")
-                            .global(true)
-                        )
-                        .group(ArgGroup::with_name("namespace-specifier")
-                            .args(&["binding", "namespace-id"])
-                            .required(true)
-                        )
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
@@ -119,41 +106,14 @@ fn run() -> Result<(), failure::Error> {
                     "{} Individually manage Workers KV key-value pairs",
                     emoji::KV
                 ))
-                .setting(AppSettings::SubcommandRequired)
-                .arg(
-                    Arg::with_name("binding")
-                    .help("The binding of the namespace this action applies to")
-                    .short("b")
-                    .long("binding")
-                    .value_name("BINDING NAME")
-                    .takes_value(true)
-                    .global(true)
-                )
-                .arg(
-                    Arg::with_name("namespace-id")
-                    .help("The id of the namespace this action applies to")
-                    .short("n")
-                    .long("namespace-id")
-                    .value_name("ID")
-                    .takes_value(true)
-                    .global(true)
-                )
-                .arg(
-                    Arg::with_name("env")
-                    .help("Environment to use")
-                    .short("e")
-                    .long("env")
-                    .takes_value(true)
-                    .value_name("ENVIRONMENT NAME")
-                    .global(true)
-                )
+                .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Put a key-value pair into a namespace")
-                        .group(ArgGroup::with_name("namespace-specifier")
-                            .args(&["binding", "namespace-id"])
-                            .required(true)
-                        )
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                         .arg(
                             Arg::with_name("key")
                             .help("Key to write value to")
@@ -193,6 +153,10 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("get")
                         .about("Get a key's value from a namespace")
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                         .group(ArgGroup::with_name("namespace-specifier")
                             .args(&["binding", "namespace-id"])
                             .required(true)
@@ -207,10 +171,10 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete a key and its value from a namespace")
-                        .group(ArgGroup::with_name("namespace-specifier")
-                            .args(&["binding", "namespace-id"])
-                            .required(true)
-                        )
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to delete")
@@ -221,10 +185,10 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all keys in a namespace. Produces JSON output")
-                        .group(ArgGroup::with_name("namespace-specifier")
-                            .args(&["binding", "namespace-id"])
-                            .required(true)
-                        )
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                         .arg(
                             Arg::with_name("prefix")
                             .help("The prefix for filtering listed keys")
@@ -241,41 +205,14 @@ fn run() -> Result<(), failure::Error> {
                     "{} Interact with multiple Workers KV key-value pairs at once",
                     emoji::KV
                 ))
-                .setting(AppSettings::SubcommandRequired)
-                .arg(
-                    Arg::with_name("binding")
-                    .help("The binding of the namespace this action applies to")
-                    .short("b")
-                    .long("binding")
-                    .value_name("BINDING NAME")
-                    .takes_value(true)
-                    .global(true)
-                )
-                .arg(
-                    Arg::with_name("namespace-id")
-                    .help("The id of the namespace this action applies to")
-                    .short("n")
-                    .long("namespace-id")
-                    .value_name("ID")
-                    .takes_value(true)
-                    .global(true)
-                )
-                .arg(
-                    Arg::with_name("env")
-                    .help("Environment to use")
-                    .short("e")
-                    .long("env")
-                    .takes_value(true)
-                    .value_name("ENVIROMENT NAME")
-                    .global(true)
-                )
+                .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Upload multiple key-value pairs to a namespace")
-                        .group(ArgGroup::with_name("namespace-specifier")
-                            .args(&["binding", "namespace-id"])
-                            .required(true)
-                        )
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                         .arg(
                             Arg::with_name("path")
                             .help("the JSON file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...]")
@@ -285,10 +222,10 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
-                        .group(ArgGroup::with_name("namespace-specifier")
-                            .args(&["binding", "namespace-id"])
-                            .required(true)
-                        )
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                         .about("Delete multiple keys and their values from a namespace")
                         .arg(
                             Arg::with_name("path")
