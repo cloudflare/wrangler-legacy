@@ -44,7 +44,6 @@ fn main() -> Result<(), ExitFailure> {
 
 fn run() -> Result<(), failure::Error> {
     // Define commonly used arguments and arg groups up front for consistency
-
     // The args below are for KV Subcommands
     let kv_binding_arg = Arg::with_name("binding")
         .help("The binding of the namespace this action applies to")
