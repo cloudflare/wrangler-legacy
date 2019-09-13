@@ -41,9 +41,7 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
         .multipart(script_upload_form)
         .send()?;
 
-    if res.status().is_success() {
-        message::success("Successfully published your script.");
-    } else {
+    if !res.status().is_success() {
         failure::bail!(
             "Something went wrong! Status: {}, Details {}",
             res.status(),
@@ -63,7 +61,7 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
 
     info!("{}", &pattern);
     message::success(&format!(
-        "Success! Your worker was successfully published. You can view it at {}",
+        "Successfully published your script to {}",
         &pattern
     ));
 

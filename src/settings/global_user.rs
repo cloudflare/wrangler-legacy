@@ -1,6 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+use cloudflare::framework::auth::Credentials;
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +17,15 @@ pub struct GlobalUser {
 impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
         get_global_config()
+    }
+}
+
+impl From<GlobalUser> for Credentials {
+    fn from(user: GlobalUser) -> Credentials {
+        Credentials::UserAuthKey {
+            key: user.api_key,
+            email: user.email,
+        }
     }
 }
 
