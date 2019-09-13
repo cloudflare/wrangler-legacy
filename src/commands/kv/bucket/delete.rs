@@ -4,10 +4,10 @@ use std::path::Path;
 use crate::commands::kv::bucket::directory_keys_only;
 use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 
 pub fn delete(
-    project: &Project,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     filename: &Path,
@@ -18,5 +18,5 @@ pub fn delete(
         Err(e) => failure::bail!("{}", e),
     };
 
-    delete_bulk(project, user, namespace_id, keys?)
+    delete_bulk(target, user, namespace_id, keys?)
 }

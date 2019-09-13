@@ -1,5 +1,5 @@
-name = "worker"
 type = "webpack"
+name = "worker"
 zone_id = ""
 private = false
 account_id = ""

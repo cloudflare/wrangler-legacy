@@ -1,7 +1,7 @@
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 use reqwest::Client;
 use serde::Deserialize;
@@ -33,19 +33,19 @@ struct V4ApiResponse {
 }
 
 pub fn upload_and_get_id(
-    project: &Project,
+    target: &Target,
     user: Option<&GlobalUser>,
 ) -> Result<String, failure::Error> {
     let preview = match &user {
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
 
-            let missing_fields = validate(&project);
+            let missing_fields = validate(&target);
 
             if missing_fields.is_empty() {
                 let client = http::auth_client(&user);
 
-                authenticated_upload(&client, &project)?
+                authenticated_upload(&client, &target)?
             } else {
                 message::warn(&format!(
                     "Your wrangler.toml is missing the following fields: {:?}",
@@ -54,7 +54,7 @@ pub fn upload_and_get_id(
                 message::warn("Falling back to unauthenticated preview.");
 
                 let client = http::client();
-                unauthenticated_upload(&client, &project)?
+                unauthenticated_upload(&client, &target)?
             }
         }
         None => {
@@ -67,24 +67,24 @@ pub fn upload_and_get_id(
 
             let client = http::client();
 
-            unauthenticated_upload(&client, &project)?
+            unauthenticated_upload(&client, &target)?
         }
     };
 
     Ok(preview.id)
 }
 
-fn validate(project: &Project) -> Vec<&str> {
+fn validate(target: &Target) -> Vec<&str> {
     let mut missing_fields = Vec::new();
 
-    if project.account_id.is_empty() {
+    if target.account_id.is_empty() {
         missing_fields.push("account_id")
     };
-    if project.name.is_empty() {
+    if target.name.is_empty() {
         missing_fields.push("name")
     };
 
-    match &project.kv_namespaces {
+    match &target.kv_namespaces {
         Some(kv_namespaces) => {
             for kv in kv_namespaces {
                 if kv.binding.is_empty() {
@@ -102,14 +102,14 @@ fn validate(project: &Project) -> Vec<&str> {
     missing_fields
 }
 
-fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+fn authenticated_upload(client: &Client, target: &Target) -> Result<Preview, failure::Error> {
     let create_address = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
-        project.account_id, project.name
+        target.account_id, target.name
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::build_script_upload_form(&project)?;
+    let script_upload_form = publish::build_script_upload_form(&target)?;
 
     let mut res = client
         .post(&create_address)
@@ -126,22 +126,22 @@ fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, f
     Ok(Preview::from(response.result))
 }
 
-fn unauthenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
     // KV namespaces are not supported by the preview service unless you authenticate
     // so we omit them and provide the user with a little guidance. We don't error out, though,
     // because there are valid workarounds for this for testing purposes.
-    let script_upload_form = if project.kv_namespaces.is_some() {
+    let script_upload_form = if target.kv_namespaces.is_some() {
         message::warn(
             "KV Namespaces are not supported in preview without setting API credentials and account_id",
         );
-        let mut project = project.clone();
-        project.kv_namespaces = None;
-        publish::build_script_upload_form(&project)?
+        let mut target = target.clone();
+        target.kv_namespaces = None;
+        publish::build_script_upload_form(&target)?
     } else {
-        publish::build_script_upload_form(&project)?
+        publish::build_script_upload_form(&target)?
     };
 
     let mut res = client

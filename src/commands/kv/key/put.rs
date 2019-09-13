@@ -2,27 +2,31 @@
 // when https://github.com/cloudflare/cloudflare-rs/issues/26 is handled (this is
 // because the SET key request body is not json--it is the raw value).
 
+use std::fs;
+use std::fs::metadata;
+
 use cloudflare::framework::response::ApiFailure;
 use url::Url;
 
 use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn put(
-    project: &Project,
+    target: &Target,
     user: GlobalUser,
     id: &str,
     key: &str,
-    value: String,
+    value: &String,
+    is_file: bool,
     expiration: Option<&str>,
     expiration_ttl: Option<&str>,
 ) -> Result<(), failure::Error> {
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        project.account_id,
+        target.account_id,
         id,
         kv::url_encode_key(key)
     );
@@ -37,13 +41,26 @@ pub fn put(
     if let Some(ttl) = expiration_ttl {
         query_params.push(("expiration_ttl", ttl))
     }
+    // If is_file is true, overwrite value to be the contents of the given
+    // filename in the 'value' arg.
+    let body_text = match is_file {
+        true => match &metadata(value) {
+            Ok(file_type) if file_type.is_file() => fs::read_to_string(value),
+            Ok(file_type) if file_type.is_dir() => {
+                failure::bail!("--path argument takes a file, {} is a directory", value)
+            }
+            Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", value), // last remaining value is symlink
+            Err(e) => failure::bail!("{}", e),
+        },
+        false => Ok(value.to_string()),
+    };
 
     let url = Url::parse_with_params(&api_endpoint, query_params);
 
     let client = http::auth_client(&user);
 
     let url_into_str = url?.into_string();
-    let mut res = client.put(&url_into_str).body(value).send()?;
+    let mut res = client.put(&url_into_str).body(body_text?).send()?;
 
     if res.status().is_success() {
         message::success("Success")

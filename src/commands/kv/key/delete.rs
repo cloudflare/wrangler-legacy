@@ -3,11 +3,11 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn delete(
-    project: &Project,
+    target: &Target,
     user: GlobalUser,
     id: &str,
     key: &str,
@@ -27,13 +27,13 @@ pub fn delete(
     message::working(&msg);
 
     let response = client.request(&DeleteKey {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         namespace_identifier: id,
         key, // this is url encoded within cloudflare-rs
     });
 
     match response {
-        Ok(_success) => message::success("Success"),
+        Ok(_) => message::success("Success"),
         Err(e) => kv::print_error(e),
     }
 

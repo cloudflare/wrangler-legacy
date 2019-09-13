@@ -20,7 +20,7 @@ use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 use notify::{self, RecursiveMode, Watcher};
@@ -34,8 +34,8 @@ use std::time::Duration;
 // executable and wait for completion. The file will receive the a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(project: &Project) -> Result<(), failure::Error> {
-    let (mut command, temp_file, bundle) = setup_build(project)?;
+pub fn run_build(target: &Target) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(target)?;
 
     info!("Running {:?}", command);
 
@@ -53,11 +53,8 @@ pub fn run_build(project: &Project) -> Result<(), failure::Error> {
     }
 }
 
-pub fn run_build_and_watch(
-    project: &Project,
-    tx: Option<Sender<()>>,
-) -> Result<(), failure::Error> {
-    let (mut command, temp_file, bundle) = setup_build(project)?;
+pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(target)?;
     command.arg("--watch=1");
 
     info!("Running {:?} in watch mode", command);
@@ -125,7 +122,7 @@ fn write_wranglerjs_output(
 }
 
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
-fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure::Error> {
+fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::Error> {
     for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
@@ -157,7 +154,7 @@ fn setup_build(project: &Project) -> Result<(Command, PathBuf, Bundle), failure:
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
     let webpack_config_path = PathBuf::from(
-        &project
+        &target
             .webpack_config
             .clone()
             .unwrap_or_else(|| "webpack.config.js".to_string()),
@@ -209,8 +206,7 @@ fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
         info!("skipping npm install because node_modules exists");
     }
 
-    // TODO(sven): figure out why the file doesn't exits in some cases? Even if
-    // the thread should have locked it.
+    // TODO(sven): figure out why the file doesn't exits in some cases?
     if flock_path.exists() {
         fs::remove_file(&flock_path)?;
     }

@@ -6,10 +6,10 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use crate::commands::kv::bucket::directory_keys_values;
 use crate::commands::kv::bulk::put::put_bulk;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 
 pub fn upload(
-    project: &Project,
+    target: &Target,
     user: GlobalUser,
     namespace_id: &str,
     filename: &Path,
@@ -23,5 +23,5 @@ pub fn upload(
         Err(e) => failure::bail!("{}", e),
     };
 
-    put_bulk(project, user, namespace_id, pairs?)
+    put_bulk(target, user, namespace_id, pairs?)
 }

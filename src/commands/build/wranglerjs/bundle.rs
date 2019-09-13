@@ -7,8 +7,6 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
-#[cfg(test)]
-use crate::terminal::message;
 
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
@@ -38,8 +36,6 @@ impl Bundle {
         }
 
         let mut script_file = File::create(self.script_path())?;
-        let mut script = create_prologue();
-        script += &wranglerjs_output.script;
 
         if let Some(encoded_wasm) = &wranglerjs_output.wasm {
             let wasm = decode(encoded_wasm).expect("could not decode Wasm in base64");
@@ -47,7 +43,7 @@ impl Bundle {
             wasm_file.write_all(&wasm)?;
         }
 
-        script_file.write_all(script.as_bytes())?;
+        script_file.write_all(wranglerjs_output.script.as_bytes())?;
 
         Ok(())
     }
@@ -79,15 +75,6 @@ impl Bundle {
             .unwrap()
             .to_string()
     }
-}
-
-// We inject some code at the top-level of the Worker; called {prologue}.
-// This aims to provide additional support, for instance providing {window}.
-pub fn create_prologue() -> String {
-    r#"
-        const window = this;
-    "#
-    .to_string()
 }
 
 #[cfg(test)]
@@ -153,7 +140,6 @@ mod tests {
     fn cleanup(name: String) {
         let current_dir = env::current_dir().unwrap();
         let path = Path::new(&current_dir).join(name);
-        message::info(&format!("p: {:?}", path));
         fs::remove_dir_all(path).unwrap();
     }
 }

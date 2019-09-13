@@ -8,12 +8,12 @@ use cloudflare::framework::response::ApiFailure;
 use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 
-pub fn get(project: &Project, user: GlobalUser, id: &str, key: &str) -> Result<(), failure::Error> {
+pub fn get(target: &Target, user: GlobalUser, id: &str, key: &str) -> Result<(), failure::Error> {
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        project.account_id,
+        target.account_id,
         id,
         kv::url_encode_key(key)
     );

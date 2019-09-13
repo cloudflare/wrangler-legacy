@@ -3,10 +3,10 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn delete(project: &Project, user: GlobalUser, id: &str) -> Result<(), failure::Error> {
+pub fn delete(target: &Target, user: GlobalUser, id: &str) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
     match kv::interactive_delete(&format!(
@@ -25,12 +25,17 @@ pub fn delete(project: &Project, user: GlobalUser, id: &str) -> Result<(), failu
     message::working(&msg);
 
     let response = client.request(&RemoveNamespace {
-        account_identifier: &project.account_id,
+        account_identifier: &target.account_id,
         namespace_identifier: id,
     });
 
     match response {
-        Ok(_success) => message::success("Success"),
+        Ok(_) => {
+            message::success("Success");
+            message::warn(
+                "Make sure to remove this \"kv-namespace\" entry from your wrangler.toml!",
+            )
+        }
         Err(e) => kv::print_error(e),
     }
 
