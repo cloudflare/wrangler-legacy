@@ -23,7 +23,7 @@ use std::process::Command;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-use notify::{self, RecursiveMode, Watcher};
+use notify_forked::{self, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
@@ -64,7 +64,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
         let _command_guard = util::GuardedCommand::spawn(command);
 
         let (watcher_tx, watcher_rx) = channel();
-        let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
+        let mut watcher = notify_forked::watcher(watcher_tx, Duration::from_secs(1))?;
 
         watcher.watch(&temp_file, RecursiveMode::Recursive)?;
 
