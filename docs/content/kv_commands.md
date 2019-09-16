@@ -16,6 +16,7 @@ the `kv:namespace` subcommand.
 
 The `kv:namespace` subcommand takes as a new binding name as an argument. It will create a Worker KV namespace
 whose title is a concatenation of your Worker's name (from `wrangler.toml`) and the binding name you provide:
+
 ```console
 $ wrangler kv:namespace create "MY_KV"
 🌀  Creating namespace with title "worker-MY_KV"
@@ -28,19 +29,25 @@ kv-namespaces = [
          { binding = "MY_KV", id = "e29b263ab50e42ce9b637fa8370175e8" }
 ]
 ```
+
 Make sure to add the `kv-namespaces` output above to your `wrangler.toml`. You can now
 access it from a Worker with code like:
+
 ```js
 let value = await MY_KV.get("my-key");
 ```
+
 The full KV API for Workers can be found [here](https://developers.cloudflare.com/workers/reference/storage/).
 
 To put a value to your KV namespace via Wrangler, use the `kv:key put` subcommand.
+
 ```console
 $ wrangler kv:key put --binding=MY_KV "key" "value"
 ✨  Success
 ```
+
 You can also specify which namespace to put your key-value pair into using `--namespace-id` instead of `--binding`:
+
 ```console
 $ wrangler kv:key put --namespace-id=e29b263ab50e42ce9b637fa8370175e8 "key" "value"
 ✨  Success
@@ -78,7 +85,7 @@ Most `kv` commands require you to specify a namespace. A namespace can be specif
 
 1. With a `--binding`:
     ```sh
-    wrangler kv:key get --binding=KV "my key"
+    wrangler kv:key get --binding=MY_KV "my key"
     ```
 1. With a `--namespace_id`:
     ```sh
@@ -95,22 +102,20 @@ route = "staging.example.com/*"
 workers_dev = false
 
 kv-namespaces = [
-    { binding = "KV", id = "06779da6940b431db6e566b4846d64db" }
+    { binding = "MY_KV", id = "06779da6940b431db6e566b4846d64db" }
 ]
 
 [env.production]
 route = "example.com/*"
 kv-namespaces = [
-    { binding = "KV", id = "07bc1f3d1f2a4fd8a45a7e026e2681c6" }
+    { binding = "MY_KV", id = "07bc1f3d1f2a4fd8a45a7e026e2681c6" }
 ]
 ```
 
-With the wrangler.toml above, you can specify `--env production` when you want to perform a KV action on
-the namespace `KV` under `env.production`. For example, with the wrangler.toml above, you can get a value
-out of a production KV instance with:
+With the wrangler.toml above, you can specify `--env production` when you want to perform a KV action on the namespace `MY_KV` under `env.production`. For example, with the wrangler.toml above, you can get a value out of a production KV instance with:
 
 ```console
-wrangler kv:key get --binding "KV" --env=production "my key"
+wrangler kv:key get --binding "MY_KV" --env=production "my key"
 ```
 
 To learn more about environments, check out the [environments documentation](./environments.md).
@@ -170,7 +175,7 @@ Takes an optional `--env` [environment](./environments.md) argument.
 #### Usage
 
 ```console
-$ wrangler kv:namespace delete --binding=KV
+$ wrangler kv:namespace delete --binding=MY_KV
 Are you sure you want to delete namespace f7b02e7fc70443149ac906dd81ec1791? [y/n]
 yes
 🌀  Deleting namespace f7b02e7fc70443149ac906dd81ec1791
@@ -195,18 +200,18 @@ Optional params include:
 #### Usage
 
 ```console
-$ wrangler kv:key put --binding=KV "key" "value" --ttl=10000
+$ wrangler kv:key put --binding=MY_KV "key" "value" --ttl=10000
 ✨  Success
 ```
 
 ```console
-$ wrangler kv:key put --binding=KV "key" value.txt --path
+$ wrangler kv:key put --binding=MY_KV "key" value.txt --path
 ✨  Success
 ```
 
 ### `list`
 
-Outputs a list of all keys in a given namespace. 
+Outputs a list of all keys in a given namespace.
 
 Requires `--binding` or `--namespace-id` argument.
 
@@ -220,7 +225,7 @@ Optional params include:
 The example below uses the `jq` command line tool to pretty-print output.
 
 ```console
-$ wrangler kv:key list --binding=KV --prefix="public" | jq '.'
+$ wrangler kv:key list --binding=MY_KV --prefix="public" | jq '.'
 [
     {
         "name": "public_key"
@@ -243,7 +248,7 @@ Takes an optional `--env` [environment](./environments.md) argument.
 #### Usage
 
 ```console
-$ wrangler kv:key get --binding=KV "key"
+$ wrangler kv:key get --binding=MY_KV "key"
 value
 ```
 
@@ -258,7 +263,7 @@ Takes an optional `--env` [environment](./environments.md) argument.
 #### Usage
 
 ```console
-$ wrangler kv:key delete --binding=KV "key"
+$ wrangler kv:key delete --binding=MY_KV "key"
 Are you sure you want to delete key "key"? [y/n]
 yes
 🌀  Deleting key "key"
@@ -300,7 +305,7 @@ The `put` command also takes an optional `--env` [environment](./environments.md
 #### Usage
 
 ```console
-$ wrangler kv:bulk put --binding=KV allthethingsupload.json
+$ wrangler kv:bulk put --binding=MY_KV allthethingsupload.json
 ✨  Success
 ```
 
@@ -326,7 +331,7 @@ The `delete` command also takes an optional `--env` [environment](./environments
 #### Usage
 
 ```console
-$ wrangler kv:bulk delete --binding=KV allthethingsdelete.json
+$ wrangler kv:bulk delete --binding=MY_KV allthethingsdelete.json
 Are you sure you want to delete all keys in allthethingsdelete.json? [y/n]
 yes
 ✨  Success
@@ -340,8 +345,12 @@ Walks the given directory and runs a bulk upload, using the path to an asset as 
 
 #### Usage
 
-```sh
-$ wrangler kv:bucket upload f7b02e7fc70443149ac906dd81ec1791 ./public
+```console
+$ wrangler kv:bucket upload --binding MY_KV ./public
+```
+
+```console
+$ wrangler kv:bucket upload --namespace-id f7b02e7fc70443149ac906dd81ec1791 ./public
 ```
 
 ### `delete`
@@ -350,6 +359,10 @@ Walks the given directory and runs a bulk delete, using the paths to assets as t
 
 #### Usage
 
-```sh
-$ wrangler kv:bucket upload f7b02e7fc70443149ac906dd81ec1791 ./public
+```console
+$ wrangler kv:bucket delete --binding MY_KV
+```
+
+```console
+$ wrangler kv:bucket delete --namespace-id f7b02e7fc70443149ac906dd81ec1791
 ```

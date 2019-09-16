@@ -241,42 +241,33 @@ fn run() -> Result<(), failure::Error> {
                     "{} Use KV as bucket-style storage",
                     emoji::KV
                 ))
+                .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("upload")
                         .about("Upload the contents of a directory keyed on path")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                                .help("The ID of the namespace this action applies to")
-                                .required(true)
-                                // .short("n")
-                                // .long("namespace-id")
-                                // .value_name("<ID>")
-                                // .takes_value(true)
-                        )
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                         .arg(
                             Arg::with_name("path")
                             .help("the directory to be uploaded to KV")
                             .required(true)
-                            .index(2),
+                            .index(1),
                         )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete the contents of a directory keyed on path")
-                        .arg(
-                            Arg::with_name("namespace-id")
-                                .help("The ID of the namespace this action applies to")
-                                .required(true)
-                                // .short("n")
-                                // .long("namespace-id")
-                                // .value_name("<ID>")
-                                // .takes_value(true)
-                        )
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
                         .arg(
                             Arg::with_name("path")
                             .help("the directory to be deleted from KV")
                             .required(true)
-                            .index(2),
+                            .index(1),
                         )
                 )
         )
