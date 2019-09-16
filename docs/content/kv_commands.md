@@ -340,8 +340,12 @@ Walks the given directory and runs a bulk upload, using the path to an asset as 
 
 #### Usage
 
-```sh
-$ wrangler kv:bucket upload f7b02e7fc70443149ac906dd81ec1791 ./public
+```console
+$ wrangler kv:bucket upload --binding MY_KV ./public
+```
+
+```console
+$ wrangler kv:bucket upload --namespace-id f7b02e7fc70443149ac906dd81ec1791 ./public
 ```
 
 ### `delete`
@@ -350,6 +354,10 @@ Walks the given directory and runs a bulk delete, using the paths to assets as t
 
 #### Usage
 
-```sh
-$ wrangler kv:bucket upload f7b02e7fc70443149ac906dd81ec1791 ./public
+```console
+$ wrangler kv:bucket delete --binding MY_KV
+```
+
+```console
+$ wrangler kv:bucket delete --namespace-id f7b02e7fc70443149ac906dd81ec1791
 ```
