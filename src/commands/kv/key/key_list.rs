@@ -47,7 +47,7 @@ impl KeyList {
         ListNamespaceKeys {
             account_identifier: &self.account_id,
             namespace_identifier: &self.namespace_id,
-            params: params,
+            params,
         }
     }
 
