@@ -60,7 +60,7 @@ pub fn create(
                         None => message::success("Add the following to your wrangler.toml's \"kv-namespaces\" array:"),
                     };
                     println!(
-                        "{{ binding: \"{}\", id: \"{}\" }}",
+                        "{{ binding = \"{}\", id = \"{}\" }}",
                         binding, success.result.id
                     );
                 }
