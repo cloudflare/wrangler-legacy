@@ -160,10 +160,6 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
-                        .group(ArgGroup::with_name("namespace-specifier")
-                            .args(&["binding", "namespace-id"])
-                            .required(true)
-                        )
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to get")
