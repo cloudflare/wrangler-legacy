@@ -1,12 +1,12 @@
 # Changelog
 
-## 🎁 1.3.0
+## 🐛 1.3.1
 
 - ### Features
 
   - **Environments - [EverlastingBugstopper], [issue/385][pull/386]**
 
-    Wrangler 1.3.0 includes supports for **environments**, allowing developers to deploy Workers projects to multiple places. For instance, an application can be deployed to a production URL _and_ a staging URL, without having to juggle multiple configuration files.
+    Wrangler 1.3.1 includes supports for **environments**, allowing developers to deploy Workers projects to multiple places. For instance, an application can be deployed to a production URL _and_ a staging URL, without having to juggle multiple configuration files.
 
     To use environments, you can now pass in `[env.$env_name]` properties in your `wrangler.toml`. Here's an example:
 
@@ -36,7 +36,7 @@
 
   - **KV commands - [ashleymichal], [gabbifish], [issue/339][pull/405]**
 
-    Wrangler 1.3.0 includes commands for managing and updating [Workers KV](https://www.cloudflare.com/products/workers-kv/) namespaces, keys, and values directly from the CLI.
+    Wrangler 1.3.1 includes commands for managing and updating [Workers KV](https://www.cloudflare.com/products/workers-kv/) namespaces, keys, and values directly from the CLI.
 
     - `wrangler kv:namespace`
 
@@ -90,7 +90,7 @@
       ✨  Success
       ```
 
-    The KV subcommands in Wrangler 1.3.0 make it super easy to comfortably query and manage your Workers KV data without ever having to leave the command-line. For more information on the available commands and their usage, see [the documentation](https://github.com/cloudflare/wrangler/blob/feat-kv-commands/docs/content/kv_commands.md). 🤯
+    The KV subcommands in Wrangler 1.3.1 make it super easy to comfortably query and manage your Workers KV data without ever having to leave the command-line. For more information on the available commands and their usage, see [the documentation](https://github.com/cloudflare/wrangler/blob/feat-kv-commands/docs/content/kv_commands.md). 🤯
 
     [ashleymichal]: https://github.com/ashleymichal
     [gabbifish]: https://github.com/gabbifish
@@ -153,6 +153,13 @@
     [gabbifish]: https://github.com/gabbifish
     [issue/517]: https://github.com/cloudflare/wrangler/issues/517
     [pull/528]: https://github.com/cloudflare/wrangler/pull/528
+
+  - **Different emojis for different commands - [EverlastingBugstopper], [pull/605]**
+
+    KV subcommands would return the same emoji value in `--help` output. This PR updates the command-line output to use different emoji, making the output easier to read!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/605]: https://github.com/cloudflare/wrangler/pull/605
 
 - ### Maintenance
 
@@ -251,7 +258,7 @@
 
   - **Test maintenance - [EverlastingBugstopper], [pull/563]**
 
-    This PR cleans up some incorrectly named tests and adds fixtures to support testing new functionality in 1.3.0, such as environments. ✨
+    This PR cleans up some incorrectly named tests and adds fixtures to support testing new functionality in 1.3.1, such as environments. ✨
 
     [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
     [pull/563]: https://github.com/cloudflare/wrangler/pull/563
