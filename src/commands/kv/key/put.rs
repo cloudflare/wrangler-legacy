@@ -36,23 +36,28 @@ pub fn put(
 
     if let Some(exp) = expiration {
         query_params.push(("expiration", exp))
-    }
+    };
+    if let Some(ttl) = expiration_ttl {
+        query_params.push(("expiration_ttl", ttl))
+    };
+    let url = Url::parse_with_params(&api_endpoint, query_params);
 
     if let Some(ttl) = expiration_ttl {
         query_params.push(("expiration_ttl", ttl))
     }
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
-    let body_text = match is_file {
-        true => match &metadata(value) {
+    let body_text = if is_file {
+        match &metadata(value) {
             Ok(file_type) if file_type.is_file() => fs::read_to_string(value),
             Ok(file_type) if file_type.is_dir() => {
                 failure::bail!("--path argument takes a file, {} is a directory", value)
             }
             Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", value), // last remaining value is symlink
             Err(e) => failure::bail!("{}", e),
-        },
-        false => Ok(value.to_string()),
+        }
+    } else {
+        Ok(value.to_string())
     };
 
     let url = Url::parse_with_params(&api_endpoint, query_params);

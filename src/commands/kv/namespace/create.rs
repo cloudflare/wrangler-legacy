@@ -42,9 +42,7 @@ pub fn create(
                             "Add the following to your wrangler.toml under [env.{}]:",
                             env
                         )),
-                        None => {
-                            message::success(&format!("Add the following to your wrangler.toml:"))
-                        }
+                        None => message::success("Add the following to your wrangler.toml:"),
                     };
                     println!(
                         "kv-namespaces = [ \n\
@@ -59,10 +57,10 @@ pub fn create(
                             "Add the following to your wrangler.toml's \"kv-namespaces\" array in [env.{}]:",
                             env
                         )),
-                        None => message::success(&format!("Add the following to your wrangler.toml's \"kv-namespaces\" array:")),
+                        None => message::success("Add the following to your wrangler.toml's \"kv-namespaces\" array:"),
                     };
                     println!(
-                        "{{ binding: \"{}\", id: \"{}\" }}",
+                        "{{ binding = \"{}\", id = \"{}\" }}",
                         binding, success.result.id
                     );
                 }

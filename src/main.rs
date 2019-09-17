@@ -58,8 +58,9 @@ fn run() -> Result<(), failure::Error> {
         .long("namespace-id")
         .value_name("ID")
         .takes_value(true);
-    let kv_namespace_specifier_group =
-        ArgGroup::with_name("namespace-specifier").args(&["binding", "namespace-id"]);
+    let kv_namespace_specifier_group = ArgGroup::with_name("namespace-specifier")
+        .args(&["binding", "namespace-id"])
+        .required(true);
 
     // This arg is for any action that uses environments (e.g. KV subcommands, publish)
     let environment_arg = Arg::with_name("env")
@@ -78,7 +79,7 @@ fn run() -> Result<(), failure::Error> {
             SubCommand::with_name("kv:namespace")
                 .about(&*format!(
                     "{} Interact with your Workers KV Namespaces",
-                    emoji::KV
+                    emoji::FILES
                 ))
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -108,7 +109,7 @@ fn run() -> Result<(), failure::Error> {
             .subcommand(SubCommand::with_name("kv:key")
                 .about(&*format!(
                     "{} Individually manage Workers KV key-value pairs",
-                    emoji::KV
+                    emoji::KEY
                 ))
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -203,7 +204,7 @@ fn run() -> Result<(), failure::Error> {
             SubCommand::with_name("kv:bulk")
                 .about(&*format!(
                     "{} Interact with multiple Workers KV key-value pairs at once",
-                    emoji::KV
+                    emoji::BICEP
                 ))
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
