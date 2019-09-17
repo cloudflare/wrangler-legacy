@@ -17,7 +17,7 @@ pub fn list(target: &Target, user: GlobalUser) -> Result<(), failure::Error> {
             let result = serde_json::to_string(&success.result)?;
             println!("{}", result);
         }
-        Err(e) => kv::print_error(e),
+        Err(e) => print!("{}", kv::format_error(e)),
     }
 
     Ok(())
