@@ -1,9 +1,11 @@
 extern crate base64;
 
 mod delete;
+mod sync;
 mod upload;
 
 pub use delete::delete;
+pub use sync::sync;
 pub use upload::upload;
 
 use std::ffi::OsString;

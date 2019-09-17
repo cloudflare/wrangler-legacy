@@ -10,11 +10,11 @@ pub fn delete(
     target: &Target,
     user: GlobalUser,
     namespace_id: &str,
-    filename: &Path,
+    path: &Path,
 ) -> Result<(), failure::Error> {
-    let keys: Result<Vec<String>, failure::Error> = match &metadata(filename) {
-        Ok(file_type) if file_type.is_dir() => directory_keys_only(filename),
-        Ok(_) => failure::bail!("{} should be a directory", filename.display()),
+    let keys: Result<Vec<String>, failure::Error> = match &metadata(path) {
+        Ok(file_type) if file_type.is_dir() => directory_keys_only(path),
+        Ok(_) => failure::bail!("{} should be a directory", path.display()),
         Err(e) => failure::bail!("{}", e),
     };
 
