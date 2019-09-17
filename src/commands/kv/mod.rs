@@ -71,7 +71,6 @@ fn format_error(e: ApiFailure) -> String {
             give_status_code_context(status);
             let mut complete_err = "".to_string();
             for error in api_errors.errors {
-                // message::warn(&format!("Error {}: {}", error.code, error.message));
                 let error_msg =
                     format!("{} Error {}: {}\n", emoji::WARN, error.code, error.message);
 
