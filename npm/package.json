@@ -24,5 +24,27 @@
     "axios": "^0.18.0",
     "rimraf": "^2.6.3",
     "tar": "^4.4.8"
-  }
+  },
+  "keywords": [
+    "wrangler",
+    "cloudflare",
+    "workers",
+    "cloudflare workers",
+    "edge",
+    "compute",
+    "serverless",
+    "serverless application",
+    "serverless module",
+    "wasm",
+    "web",
+    "assembly",
+    "webassembly",
+    "rust",
+    "emscripten",
+    "typescript",
+    "graphql",
+    "router",
+    "http",
+    "cli"
+  ]
 }
