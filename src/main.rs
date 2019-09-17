@@ -57,8 +57,9 @@ fn run() -> Result<(), failure::Error> {
         .long("namespace-id")
         .value_name("ID")
         .takes_value(true);
-    let kv_namespace_specifier_group =
-        ArgGroup::with_name("namespace-specifier").args(&["binding", "namespace-id"]);
+    let kv_namespace_specifier_group = ArgGroup::with_name("namespace-specifier")
+        .args(&["binding", "namespace-id"])
+        .required(true);
 
     // This arg is for any action that uses environments (e.g. KV subcommands, publish)
     let environment_arg = Arg::with_name("env")
