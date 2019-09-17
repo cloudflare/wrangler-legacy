@@ -18,6 +18,8 @@ use crate::terminal::message;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Site {
     pub bucket: String,
+    #[serde(rename = "entry-point")]
+    pub entry_point: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -53,9 +55,15 @@ impl Target {
         let current_dir = env::current_dir()?;
         // if `site` is configured, we want to isolate worker code
         // and build artifacts from static site application code.
+        // if the user has configured `site.entry-point`, use that
+        // as the build directory. Otherwise use our the default
+        // stored as the const SITE_BUILD_DIR
         match &self.site {
-            Some(_site_config) => Ok(current_dir.join(
-                SITE_BUILD_DIR.to_string(),
+            Some(site_config) => Ok(current_dir.join(
+                site_config
+                    .entry_point
+                    .to_owned()
+                    .unwrap_or(SITE_BUILD_DIR.to_string()),
             )),
             None => Ok(current_dir),
         }
