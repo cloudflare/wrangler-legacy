@@ -127,8 +127,8 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         env_dep_installed(tool)?;
     }
 
-    let current_dir = env::current_dir()?;
-    run_npm_install(current_dir).expect("could not run `npm install`");
+    let build_dir = target.build_dir()?;
+    run_npm_install(&build_dir.to_path_buf()).expect("could not run `npm install`");
 
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
@@ -149,7 +149,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         temp_file.clone().to_str().unwrap().to_string()
     ));
 
-    let bundle = Bundle::new();
+    let bundle = Bundle::new(&build_dir);
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
@@ -164,9 +164,8 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
     if !bundle.has_webpack_config(&webpack_config_path) {
-        let package = Package::new("./")?;
-        let current_dir = env::current_dir()?;
-        let package_main = current_dir
+        let package = Package::new(&build_dir)?;
+        let package_main = build_dir
             .join(package.main()?)
             .to_str()
             .unwrap()
@@ -185,7 +184,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
-fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
+fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
     let flock_path = dir.join(&".install.lock");
     let flock = File::create(&flock_path)?;
     // avoid running multiple {npm install} at the same time (eg. in tests)
@@ -263,7 +262,7 @@ fn install() -> Result<PathBuf, failure::Error> {
         wranglerjs_path.path()
     };
 
-    run_npm_install(wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
+    run_npm_install(&wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
     Ok(wranglerjs_path)
 }
 

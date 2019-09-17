@@ -40,7 +40,8 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
         }
         TargetType::JavaScript => {
             log::info!("JavaScript project detected. Publishing...");
-            let package = Package::new("./")?;
+            let build_dir = target.build_dir()?;
+            let package = Package::new(&build_dir)?;
 
             let script_path = package.main()?;
 
@@ -51,7 +52,8 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
         TargetType::Webpack => {
             log::info!("Webpack project detected. Publishing...");
             // FIXME(sven): shouldn't new
-            let bundle = wranglerjs::Bundle::new();
+            let build_dir = target.build_dir()?;
+            let bundle = wranglerjs::Bundle::new(&build_dir);
 
             let script_path = bundle.script_path();
 

@@ -5,6 +5,7 @@ pub use kv_namespace::KvNamespace;
 pub use target_type::TargetType;
 
 use std::collections::{HashMap, HashSet};
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -44,6 +45,10 @@ impl Target {
         let mut updated_namespaces = self.kv_namespaces();
         updated_namespaces.push(kv_namespace);
         self.kv_namespaces = Some(updated_namespaces);
+    }
+
+    pub fn build_dir(&self) -> Result<PathBuf, std::io::Error> {
+        env::current_dir()
     }
 }
 
