@@ -1,14 +1,13 @@
 mod project_assets;
 mod wasm_module;
 
-use log::info;
-
 use reqwest::multipart::{Form, Part};
 use std::fs;
 use std::path::Path;
 
 use crate::commands::build::wranglerjs;
 use crate::settings::binding;
+
 use crate::settings::metadata::Metadata;
 use crate::settings::target::kv_namespace;
 use crate::settings::target::{Target, TargetType};
@@ -23,7 +22,7 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
     let kv_namespaces = target.kv_namespaces();
     match target_type {
         TargetType::Rust => {
-            info!("Rust project detected. Publishing...");
+            log::info!("Rust project detected. Publishing...");
             let name = krate::Krate::new("./")?.name.replace("-", "_");
             // TODO: move into build?
             build_generated_dir()?;
@@ -40,7 +39,7 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
             build_form(&assets)
         }
         TargetType::JavaScript => {
-            info!("JavaScript project detected. Publishing...");
+            log::info!("JavaScript project detected. Publishing...");
             let package = Package::new("./")?;
 
             let script_path = package.main()?;
@@ -50,7 +49,7 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
             build_form(&assets)
         }
         TargetType::Webpack => {
-            info!("Webpack project detected. Publishing...");
+            log::info!("Webpack project detected. Publishing...");
             // FIXME(sven): shouldn't new
             let bundle = wranglerjs::Bundle::new();
 
@@ -80,7 +79,7 @@ fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
 
-    info!("{:?}", &form);
+    log::info!("{:?}", &form);
 
     Ok(form)
 }
