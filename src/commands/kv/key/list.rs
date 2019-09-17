@@ -33,7 +33,7 @@ pub fn list(
 
                 print!("{}", serde_json::to_string(&key)?);
             }
-            Err(e) => kv::print_error(e),
+            Err(e) => print!("{}", kv::format_error(e)),
         }
     }
 

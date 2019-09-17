@@ -36,7 +36,7 @@ pub fn delete(target: &Target, user: GlobalUser, id: &str) -> Result<(), failure
                 "Make sure to remove this \"kv-namespace\" entry from your wrangler.toml!",
             )
         }
-        Err(e) => kv::print_error(e),
+        Err(e) => print!("{}", kv::format_error(e)),
     }
 
     Ok(())
