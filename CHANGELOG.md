@@ -90,7 +90,7 @@
       ✨  Success
       ```
 
-    The KV subcommands in Wrangler 1.3.1 make it super easy to comfortably query and manage your Workers KV data without ever having to leave the command-line. For more information on the available commands and their usage, see [the documentation](https://github.com/cloudflare/wrangler/blob/feat-kv-commands/docs/content/kv_commands.md). 🤯
+    The KV subcommands in Wrangler 1.3.1 make it super easy to comfortably query and manage your Workers KV data without ever having to leave the command-line. For more information on the available commands and their usage, see [the documentation](https://github.com/cloudflare/wrangler/blob/master/docs/content/kv_commands.md). 🤯
 
     [ashleymichal]: https://github.com/ashleymichal
     [gabbifish]: https://github.com/gabbifish
