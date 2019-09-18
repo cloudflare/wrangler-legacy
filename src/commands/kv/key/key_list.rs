@@ -5,6 +5,9 @@ use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
 
+use crate::commands::kv;
+use crate::settings::global_user::GlobalUser;
+
 use serde_json::value::Value as JsonValue;
 
 use crate::settings::target::Target;
@@ -22,19 +25,20 @@ pub struct KeyList {
 impl KeyList {
     pub fn new(
         target: &Target,
-        client: HttpApiClient,
+        user: GlobalUser,
         namespace_id: &str,
         prefix: Option<&str>,
-    ) -> KeyList {
-        KeyList {
+    ) -> Result<KeyList, failure::Error> {
+        let iter = KeyList {
             keys_result: None,
             prefix: prefix.map(str::to_string),
-            client,
+            client: kv::api_client(user)?,
             account_id: target.account_id.to_owned(),
             namespace_id: namespace_id.to_string(),
             cursor: None,
             init_fetch: false,
-        }
+        };
+        Ok(iter)
     }
 
     fn request_params(&self) -> ListNamespaceKeys {

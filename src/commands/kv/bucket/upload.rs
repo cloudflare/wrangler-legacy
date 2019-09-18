@@ -7,15 +7,16 @@ use crate::commands::kv::bucket::directory_keys_values;
 use crate::commands::kv::bulk::put::put_bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
+use crate::terminal::message;
 
 pub fn upload(
     target: &Target,
     user: GlobalUser,
     namespace_id: &str,
-    filename: &Path,
+    path: &Path,
 ) -> Result<(), failure::Error> {
-    let pairs: Result<Vec<KeyValuePair>, failure::Error> = match &metadata(filename) {
-        Ok(file_type) if file_type.is_dir() => directory_keys_values(filename),
+    let pairs: Result<Vec<KeyValuePair>, failure::Error> = match &metadata(path) {
+        Ok(file_type) if file_type.is_dir() => directory_keys_values(path),
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             failure::bail!("wrangler kv:bucket upload takes a directory")
@@ -23,5 +24,9 @@ pub fn upload(
         Err(e) => failure::bail!("{}", e),
     };
 
-    put_bulk(target, user, namespace_id, pairs?)
+    match put_bulk(target, user, namespace_id, pairs?) {
+        Ok(_) => message::success("Success"),
+        Err(e) => print!("{}", e),
+    }
+    Ok(())
 }
