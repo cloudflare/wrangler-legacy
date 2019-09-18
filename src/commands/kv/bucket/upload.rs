@@ -31,8 +31,9 @@ pub fn upload(
 
     validate_file_uploads(pairs.clone())?;
 
-    // Create a vector of uploads; that is, a vector of vectors of key-value pairs, each of which are
-    // maximum 10K key-value pairs in size OR maximum ~50MB in size.
+    // Iterate over all key-value pairs and create batches of uploads, each of which are
+    // maximum 10K key-value pairs in size OR maximum ~50MB in size. Upload each batch
+    // as it is created.
     let mut key_count = 0;
     let mut key_pair_bytes = 0;
     let mut key_value_batch: Vec<KeyValuePair> = Vec::new();
@@ -75,6 +76,7 @@ fn call_put_bulk_api(
     // If partial upload fails (e.g. server error), return that error message
     put_bulk(target, user.clone(), namespace_id, key_value_batch.clone())?;
 
+    // Can clear batch now that we've uploaded it
     key_value_batch.clear();
     Ok(())
 }
