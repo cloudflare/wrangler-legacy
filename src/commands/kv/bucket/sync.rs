@@ -19,12 +19,11 @@ pub fn sync(
     path: &Path,
 ) -> Result<(), failure::Error> {
     // First get local keys
-    let local_keys_vec: Result<Vec<String>, failure::Error> = match &metadata(path) {
+    let local_keys_vec: Vec<String> = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => directory_keys_only(path),
         Ok(_) => failure::bail!("{} should be a directory", path.display()),
         Err(e) => failure::bail!("{}", e),
-    };
-    let local_keys_vec = local_keys_vec?;
+    }?;
     let local_keys: HashSet<_> = HashSet::from_iter(local_keys_vec.iter());
 
     // Then get remote keys
