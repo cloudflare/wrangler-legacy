@@ -106,7 +106,8 @@ fn run() -> Result<(), failure::Error> {
                         .about("List all namespaces on your Cloudflare account")
                 )
         )
-            .subcommand(SubCommand::with_name("kv:key")
+        .subcommand(
+            SubCommand::with_name("kv:key")
                 .about(&*format!(
                     "{} Individually manage Workers KV key-value pairs",
                     emoji::KEY
