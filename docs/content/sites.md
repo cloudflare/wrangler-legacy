@@ -1,0 +1,145 @@
+# Sites
+
+Static files can easily be deployed and served from a Wrangler project.
+
+### Setup new project
+
+If you want to setup a new project use  `wrangler generate` . Examples of how to setup a project for Hugo, Gatsby and React can be seen in our [template gallery](TODO).
+
+To set up a generic project you can run:
+
+```
+wrangler generate --site myProj
+```
+
+This command creates the source directory `dist`, `wrangler.toml`, and `worker-site` directory required. 
+
+Any files you wish to upload and make live should live in `dist`. You can change this later.
+
+### Setup existing static project
+
+If you already have a folder (e.g. `./dist`) with the static files you'd like to be served from a Worker script, you can upload them to Worker's KV. First run:
+
+```
+$ wrangler init --site --bucket="./dist"
+```
+
+This command creates the `wrangler.toml` and `worker-site` directory required to upload the files and serve them from our network. 
+
+#### Setup existing Worker project
+
+If you already have a Worker running on your project nice! Read [Config Bucket](TODO) and [Advanced Modify a Worker script](TODO)
+
+### Config Bucket
+
+Special keys in your `wrangler.toml` for using sites with Worker scripts are:
+
+| Key             | Value                                                        | Example                                                      |
+| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| \*`bucket`      | The file path to the static assests you wish to serve in respect to the directory containing your wrangler.toml | `bucket = "./dist"`                                          |
+| `kv-namespaces` | The glue for the static assets that live on our edge to your Worker script. ` | ```kv-namespaces = [ { binding = "MY_KV", id = "e29b263ab50e42ce9b637fa8370175e8" }]``` |
+|                 | \*`binding` is an arbitrary value that the [npm package](TODO) references when serving files from the Worker script |                                                              |
+|                 | `id` the ID of the namespace where the files live            |                                                              |
+
+\* Note you shouldn't need to touch these values.
+
+With all the appropriate files setup, you'll want to add your `wrangler.toml` the namespace ID as well as the deploy configuration.
+
+##### Add namespace ID
+
+First create a namespace
+
+```
+$ wrangler kv create STATIC_ASSETS --env=prod
+=> { "id": "c417513a199c4289a1a0c8385c58a0e7", "title": "workers-site-STATIC_ASSETS" }
+```
+
+Note [`—-env`](./environments) is optional.
+
+Add this namespace ID to your `wrangler.toml`:
+
+```
+name = "my-blog"
+type = "webpack"
+account_id = "43434f8d0d9f52a395a1472b35f23439" 
+ 
+[env.prod]
+bucket = "./dist" 
+kv-namespaces = [ { binding = "MY_KV", id = "c417513a199c4289a1a0c8385c58a0e7" }]
+```
+
+If you used `wrangler init` or `wrangler generate` with the `—site` flag, then the `binding` and `assets` fields will be set. If not, then add those values.
+
+##### Deploy Config
+
+Setup the `account_id`, `zone_id`, `route`, and `workers_dev` you wish to  publish following [the project config steps](../../#-config).
+
+### Deploy
+
+Now that you have configured your project to use the static files, time to upload them and deploy the Worker. This can be done from `wrangler publish`:
+
+```console
+$ wrangler publish
+=> Writing contents of ./public to bucket c417513a199c4289a1a0c8385c58a0e7
+=> Publishing workers-sites
+=> Success! Your site is live at myblog.examples.workers.dev
+```
+
+#### Advanced: Modifying the Worker 
+
+If you used `wrangler init` or `wrangler generate` with the `—site` flag, then your Worker should already live in `worker-site/worker.js`. If not, you'll want to configure a Worker script to serve the files from KV:
+
+First install the node package:
+
+```
+npm install @cloudflare/kv-asset-handlers
+```
+
+Then configure the Worker script to look something like:
+
+```javascript
+import { getAssetFromKV } from '@cloudflare/kv-asset-handlers'
+
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request))
+})
+// Map how the path of an incoming request will map to a file path
+// from your bucket
+function keyModifier(path) {
+  if (path.endsWith('/')) {
+    path += `index.html`
+  }
+  return path
+}
+async function handleRequest(request) {
+  let url = new URL(request.url)
+  let key = keyModifier(url.pathname)
+  try {
+    return await getAssetFromKV(key, { cacheControl: { bypassCache: true } })
+  } catch (e) {
+    return new Response(`"${url.pathname}" not found`, { status: 404, statusText: 'not found' })
+  }
+}
+
+```
+
+More information on the configurable options of `getAssetFromKV` see [@cloudflare/kv-asset-handler](TODO).
+
+##### Advanced Tip 
+
+Another routing solution that supports serving static files from KV is [`8track`](TODO):
+
+```
+wrangler generate myProj --git  https://github.com/jrf0110/8track
+```
+
+This allows KV to serve as a continuous middleware:
+
+```typescript
+const router = new Router()
+router.all`(.*)`.use(kvStatic(myKvNamespaceVar, { cacheControl: {  bypassCache:false}}))
+route.get(`\happy*`).handle(..)
+```
+
+
+
