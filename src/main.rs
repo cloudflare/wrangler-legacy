@@ -379,13 +379,13 @@ fn run() -> Result<(), failure::Error> {
                         .takes_value(true)
                 )
                 .arg(
-                    Arg::with_name("no_worker")
+                    Arg::with_name("no-worker")
                         .help("run publish without uploading your worker. used if you want to publish a bucket on its own")
                         .long("no-worker")
                         .takes_value(false)
                 )
                 .arg(
-                    Arg::with_name("no_bucket")
+                    Arg::with_name("no-bucket")
                         .help("run publish without uploading your bucket to kv. used to update worker logic alone")
                         .long("no-bucket")
                         .takes_value(false)
@@ -503,9 +503,9 @@ fn run() -> Result<(), failure::Error> {
             target = manifest.get_target(None, false)?;
         }
 
-        let no_worker = matches.is_present("no_worker");
-        let no_bucket = matches.is_present("no_bucket");
-        commands::publish(&user, &target, no_worker, no_bucket)?;
+        let push_worker = !matches.is_present("no-worker");
+        let push_bucket = !matches.is_present("no-bucket");
+        commands::publish(&user, &target, push_worker, push_bucket)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
