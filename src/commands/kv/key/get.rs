@@ -32,7 +32,10 @@ pub fn get(target: &Target, user: GlobalUser, id: &str, key: &str) -> Result<(),
         // it will be redundant when we switch to using cloudflare-rs for all API requests.
         let parsed = res.json();
         let errors = parsed.unwrap_or_default();
-        kv::print_error(ApiFailure::Error(res.status(), errors));
+        print!(
+            "{}",
+            kv::format_error(ApiFailure::Error(res.status(), errors))
+        );
     }
 
     Ok(())

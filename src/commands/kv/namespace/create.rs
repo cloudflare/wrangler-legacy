@@ -66,7 +66,7 @@ pub fn create(
                 }
             }
         }
-        Err(e) => kv::print_error(e),
+        Err(e) => print!("{}", kv::format_error(e)),
     }
 
     Ok(())

@@ -34,7 +34,11 @@ pub fn put(
         Err(e) => failure::bail!("{}", e),
     };
 
-    put_bulk(target, user, namespace_id, pairs?)
+    match put_bulk(target, user, namespace_id, pairs?) {
+        Ok(_) => message::success("Success"),
+        Err(e) => print!("{}", e),
+    }
+    Ok(())
 }
 
 pub fn put_bulk(
@@ -61,9 +65,7 @@ pub fn put_bulk(
     });
 
     match response {
-        Ok(_) => message::success("Success"),
-        Err(e) => kv::print_error(e),
+        Ok(_) => Ok(()),
+        Err(e) => failure::bail!("{}", kv::format_error(e)),
     }
-
-    Ok(())
 }

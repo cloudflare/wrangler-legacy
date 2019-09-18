@@ -9,6 +9,7 @@ use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
+use crate::terminal::emoji;
 use crate::terminal::message;
 
 pub mod bucket;
@@ -66,20 +67,26 @@ fn api_client(user: GlobalUser) -> Result<HttpApiClient, failure::Error> {
     Ok(HttpApiClient::new(Credentials::from(user)))
 }
 
-fn print_error(e: ApiFailure) {
+fn format_error(e: ApiFailure) -> String {
     match e {
         ApiFailure::Error(status, api_errors) => {
             give_status_code_context(status);
+            let mut complete_err = "".to_string();
             for error in api_errors.errors {
-                message::warn(&format!("Error {}: {}", error.code, error.message));
+                let error_msg =
+                    format!("{} Error {}: {}\n", emoji::WARN, error.code, error.message);
 
                 let suggestion = help(error.code);
                 if !suggestion.is_empty() {
-                    message::help(suggestion);
+                    let help_msg = format!("{} {}\n", emoji::SLEUTH, suggestion);
+                    complete_err.push_str(&format!("{}{}", error_msg, help_msg));
+                } else {
+                    complete_err.push_str(&error_msg)
                 }
             }
+            complete_err
         }
-        ApiFailure::Invalid(reqwest_err) => message::warn(&format!("Error: {}", reqwest_err)),
+        ApiFailure::Invalid(reqwest_err) => format!("{} Error: {}", emoji::WARN, reqwest_err),
     }
 }
 

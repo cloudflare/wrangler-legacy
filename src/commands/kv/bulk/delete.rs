@@ -48,7 +48,11 @@ pub fn delete(
 
     let keys: Vec<String> = pairs?.iter().map(|kv| kv.key.to_owned()).collect();
 
-    delete_bulk(target, user, namespace_id, keys)
+    match delete_bulk(target, user, namespace_id, keys) {
+        Ok(_) => message::success("Success"),
+        Err(e) => print!("{}", e),
+    }
+    Ok(())
 }
 
 pub fn delete_bulk(
@@ -75,9 +79,7 @@ pub fn delete_bulk(
     });
 
     match response {
-        Ok(_) => message::success("Success"),
-        Err(e) => kv::print_error(e),
+        Ok(_) => Ok(()),
+        Err(e) => failure::bail!("{}", kv::format_error(e)),
     }
-
-    Ok(())
 }
