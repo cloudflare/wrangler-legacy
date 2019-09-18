@@ -271,6 +271,20 @@ fn run() -> Result<(), failure::Error> {
                             .index(1),
                         )
                 )
+                .subcommand(
+                    SubCommand::with_name("sync")
+                        .about("Sync the contents of a directory keyed on path (ensures local and remote directories are the same)")
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
+                        .arg(
+                            Arg::with_name("path")
+                            .help("the directory to be synced to KV")
+                            .required(true)
+                            .index(1),
+                        )
+                )
         )
         .subcommand(
             SubCommand::with_name("generate")
@@ -683,6 +697,10 @@ fn run() -> Result<(), failure::Error> {
             ("delete", Some(delete_matches)) => {
                 let path = delete_matches.value_of("path").unwrap();
                 commands::kv::bucket::delete(&target, user, &namespace_id, Path::new(path))?;
+            }
+            ("sync", Some(sync_matches)) => {
+                let path = sync_matches.value_of("path").unwrap();
+                commands::kv::bucket::sync(&target, user, &namespace_id, Path::new(path))?;
             }
             ("", None) => message::warn("kv:bucket expects a subcommand"),
             _ => unreachable!(),
