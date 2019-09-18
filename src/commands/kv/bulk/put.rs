@@ -41,7 +41,6 @@ pub fn put(
     Ok(())
 }
 
-//todo(gabbi): Let's make sure to split very large payloads into multiple requests.
 pub fn put_bulk(
     target: &Target,
     user: GlobalUser,

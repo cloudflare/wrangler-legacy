@@ -11,8 +11,11 @@ use crate::terminal::message;
 
 const KEY_MAX_SIZE: usize = 512;
 const VALUE_MAX_SIZE: usize = 2 * 1024 * 1024;
-const PAIRS_MAX_COUNT: usize = 10000;
-const UPLOAD_MAX_SIZE: usize = 100 * 1024 * 1024;
+
+// The consts below are halved from the API's true capacity to help avoid
+// hammering it with large requests.
+const PAIRS_MAX_COUNT: usize = 5000;
+const UPLOAD_MAX_SIZE: usize = 50 * 1024 * 1024;
 
 pub fn upload(
     target: &Target,
@@ -44,9 +47,9 @@ pub fn upload(
             call_put_bulk_api(target, user.clone(), namespace_id, &mut key_value_batch)?;
         } else {
             let pair = pairs.pop().unwrap();
-            if key_count + pair.key.len() > PAIRS_MAX_COUNT
+            if key_count + 1 > PAIRS_MAX_COUNT
             // Keep upload size small to keep KV bulk API happy
-            || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE * 1/2
+            || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
             {
                 call_put_bulk_api(target, user.clone(), namespace_id, &mut key_value_batch)?;
 
@@ -56,7 +59,7 @@ pub fn upload(
             }
 
             // Add the popped key-value pair to the running batch of key-value pair uploads
-            key_count = key_count + pair.key.len();
+            key_count = key_count + 1;
             key_pair_bytes = key_pair_bytes + pair.key.len() + pair.value.len();
             key_value_batch.push(pair);
         }
