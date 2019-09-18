@@ -4,6 +4,7 @@ pub mod preview;
 mod route;
 mod upload_form;
 
+use crate::settings::target::kv_namespace::KvNamespace;
 pub use package::Package;
 use route::Route;
 
@@ -17,18 +18,30 @@ use crate::commands::kv;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
+
 use crate::settings::target::Target;
 use crate::terminal::{emoji, message};
 
 pub fn publish(
     user: &GlobalUser,
-    target: &Target,
+    target: &mut Target,
     push_worker: bool,
     push_bucket: bool,
 ) -> Result<(), failure::Error> {
     info!("workers_dev = {}", target.workers_dev);
 
     validate_target(target)?;
+
+    if let Some(site_config) = &target.site {
+        let site_namespace = kv::namespace::site(target, user)?;
+
+        target.add_kv_namespace(KvNamespace {
+            binding: "__STATIC_CONTENT".to_string(),
+            id: site_namespace.id,
+            bucket: Some(site_config.bucket.to_owned()),
+        });
+    }
+
     if push_bucket {
         upload_buckets(target, user)?;
     }

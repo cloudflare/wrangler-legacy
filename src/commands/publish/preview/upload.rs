@@ -109,7 +109,7 @@ fn authenticated_upload(client: &Client, target: &Target) -> Result<Preview, fai
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::build_script_upload_form(&target)?;
+    let script_upload_form = publish::build_script_upload_form(target)?;
 
     let mut res = client
         .post(&create_address)

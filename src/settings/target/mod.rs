@@ -4,17 +4,20 @@ mod target_type;
 pub use kv_namespace::KvNamespace;
 pub use target_type::TargetType;
 
-use crate::terminal::emoji;
-use crate::terminal::message;
-
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use log::info;
-
 use config::{Config, File};
 use serde::{Deserialize, Serialize};
+
+use crate::terminal::emoji;
+use crate::terminal::message;
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Site {
+    pub bucket: String,
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Target {
@@ -29,11 +32,18 @@ pub struct Target {
     pub webpack_config: Option<String>,
     pub workers_dev: bool,
     pub zone_id: Option<String>,
+    pub site: Option<Site>,
 }
 
 impl Target {
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
         self.kv_namespaces.clone().unwrap_or_else(Vec::new)
+    }
+
+    pub fn add_kv_namespace(&mut self, kv_namespace: KvNamespace) {
+        let mut updated_namespaces = self.kv_namespaces();
+        updated_namespaces.push(kv_namespace);
+        self.kv_namespaces = Some(updated_namespaces);
     }
 }
 
@@ -49,6 +59,7 @@ pub struct Environment {
     pub webpack_config: Option<String>,
     pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
+    pub site: Option<Site>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -66,6 +77,7 @@ pub struct Manifest {
     pub webpack_config: Option<String>,
     pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
+    pub site: Option<Site>,
 }
 
 impl Manifest {
@@ -234,13 +246,14 @@ impl Manifest {
             account_id: self.account_id.clone(),         // MAY inherit
             webpack_config: self.webpack_config.clone(), // MAY inherit
             zone_id: self.zone_id.clone(),               // MAY inherit
-            workers_dev: true,                           // MAY inherit,
+            workers_dev: true,                           // MAY inherit
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(),                   // MAY inherit
             kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
             route: None,                               // MUST NOT inherit
             routes: self.routes.clone(),               // MUST NOT inherit
+            site: self.site.clone(),                   // MUST NOT inherit
         };
 
         let environment = self.get_environment(environment_name)?;
@@ -295,6 +308,7 @@ impl Manifest {
             webpack_config: None,
             workers_dev: Some(true),
             zone_id: Some(String::new()),
+            site: None,
         };
 
         let toml = toml::to_string(&manifest)?;
@@ -305,7 +319,7 @@ impl Manifest {
         };
         let config_file = config_path.join("wrangler.toml");
 
-        info!("Writing a wrangler.toml file at {}", config_file.display());
+        log::info!("Writing a wrangler.toml file at {}", config_file.display());
         fs::write(&config_file, &toml)?;
         Ok(manifest)
     }

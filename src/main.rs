@@ -508,7 +508,7 @@ fn run() -> Result<(), failure::Error> {
             failure::bail!("You can only pass --env or --release, not both")
         }
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target;
+        let mut target;
         if matches.is_present("env") {
             target = manifest.get_target(matches.value_of("env"), false)?;
         } else if matches.is_present("release") {
@@ -519,7 +519,7 @@ fn run() -> Result<(), failure::Error> {
 
         let push_worker = !matches.is_present("no-worker");
         let push_bucket = !matches.is_present("no-bucket");
-        commands::publish(&user, &target, push_worker, push_bucket)?;
+        commands::publish(&user, &mut target, push_worker, push_bucket)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;

@@ -166,6 +166,7 @@ mod tests {
             webpack_config: None,
             workers_dev: false,
             zone_id: None,
+            site: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }
