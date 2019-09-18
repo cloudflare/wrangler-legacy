@@ -20,13 +20,23 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::{emoji, message};
 
-pub fn publish(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+pub fn publish(
+    user: &GlobalUser,
+    target: &Target,
+    push_worker: bool,
+    push_bucket: bool,
+) -> Result<(), failure::Error> {
     info!("workers_dev = {}", target.workers_dev);
 
     validate_target(target)?;
-    upload_buckets(target, user)?;
-    commands::build(&target)?;
-    publish_script(&user, &target)?;
+    if push_bucket {
+        upload_buckets(target, user)?;
+    }
+    if push_worker {
+        commands::build(&target)?;
+        publish_script(&user, &target)?;
+    }
+
     Ok(())
 }
 

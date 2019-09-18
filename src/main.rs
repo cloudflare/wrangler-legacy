@@ -377,6 +377,18 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("env")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("no-worker")
+                        .help("run publish without uploading your worker. used if you want to publish a bucket on its own")
+                        .long("no-worker")
+                        .takes_value(false)
+                )
+                .arg(
+                    Arg::with_name("no-bucket")
+                        .help("run publish without uploading your bucket to kv. used to update worker logic alone")
+                        .long("no-bucket")
+                        .takes_value(false)
                 ),
         )
         .subcommand(
@@ -482,16 +494,18 @@ fn run() -> Result<(), failure::Error> {
             failure::bail!("You can only pass --env or --release, not both")
         }
         let manifest = settings::target::Manifest::new(config_path)?;
+        let target;
         if matches.is_present("env") {
-            let target = manifest.get_target(matches.value_of("env"), false)?;
-            commands::publish(&user, &target)?;
+            target = manifest.get_target(matches.value_of("env"), false)?;
         } else if matches.is_present("release") {
-            let target = manifest.get_target(None, true)?;
-            commands::publish(&user, &target)?;
+            target = manifest.get_target(None, true)?;
         } else {
-            let target = manifest.get_target(None, false)?;
-            commands::publish(&user, &target)?;
+            target = manifest.get_target(None, false)?;
         }
+
+        let push_worker = !matches.is_present("no-worker");
+        let push_bucket = !matches.is_present("no-bucket");
+        commands::publish(&user, &target, push_worker, push_bucket)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
