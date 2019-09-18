@@ -123,7 +123,7 @@ impl Manifest {
     pub fn generate(
         name: String,
         target_type: TargetType,
-        init: bool,
+        config_path: PathBuf,
     ) -> Result<Manifest, failure::Error> {
         let manifest = Manifest {
             account_id: String::new(),
@@ -141,11 +141,6 @@ impl Manifest {
         };
 
         let toml = toml::to_string(&manifest)?;
-        let config_path = if init {
-            PathBuf::from("./")
-        } else {
-            Path::new("./").join(&name)
-        };
         let config_file = config_path.join("wrangler.toml");
 
         log::info!("Writing a wrangler.toml file at {}", config_file.display());

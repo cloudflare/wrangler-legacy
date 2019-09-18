@@ -1,6 +1,6 @@
 use crate::settings::target::{Manifest, TargetType};
 use crate::terminal::message;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub fn init(name: Option<&str>, target_type: Option<TargetType>) -> Result<(), failure::Error> {
     if Path::new("./wrangler.toml").exists() {
@@ -9,7 +9,8 @@ pub fn init(name: Option<&str>, target_type: Option<TargetType>) -> Result<(), f
     let dirname = get_current_dirname()?;
     let name = name.unwrap_or_else(|| &dirname);
     let target_type = target_type.unwrap_or_default();
-    Manifest::generate(name.to_string(), target_type, true)?;
+    let config_path = PathBuf::from("./");
+    Manifest::generate(name.to_string(), target_type, config_path)?;
     message::success("Succesfully created a `wrangler.toml`");
     Ok(())
 }

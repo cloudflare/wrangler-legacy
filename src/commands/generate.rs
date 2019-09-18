@@ -20,7 +20,8 @@ pub fn generate(
     let command_name = format!("{:?}", command);
 
     commands::run(command, &command_name)?;
-    Manifest::generate(name.to_string(), target_type, false)?;
+    let config_path = PathBuf::from("./").join(&name);
+    Manifest::generate(name.to_string(), target_type, config_path)?;
     Ok(())
 }
 
