@@ -44,7 +44,7 @@ pub fn upload(
         } else {
             let pair = pairs.pop().unwrap();
             if key_count + pair.key.len() > PAIRS_MAX_COUNT // Max KV pairs for request met
-            || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE * 80 / 100
+            || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE * 1/2
             // key+value sums nearly at UPLOAD_MAX_SIZE
             {
                 call_put_bulk_api(target, user.clone(), namespace_id, &mut key_value_batch)?;
