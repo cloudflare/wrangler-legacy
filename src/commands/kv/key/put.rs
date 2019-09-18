@@ -19,7 +19,7 @@ pub fn put(
     user: GlobalUser,
     id: &str,
     key: &str,
-    value: &String,
+    value: &str,
     is_file: bool,
     expiration: Option<&str>,
     expiration_ttl: Option<&str>,
@@ -40,11 +40,7 @@ pub fn put(
     if let Some(ttl) = expiration_ttl {
         query_params.push(("expiration_ttl", ttl))
     };
-    let url = Url::parse_with_params(&api_endpoint, query_params);
 
-    if let Some(ttl) = expiration_ttl {
-        query_params.push(("expiration_ttl", ttl))
-    }
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
     let body_text = if is_file {

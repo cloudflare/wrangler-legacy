@@ -240,7 +240,7 @@ fn run() -> Result<(), failure::Error> {
             SubCommand::with_name("kv:bucket")
                 .about(&*format!(
                     "{} Use KV as bucket-style storage",
-                    emoji::KV
+                    emoji::FILE_CABINET
                 ))
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
