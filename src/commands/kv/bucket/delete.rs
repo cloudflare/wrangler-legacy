@@ -5,6 +5,7 @@ use crate::commands::kv::bucket::directory_keys_only;
 use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
+use crate::terminal::message;
 
 pub fn delete(
     target: &Target,
@@ -18,5 +19,9 @@ pub fn delete(
         Err(e) => failure::bail!("{}", e),
     };
 
-    delete_bulk(target, user, namespace_id, keys?)
+    match delete_bulk(target, user, namespace_id, keys?) {
+        Ok(_) => message::success("Success"),
+        Err(e) => print!("{}", e),
+    }
+    Ok(())
 }

@@ -7,6 +7,7 @@ use crate::commands::kv::bucket::directory_keys_values;
 use crate::commands::kv::bulk::put::put_bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
+use crate::terminal::message;
 
 pub fn upload(
     target: &Target,
@@ -23,5 +24,9 @@ pub fn upload(
         Err(e) => failure::bail!("{}", e),
     };
 
-    put_bulk(target, user, namespace_id, pairs?)
+    match put_bulk(target, user, namespace_id, pairs?) {
+        Ok(_) => message::success("Success"),
+        Err(e) => print!("{}", e),
+    }
+    Ok(())
 }
