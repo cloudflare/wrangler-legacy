@@ -15,11 +15,20 @@ use serde::{Deserialize, Serialize};
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Site {
     pub bucket: String,
     #[serde(rename = "entry-point")]
     pub entry_point: Option<String>,
+}
+
+impl Default for Site {
+    fn default() -> Site {
+        Site {
+            bucket: String::new(),
+            entry_point: Some(String::from("workers-site")),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -54,10 +63,10 @@ impl Target {
     pub fn build_dir(&self) -> Result<PathBuf, std::io::Error> {
         let current_dir = env::current_dir()?;
         // if `site` is configured, we want to isolate worker code
-        // and build artifacts from static site application code.
+        // and build artifacts away from static site application code.
         // if the user has configured `site.entry-point`, use that
-        // as the build directory. Otherwise use our the default
-        // stored as the const SITE_BUILD_DIR
+        // as the build directory. Otherwise use the default const
+        // SITE_BUILD_DIR
         match &self.site {
             Some(site_config) => Ok(current_dir.join(
                 site_config
@@ -124,6 +133,7 @@ impl Manifest {
         name: String,
         target_type: TargetType,
         config_path: PathBuf,
+        site: bool,
     ) -> Result<Manifest, failure::Error> {
         let mut manifest = Manifest::default();
 
@@ -134,24 +144,10 @@ impl Manifest {
         manifest.workers_dev = Some(true);
         manifest.zone_id = Some(String::new());
 
-        let toml = toml::to_string(&manifest)?;
-        let config_file = config_path.join("wrangler.toml");
-
-        log::info!("Writing a wrangler.toml file at {}", config_file.display());
-        fs::write(&config_file, &toml)?;
-        Ok(manifest)
-    }
-
-    pub fn generate_site(name: String, config_path: PathBuf) -> Result<Manifest, failure::Error> {
-        let site = Site::default();
-        let mut manifest = Manifest::default();
-
-        manifest.name = name.clone();
-        manifest.site = Some(site);
-
-        manifest.route = Some(String::new());
-        manifest.workers_dev = Some(true);
-        manifest.zone_id = Some(String::new());
+        if site {
+            let site = Site::default();
+            manifest.site = Some(site);
+        }
 
         let toml = toml::to_string(&manifest)?;
         let config_file = config_path.join("wrangler.toml");
@@ -177,8 +173,14 @@ impl Manifest {
             message::warn("--release will be deprecated.");
         }
 
+        // Site projects are always Webpack for now; don't let toml override this.
+        let target_type = match self.site {
+            Some(_) => TargetType::Webpack,
+            None => self.target_type.clone(),
+        };
+
         let mut target = Target {
-            target_type: self.target_type.clone(),       // MUST inherit
+            target_type,                                 // MUST inherit
             account_id: self.account_id.clone(),         // MAY inherit
             webpack_config: self.webpack_config.clone(), // MAY inherit
             zone_id: self.zone_id.clone(),               // MAY inherit

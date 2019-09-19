@@ -5,27 +5,27 @@ use std::process::Command;
 
 use crate::terminal::{emoji, message};
 
-pub fn generate_site(name: &str, target_type: TargetType) -> Result<(), failure::Error> {
-    let template = "https://github.com/cloudflare/worker-sites-template";
-    run_generate(name, template, &target_type)?;
-    let config_path = PathBuf::from("./").join(&name);
-    Manifest::generate_site(name.to_string(), config_path)?;
-    Ok(())
-}
-
 pub fn generate(
     name: &str,
     template: &str,
     target_type: Option<TargetType>,
+    site: bool,
 ) -> Result<(), failure::Error> {
     let target_type = target_type.unwrap_or_else(|| get_target_type(template));
-    run_generate(name, template, &target_type)?;
-    let config_path = PathBuf::from("./").join(&name);
-    Manifest::generate(name.to_string(), target_type, config_path)?;
-    Ok(())
+    if site {
+        run_generate(name, template, &target_type)?;
+        let config_path = PathBuf::from("./").join(&name);
+        Manifest::generate(name.to_string(), target_type, config_path, site)?;
+        Ok(())
+    } else {
+        run_generate(name, template, &target_type)?;
+        let config_path = PathBuf::from("./").join(&name);
+        Manifest::generate(name.to_string(), target_type, config_path, site)?;
+        Ok(())
+    }
 }
 
-fn run_generate(
+pub fn run_generate(
     name: &str,
     template: &str,
     target_type: &TargetType,
