@@ -15,6 +15,8 @@ use serde::{Deserialize, Serialize};
 use crate::terminal::emoji;
 use crate::terminal::message;
 
+const SITE_ENTRY_POINT: &str = "workers-site";
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Site {
     pub bucket: String,
@@ -26,7 +28,7 @@ impl Default for Site {
     fn default() -> Site {
         Site {
             bucket: String::new(),
-            entry_point: Some(String::from("workers-site")),
+            entry_point: Some(String::from(SITE_ENTRY_POINT)),
         }
     }
 }
@@ -46,8 +48,6 @@ pub struct Target {
     pub zone_id: Option<String>,
     pub site: Option<Site>,
 }
-
-const SITE_BUILD_DIR: &str = "./workers-site";
 
 impl Target {
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
@@ -72,7 +72,7 @@ impl Target {
                 site_config
                     .entry_point
                     .to_owned()
-                    .unwrap_or_else(|| SITE_BUILD_DIR.to_string()),
+                    .unwrap_or_else(|| format!("./{}", SITE_ENTRY_POINT)),
             )),
             None => Ok(current_dir),
         }
@@ -135,19 +135,21 @@ impl Manifest {
         config_path: PathBuf,
         site: bool,
     ) -> Result<Manifest, failure::Error> {
-        let mut manifest = Manifest::default();
-
-        manifest.name = name.clone();
-        manifest.target_type = target_type.clone();
-
-        manifest.route = Some(String::new());
-        manifest.workers_dev = Some(true);
-        manifest.zone_id = Some(String::new());
-
-        if site {
-            let site = Site::default();
-            manifest.site = Some(site);
-        }
+        let site = if site { Some(Site::default()) } else { None };
+        let manifest = Manifest {
+            account_id: String::new(),
+            env: None,
+            kv_namespaces: None,
+            name: name.clone(),
+            private: None,
+            target_type: target_type.clone(),
+            route: Some(String::new()),
+            routes: None,
+            webpack_config: None,
+            workers_dev: Some(true),
+            zone_id: Some(String::new()),
+            site,
+        };
 
         let toml = toml::to_string(&manifest)?;
         let config_file = config_path.join("wrangler.toml");

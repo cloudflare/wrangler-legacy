@@ -130,7 +130,9 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     let build_dir = target.build_dir()?;
 
-    scaffold_site_worker(&target)?;
+    if target.site.is_some() {
+        scaffold_site_worker(&target)?;
+    }
 
     run_npm_install(&build_dir).expect("could not run `npm install`");
 
@@ -188,21 +190,20 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
 pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
     let build_dir = target.build_dir()?;
+    // TODO: this is a placeholder template. Replace with The Real Thing on launch.
+    let template = "https://github.com/ashleymichal/glowing-palm-tree";
 
-    if target.site.is_some() {
-        // TODO: this is a placeholder template. Replace with The Real Thing on launch.
-        let template = "https://github.com/ashleymichal/glowing-palm-tree";
+    if !Path::new(&build_dir).exists() {
+        // TODO: use site.entry_point instead of build_dir explicitly.
+        run_generate(
+            build_dir.file_name().unwrap().to_str().unwrap(),
+            template,
+            &target.target_type,
+        )?;
 
-        if !Path::new(&build_dir).exists() {
-            // TODO: use site.entry_point instead of build_dir explicitly.
-            run_generate(
-                build_dir.file_name().unwrap().to_str().unwrap(),
-                template,
-                &target.target_type,
-            )?;
-
-            fs::remove_dir_all(&build_dir.join(".git"))?;
-        }
+        // This step is to prevent having a git repo within a git repo after
+        // generating the scaffold into an existing project.
+        fs::remove_dir_all(&build_dir.join(".git"))?;
     }
 
     Ok(())

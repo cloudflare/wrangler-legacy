@@ -326,7 +326,7 @@ fn run() -> Result<(), failure::Error> {
                         .short("s")
                         .long("site")
                         .takes_value(false)
-                        .help("initializes a Workers Sites project overrides `type` and `template`"),
+                        .help("initializes a Workers Sites project. Overrides `type` and `template`"),
                 ),
         )
         .subcommand(
@@ -352,7 +352,7 @@ fn run() -> Result<(), failure::Error> {
                         .short("s")
                         .long("site")
                         .takes_value(false)
-                        .help("initializes a Workers Sites project overrides `type` and `template`"),
+                        .help("initializes a Workers Sites project. Overrides `type` and `template`"),
                 ),
         )
         .subcommand(
