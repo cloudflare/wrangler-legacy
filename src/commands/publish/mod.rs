@@ -4,8 +4,9 @@ pub mod preview;
 mod route;
 mod upload_form;
 
-use crate::settings::target::kv_namespace::KvNamespace;
 pub use package::Package;
+
+use crate::settings::target::kv_namespace::KvNamespace;
 use route::Route;
 
 use upload_form::build_script_upload_form;
