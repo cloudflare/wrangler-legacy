@@ -12,17 +12,10 @@ pub fn generate(
     site: bool,
 ) -> Result<(), failure::Error> {
     let target_type = target_type.unwrap_or_else(|| get_target_type(template));
-    if site {
-        run_generate(name, template, &target_type)?;
-        let config_path = PathBuf::from("./").join(&name);
-        Manifest::generate(name.to_string(), target_type, config_path, site)?;
-        Ok(())
-    } else {
-        run_generate(name, template, &target_type)?;
-        let config_path = PathBuf::from("./").join(&name);
-        Manifest::generate(name.to_string(), target_type, config_path, site)?;
-        Ok(())
-    }
+    run_generate(name, template, &target_type)?;
+    let config_path = PathBuf::from("./").join(&name);
+    Manifest::generate(name.to_string(), target_type, config_path, site)?;
+    Ok(())
 }
 
 pub fn run_generate(

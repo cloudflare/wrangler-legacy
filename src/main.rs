@@ -472,29 +472,31 @@ fn run() -> Result<(), failure::Error> {
         let name = matches.value_of("name").unwrap_or("worker");
         let site = matches.is_present("site");
 
-        let target_type;
-        let template;
-        if site {
+        let (target_type, template) = if site {
             // Workers Sites projects are always Webpack for now
-            target_type = Some(TargetType::Webpack);
+            let target_type = Some(TargetType::Webpack);
             // template = "https://github.com/cloudflare/worker-sites-template";
             // TODO: this is a placeholder template. Replace with The Real Thing (^) on launch.
-            template = "https://github.com/ashleymichal/scaling-succotash";
+            let template = "https://github.com/ashleymichal/scaling-succotash";
+
+            (target_type, template)
         } else {
-            target_type = match matches.value_of("type") {
+            let target_type = match matches.value_of("type") {
                 Some(s) => Some(TargetType::from_str(&s.to_lowercase())?),
                 None => None,
             };
 
             let default_template = "https://github.com/cloudflare/worker-template";
-            template = matches.value_of("template").unwrap_or(match target_type {
+            let template = matches.value_of("template").unwrap_or(match target_type {
                 Some(ref pt) => match pt {
                     TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
                     _ => default_template,
                 },
                 _ => default_template,
             });
-        }
+
+            (target_type, template)
+        };
 
         info!(
             "Generate command called with template {}, and name {}",
@@ -505,17 +507,15 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("init") {
         let name = matches.value_of("name");
         let site = matches.is_present("site");
-        let target_type;
-
-        if site {
+        let target_type = if site {
             // Workers Sites projects are always Webpack for now
-            target_type = Some(TargetType::Webpack);
+            Some(TargetType::Webpack)
         } else {
-            target_type = match matches.value_of("type") {
+            match matches.value_of("type") {
                 Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
                 None => None,
-            };
-        }
+            }
+        };
 
         commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
