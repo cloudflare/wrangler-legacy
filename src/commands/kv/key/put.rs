@@ -47,12 +47,11 @@ pub fn put(
 
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
-    let mut res;
-    if is_file {
+    let mut res = if is_file {
         match &metadata(value) {
             Ok(file_type) if file_type.is_file() => {
                 let file = fs::File::open(value)?;
-                res = client.put(&url_into_str).body(file).send()?;
+                client.put(&url_into_str).body(file).send()?
             }
             Ok(file_type) if file_type.is_dir() => {
                 failure::bail!("--path argument takes a file, {} is a directory", value)
@@ -61,7 +60,7 @@ pub fn put(
             Err(e) => failure::bail!("{}", e),
         }
     } else {
-        res = client.put(&url_into_str).body(value.to_string()).send()?;
+        client.put(&url_into_str).body(value.to_string()).send()?
     };
 
     if res.status().is_success() {
