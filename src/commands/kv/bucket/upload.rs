@@ -115,12 +115,12 @@ pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Er
                 KEY_MAX_SIZE
             );
         }
-        if pair.key.len() > KEY_MAX_SIZE {
-            failure::bail!(
+        if pair.value.len() > VALUE_MAX_SIZE {
+            format_err(
                 "File `{}` exceeds the maximum value size limit of {} bytes",
                 pair.key,
                 VALUE_MAX_SIZE
-            );
+            )
         }
     }
     Ok(())
