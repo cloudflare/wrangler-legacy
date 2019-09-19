@@ -341,11 +341,21 @@ yes
 
 ### `upload`
 
-Walks the given directory and runs a bulk upload, using the path to an asset as its `key` and the asset as its `value`.
+Walks the given directory and runs a bulk upload, using the local path to an asset as its `key` and the asset as its `value`.
 
 #### Usage
 
 ```console
+$ wrangler kv:namespace create "MY_KV"
+..
+✨  Add the following to your wrangler.toml:
+kv-namespaces = [
+         { binding = "MY_KV", id = "f7b02e7fc70443149ac906dd81ec1791" }
+]
+# Modify the wrangler.toml 
+```
+
+```
 $ wrangler kv:bucket upload --binding MY_KV ./public
 ```
 
