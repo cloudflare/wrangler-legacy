@@ -1,4 +1,5 @@
 mod project_assets;
+mod text_blob;
 mod wasm_module;
 
 use reqwest::multipart::{Form, Part};
@@ -6,13 +7,14 @@ use std::fs;
 use std::path::Path;
 
 use crate::commands::build::wranglerjs;
+use crate::commands::kv::bucket::directory_keys_values;
 use crate::settings::binding;
-
 use crate::settings::metadata::Metadata;
 use crate::settings::target::kv_namespace;
 use crate::settings::target::{Target, TargetType};
 
 use project_assets::ProjectAssets;
+use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
 use super::{krate, Package};
@@ -34,7 +36,8 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
 
             let script_path = "./worker/generated/script.js".to_string();
 
-            let assets = ProjectAssets::new(script_path, vec![wasm_module], kv_namespaces)?;
+            let assets =
+                ProjectAssets::new(script_path, vec![wasm_module], kv_namespaces, Vec::new())?;
 
             build_form(&assets)
         }
@@ -45,7 +48,7 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
 
             let script_path = package.main(&build_dir)?;
 
-            let assets = ProjectAssets::new(script_path, Vec::new(), kv_namespaces)?;
+            let assets = ProjectAssets::new(script_path, Vec::new(), kv_namespaces, Vec::new())?;
 
             build_form(&assets)
         }
@@ -63,14 +66,31 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
                 let path = bundle.wasm_path();
                 let binding = bundle.get_wasm_binding();
                 let wasm_module = WasmModule::new(path, binding)?;
-                wasm_modules.push(wasm_module)
+                wasm_modules.push(wasm_module);
             }
 
-            let assets = ProjectAssets::new(script_path, wasm_modules, kv_namespaces)?;
+            let mut text_blobs = Vec::new();
+
+            if let Some(site) = &target.site {
+                log::info!("adding __STATIC_CONTENT_MANIFEST");
+                let binding = "__STATIC_CONTENT_MANIFEST".to_string();
+                let asset_manifest = get_asset_manifest(&site.bucket)?;
+                let text_blob = TextBlob::new(asset_manifest, binding)?;
+                text_blobs.push(text_blob);
+            }
+
+            let assets = ProjectAssets::new(script_path, wasm_modules, kv_namespaces, text_blobs)?;
 
             build_form(&assets)
         }
     }
+}
+
+fn get_asset_manifest(directory: &str) -> Result<String, failure::Error> {
+    let directory = Path::new(&directory);
+    let (_, manifest) = directory_keys_values(directory, false)?;
+    let manifest = serde_json::to_string(&manifest)?;
+    Ok(manifest)
 }
 
 fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
@@ -81,7 +101,7 @@ fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
 
-    log::info!("{:?}", &form);
+    log::info!("{:#?}", &form);
 
     Ok(form)
 }
@@ -91,6 +111,14 @@ fn add_files(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure::Er
 
     for wasm_module in &assets.wasm_modules {
         form = form.file(wasm_module.filename(), wasm_module.path())?;
+    }
+
+    for text_blob in &assets.text_blobs {
+        let part = Part::text(text_blob.data.clone())
+            .file_name(text_blob.binding.clone())
+            .mime_str("text/plain")?;
+
+        form = form.part(text_blob.binding.clone(), part);
     }
 
     Ok(form)

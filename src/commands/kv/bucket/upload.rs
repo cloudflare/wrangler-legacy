@@ -1,13 +1,13 @@
 use std::fs::metadata;
 use std::path::Path;
 
-use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
-
 use crate::commands::kv::bucket::directory_keys_values;
 use crate::commands::kv::bulk::put::put_bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
+use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
+use failure::format_err;
 
 const KEY_MAX_SIZE: usize = 512;
 const VALUE_MAX_SIZE: usize = 2 * 1024 * 1024;
@@ -40,12 +40,15 @@ pub fn upload_files(
     verbose: bool,
 ) -> Result<(), failure::Error> {
     let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
-        Ok(file_type) if file_type.is_dir() => directory_keys_values(path, verbose),
+        Ok(file_type) if file_type.is_dir() => {
+            let (p, _) = directory_keys_values(path, verbose)?;
+            Ok(p)
+        }
         Ok(_file_type) => {
             // any other file types (files, symlinks)
-            failure::bail!("wrangler kv:bucket upload takes a directory")
+            Err(format_err!("wrangler kv:bucket upload takes a directory"))
         }
-        Err(e) => failure::bail!("{}", e),
+        Err(e) => Err(format_err!("{}", e)),
     }?;
 
     validate_file_uploads(pairs.clone())?;
