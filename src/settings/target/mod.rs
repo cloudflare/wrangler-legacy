@@ -15,6 +15,8 @@ use serde::{Deserialize, Serialize};
 use crate::terminal::emoji;
 use crate::terminal::message;
 
+const SITE_ENTRY_POINT: &str = "workers-site";
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Site {
     pub bucket: String,
@@ -26,7 +28,7 @@ impl Default for Site {
     fn default() -> Site {
         Site {
             bucket: String::new(),
-            entry_point: Some(String::from("workers-site")),
+            entry_point: Some(String::from(SITE_ENTRY_POINT)),
         }
     }
 }
@@ -46,8 +48,6 @@ pub struct Target {
     pub zone_id: Option<String>,
     pub site: Option<Site>,
 }
-
-const SITE_BUILD_DIR: &str = "./workers-site";
 
 impl Target {
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
@@ -72,7 +72,7 @@ impl Target {
                 site_config
                     .entry_point
                     .to_owned()
-                    .unwrap_or_else(|| SITE_BUILD_DIR.to_string()),
+                    .unwrap_or_else(|| format!("./{}}", SITE_ENTRY_POINT)),
             )),
             None => Ok(current_dir),
         }

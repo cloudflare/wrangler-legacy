@@ -201,6 +201,8 @@ pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
                 &target.target_type,
             )?;
 
+            // This step is to prevent having a git repo within a git repo after
+            // generating the scaffold into an existing project.
             fs::remove_dir_all(&build_dir.join(".git"))?;
         }
     }
