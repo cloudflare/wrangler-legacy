@@ -18,7 +18,12 @@ pub fn sync(
     namespace_id: &str,
     path: &Path,
 ) -> Result<(), failure::Error> {
-    // First get local keys
+    // First, upload all existing files in given directory
+    message::info("Preparing to upload updated files...");
+    upload(target, user.clone(), namespace_id, path)?;
+
+    // Now delete files from Workers KV that exist in remote but no longer exist locally.
+    // Get local keys
     let local_keys_vec: Vec<String> = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => directory_keys_only(path),
         Ok(_) => failure::bail!("{} should be a directory", path.display()),
@@ -49,12 +54,8 @@ pub fn sync(
 
     if !keys_to_delete.is_empty() {
         message::info("Deleting stale files...");
-        delete_bulk(target, user.clone(), namespace_id, keys_to_delete)?;
+        delete_bulk(target, user, namespace_id, keys_to_delete)?;
     }
-
-    // After deleting remote keys, upload all existing files in given directory
-    message::info("Preparing to upload updated files...");
-    upload(target, user, namespace_id, path)?;
 
     message::success("Success");
     Ok(())
