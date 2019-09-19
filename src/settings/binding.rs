@@ -7,6 +7,8 @@ pub enum Binding {
     WasmModule { name: String, part: String },
     #[serde(rename = "kv_namespace")]
     KvNamespace { name: String, namespace_id: String },
+    #[serde(rename = "text_blob")]
+    TextBlob { name: String, part: String },
 }
 
 impl Binding {
@@ -19,5 +21,9 @@ impl Binding {
 
     pub fn new_kv_namespace(name: String, namespace_id: String) -> Binding {
         Binding::KvNamespace { name, namespace_id }
+    }
+
+    pub fn new_text_blob(name: String, part: String) -> Binding {
+        Binding::TextBlob { name, part }
     }
 }
