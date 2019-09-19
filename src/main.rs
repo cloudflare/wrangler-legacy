@@ -105,7 +105,8 @@ fn run() -> Result<(), failure::Error> {
                         .about("List all namespaces on your Cloudflare account")
                 )
         )
-            .subcommand(SubCommand::with_name("kv:key")
+        .subcommand(
+            SubCommand::with_name("kv:key")
                 .about(&*format!(
                     "{} Individually manage Workers KV key-value pairs",
                     emoji::KEY
@@ -319,6 +320,13 @@ fn run() -> Result<(), failure::Error> {
                         .long("type")
                         .takes_value(true)
                         .help("the type of project you want generated"),
+                )
+                .arg(
+                    Arg::with_name("site")
+                        .short("s")
+                        .long("site")
+                        .takes_value(false)
+                        .help("initializes a Workers Sites project. Overrides `type` and `template`"),
                 ),
         )
         .subcommand(
@@ -338,6 +346,13 @@ fn run() -> Result<(), failure::Error> {
                         .long("type")
                         .takes_value(true)
                         .help("the type of project you want generated"),
+                )
+                .arg(
+                    Arg::with_name("site")
+                        .short("s")
+                        .long("site")
+                        .takes_value(false)
+                        .help("initializes a Workers Sites project. Overrides `type` and `template`"),
                 ),
         )
         .subcommand(
@@ -455,32 +470,54 @@ fn run() -> Result<(), failure::Error> {
         commands::global_config(email, api_key)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
-        let target_type = match matches.value_of("type") {
-            Some(s) => Some(TargetType::from_str(&s.to_lowercase())?),
-            None => None,
-        };
+        let site = matches.is_present("site");
 
-        let default_template = "https://github.com/cloudflare/worker-template";
-        let template = matches.value_of("template").unwrap_or(match target_type {
-            Some(ref pt) => match pt {
-                TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
+        let (target_type, template) = if site {
+            // Workers Sites projects are always Webpack for now
+            let target_type = Some(TargetType::Webpack);
+            // template = "https://github.com/cloudflare/worker-sites-template";
+            // TODO: this is a placeholder template. Replace with The Real Thing (^) on launch.
+            let template = "https://github.com/ashleymichal/scaling-succotash";
+
+            (target_type, template)
+        } else {
+            let target_type = match matches.value_of("type") {
+                Some(s) => Some(TargetType::from_str(&s.to_lowercase())?),
+                None => None,
+            };
+
+            let default_template = "https://github.com/cloudflare/worker-template";
+            let template = matches.value_of("template").unwrap_or(match target_type {
+                Some(ref pt) => match pt {
+                    TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
+                    _ => default_template,
+                },
                 _ => default_template,
-            },
-            _ => default_template,
-        });
+            });
+
+            (target_type, template)
+        };
 
         info!(
             "Generate command called with template {}, and name {}",
             template, name
         );
-        commands::generate(name, template, target_type)?;
+
+        commands::generate(name, template, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("init") {
         let name = matches.value_of("name");
-        let target_type = match matches.value_of("type") {
-            Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
-            None => None,
+        let site = matches.is_present("site");
+        let target_type = if site {
+            // Workers Sites projects are always Webpack for now
+            Some(TargetType::Webpack)
+        } else {
+            match matches.value_of("type") {
+                Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
+                None => None,
+            }
         };
-        commands::init(name, target_type)?;
+
+        commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
