@@ -72,7 +72,7 @@ impl Target {
                 site_config
                     .entry_point
                     .to_owned()
-                    .unwrap_or(SITE_BUILD_DIR.to_string()),
+                    .unwrap_or_else(|| SITE_BUILD_DIR.to_string()),
             )),
             None => Ok(current_dir),
         }

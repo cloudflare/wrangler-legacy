@@ -75,7 +75,7 @@ pub fn upload_files(
             }
 
             // Add the popped key-value pair to the running batch of key-value pair uploads
-            key_count = key_count + 1;
+            key_count += 1;
             key_pair_bytes = key_pair_bytes + pair.key.len() + pair.value.len();
             key_value_batch.push(pair);
         }

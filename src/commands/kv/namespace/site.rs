@@ -25,17 +25,10 @@ pub fn site(target: &Target, user: &GlobalUser) -> Result<WorkersKvNamespace, fa
     });
 
     match response {
-        Ok(success) => {
-            return Ok(success.result);
-        }
+        Ok(success) => Ok(success.result),
         Err(e) => match e {
             ApiFailure::Error(_status, api_errors) => {
-                if api_errors
-                    .errors
-                    .iter()
-                    .find(|&e| e.code == 10014)
-                    .is_some()
-                {
+                if api_errors.errors.iter().any(|e| e.code == 10014) {
                     log::info!("Namespace {} already exists.", title);
                     let response = client.request(&ListNamespaces {
                         account_identifier: &target.account_id,
