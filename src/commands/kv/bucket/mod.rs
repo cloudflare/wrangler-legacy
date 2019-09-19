@@ -25,7 +25,6 @@ pub fn directory_keys_values(
     directory: &Path,
     verbose: bool,
 ) -> Result<(Vec<KeyValuePair>, HashMap<String, String>), failure::Error> {
-
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut key_manifest: HashMap<String, String> = HashMap::new();
 
