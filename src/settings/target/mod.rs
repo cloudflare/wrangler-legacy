@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Site {
     pub bucket: String,
     #[serde(rename = "entry-point")]
@@ -85,7 +85,7 @@ pub struct Environment {
     pub site: Option<Site>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
     pub account_id: String,
     pub env: Option<HashMap<String, Environment>>,
@@ -125,20 +125,33 @@ impl Manifest {
         target_type: TargetType,
         config_path: PathBuf,
     ) -> Result<Manifest, failure::Error> {
-        let manifest = Manifest {
-            account_id: String::new(),
-            env: None,
-            kv_namespaces: None,
-            name: name.clone(),
-            private: None,
-            target_type: target_type.clone(),
-            route: Some(String::new()),
-            routes: None,
-            webpack_config: None,
-            workers_dev: Some(true),
-            zone_id: Some(String::new()),
-            site: None,
-        };
+        let mut manifest = Manifest::default();
+
+        manifest.name = name.clone();
+        manifest.target_type = target_type.clone();
+
+        manifest.route = Some(String::new());
+        manifest.workers_dev = Some(true);
+        manifest.zone_id = Some(String::new());
+
+        let toml = toml::to_string(&manifest)?;
+        let config_file = config_path.join("wrangler.toml");
+
+        log::info!("Writing a wrangler.toml file at {}", config_file.display());
+        fs::write(&config_file, &toml)?;
+        Ok(manifest)
+    }
+
+    pub fn generate_site(name: String, config_path: PathBuf) -> Result<Manifest, failure::Error> {
+        let site = Site::default();
+        let mut manifest = Manifest::default();
+
+        manifest.name = name.clone();
+        manifest.site = Some(site);
+
+        manifest.route = Some(String::new());
+        manifest.workers_dev = Some(true);
+        manifest.zone_id = Some(String::new());
 
         let toml = toml::to_string(&manifest)?;
         let config_file = config_path.join("wrangler.toml");
