@@ -85,7 +85,7 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
     }
 }
 
-fn get_asset_manifest(directory: &String) -> Result<String, failure::Error> {
+fn get_asset_manifest(directory: &str) -> Result<String, failure::Error> {
     let directory = Path::new(&directory);
     let (_, manifest) = directory_keys_values(directory)?;
     let manifest = serde_json::to_string(&manifest)?;
