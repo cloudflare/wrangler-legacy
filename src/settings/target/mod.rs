@@ -72,7 +72,7 @@ impl Target {
                 site_config
                     .entry_point
                     .to_owned()
-                    .unwrap_or_else(|| format!("./{}}", SITE_ENTRY_POINT)),
+                    .unwrap_or_else(|| format!("./{}", SITE_ENTRY_POINT)),
             )),
             None => Ok(current_dir),
         }
@@ -135,19 +135,21 @@ impl Manifest {
         config_path: PathBuf,
         site: bool,
     ) -> Result<Manifest, failure::Error> {
-        let mut manifest = Manifest::default();
-
-        manifest.name = name.clone();
-        manifest.target_type = target_type.clone();
-
-        manifest.route = Some(String::new());
-        manifest.workers_dev = Some(true);
-        manifest.zone_id = Some(String::new());
-
-        if site {
-            let site = Site::default();
-            manifest.site = Some(site);
-        }
+        let site = if site { Some(Site::default()) } else { None };
+        let manifest = Manifest {
+            account_id: String::new(),
+            env: None,
+            kv_namespaces: None,
+            name: name.clone(),
+            private: None,
+            target_type: target_type.clone(),
+            route: Some(String::new()),
+            routes: None,
+            webpack_config: None,
+            workers_dev: Some(true),
+            zone_id: Some(String::new()),
+            site,
+        };
 
         let toml = toml::to_string(&manifest)?;
         let config_file = config_path.join("wrangler.toml");
