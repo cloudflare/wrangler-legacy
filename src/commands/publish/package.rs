@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde::{self, Deserialize};
 
@@ -9,12 +9,12 @@ pub struct Package {
     main: String,
 }
 impl Package {
-    pub fn main(&self) -> Result<String, failure::Error> {
+    pub fn main(&self, build_dir: &PathBuf) -> Result<String, failure::Error> {
         if self.main == "" {
             failure::bail!(
                 "The `main` key in your `package.json` file is required; please specified the entrypoint of your Worker.",
             )
-        } else if !Path::new(&self.main).exists() {
+        } else if !build_dir.join(&self.main).exists() {
             failure::bail!(
                 "The entrypoint of your Worker ({}) could not be found.",
                 self.main

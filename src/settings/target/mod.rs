@@ -22,6 +22,15 @@ pub struct Site {
     pub entry_point: Option<String>,
 }
 
+impl Default for Site {
+    fn default() -> Site {
+        Site {
+            bucket: String::new(),
+            entry_point: Some(String::from("workers-site")),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Target {
     pub account_id: String,
@@ -54,10 +63,10 @@ impl Target {
     pub fn build_dir(&self) -> Result<PathBuf, std::io::Error> {
         let current_dir = env::current_dir()?;
         // if `site` is configured, we want to isolate worker code
-        // and build artifacts from static site application code.
+        // and build artifacts away from static site application code.
         // if the user has configured `site.entry-point`, use that
-        // as the build directory. Otherwise use our the default
-        // stored as the const SITE_BUILD_DIR
+        // as the build directory. Otherwise use the default const
+        // SITE_BUILD_DIR
         match &self.site {
             Some(site_config) => Ok(current_dir.join(
                 site_config
@@ -85,7 +94,7 @@ pub struct Environment {
     pub site: Option<Site>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
     pub account_id: String,
     pub env: Option<HashMap<String, Environment>>,
@@ -118,6 +127,106 @@ impl Manifest {
         check_for_duplicate_names(&manifest)?;
 
         Ok(manifest)
+    }
+
+    pub fn generate(
+        name: String,
+        target_type: TargetType,
+        config_path: PathBuf,
+        site: bool,
+    ) -> Result<Manifest, failure::Error> {
+        let mut manifest = Manifest::default();
+
+        manifest.name = name.clone();
+        manifest.target_type = target_type.clone();
+
+        manifest.route = Some(String::new());
+        manifest.workers_dev = Some(true);
+        manifest.zone_id = Some(String::new());
+
+        if site {
+            let site = Site::default();
+            manifest.site = Some(site);
+        }
+
+        let toml = toml::to_string(&manifest)?;
+        let config_file = config_path.join("wrangler.toml");
+
+        log::info!("Writing a wrangler.toml file at {}", config_file.display());
+        fs::write(&config_file, &toml)?;
+        Ok(manifest)
+    }
+
+    pub fn get_target(
+        &self,
+        environment_name: Option<&str>,
+        release: bool,
+    ) -> Result<Target, failure::Error> {
+        if release && self.workers_dev.is_some() {
+            failure::bail!(format!(
+                "{} The --release flag is not compatible with use of the workers_dev field.",
+                emoji::WARN
+            ))
+        }
+
+        if release {
+            message::warn("--release will be deprecated.");
+        }
+
+        // Site projects are always Webpack for now; don't let toml override this.
+        let target_type = match self.site {
+            Some(_) => TargetType::Webpack,
+            None => self.target_type.clone(),
+        };
+
+        let mut target = Target {
+            target_type,                                 // MUST inherit
+            account_id: self.account_id.clone(),         // MAY inherit
+            webpack_config: self.webpack_config.clone(), // MAY inherit
+            zone_id: self.zone_id.clone(),               // MAY inherit
+            workers_dev: true,                           // MAY inherit
+            // importantly, the top level name will be modified
+            // to include the name of the environment
+            name: self.name.clone(),                   // MAY inherit
+            kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
+            route: None,                               // MUST NOT inherit
+            routes: self.routes.clone(),               // MUST NOT inherit
+            site: self.site.clone(),                   // MUST NOT inherit
+        };
+
+        let environment = self.get_environment(environment_name)?;
+
+        self.check_private(environment);
+
+        let (route, workers_dev) = self.negotiate_zoneless(environment, release)?;
+        target.route = route;
+        target.workers_dev = workers_dev;
+        if let Some(environment) = environment {
+            target.name = if let Some(name) = &environment.name {
+                name.clone()
+            } else {
+                match environment_name {
+                    Some(environment_name) => format!("{}-{}", self.name, environment_name),
+                    None => failure::bail!("You must specify `name` in your wrangler.toml"),
+                }
+            };
+            if let Some(account_id) = &environment.account_id {
+                target.account_id = account_id.clone();
+            }
+            if environment.routes.is_some() {
+                target.routes = environment.routes.clone();
+            }
+            if environment.webpack_config.is_some() {
+                target.webpack_config = environment.webpack_config.clone();
+            }
+            if environment.zone_id.is_some() {
+                target.zone_id = environment.zone_id.clone();
+            }
+            // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
+            target.kv_namespaces = environment.kv_namespaces.clone();
+        }
+
+        Ok(target)
     }
 
     fn get_environment(
@@ -246,105 +355,6 @@ impl Manifest {
                 message::warn(deprecate_private_warning);
             }
         }
-    }
-
-    pub fn get_target(
-        &self,
-        environment_name: Option<&str>,
-        release: bool,
-    ) -> Result<Target, failure::Error> {
-        if release && self.workers_dev.is_some() {
-            failure::bail!(format!(
-                "{} The --release flag is not compatible with use of the workers_dev field.",
-                emoji::WARN
-            ))
-        }
-
-        if release {
-            message::warn("--release will be deprecated.");
-        }
-
-        let mut target = Target {
-            target_type: self.target_type.clone(),       // MUST inherit
-            account_id: self.account_id.clone(),         // MAY inherit
-            webpack_config: self.webpack_config.clone(), // MAY inherit
-            zone_id: self.zone_id.clone(),               // MAY inherit
-            workers_dev: true,                           // MAY inherit
-            // importantly, the top level name will be modified
-            // to include the name of the environment
-            name: self.name.clone(),                   // MAY inherit
-            kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
-            route: None,                               // MUST NOT inherit
-            routes: self.routes.clone(),               // MUST NOT inherit
-            site: self.site.clone(),                   // MUST NOT inherit
-        };
-
-        let environment = self.get_environment(environment_name)?;
-
-        self.check_private(environment);
-
-        let (route, workers_dev) = self.negotiate_zoneless(environment, release)?;
-        target.route = route;
-        target.workers_dev = workers_dev;
-        if let Some(environment) = environment {
-            target.name = if let Some(name) = &environment.name {
-                name.clone()
-            } else {
-                match environment_name {
-                    Some(environment_name) => format!("{}-{}", self.name, environment_name),
-                    None => failure::bail!("You must specify `name` in your wrangler.toml"),
-                }
-            };
-            if let Some(account_id) = &environment.account_id {
-                target.account_id = account_id.clone();
-            }
-            if environment.routes.is_some() {
-                target.routes = environment.routes.clone();
-            }
-            if environment.webpack_config.is_some() {
-                target.webpack_config = environment.webpack_config.clone();
-            }
-            if environment.zone_id.is_some() {
-                target.zone_id = environment.zone_id.clone();
-            }
-            // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
-            target.kv_namespaces = environment.kv_namespaces.clone();
-        }
-
-        Ok(target)
-    }
-
-    pub fn generate(
-        name: String,
-        target_type: TargetType,
-        init: bool,
-    ) -> Result<Manifest, failure::Error> {
-        let manifest = Manifest {
-            account_id: String::new(),
-            env: None,
-            kv_namespaces: None,
-            name: name.clone(),
-            private: None,
-            target_type: target_type.clone(),
-            route: Some(String::new()),
-            routes: None,
-            webpack_config: None,
-            workers_dev: Some(true),
-            zone_id: Some(String::new()),
-            site: None,
-        };
-
-        let toml = toml::to_string(&manifest)?;
-        let config_path = if init {
-            PathBuf::from("./")
-        } else {
-            Path::new("./").join(&name)
-        };
-        let config_file = config_path.join("wrangler.toml");
-
-        log::info!("Writing a wrangler.toml file at {}", config_file.display());
-        fs::write(&config_file, &toml)?;
-        Ok(manifest)
     }
 }
 

@@ -46,7 +46,7 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
             let build_dir = target.build_dir()?;
             let package = Package::new(&build_dir)?;
 
-            let script_path = package.main()?;
+            let script_path = package.main(&build_dir)?;
 
             let assets = ProjectAssets::new(script_path, Vec::new(), kv_namespaces, Vec::new())?;
 
