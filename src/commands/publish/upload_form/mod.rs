@@ -72,6 +72,7 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
             let mut text_blobs = Vec::new();
 
             if let Some(site) = &target.site {
+                log::info!("adding __STATIC_CONTENT_MANIFEST");
                 let binding = "__STATIC_CONTENT_MANFIEST".to_string();
                 let asset_manifest = get_asset_manifest(&site.bucket)?;
                 let text_blob = TextBlob::new(asset_manifest, binding)?;
@@ -100,7 +101,7 @@ fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
 
-    log::info!("{:?}", &form);
+    log::info!("{:#?}", &form);
 
     Ok(form)
 }
