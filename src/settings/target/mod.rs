@@ -5,6 +5,7 @@ pub use kv_namespace::KvNamespace;
 pub use target_type::TargetType;
 
 use std::collections::{HashMap, HashSet};
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -17,6 +18,8 @@ use crate::terminal::message;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Site {
     pub bucket: String,
+    #[serde(rename = "entry-point")]
+    pub entry_point: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -35,6 +38,8 @@ pub struct Target {
     pub site: Option<Site>,
 }
 
+const SITE_BUILD_DIR: &str = "./workers-site";
+
 impl Target {
     pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
         self.kv_namespaces.clone().unwrap_or_else(Vec::new)
@@ -44,6 +49,24 @@ impl Target {
         let mut updated_namespaces = self.kv_namespaces();
         updated_namespaces.push(kv_namespace);
         self.kv_namespaces = Some(updated_namespaces);
+    }
+
+    pub fn build_dir(&self) -> Result<PathBuf, std::io::Error> {
+        let current_dir = env::current_dir()?;
+        // if `site` is configured, we want to isolate worker code
+        // and build artifacts from static site application code.
+        // if the user has configured `site.entry-point`, use that
+        // as the build directory. Otherwise use our the default
+        // stored as the const SITE_BUILD_DIR
+        match &self.site {
+            Some(site_config) => Ok(current_dir.join(
+                site_config
+                    .entry_point
+                    .to_owned()
+                    .unwrap_or(SITE_BUILD_DIR.to_string()),
+            )),
+            None => Ok(current_dir),
+        }
     }
 }
 
