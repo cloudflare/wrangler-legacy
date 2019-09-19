@@ -73,7 +73,7 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
 
             if let Some(site) = &target.site {
                 log::info!("adding __STATIC_CONTENT_MANIFEST");
-                let binding = "__STATIC_CONTENT_MANFIEST".to_string();
+                let binding = "__STATIC_CONTENT_MANIFEST".to_string();
                 let asset_manifest = get_asset_manifest(&site.bucket)?;
                 let text_blob = TextBlob::new(asset_manifest, binding)?;
                 text_blobs.push(text_blob);
