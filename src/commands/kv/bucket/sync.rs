@@ -5,7 +5,7 @@ use std::path::Path;
 
 use crate::commands::kv;
 use crate::commands::kv::bucket::directory_keys_only;
-use crate::commands::kv::bucket::upload::upload;
+use crate::commands::kv::bucket::upload::upload_files;
 use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::commands::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
@@ -17,10 +17,13 @@ pub fn sync(
     user: GlobalUser,
     namespace_id: &str,
     path: &Path,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
     // First, upload all existing files in given directory
-    message::info("Preparing to upload updated files...");
-    upload(target, user.clone(), namespace_id, path)?;
+    if verbose {
+        message::info("Preparing to upload updated files...");
+    }
+    upload_files(target, user.clone(), namespace_id, path, verbose)?;
 
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
@@ -53,7 +56,9 @@ pub fn sync(
     }
 
     if !keys_to_delete.is_empty() {
-        message::info("Deleting stale files...");
+        if verbose {
+            message::info("Deleting stale files...");
+        }
         delete_bulk(target, user, namespace_id, keys_to_delete)?;
     }
 

@@ -17,7 +17,10 @@ use walkdir::WalkDir;
 
 use crate::terminal::message;
 
-fn directory_keys_values(directory: &Path) -> Result<Vec<KeyValuePair>, failure::Error> {
+fn directory_keys_values(
+    directory: &Path,
+    verbose: bool,
+) -> Result<Vec<KeyValuePair>, failure::Error> {
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     for entry in WalkDir::new(directory) {
         let entry = entry.unwrap();
@@ -29,7 +32,9 @@ fn directory_keys_values(directory: &Path) -> Result<Vec<KeyValuePair>, failure:
 
             // Need to base64 encode value
             let b64_value = base64::encode(&value);
-            message::working(&format!("Parsing {}...", key.clone()));
+            if verbose {
+                message::working(&format!("Parsing {}...", key.clone()));
+            }
             upload_vec.push(KeyValuePair {
                 key,
                 value: b64_value,

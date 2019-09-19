@@ -22,9 +22,25 @@ pub fn upload(
     user: GlobalUser,
     namespace_id: &str,
     path: &Path,
+    verbose: bool,
+) -> Result<(), failure::Error> {
+    match upload_files(target, user, namespace_id, path, verbose) {
+        Ok(_) => message::success("Success"),
+        Err(e) => print!("{}", e),
+    }
+
+    Ok(())
+}
+
+pub fn upload_files(
+    target: &Target,
+    user: GlobalUser,
+    namespace_id: &str,
+    path: &Path,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
     let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
-        Ok(file_type) if file_type.is_dir() => directory_keys_values(path),
+        Ok(file_type) if file_type.is_dir() => directory_keys_values(path, verbose),
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             failure::bail!("wrangler kv:bucket upload takes a directory")
@@ -65,7 +81,6 @@ pub fn upload(
         }
     }
 
-    message::success("Success");
     Ok(())
 }
 
