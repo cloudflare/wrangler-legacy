@@ -23,7 +23,9 @@ use crate::terminal::message;
 
 pub fn directory_keys_values(
     directory: &Path,
+    verbose: bool,
 ) -> Result<(Vec<KeyValuePair>, HashMap<String, String>), failure::Error> {
+
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut key_manifest: HashMap<String, String> = HashMap::new();
 
@@ -37,8 +39,9 @@ pub fn directory_keys_values(
             let b64_value = base64::encode(&value);
 
             let (path, key) = generate_key(path, directory, Some(b64_value.clone()))?;
-
-            message::working(&format!("Parsing {}...", key.clone()));
+            if verbose {
+                message::working(&format!("Parsing {}...", key.clone()));
+            }
             upload_vec.push(KeyValuePair {
                 key: key.clone(),
                 value: b64_value,

@@ -4,7 +4,6 @@
 extern crate text_io;
 
 use std::env;
-use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -256,6 +255,12 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1),
                         )
+                        .arg(
+                            Arg::with_name("verbose")
+                            .help("Verbose mode: print out all files uploaded")
+                            .short("v")
+                            .long("verbose")
+                        )
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -283,6 +288,12 @@ fn run() -> Result<(), failure::Error> {
                             .help("the directory to be synced to KV")
                             .required(true)
                             .index(1),
+                        )
+                        .arg(
+                            Arg::with_name("verbose")
+                            .help("Verbose mode: print out all files synced")
+                            .short("v")
+                            .long("verbose")
                         )
                 )
         )
@@ -594,19 +605,10 @@ fn run() -> Result<(), failure::Error> {
             }
             ("put", Some(put_key_matches)) => {
                 let key = put_key_matches.value_of("key").unwrap();
-                let is_file = match put_key_matches.occurrences_of("path") {
-                    1 => true,
-                    _ => false,
-                };
 
                 // If is_file is true, overwrite value to be the contents of the given
                 // filename in the 'value' arg.
-                let value_arg = put_key_matches.value_of("value").unwrap();
-                let value = if is_file {
-                    fs::read_to_string(value_arg)?
-                } else {
-                    value_arg.to_string()
-                };
+                let value = put_key_matches.value_of("value").unwrap();
                 let expiration = put_key_matches.value_of("expiration");
                 let ttl = put_key_matches.value_of("expiration-ttl");
                 commands::kv::key::put(
@@ -615,7 +617,7 @@ fn run() -> Result<(), failure::Error> {
                     &namespace_id,
                     key,
                     &value,
-                    is_file,
+                    put_key_matches.is_present("path"),
                     expiration,
                     ttl,
                 )?
@@ -692,7 +694,13 @@ fn run() -> Result<(), failure::Error> {
         match (subcommand, subcommand_matches) {
             ("upload", Some(write_bulk_matches)) => {
                 let path = write_bulk_matches.value_of("path").unwrap();
-                commands::kv::bucket::upload(&target, user, &namespace_id, Path::new(path))?;
+                commands::kv::bucket::upload(
+                    &target,
+                    user,
+                    &namespace_id,
+                    Path::new(path),
+                    write_bulk_matches.is_present("verbose"),
+                )?;
             }
             ("delete", Some(delete_matches)) => {
                 let path = delete_matches.value_of("path").unwrap();
@@ -700,7 +708,13 @@ fn run() -> Result<(), failure::Error> {
             }
             ("sync", Some(sync_matches)) => {
                 let path = sync_matches.value_of("path").unwrap();
-                commands::kv::bucket::sync(&target, user, &namespace_id, Path::new(path))?;
+                commands::kv::bucket::sync(
+                    &target,
+                    user,
+                    &namespace_id,
+                    Path::new(path),
+                    sync_matches.is_present("verbose"),
+                )?;
             }
             ("", None) => message::warn("kv:bucket expects a subcommand"),
             _ => unreachable!(),

@@ -100,7 +100,7 @@ fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Err
     for namespace in &target.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
             let path = Path::new(&bucket);
-            kv::bucket::upload(target, user.to_owned(), &namespace.id, path)?;
+            kv::bucket::upload(target, user.to_owned(), &namespace.id, path, false)?;
         }
     }
 

@@ -22,10 +22,26 @@ pub fn upload(
     user: GlobalUser,
     namespace_id: &str,
     path: &Path,
+    verbose: bool,
+) -> Result<(), failure::Error> {
+    match upload_files(target, user, namespace_id, path, verbose) {
+        Ok(_) => message::success("Success"),
+        Err(e) => print!("{}", e),
+    }
+
+    Ok(())
+}
+
+pub fn upload_files(
+    target: &Target,
+    user: GlobalUser,
+    namespace_id: &str,
+    path: &Path,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
     let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => {
-            let (p, _) = directory_keys_values(path)?;
+            let (p, _) = directory_keys_values(path, verbose)?;
             Ok(p)
         }
         Ok(_file_type) => {
@@ -68,7 +84,6 @@ pub fn upload(
         }
     }
 
-    message::success("Success");
     Ok(())
 }
 
