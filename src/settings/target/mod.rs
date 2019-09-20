@@ -24,6 +24,15 @@ pub struct Site {
     pub entry_point: Option<String>,
 }
 
+impl Site {
+    pub fn new(bucket: &str) -> Site {
+        let mut site = Site::default();
+        site.bucket = String::from(bucket);
+
+        site
+    }
+}
+
 impl Default for Site {
     fn default() -> Site {
         Site {
@@ -133,9 +142,8 @@ impl Manifest {
         name: String,
         target_type: TargetType,
         config_path: PathBuf,
-        site: bool,
+        site: Option<Site>,
     ) -> Result<Manifest, failure::Error> {
-        let site = if site { Some(Site::default()) } else { None };
         let manifest = Manifest {
             account_id: String::new(),
             env: None,
