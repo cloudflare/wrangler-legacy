@@ -1,6 +1,9 @@
+use std::collections::HashSet;
+
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
+
 use http::status::StatusCode;
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
@@ -9,8 +12,7 @@ use crate::settings::target::Target;
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-use std::collections::HashSet;
-
+pub mod bucket;
 pub mod bulk;
 pub mod key;
 pub mod namespace;
@@ -149,10 +151,12 @@ mod tests {
                 KvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
+                    bucket: None,
                 },
                 KvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
+                    bucket: None,
                 },
             ]),
             name: "test-target".to_string(),
@@ -162,6 +166,7 @@ mod tests {
             webpack_config: None,
             workers_dev: false,
             zone_id: None,
+            site: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }

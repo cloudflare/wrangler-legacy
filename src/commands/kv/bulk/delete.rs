@@ -55,7 +55,7 @@ pub fn delete(
     Ok(())
 }
 
-fn delete_bulk(
+pub fn delete_bulk(
     target: &Target,
     user: GlobalUser,
     namespace_id: &str,

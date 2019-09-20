@@ -3,6 +3,7 @@ pub mod output;
 
 use crate::commands::build::watch::wait_for_changes;
 use crate::commands::build::watch::COOLDOWN_PERIOD;
+use crate::commands::generate::run_generate;
 
 use crate::commands::publish::package::Package;
 use crate::install;
@@ -127,8 +128,13 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         env_dep_installed(tool)?;
     }
 
-    let current_dir = env::current_dir()?;
-    run_npm_install(current_dir).expect("could not run `npm install`");
+    let build_dir = target.build_dir()?;
+
+    if target.site.is_some() {
+        scaffold_site_worker(&target)?;
+    }
+
+    run_npm_install(&build_dir).expect("could not run `npm install`");
 
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
@@ -149,7 +155,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         temp_file.clone().to_str().unwrap().to_string()
     ));
 
-    let bundle = Bundle::new();
+    let bundle = Bundle::new(&build_dir);
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
@@ -164,10 +170,9 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
     if !bundle.has_webpack_config(&webpack_config_path) {
-        let package = Package::new("./")?;
-        let current_dir = env::current_dir()?;
-        let package_main = current_dir
-            .join(package.main()?)
+        let package = Package::new(&build_dir)?;
+        let package_main = build_dir
+            .join(package.main(&build_dir)?)
             .to_str()
             .unwrap()
             .to_string();
@@ -183,9 +188,30 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     Ok((command, temp_file, bundle))
 }
 
+pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
+    let build_dir = target.build_dir()?;
+    // TODO: this is a placeholder template. Replace with The Real Thing on launch.
+    let template = "https://github.com/ashleymichal/glowing-palm-tree";
+
+    if !Path::new(&build_dir).exists() {
+        // TODO: use site.entry_point instead of build_dir explicitly.
+        run_generate(
+            build_dir.file_name().unwrap().to_str().unwrap(),
+            template,
+            &target.target_type,
+        )?;
+
+        // This step is to prevent having a git repo within a git repo after
+        // generating the scaffold into an existing project.
+        fs::remove_dir_all(&build_dir.join(".git"))?;
+    }
+
+    Ok(())
+}
+
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
-fn run_npm_install(dir: PathBuf) -> Result<(), failure::Error> {
+fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
     let flock_path = dir.join(&".install.lock");
     let flock = File::create(&flock_path)?;
     // avoid running multiple {npm install} at the same time (eg. in tests)
@@ -263,7 +289,7 @@ fn install() -> Result<PathBuf, failure::Error> {
         wranglerjs_path.path()
     };
 
-    run_npm_install(wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
+    run_npm_install(&wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
     Ok(wranglerjs_path)
 }
 

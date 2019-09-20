@@ -5,24 +5,51 @@ mod route;
 mod upload_form;
 
 pub use package::Package;
+
+use crate::settings::target::kv_namespace::KvNamespace;
 use route::Route;
+
 use upload_form::build_script_upload_form;
 
-use log::info;
+use std::path::Path;
 
 use crate::commands;
+use crate::commands::kv;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
+
 use crate::settings::target::Target;
 use crate::terminal::{emoji, message};
 
-pub fn publish(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    info!("workers_dev = {}", target.workers_dev);
+pub fn publish(
+    user: &GlobalUser,
+    target: &mut Target,
+    push_worker: bool,
+    push_bucket: bool,
+) -> Result<(), failure::Error> {
+    log::info!("workers_dev = {}", target.workers_dev);
 
     validate_target(target)?;
-    commands::build(&target)?;
-    publish_script(&user, &target)?;
+
+    if let Some(site_config) = &target.site {
+        let site_namespace = kv::namespace::site(target, user)?;
+
+        target.add_kv_namespace(KvNamespace {
+            binding: "__STATIC_CONTENT".to_string(),
+            id: site_namespace.id,
+            bucket: Some(site_config.bucket.to_owned()),
+        });
+    }
+
+    if push_bucket {
+        upload_buckets(target, user)?;
+    }
+    if push_worker {
+        commands::build(&target)?;
+        publish_script(&user, &target)?;
+    }
+
     Ok(())
 }
 
@@ -52,18 +79,29 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
     let pattern = if !target.workers_dev {
         let route = Route::new(&target)?;
         Route::publish(&user, &target, &route)?;
-        info!("publishing to route");
+        log::info!("publishing to route");
         route.pattern
     } else {
-        info!("publishing to subdomain");
+        log::info!("publishing to subdomain");
         publish_to_subdomain(target, user)?
     };
 
-    info!("{}", &pattern);
+    log::info!("{}", &pattern);
     message::success(&format!(
         "Successfully published your script to {}",
         &pattern
     ));
+
+    Ok(())
+}
+
+fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+    for namespace in &target.kv_namespaces() {
+        if let Some(bucket) = &namespace.bucket {
+            let path = Path::new(&bucket);
+            kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
+        }
+    }
 
     Ok(())
 }
@@ -73,7 +111,7 @@ fn build_subdomain_request() -> String {
 }
 
 fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, failure::Error> {
-    info!("checking that subdomain is registered");
+    log::info!("checking that subdomain is registered");
     let subdomain = Subdomain::get(&target.account_id, user)?;
 
     let sd_worker_addr = format!(
@@ -83,7 +121,7 @@ fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, fa
 
     let client = http::auth_client(user);
 
-    info!("Making public on subdomain...");
+    log::info!("Making public on subdomain...");
     let mut res = client
         .post(&sd_worker_addr)
         .header("Content-type", "application/json")

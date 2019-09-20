@@ -41,7 +41,7 @@ pub fn put(
     Ok(())
 }
 
-fn put_bulk(
+pub fn put_bulk(
     target: &Target,
     user: GlobalUser,
     namespace_id: &str,

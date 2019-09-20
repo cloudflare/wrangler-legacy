@@ -1,5 +1,5 @@
-mod delete;
-mod put;
+pub mod delete;
+pub mod put;
 
 pub use delete::delete;
 pub use put::put;

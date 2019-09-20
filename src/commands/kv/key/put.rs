@@ -33,6 +33,7 @@ pub fn put(
 
     // Add expiration and expiration_ttl query options as necessary.
     let mut query_params: Vec<(&str, &str)> = vec![];
+
     if let Some(exp) = expiration {
         query_params.push(("expiration", exp))
     };

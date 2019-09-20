@@ -105,7 +105,8 @@ fn run() -> Result<(), failure::Error> {
                         .about("List all namespaces on your Cloudflare account")
                 )
         )
-            .subcommand(SubCommand::with_name("kv:key")
+        .subcommand(
+            SubCommand::with_name("kv:key")
                 .about(&*format!(
                     "{} Individually manage Workers KV key-value pairs",
                     emoji::KEY
@@ -236,6 +237,68 @@ fn run() -> Result<(), failure::Error> {
                 )
         )
         .subcommand(
+            SubCommand::with_name("kv:bucket")
+                .about(&*format!(
+                    "{} Use KV as bucket-style storage",
+                    emoji::FILE_CABINET
+                ))
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    SubCommand::with_name("upload")
+                        .about("Upload the contents of a directory keyed on path")
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
+                        .arg(
+                            Arg::with_name("path")
+                            .help("the directory to be uploaded to KV")
+                            .required(true)
+                            .index(1),
+                        )
+                        .arg(
+                            Arg::with_name("verbose")
+                            .help("Verbose mode: print out all files uploaded")
+                            .short("v")
+                            .long("verbose")
+                        )
+                )
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .about("Delete the contents of a directory keyed on path")
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
+                        .arg(
+                            Arg::with_name("path")
+                            .help("the directory to be deleted from KV")
+                            .required(true)
+                            .index(1),
+                        )
+                )
+                .subcommand(
+                    SubCommand::with_name("sync")
+                        .about("Sync the contents of a directory keyed on path (ensures local and remote directories are the same)")
+                        .arg(kv_binding_arg.clone())
+                        .arg(kv_namespace_id_arg.clone())
+                        .group(kv_namespace_specifier_group.clone())
+                        .arg(environment_arg.clone())
+                        .arg(
+                            Arg::with_name("path")
+                            .help("the directory to be synced to KV")
+                            .required(true)
+                            .index(1),
+                        )
+                        .arg(
+                            Arg::with_name("verbose")
+                            .help("Verbose mode: print out all files synced")
+                            .short("v")
+                            .long("verbose")
+                        )
+                )
+        )
+        .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
                     "{} Generate a new worker project",
@@ -257,6 +320,13 @@ fn run() -> Result<(), failure::Error> {
                         .long("type")
                         .takes_value(true)
                         .help("the type of project you want generated"),
+                )
+                .arg(
+                    Arg::with_name("site")
+                        .short("s")
+                        .long("site")
+                        .takes_value(false)
+                        .help("initializes a Workers Sites project. Overrides `type` and `template`"),
                 ),
         )
         .subcommand(
@@ -276,6 +346,13 @@ fn run() -> Result<(), failure::Error> {
                         .long("type")
                         .takes_value(true)
                         .help("the type of project you want generated"),
+                )
+                .arg(
+                    Arg::with_name("site")
+                        .short("s")
+                        .long("site")
+                        .takes_value(false)
+                        .help("initializes a Workers Sites project. Overrides `type` and `template`"),
                 ),
         )
         .subcommand(
@@ -340,6 +417,18 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("env")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("no-worker")
+                        .help("run publish without uploading your worker. used if you want to publish a bucket on its own")
+                        .long("no-worker")
+                        .takes_value(false)
+                )
+                .arg(
+                    Arg::with_name("no-bucket")
+                        .help("run publish without uploading your bucket to kv. used to update worker logic alone")
+                        .long("no-bucket")
+                        .takes_value(false)
                 ),
         )
         .subcommand(
@@ -381,32 +470,54 @@ fn run() -> Result<(), failure::Error> {
         commands::global_config(email, api_key)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
-        let target_type = match matches.value_of("type") {
-            Some(s) => Some(TargetType::from_str(&s.to_lowercase())?),
-            None => None,
-        };
+        let site = matches.is_present("site");
 
-        let default_template = "https://github.com/cloudflare/worker-template";
-        let template = matches.value_of("template").unwrap_or(match target_type {
-            Some(ref pt) => match pt {
-                TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
+        let (target_type, template) = if site {
+            // Workers Sites projects are always Webpack for now
+            let target_type = Some(TargetType::Webpack);
+            // template = "https://github.com/cloudflare/worker-sites-template";
+            // TODO: this is a placeholder template. Replace with The Real Thing (^) on launch.
+            let template = "https://github.com/ashleymichal/scaling-succotash";
+
+            (target_type, template)
+        } else {
+            let target_type = match matches.value_of("type") {
+                Some(s) => Some(TargetType::from_str(&s.to_lowercase())?),
+                None => None,
+            };
+
+            let default_template = "https://github.com/cloudflare/worker-template";
+            let template = matches.value_of("template").unwrap_or(match target_type {
+                Some(ref pt) => match pt {
+                    TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
+                    _ => default_template,
+                },
                 _ => default_template,
-            },
-            _ => default_template,
-        });
+            });
+
+            (target_type, template)
+        };
 
         info!(
             "Generate command called with template {}, and name {}",
             template, name
         );
-        commands::generate(name, template, target_type)?;
+
+        commands::generate(name, template, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("init") {
         let name = matches.value_of("name");
-        let target_type = match matches.value_of("type") {
-            Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
-            None => None,
+        let site = matches.is_present("site");
+        let target_type = if site {
+            // Workers Sites projects are always Webpack for now
+            Some(TargetType::Webpack)
+        } else {
+            match matches.value_of("type") {
+                Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
+                None => None,
+            }
         };
-        commands::init(name, target_type)?;
+
+        commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
@@ -445,16 +556,18 @@ fn run() -> Result<(), failure::Error> {
             failure::bail!("You can only pass --env or --release, not both")
         }
         let manifest = settings::target::Manifest::new(config_path)?;
+        let mut target;
         if matches.is_present("env") {
-            let target = manifest.get_target(matches.value_of("env"), false)?;
-            commands::publish(&user, &target)?;
+            target = manifest.get_target(matches.value_of("env"), false)?;
         } else if matches.is_present("release") {
-            let target = manifest.get_target(None, true)?;
-            commands::publish(&user, &target)?;
+            target = manifest.get_target(None, true)?;
         } else {
-            let target = manifest.get_target(None, false)?;
-            commands::publish(&user, &target)?;
+            target = manifest.get_target(None, false)?;
         }
+
+        let push_worker = !matches.is_present("no-worker");
+        let push_bucket = !matches.is_present("no-bucket");
+        commands::publish(&user, &mut target, push_worker, push_bucket)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
@@ -529,11 +642,10 @@ fn run() -> Result<(), failure::Error> {
             }
             ("put", Some(put_key_matches)) => {
                 let key = put_key_matches.value_of("key").unwrap();
+
+                // If is_file is true, overwrite value to be the contents of the given
+                // filename in the 'value' arg.
                 let value = put_key_matches.value_of("value").unwrap();
-                let is_file = match put_key_matches.occurrences_of("path") {
-                    1 => true,
-                    _ => false,
-                };
                 let expiration = put_key_matches.value_of("expiration");
                 let ttl = put_key_matches.value_of("expiration-ttl");
                 commands::kv::key::put(
@@ -541,8 +653,8 @@ fn run() -> Result<(), failure::Error> {
                     user,
                     &namespace_id,
                     key,
-                    value,
-                    is_file,
+                    &value,
+                    put_key_matches.is_present("path"),
                     expiration,
                     ttl,
                 )?
@@ -591,6 +703,57 @@ fn run() -> Result<(), failure::Error> {
                 commands::kv::bulk::delete(&target, user, &namespace_id, Path::new(path))?
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
+            _ => unreachable!(),
+        }
+    } else if let Some(kv_matches) = matches.subcommand_matches("kv:bucket") {
+        let manifest = settings::target::Manifest::new(config_path)?;
+        let user = settings::global_user::GlobalUser::new()?;
+
+        // Get environment and bindings
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
+        let (target, namespace_id) = match subcommand_matches {
+            Some(subcommand_matches) => {
+                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
+                let namespace_id = match subcommand_matches.value_of("binding") {
+                    Some(namespace_binding) => {
+                        commands::kv::get_namespace_id(&target, namespace_binding)?
+                    }
+                    None => subcommand_matches
+                        .value_of("namespace-id")
+                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
+                        .to_string(),
+                };
+                (target, namespace_id.to_string())
+            }
+            None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
+        };
+
+        match (subcommand, subcommand_matches) {
+            ("upload", Some(write_bulk_matches)) => {
+                let path = write_bulk_matches.value_of("path").unwrap();
+                commands::kv::bucket::upload(
+                    &target,
+                    user,
+                    &namespace_id,
+                    Path::new(path),
+                    write_bulk_matches.is_present("verbose"),
+                )?;
+            }
+            ("delete", Some(delete_matches)) => {
+                let path = delete_matches.value_of("path").unwrap();
+                commands::kv::bucket::delete(&target, user, &namespace_id, Path::new(path))?;
+            }
+            ("sync", Some(sync_matches)) => {
+                let path = sync_matches.value_of("path").unwrap();
+                commands::kv::bucket::sync(
+                    &target,
+                    user,
+                    &namespace_id,
+                    Path::new(path),
+                    sync_matches.is_present("verbose"),
+                )?;
+            }
+            ("", None) => message::warn("kv:bucket expects a subcommand"),
             _ => unreachable!(),
         }
     }

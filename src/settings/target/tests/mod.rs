@@ -38,10 +38,12 @@ fn it_builds_from_environments_config_with_kv() {
     let kv_1 = KvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "prodKV-1".to_string(),
+        bucket: None,
     };
     let kv_2 = KvNamespace {
         id: "anotherwaytoolongidstring".to_string(),
         binding: "prodKV-2".to_string(),
+        bucket: None,
     };
 
     match target.kv_namespaces {
@@ -57,10 +59,12 @@ fn it_builds_from_environments_config_with_kv() {
     let kv_1 = KvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "stagingKV-1".to_string(),
+        bucket: None,
     };
     let kv_2 = KvNamespace {
         id: "anotherwaytoolongidstring".to_string(),
         binding: "stagingKV-2".to_string(),
+        bucket: None,
     };
     match target.kv_namespaces {
         Some(kv_namespaces) => {
@@ -92,10 +96,12 @@ fn it_builds_from_legacy_config_with_kv() {
     let kv_1 = KvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "prodKV".to_string(),
+        bucket: None,
     };
     let kv_2 = KvNamespace {
         id: "anotherwaytoolongidstring".to_string(),
         binding: "stagingKV".to_string(),
+        bucket: None,
     };
 
     match target.kv_namespaces {

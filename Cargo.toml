@@ -44,6 +44,8 @@ walkdir = "2.2.9"
 percent-encoding = "1.0.1"
 http = "0.1.1"
 regex = "1"
+sha2 = "0.8.0"
+data-encoding = "2.1.2"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"
