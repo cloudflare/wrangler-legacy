@@ -691,57 +691,6 @@ fn run() -> Result<(), failure::Error> {
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
         }
-    } else if let Some(kv_matches) = matches.subcommand_matches("kv:bucket") {
-        let manifest = settings::target::Manifest::new(config_path)?;
-        let user = settings::global_user::GlobalUser::new()?;
-
-        // Get environment and bindings
-        let (subcommand, subcommand_matches) = kv_matches.subcommand();
-        let (target, namespace_id) = match subcommand_matches {
-            Some(subcommand_matches) => {
-                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
-                let namespace_id = match subcommand_matches.value_of("binding") {
-                    Some(namespace_binding) => {
-                        commands::kv::get_namespace_id(&target, namespace_binding)?
-                    }
-                    None => subcommand_matches
-                        .value_of("namespace-id")
-                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
-                        .to_string(),
-                };
-                (target, namespace_id.to_string())
-            }
-            None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
-        };
-
-        match (subcommand, subcommand_matches) {
-            ("upload", Some(write_bulk_matches)) => {
-                let path = write_bulk_matches.value_of("path").unwrap();
-                commands::kv::bucket::upload(
-                    &target,
-                    user,
-                    &namespace_id,
-                    Path::new(path),
-                    write_bulk_matches.is_present("verbose"),
-                )?;
-            }
-            ("delete", Some(delete_matches)) => {
-                let path = delete_matches.value_of("path").unwrap();
-                commands::kv::bucket::delete(&target, user, &namespace_id, Path::new(path))?;
-            }
-            ("sync", Some(sync_matches)) => {
-                let path = sync_matches.value_of("path").unwrap();
-                commands::kv::bucket::sync(
-                    &target,
-                    user,
-                    &namespace_id,
-                    Path::new(path),
-                    sync_matches.is_present("verbose"),
-                )?;
-            }
-            ("", None) => message::warn("kv:bucket expects a subcommand"),
-            _ => unreachable!(),
-        }
     }
     Ok(())
 }
