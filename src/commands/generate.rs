@@ -1,4 +1,4 @@
-use crate::settings::target::{Manifest, TargetType};
+use crate::settings::target::{Manifest, Site, TargetType};
 use crate::{commands, install};
 use std::path::PathBuf;
 use std::process::Command;
@@ -14,7 +14,15 @@ pub fn generate(
     let target_type = target_type.unwrap_or_else(|| get_target_type(template));
     run_generate(name, template, &target_type)?;
     let config_path = PathBuf::from("./").join(&name);
-    Manifest::generate(name.to_string(), target_type, config_path, site)?;
+    // TODO: this is tightly coupled to our site template. Need to remove once
+    // we refine our generate logic.
+    let generated_site = if site {
+        Some(Site::new("./public"))
+    } else {
+        None
+    };
+    Manifest::generate(name.to_string(), target_type, config_path, generated_site)?;
+
     Ok(())
 }
 

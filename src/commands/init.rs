@@ -1,5 +1,5 @@
 use crate::commands;
-use crate::settings::target::{Manifest, TargetType};
+use crate::settings::target::{Manifest, Site, TargetType};
 use crate::terminal::message;
 use std::path::{Path, PathBuf};
 
@@ -15,7 +15,9 @@ pub fn init(
     let name = name.unwrap_or_else(|| &dirname);
     let target_type = target_type.unwrap_or_default();
     let config_path = PathBuf::from("./");
-    let manifest = Manifest::generate(name.to_string(), target_type, config_path, site)?;
+    let initialized_site = if site { Some(Site::default()) } else { None };
+    let manifest =
+        Manifest::generate(name.to_string(), target_type, config_path, initialized_site)?;
     message::success("Succesfully created a `wrangler.toml`");
 
     if site {
