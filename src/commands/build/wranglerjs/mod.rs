@@ -191,7 +191,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
     let build_dir = target.build_dir()?;
     // TODO: this is a placeholder template. Replace with The Real Thing on launch.
-    let template = "https://github.com/ashleymichal/glowing-palm-tree";
+    let template = "https://github.com/ashleymichal/worker-site-init";
 
     if !Path::new(&build_dir).exists() {
         // TODO: use site.entry_point instead of build_dir explicitly.
