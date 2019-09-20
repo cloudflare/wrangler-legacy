@@ -237,68 +237,6 @@ fn run() -> Result<(), failure::Error> {
                 )
         )
         .subcommand(
-            SubCommand::with_name("kv:bucket")
-                .about(&*format!(
-                    "{} Use KV as bucket-style storage",
-                    emoji::FILE_CABINET
-                ))
-                .setting(AppSettings::SubcommandRequiredElseHelp)
-                .subcommand(
-                    SubCommand::with_name("upload")
-                        .about("Upload the contents of a directory keyed on path")
-                        .arg(kv_binding_arg.clone())
-                        .arg(kv_namespace_id_arg.clone())
-                        .group(kv_namespace_specifier_group.clone())
-                        .arg(environment_arg.clone())
-                        .arg(
-                            Arg::with_name("path")
-                            .help("the directory to be uploaded to KV")
-                            .required(true)
-                            .index(1),
-                        )
-                        .arg(
-                            Arg::with_name("verbose")
-                            .help("Verbose mode: print out all files uploaded")
-                            .short("v")
-                            .long("verbose")
-                        )
-                )
-                .subcommand(
-                    SubCommand::with_name("delete")
-                        .about("Delete the contents of a directory keyed on path")
-                        .arg(kv_binding_arg.clone())
-                        .arg(kv_namespace_id_arg.clone())
-                        .group(kv_namespace_specifier_group.clone())
-                        .arg(environment_arg.clone())
-                        .arg(
-                            Arg::with_name("path")
-                            .help("the directory to be deleted from KV")
-                            .required(true)
-                            .index(1),
-                        )
-                )
-                .subcommand(
-                    SubCommand::with_name("sync")
-                        .about("Sync the contents of a directory keyed on path (ensures local and remote directories are the same)")
-                        .arg(kv_binding_arg.clone())
-                        .arg(kv_namespace_id_arg.clone())
-                        .group(kv_namespace_specifier_group.clone())
-                        .arg(environment_arg.clone())
-                        .arg(
-                            Arg::with_name("path")
-                            .help("the directory to be synced to KV")
-                            .required(true)
-                            .index(1),
-                        )
-                        .arg(
-                            Arg::with_name("verbose")
-                            .help("Verbose mode: print out all files synced")
-                            .short("v")
-                            .long("verbose")
-                        )
-                )
-        )
-        .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
                     "{} Generate a new worker project",
