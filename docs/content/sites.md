@@ -12,44 +12,19 @@ To set up a generic project you can run:
 wrangler generate --site myProj
 ```
 
-This command creates the source directory `public`, `wrangler.toml`, and `worker-site` directory required. 
+This command creates the source directory `dist`, `wrangler.toml`, and `worker-site` directory required. 
 
-Any files you wish to upload and make live should live in `public`. You can change this later.
+Any files you wish to upload and make live should live in `dist`. You can change this later.
 
 ### Setup existing static project
 
-If you already have a folder (e.g. `./public`) with the static files you'd like to be served from a Worker script, you can upload them to Worker's KV. First run:
+If you already have a folder with the static files you'd like to be served from a Worker script, you can upload them to Worker's KV. First run:
 
 ```
-$ wrangler init --site --bucket="./dist"
+$ wrangler init --site
 ```
 
 This command creates the `wrangler.toml` and `worker-site` directory required to upload the files and serve them from our network. 
-
-#### Setup existing Worker project
-
-If you already have a Worker running on your project nice! There are separate steps for this setup:
-
-* Setup and upload a [bucket](./kv_commands.md#kvbucket) using KV 
-
-  ```
-  $ wrangler kv:namespace create "__STATIC_CONTENT__"
-  ..
-  ✨  Add the following to your wrangler.toml:
-  kv-namespaces = [
-           { binding = "__STATIC_CONTENT__", id = "f7b02e7fc70443149ac906dd81ec1791" }
-  ]
-  ```
-
-* Bind the bucket in your wrangler.toml
-
-  ```
-  kv-namespaces = [
-           { binding = "__STATIC_CONTENT", id = "f7b02e7fc70443149ac906dd81ec1791" }
-  ]
-  ```
-
-* Modify your Worker script using the [advanced steps](TODO) to serve the files
 
 ### Config Bucket
 
@@ -117,23 +92,24 @@ Then configure the Worker script to look something like:
 import { getAssetFromKV } from '@cloudflare/kv-asset-handlers'
 
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
+  event.respondWith(handleRequest(event))
 })
 // Map how the path of an incoming request will map to a file path
 // from your bucket
 function keyModifier(path) {
-  if (path.endsWith('/')) {
-    path += `index.html`
-  }
-  return path
+  return path.replace('/docs', '')
 }
 async function handleRequest(request) {
-  let url = new URL(request.url)
-  let key = keyModifier(url.pathname)
   try {
-    return await getAssetFromKV(key, { cacheControl: { bypassCache: true } })
+    return await getAssetFromKV(event, {
+      cacheControl: { bypassCache: true },
+      keyModifier: keyModifier,
+    })
   } catch (e) {
-    return new Response(`"${url.pathname}" not found`, { status: 404, statusText: 'not found' })
+    return new Response(`"${url.pathname}" not found`, {
+      status: 404,
+      statusText: 'not found',
+    })
   }
 }
 ```
@@ -152,7 +128,7 @@ This allows KV to serve as a continuous middleware:
 
 ```typescript
 const router = new Router()
-router.all`(.*)`.use(kvStatic(myKvNamespaceVar, { cacheControl: {  bypassCache:false}}))
+router.all`(.*)`.use(kvStatic(__STATIC_CONTENT, { cacheControl: {  bypassCache:false}}))
 route.get(`\happy*`).handle(..)
 ```
 
