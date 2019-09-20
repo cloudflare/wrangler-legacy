@@ -120,7 +120,7 @@ pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Er
             failure::bail!(
                 "File `{}` of {} bytes exceeds the maximum value size limit of {} bytes",
                 pair.key,
-                pair.key.len(),
+                pair.value.len(),
                 VALUE_MAX_SIZE
             );
         }
