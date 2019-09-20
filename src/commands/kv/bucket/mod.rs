@@ -65,7 +65,7 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
             // Need to base64 encode value
             let b64_value = base64::encode(&value);
 
-            let (_, key) = generate_key(path, directory, Some(b64_value.clone()))?;
+            let (_, key) = generate_key(path, directory, Some(b64_value))?;
 
             upload_vec.push(key);
         }
