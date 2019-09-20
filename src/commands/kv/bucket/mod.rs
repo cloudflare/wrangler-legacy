@@ -1,12 +1,15 @@
 extern crate base64;
 
+mod delete;
 mod sync;
 mod upload;
 
 use data_encoding::HEXLOWER;
 use sha2::{Digest, Sha256};
 
+pub use delete::delete;
 pub use sync::sync;
+pub use upload::upload;
 
 use std::collections::HashMap;
 use std::ffi::OsString;

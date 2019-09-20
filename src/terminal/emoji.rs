@@ -17,6 +17,7 @@ pub static BICEP: Emoji = Emoji("💪 ", "");
 pub static CRAB: Emoji = Emoji("🦀 ", "");
 pub static DANCERS: Emoji = Emoji("👯 ", "");
 pub static EYES: Emoji = Emoji("👀 ", "");
+pub static FILE_CABINET: Emoji = Emoji("🗄 ", "");
 pub static FILES: Emoji = Emoji("🗂️ ", "");
 pub static INBOX: Emoji = Emoji("📥 ", "");
 pub static INFO: Emoji = Emoji("💁 ", "");
