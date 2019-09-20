@@ -17,6 +17,21 @@ const VALUE_MAX_SIZE: usize = 2 * 1024 * 1024;
 const PAIRS_MAX_COUNT: usize = 5000;
 const UPLOAD_MAX_SIZE: usize = 50 * 1024 * 1024;
 
+pub fn upload(
+    target: &Target,
+    user: GlobalUser,
+    namespace_id: &str,
+    path: &Path,
+    verbose: bool,
+) -> Result<(), failure::Error> {
+    match upload_files(target, user, namespace_id, path, verbose) {
+        Ok(_) => message::success("Success"),
+        Err(e) => print!("{}", e),
+    }
+
+    Ok(())
+}
+
 pub fn upload_files(
     target: &Target,
     user: GlobalUser,
