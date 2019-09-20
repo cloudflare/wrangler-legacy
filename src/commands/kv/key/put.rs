@@ -41,11 +41,18 @@ pub fn put(
     };
     let url = Url::parse_with_params(&api_endpoint, query_params);
 
+    let client = http::auth_client(&user);
+
+    let url_into_str = url?.into_string();
+
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
-    let body_text = if is_file {
+    let mut res = if is_file {
         match &metadata(value) {
-            Ok(file_type) if file_type.is_file() => fs::read_to_string(value),
+            Ok(file_type) if file_type.is_file() => {
+                let file = fs::File::open(value)?;
+                client.put(&url_into_str).body(file).send()?
+            }
             Ok(file_type) if file_type.is_dir() => {
                 failure::bail!("--path argument takes a file, {} is a directory", value)
             }
@@ -53,13 +60,8 @@ pub fn put(
             Err(e) => failure::bail!("{}", e),
         }
     } else {
-        Ok(value.to_string())
+        client.put(&url_into_str).body(value.to_string()).send()?
     };
-
-    let client = http::auth_client(&user);
-
-    let url_into_str = url?.into_string();
-    let mut res = client.put(&url_into_str).body(body_text?).send()?;
 
     if res.status().is_success() {
         message::success("Success")
