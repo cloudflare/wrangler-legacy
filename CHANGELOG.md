@@ -15,7 +15,7 @@
     name = "my-worker-dev"
     account_id = "12345678901234567890"
     zone_id = "09876543210987654321"
-    workers_dot_dev = false
+    workers_dev = false
 
     [env.staging]
     name = "my-worker-staging"
