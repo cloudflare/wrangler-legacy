@@ -60,7 +60,12 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
-            let (key, _) = generate_key(path, directory, None)?;
+            let value = std::fs::read(path)?;
+
+            // Need to base64 encode value
+            let b64_value = base64::encode(&value);
+
+            let (_, key) = generate_key(path, directory, Some(b64_value.clone()))?;
 
             upload_vec.push(key);
         }
