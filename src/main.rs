@@ -401,9 +401,7 @@ fn run() -> Result<(), failure::Error> {
         let (target_type, template) = if site {
             // Workers Sites projects are always Webpack for now
             let target_type = Some(TargetType::Webpack);
-            // template = "https://github.com/cloudflare/worker-sites-template";
-            // TODO: this is a placeholder template. Replace with The Real Thing (^) on launch.
-            let template = "https://github.com/ashleymichal/scaling-succotash";
+            let template = "https://github.com/cloudflare/worker-sites-template";
 
             (target_type, template)
         } else {

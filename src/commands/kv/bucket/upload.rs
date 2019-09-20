@@ -95,15 +95,17 @@ pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Er
     for pair in pairs {
         if pair.key.len() > KEY_MAX_SIZE {
             failure::bail!(
-                "Path `{}` exceeds the maximum key size limit of {} bytes",
+                "Path `{}` of {} bytes exceeds the maximum key size limit of {} bytes",
                 pair.key,
+                pair.key.len(),
                 KEY_MAX_SIZE
             );
         }
         if pair.value.len() > VALUE_MAX_SIZE {
             failure::bail!(
-                "File `{}` exceeds the maximum value size limit of {} bytes",
+                "File `{}` of {} bytes exceeds the maximum value size limit of {} bytes",
                 pair.key,
+                pair.value.len(),
                 VALUE_MAX_SIZE
             );
         }
