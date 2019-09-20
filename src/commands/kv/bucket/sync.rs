@@ -19,11 +19,33 @@ pub fn sync(
     path: &Path,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    // First, upload all existing files in given directory
+    // First, upload all changed files in given local directory (aka file in Workers KV
+    // is now stale).
+
+    // Gremote keys, which contain the hash of the file (value) as the suffix.
+    // Turn it into a HashSet.
+    let remote_keys_iter = KeyList::new(target, user.clone(), namespace_id, None)?;
+    let mut remote_keys: HashSet<String> = HashSet::new();
+    for remote_key in remote_keys_iter {
+        match remote_key {
+            Ok(remote_key) => {
+                remote_keys.insert(remote_key.name);
+            }
+            Err(e) => failure::bail!(kv::format_error(e)),
+        }
+    }
+
     if verbose {
         message::info("Preparing to upload updated files...");
     }
-    upload_files(target, user.clone(), namespace_id, path, verbose)?;
+    upload_files(
+        target,
+        user.clone(),
+        namespace_id,
+        path,
+        Some(remote_keys.clone()),
+        verbose,
+    )?;
 
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
@@ -32,28 +54,14 @@ pub fn sync(
         Ok(_) => failure::bail!("{} should be a directory", path.display()),
         Err(e) => failure::bail!("{}", e),
     }?;
-    let local_keys: HashSet<_> = HashSet::from_iter(local_keys_vec.iter());
-
-    // Then get remote keys
-    let remote_keys = KeyList::new(target, user.clone(), namespace_id, None)?;
+    let local_keys: HashSet<_> = HashSet::from_iter(local_keys_vec.into_iter());
 
     // Find keys that are present in remote but not present in local, and
-    // stage them for deletion. This is done by iterating over the remote_keys and checking for
-    // remote_keys that do not exist in local_keys. This logic is similar to that of the
-    // difference() method in https://doc.rust-lang.org/src/std/collections/hash/set.rs.html,
-    // but saves us the trouble and overhead memory of converting remote_keys into a HashSet.
-    let mut keys_to_delete: Vec<String> = Vec::new();
-    for remote_key in remote_keys {
-        match remote_key {
-            Ok(remote_key) => {
-                let name = remote_key.name;
-                if !local_keys.contains(&name) {
-                    keys_to_delete.push(name);
-                }
-            }
-            Err(e) => print!("{}", kv::format_error(e)),
-        }
-    }
+    // stage them for deletion.
+    let keys_to_delete: Vec<_> = remote_keys
+        .difference(&local_keys)
+        .map(|key| key.to_owned())
+        .collect();
 
     if !keys_to_delete.is_empty() {
         if verbose {

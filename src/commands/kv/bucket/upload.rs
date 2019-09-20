@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs::metadata;
 use std::path::Path;
 
@@ -22,19 +24,22 @@ pub fn upload_files(
     user: GlobalUser,
     namespace_id: &str,
     path: &Path,
+    exclude_keys: Option<HashSet<String>>,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
-        Ok(file_type) if file_type.is_dir() => {
-            let (p, _) = directory_keys_values(path, verbose)?;
-            Ok(p)
-        }
+    let (mut pairs, _): (Vec<KeyValuePair>, HashMap<String, String>) = match &metadata(path) {
+        Ok(file_type) if file_type.is_dir() => directory_keys_values(path, verbose),
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             Err(format_err!("wrangler kv:bucket upload takes a directory"))
         }
         Err(e) => Err(format_err!("{}", e)),
     }?;
+
+    // If a list of files to skip uploading is provided, filter the filename/file key pairs
+    if let Some(excluded_keys) = exclude_keys {
+        pairs = filter_unchanged_remote_files(pairs, excluded_keys);
+    }
 
     validate_file_uploads(pairs.clone())?;
 
@@ -87,6 +92,19 @@ fn call_put_bulk_api(
     Ok(())
 }
 
+fn filter_unchanged_remote_files(
+    pairs: Vec<KeyValuePair>,
+    exclude_keys: HashSet<String>,
+) -> Vec<KeyValuePair> {
+    let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
+    for pair in pairs {
+        if !exclude_keys.contains(&pair.key) {
+            filtered_pairs.push(pair);
+        }
+    }
+    filtered_pairs
+}
+
 // Ensure that all key-value pairs being uploaded have valid sizes (this ensures that
 // no partial uploads happen). I don't like this function because it duplicates the
 // size checking the API already does--but doing a preemptive check like this (before
@@ -111,4 +129,85 @@ pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Er
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+    use std::path::Path;
+
+    use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
+
+    use crate::commands::kv::bucket::generate_url_safe_key_and_hash;
+    use crate::commands::kv::bucket::upload::filter_unchanged_remote_files;
+
+    #[test]
+    fn it_can_filter_preexisting_files() {
+        let (_, key_a_old) = generate_url_safe_key_and_hash(
+            Path::new("/a"),
+            Path::new("/"),
+            Some("old".to_string()),
+        )
+        .unwrap();
+        let (_, key_b_old) = generate_url_safe_key_and_hash(
+            Path::new("/b"),
+            Path::new("/"),
+            Some("old".to_string()),
+        )
+        .unwrap();
+        // Generate new key (using hash of new value) for b when to simulate its value being updated.
+        let (_, key_b_new) = generate_url_safe_key_and_hash(
+            Path::new("/b"),
+            Path::new("/"),
+            Some("new".to_string()),
+        )
+        .unwrap();
+
+        // Old values found on remote
+        let mut exclude_keys = HashSet::new();
+        exclude_keys.insert(key_a_old.clone());
+        exclude_keys.insert(key_b_old.clone());
+
+        // local files (with b updated) to upload
+        let pairs_to_upload = vec![
+            KeyValuePair {
+                key: key_a_old,
+                value: "old".to_string(), // This value remains unchanged
+                expiration_ttl: None,
+                expiration: None,
+                base64: None,
+            },
+            KeyValuePair {
+                key: key_b_new.clone(),
+                value: "new".to_string(), // Note this pair has a new value
+                expiration_ttl: None,
+                expiration: None,
+                base64: None,
+            },
+        ];
+
+        let expected = vec![KeyValuePair {
+            key: key_b_new,
+            value: "new".to_string(),
+            expiration_ttl: None,
+            expiration: None,
+            base64: None,
+        }];
+        let actual = filter_unchanged_remote_files(pairs_to_upload, exclude_keys);
+        check_kv_pairs_equality(expected, actual);
+    }
+
+    fn check_kv_pairs_equality(expected: Vec<KeyValuePair>, actual: Vec<KeyValuePair>) {
+        assert!(expected.len() == actual.len());
+        let mut idx = 0;
+        for pair in expected {
+            // Ensure the expected key and value was returned in the filtered pair list
+            // Awkward field-by-field comparison below courtesy of not yet implementing
+            // PartialEq for KeyValuePair in cloudflare-rs :)
+            // todo(gabbi): Implement PartialEq for KeyValuePair in cloudflare-rs.
+            assert!(pair.key == actual[idx].key);
+            assert!(pair.value == actual[idx].value);
+            idx = idx + 1;
+        }
+    }
 }
