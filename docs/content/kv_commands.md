@@ -336,33 +336,3 @@ Are you sure you want to delete all keys in allthethingsdelete.json? [y/n]
 yes
 ✨  Success
 ```
-
-## `kv:bucket`
-
-### `upload`
-
-Walks the given directory and runs a bulk upload, using the path to an asset as its `key` and the asset as its `value`.
-
-#### Usage
-
-```console
-$ wrangler kv:bucket upload --binding MY_KV ./public
-```
-
-```console
-$ wrangler kv:bucket upload --namespace-id f7b02e7fc70443149ac906dd81ec1791 ./public
-```
-
-### `delete`
-
-Walks the given directory and runs a bulk delete, using the paths to assets as the `key`s to delete.
-
-#### Usage
-
-```console
-$ wrangler kv:bucket delete --binding MY_KV
-```
-
-```console
-$ wrangler kv:bucket delete --namespace-id f7b02e7fc70443149ac906dd81ec1791
-```
