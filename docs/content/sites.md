@@ -37,20 +37,7 @@ Special keys in your `wrangler.toml` for using sites with Worker scripts are:
 
 \* Note you shouldn't need to touch these values.
 
-With all the appropriate files setup, you'll want to add your `wrangler.toml` the namespace ID as well as the deploy configuration.
-
-##### Add namespace ID
-
-First create a namespace
-
-```
-$ wrangler kv create STATIC_ASSETS --env=prod
-=> { "id": "c417513a199c4289a1a0c8385c58a0e7", "title": "workers-site-STATIC_ASSETS" }
-```
-
-Note [`—-env`](./environments) is optional.
-
-Add this namespace ID to your `wrangler.toml`:
+Add this site `bucket to your `wrangler.toml`:
 
 ```
 name = "my-blog"
@@ -58,8 +45,9 @@ type = "webpack"
 account_id = "43434f8d0d9f52a395a1472b35f23439" 
 site = { bucket = "./public", entry-point = "./workers-site" }
 ```
+Note if using [environments](./environments) make sure to place `site` at the top level config. 
 
-If you used `wrangler init` or `wrangler generate` with the `—site` flag, then the `binding` and `assets` fields will be set. If not, then add those values.
+If you used `wrangler init` or `wrangler generate` with the `—site` flag, then the `entry-point` will be set to default.
 
 ##### Deploy Config
 
@@ -80,13 +68,7 @@ $ wrangler publish
 
 If you used `wrangler init` or `wrangler generate` with the `--site` flag, then your Worker should already live in `worker-site/index.js`. If not, you'll want to configure a Worker script to serve the files from KV:
 
-First install the node package:
-
-```
-npm install @cloudflare/kv-asset-handlers
-```
-
-Then configure the Worker script to look something like:
+Configureing the Worker script to do something custom like strip `/docs` looks like:
 
 ```javascript
 import { getAssetFromKV } from '@cloudflare/kv-asset-handlers'
@@ -97,7 +79,10 @@ addEventListener('fetch', event => {
 // Map how the path of an incoming request will map to a file path
 // from your bucket
 function keyModifier(path) {
-  return path.replace('/docs', '')
+  if (path.endsWith('/')) {
+    path += `index.html`
+  }
+	return path.replace('/docs', '')
 }
 async function handleRequest(request) {
   try {
@@ -115,22 +100,6 @@ async function handleRequest(request) {
 ```
 
 More information on the configurable options of `getAssetFromKV` see [@cloudflare/kv-asset-handler](TODO).
-
-##### Advanced Tip 
-
-Another routing solution that supports serving static files from KV is [`8track`](TODO):
-
-```
-wrangler generate myProj --git  https://github.com/jrf0110/8track
-```
-
-This allows KV to serve as a continuous middleware:
-
-```typescript
-const router = new Router()
-router.all`(.*)`.use(kvStatic(__STATIC_CONTENT, { cacheControl: {  bypassCache:false}}))
-route.get(`\happy*`).handle(..)
-```
 
 
 
