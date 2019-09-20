@@ -12,13 +12,13 @@ To set up a generic project you can run:
 wrangler generate --site myProj
 ```
 
-This command creates the source directory `dist`, `wrangler.toml`, and `worker-site` directory required. 
+This command creates the source directory `public`, `wrangler.toml`, and `worker-site` directory required. 
 
-Any files you wish to upload and make live should live in `dist`. You can change this later.
+Any files you wish to upload and make live should live in `public`. You can change this later.
 
 ### Setup existing static project
 
-If you already have a folder (e.g. `./dist`) with the static files you'd like to be served from a Worker script, you can upload them to Worker's KV. First run:
+If you already have a folder (e.g. `./public`) with the static files you'd like to be served from a Worker script, you can upload them to Worker's KV. First run:
 
 ```
 $ wrangler init --site --bucket="./dist"
@@ -45,7 +45,7 @@ If you already have a Worker running on your project nice! There are separate st
 
   ```
   kv-namespaces = [
-           { binding = "__STATIC_CONTENT__", id = "f7b02e7fc70443149ac906dd81ec1791" }
+           { binding = "__STATIC_CONTENT", id = "f7b02e7fc70443149ac906dd81ec1791" }
   ]
   ```
 
