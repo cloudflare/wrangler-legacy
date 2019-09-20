@@ -37,7 +37,7 @@ Special keys in your `wrangler.toml` for using sites with Worker scripts are:
 
 \* Note you shouldn't need to touch these values.
 
-Add this site `bucket to your `wrangler.toml`:
+Add this site `bucket` to your `wrangler.toml`:
 
 ```
 name = "my-blog"
