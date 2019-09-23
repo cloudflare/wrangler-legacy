@@ -10,11 +10,7 @@ const { homedir } = require('os');
 
 const cwd = join(homedir(), ".wrangler");
 
-function getReleaseByTag(tag) {
-  return get(`https://api.github.com/repos/cloudflare/wrangler/releases/tags/v${tag}`)
-    .then(res => get(res.data.assets_url))
-    .then(res => res.data);
-}
+const VERSION = "1.4.0-rc.1"
 
 function getPlatform() {
   const type = os.type();
@@ -33,7 +29,7 @@ function getPlatform() {
   throw new Error(`Unsupported platform: ${type} ${arch}`);
 }
 
-function downloadAsset(asset) {
+function downloadAsset(version, platform) {
   const dest = join(cwd, "out");
 
   if (existsSync(dest)) {
@@ -41,10 +37,12 @@ function downloadAsset(asset) {
   }
   mkdirSync(dest);
 
-  console.log("Downloading release", asset.browser_download_url);
+  const url = `https://cloudflare.works/download-wrangler/${ version }/${ platform }`
+
+  console.log("Downloading release", url);
 
   return axios({
-    url: asset.browser_download_url,
+    url,
     responseType: "stream"
   }).then(res => {
     res.data.pipe(
@@ -60,18 +58,7 @@ if (!existsSync(cwd)) {
   mkdirSync(cwd);
 }
 
-getReleaseByTag("1.4.0-rc.1")
-  .then(assets => {
-    const [compatibleAssets] = assets.filter(asset =>
-      asset.name.endsWith(getPlatform() + ".tar.gz")
-    );
-
-    if (compatibleAssets === undefined) {
-      throw new Error("No compatible release has been found");
-    }
-
-    return downloadAsset(compatibleAssets);
-  })
+downloadAsset(VERSION, getPlatform())
   .then(() => {
     console.log("Wrangler has been installed!");
   })
