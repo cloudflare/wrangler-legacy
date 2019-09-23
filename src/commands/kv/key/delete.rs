@@ -12,6 +12,7 @@ pub fn delete(
     id: &str,
     key: &str,
 ) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
     let client = kv::api_client(user)?;
 
     match kv::interactive_delete(&format!("Are you sure you want to delete key \"{}\"?", key)) {

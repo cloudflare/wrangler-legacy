@@ -14,6 +14,8 @@ pub fn create(
     user: GlobalUser,
     binding: &str,
 ) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
+
     let client = kv::api_client(user)?;
 
     validate_binding(binding)?;
