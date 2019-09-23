@@ -11,6 +11,7 @@ use crate::settings::target::Target;
 use crate::terminal::message;
 
 pub fn site(target: &Target, user: &GlobalUser) -> Result<WorkersKvNamespace, failure::Error> {
+    kv::validate_target(target)?;
     let client = kv::api_client(user.to_owned())?;
 
     let title = format!("__{}-{}", target.name, "workers_sites_assets");

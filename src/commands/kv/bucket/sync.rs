@@ -19,6 +19,7 @@ pub fn sync(
     path: &Path,
     verbose: bool,
 ) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
     // First, upload all changed files in given local directory (aka replace files
     // in Workers KV that are now stale).
 
@@ -36,7 +37,7 @@ pub fn sync(
             Err(e) => failure::bail!(kv::format_error(e)),
         }
     }
-
+    // First, upload all existing files in given directory
     if verbose {
         message::info("Preparing to upload updated files...");
     }
