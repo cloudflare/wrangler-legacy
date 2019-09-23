@@ -14,6 +14,7 @@ pub fn list(
     namespace_id: &str,
     prefix: Option<&str>,
 ) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
     let key_list = KeyList::new(target, user, namespace_id, prefix)?;
 
     print!("["); // Open json list bracket
