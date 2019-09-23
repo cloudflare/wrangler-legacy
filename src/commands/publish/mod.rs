@@ -99,12 +99,19 @@ fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Err
             if !path.exists() {
                 if let Some(path_str) = path.to_str() {
                     failure::bail!(
-                        "{} could not find a directory for bucket \"{}\"",
+                        "{} directory for bucket does not exist at \"{}\"",
                         emoji::WARN,
                         path_str
                     )
+                } else {
+                    failure::bail!("{} bucket does not exist")
                 }
-                failure::bail!("{} bucket path is not valid UTF-8")
+            } else if !path.is_dir() {
+                if let Some(path_str) = path.to_str() {
+                    failure::bail!("{} bucket \"{}\" is not a directory", emoji::WARN, path_str)
+                } else {
+                    failure::bail!("{} bucket is not a directory", emoji::WARN)
+                }
             }
             kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
         }
