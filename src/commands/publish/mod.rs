@@ -89,7 +89,23 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
 fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     for namespace in &target.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
+            if bucket.is_empty() {
+                failure::bail!(
+                    "{} You need to specify a bucket directory in your wrangler.toml",
+                    emoji::WARN
+                )
+            }
             let path = Path::new(&bucket);
+            if !path.exists() {
+                if let Some(path_str) = path.to_str() {
+                    failure::bail!(
+                        "{} could not find a directory for bucket \"{}\"",
+                        emoji::WARN,
+                        path_str
+                    )
+                }
+                failure::bail!("{} bucket path is not valid UTF-8")
+            }
             kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
         }
     }
