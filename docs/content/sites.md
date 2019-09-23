@@ -43,7 +43,9 @@ Add this site `bucket` to your `wrangler.toml`:
 name = "my-blog"
 type = "webpack"
 account_id = "43434f8d0d9f52a395a1472b35f23439" 
-site = { bucket = "./public", entry-point = "./workers-site" }
+[site]
+bucket = "./public"
+entry-point = "./workers-site"
 ```
 Note if using [environments](./environments) make sure to place `site` at the top level config. 
 
