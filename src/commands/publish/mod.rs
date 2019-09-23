@@ -98,7 +98,7 @@ fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Err
             let path = Path::new(&bucket);
             if !path.exists() {
                 failure::bail!(
-                    "{} directory for bucket does not exist at \"{}\"",
+                    "{} bucket directory \"{}\" does not exist",
                     emoji::WARN,
                     path.to_string_lossy()
                 )
