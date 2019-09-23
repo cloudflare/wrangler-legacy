@@ -19,11 +19,13 @@ pub fn sync(
     path: &Path,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    // First, upload all changed files in given local directory (aka file in Workers KV
-    // is now stale).
+    // First, upload all changed files in given local directory (aka replace files
+    // in Workers KV that are now stale).
 
-    // Gremote keys, which contain the hash of the file (value) as the suffix.
-    // Turn it into a HashSet.
+    // Get remote keys, which contain the hash of the file (value) as the suffix.
+    // Turn it into a HashSet. This will be used by upload() to figure out which
+    // files to exclude from upload (because their current version already exists in
+    // the Workers KV remote).
     let remote_keys_iter = KeyList::new(target, user.clone(), namespace_id, None)?;
     let mut remote_keys: HashSet<String> = HashSet::new();
     for remote_key in remote_keys_iter {
