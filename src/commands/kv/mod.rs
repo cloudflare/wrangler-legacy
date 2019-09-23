@@ -147,9 +147,6 @@ pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
     if target.account_id.is_empty() {
         missing_fields.push("account_id")
     };
-    if target.name.is_empty() {
-        missing_fields.push("name")
-    };
 
     match &target.kv_namespaces {
         Some(kv_namespaces) => {
