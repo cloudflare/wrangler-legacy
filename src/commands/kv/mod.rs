@@ -168,7 +168,7 @@ pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "Your wrangler.toml is missing the following field(s): {:?}" ,
+            "Your wrangler.toml is missing the following field(s): {:?}",
             missing_fields
         )
     } else {
