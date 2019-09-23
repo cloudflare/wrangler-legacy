@@ -1,9 +1,10 @@
-use crate::settings::target::{Manifest, Site, TargetType};
-use crate::{commands, install};
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::commands::validate_worker_name;
+use crate::settings::target::{Manifest, Site, TargetType};
 use crate::terminal::{emoji, message};
+use crate::{commands, install};
 
 pub fn generate(
     name: &str,
@@ -11,6 +12,8 @@ pub fn generate(
     target_type: Option<TargetType>,
     site: bool,
 ) -> Result<(), failure::Error> {
+    validate_worker_name(name)?;
+
     let target_type = target_type.unwrap_or_else(|| get_target_type(template));
     run_generate(name, template, &target_type)?;
     let config_path = PathBuf::from("./").join(&name);
