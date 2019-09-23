@@ -75,9 +75,8 @@ fn validate_binding(binding: &str) -> Result<(), failure::Error> {
         failure::bail!(
             "A binding can only have alphanumeric and _ characters, and cannot begin with a number"
         )
-    } else {
-        Ok(())
     }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -45,9 +45,8 @@ pub fn validate_worker_name(name: &str) -> Result<(), failure::Error> {
     let re = Regex::new(r"^[a-z0-9_][a-z0-9-_]*$").unwrap();
     if !re.is_match(&name) {
         failure::bail!("Worker name \"{}\" invalid. Ensure that you only use lowercase letters, dashes, underscores, and numbers.", name)
-    } else {
-        Ok(())
     }
+    Ok(())
 }
 
 #[cfg(test)]
