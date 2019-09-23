@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::metadata;
 use std::path::Path;
@@ -27,8 +26,11 @@ pub fn upload_files(
     exclude_keys: Option<HashSet<String>>,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let (mut pairs, _): (Vec<KeyValuePair>, HashMap<String, String>) = match &metadata(path) {
-        Ok(file_type) if file_type.is_dir() => directory_keys_values(path, verbose),
+    let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
+        Ok(file_type) if file_type.is_dir() => {
+            let (p, _) = directory_keys_values(path, verbose)?;
+            Ok(p)
+        }
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             Err(format_err!("wrangler kv:bucket upload takes a directory"))
