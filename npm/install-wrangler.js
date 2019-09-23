@@ -60,7 +60,7 @@ if (!existsSync(cwd)) {
   mkdirSync(cwd);
 }
 
-getReleaseByTag("1.4.0-rc.1")
+getReleaseByTag("1.4.0-rc.2")
   .then(assets => {
     const [compatibleAssets] = assets.filter(asset =>
       asset.name.endsWith(getPlatform() + ".tar.gz")
@@ -75,4 +75,7 @@ getReleaseByTag("1.4.0-rc.1")
   .then(() => {
     console.log("Wrangler has been installed!");
   })
-  .catch(e => { console.error("Error fetching release", e.message); });
+  .catch(e => {
+    console.error("Error fetching release", e.message);
+    throw e;
+  });
