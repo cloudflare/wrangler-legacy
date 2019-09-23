@@ -148,21 +148,6 @@ pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
         missing_fields.push("account_id")
     };
 
-    match &target.kv_namespaces {
-        Some(kv_namespaces) => {
-            for kv in kv_namespaces {
-                if kv.binding.is_empty() {
-                    missing_fields.push("kv-namespace binding")
-                }
-
-                if kv.id.is_empty() {
-                    missing_fields.push("kv-namespace id")
-                }
-            }
-        }
-        None => {}
-    }
-
     if !missing_fields.is_empty() {
         failure::bail!(
             "Your wrangler.toml is missing the following field(s): {:?}",
