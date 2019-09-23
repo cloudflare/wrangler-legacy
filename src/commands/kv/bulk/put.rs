@@ -20,6 +20,8 @@ pub fn put(
     namespace_id: &str,
     filename: &Path,
 ) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
+
     let pairs: Result<Vec<KeyValuePair>, failure::Error> = match &metadata(filename) {
         Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;

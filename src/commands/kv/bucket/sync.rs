@@ -19,6 +19,8 @@ pub fn sync(
     path: &Path,
     verbose: bool,
 ) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
+
     // First, upload all existing files in given directory
     if verbose {
         message::info("Preparing to upload updated files...");

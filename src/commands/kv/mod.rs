@@ -121,6 +121,9 @@ fn give_status_code_context(status_code: StatusCode) {
 fn help(error_code: u16) -> &'static str {
     // https://api.cloudflare.com/#workers-kv-namespace-errors
     match error_code {
+        7003 | 7000 => {
+            "Your wrangler.toml is likely missing the field \"account_id\", which is required to write to Workers KV."
+        }
         // namespace errors
         10010 | 10011 | 10012 | 10013 | 10014 | 10018 => {
             "Run `wrangler kv:namespace list` to see your existing namespaces with IDs"
@@ -135,6 +138,23 @@ fn help(error_code: u16) -> &'static str {
         // cloudflare account errors
         10017 | 10026 => "Workers KV is a paid feature, please upgrade your account (https://www.cloudflare.com/products/workers-kv/)",
         _ => "",
+    }
+}
+
+pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
+    let mut missing_fields = Vec::new();
+
+    if target.account_id.is_empty() {
+        missing_fields.push("account_id")
+    };
+
+    if !missing_fields.is_empty() {
+        failure::bail!(
+            "Your wrangler.toml is missing the following field(s): {:?}",
+            missing_fields
+        )
+    } else {
+        Ok(())
     }
 }
 
