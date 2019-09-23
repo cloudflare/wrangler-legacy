@@ -45,7 +45,7 @@ pub fn sync(
         user.clone(),
         namespace_id,
         path,
-        Some(remote_keys.clone()),
+        Some(&remote_keys),
         verbose,
     )?;
 

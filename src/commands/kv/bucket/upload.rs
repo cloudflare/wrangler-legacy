@@ -23,7 +23,7 @@ pub fn upload_files(
     user: GlobalUser,
     namespace_id: &str,
     path: &Path,
-    exclude_keys: Option<HashSet<String>>,
+    exclude_keys: Option<&HashSet<String>>,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
@@ -96,7 +96,7 @@ fn call_put_bulk_api(
 
 fn filter_unchanged_remote_files(
     pairs: Vec<KeyValuePair>,
-    exclude_keys: HashSet<String>,
+    exclude_keys: &HashSet<String>,
 ) -> Vec<KeyValuePair> {
     let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
     for pair in pairs {
@@ -195,7 +195,7 @@ mod tests {
             expiration: None,
             base64: None,
         }];
-        let actual = filter_unchanged_remote_files(pairs_to_upload, exclude_keys);
+        let actual = filter_unchanged_remote_files(pairs_to_upload, &exclude_keys);
         check_kv_pairs_equality(expected, actual);
     }
 
