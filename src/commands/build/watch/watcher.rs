@@ -74,17 +74,7 @@ fn filter_ignored(path: PathBuf, ignore_dirs_opt: Option<&HashSet<String>>) -> O
             }
         }
     }
-
-    // Then check if dotfile, if so exclude.
-    let mut segments: Vec<&str> = relative_path.unwrap().split('/').collect();
-    let filename = segments.pop();
-    if let Some(f) = filename {
-        if f.starts_with(".") {
-            return None;
-        }
-        return Some(path);
-    }
-    None
+    Some(path)
 }
 
 #[cfg(test)]
@@ -98,14 +88,6 @@ mod tests {
         let to_ignore = ["pkg", "target", "worker/generated"];
         let ignore_dirs: HashSet<_> = to_ignore.iter().map(|d| d.to_string()).collect();
         let test_path = "home/blah/./worker/generated/file.txt";
-        assert!(filter_ignored(Path::new(test_path).to_path_buf(), Some(&ignore_dirs)).is_none());
-    }
-
-    #[test]
-    fn it_can_filter_dotfile() {
-        let to_ignore = ["pkg", "target", "worker/generated"];
-        let ignore_dirs: HashSet<_> = to_ignore.iter().map(|d| d.to_string()).collect();
-        let test_path = "home/blah/./cats/.gitignore";
         assert!(filter_ignored(Path::new(test_path).to_path_buf(), Some(&ignore_dirs)).is_none());
     }
 
