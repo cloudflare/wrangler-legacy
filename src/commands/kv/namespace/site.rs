@@ -10,11 +10,18 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn site(target: &Target, user: &GlobalUser) -> Result<WorkersKvNamespace, failure::Error> {
+pub fn site(
+    target: &Target,
+    user: &GlobalUser,
+    preview: bool,
+) -> Result<WorkersKvNamespace, failure::Error> {
     kv::validate_target(target)?;
     let client = kv::api_client(user.to_owned())?;
 
-    let title = format!("__{}-{}", target.name, "workers_sites_assets");
+    let title = match preview {
+        false => format!("__{}-{}", target.name, "workers_sites_assets"),
+        true => format!("__{}-{}", target.name, "workers_sites_assets_preview"),
+    };
     let msg = format!("Creating namespace for Workers Site \"{}\"", title);
     message::working(&msg);
 

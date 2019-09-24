@@ -6,6 +6,7 @@ use reqwest::multipart::{Form, Part};
 use std::fs;
 use std::path::Path;
 
+use crate::commands;
 use crate::commands::build::wranglerjs;
 use crate::commands::kv::bucket::directory_keys_values;
 use crate::settings::binding;
@@ -19,7 +20,10 @@ use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error> {
+pub fn build_script_and_upload_form(target: &Target) -> Result<Form, failure::Error> {
+    // Build the script before uploading.
+    commands::build(&target)?;
+
     let target_type = &target.target_type;
     let kv_namespaces = target.kv_namespaces();
     match target_type {
