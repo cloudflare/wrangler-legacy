@@ -6,6 +6,7 @@ use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
+use regex::Regex;
 
 pub fn create(
     target: &Target,
@@ -17,11 +18,7 @@ pub fn create(
 
     let client = kv::api_client(user)?;
 
-    if !validate_binding(binding) {
-        failure::bail!(
-            "A binding can only have alphanumeric and _ characters, and cannot begin with a number"
-        );
-    }
+    validate_binding(binding)?;
 
     let title = format!("{}-{}", target.name, binding);
     let msg = format!("Creating namespace with title \"{}\"", title);
@@ -74,10 +71,14 @@ pub fn create(
     Ok(())
 }
 
-fn validate_binding(binding: &str) -> bool {
-    use regex::Regex;
+fn validate_binding(binding: &str) -> Result<(), failure::Error> {
     let re = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
-    re.is_match(binding)
+    if !re.is_match(binding) {
+        failure::bail!(
+            "A binding can only have alphanumeric and _ characters, and cannot begin with a number"
+        )
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -88,7 +89,7 @@ mod tests {
     fn it_can_detect_invalid_binding() {
         let invalid_bindings = vec!["hi there", "1234"];
         for binding in invalid_bindings {
-            assert!(!validate_binding(binding));
+            assert!(validate_binding(binding).is_err());
         }
     }
 
@@ -96,7 +97,7 @@ mod tests {
     fn it_can_detect_valid_binding() {
         let valid_bindings = vec!["ONE", "TWO_TWO", "__private_variable", "rud3_var"];
         for binding in valid_bindings {
-            assert!(validate_binding(binding));
+            assert!(validate_binding(binding).is_ok());
         }
     }
 }
