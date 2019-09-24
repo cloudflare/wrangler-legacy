@@ -1,5 +1,8 @@
 use std::collections::HashSet;
 use std::fs::metadata;
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
 use std::path::Path;
 
 use crate::commands::kv::bucket::directory_keys_values;
@@ -38,10 +41,12 @@ pub fn upload_files(
         Err(e) => Err(format_err!("{}", e)),
     }?;
 
-    // If a list of files to skip uploading is provided, filter the filename/file key pairs
-    if let Some(excluded_keys) = exclude_keys {
-        pairs = filter_unchanged_remote_files(pairs, excluded_keys);
+    let wignore = parse_wignore()?;
+    let mut ignore = &HashSet::new();
+    if let Some(exclude) = exclude_keys {
+        ignore = exclude;
     }
+    pairs = filter_files(pairs, ignore, &wignore);
 
     validate_file_uploads(pairs.clone())?;
 
@@ -94,17 +99,30 @@ fn call_put_bulk_api(
     Ok(())
 }
 
-fn filter_unchanged_remote_files(
+fn filter_files(
     pairs: Vec<KeyValuePair>,
-    exclude_keys: &HashSet<String>,
+    already_uploaded: &HashSet<String>,
+    wignore: &HashSet<String>,
 ) -> Vec<KeyValuePair> {
     let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
     for pair in pairs {
-        if !exclude_keys.contains(&pair.key) {
+        if !already_uploaded.contains(&pair.key) && !wignore.contains(&pair.key) {
             filtered_pairs.push(pair);
         }
     }
     filtered_pairs
+}
+
+fn parse_wignore() -> Result<HashSet<String>, failure::Error> {
+    // Create set of ignored entries
+    let mut ignore_set = HashSet::new();
+    if let Ok(file) = File::open(".wignore") {
+        let reader = BufReader::new(file);
+        for line in reader.lines() {
+            ignore_set.insert(line?);
+        }
+    }
+    Ok(ignore_set)
 }
 
 // Ensure that all key-value pairs being uploaded have valid sizes (this ensures that
