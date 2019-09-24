@@ -1,7 +1,9 @@
+use std::path::{Path, PathBuf};
+
 use crate::commands;
+use crate::commands::validate_worker_name;
 use crate::settings::target::{Manifest, Site, TargetType};
 use crate::terminal::message;
-use std::path::{Path, PathBuf};
 
 pub fn init(
     name: Option<&str>,
@@ -13,6 +15,8 @@ pub fn init(
     }
     let dirname = get_current_dirname()?;
     let name = name.unwrap_or_else(|| &dirname);
+    validate_worker_name(name)?;
+
     let target_type = target_type.unwrap_or_default();
     let config_path = PathBuf::from("./");
     let initialized_site = if site { Some(Site::default()) } else { None };
