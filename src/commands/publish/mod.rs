@@ -13,7 +13,6 @@ use upload_form::build_script_and_upload_form;
 
 use std::path::Path;
 
-use crate::commands;
 use crate::commands::kv;
 use crate::commands::subdomain::Subdomain;
 use crate::commands::validate_worker_name;
@@ -34,8 +33,7 @@ pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Er
     }
 
     upload_buckets(target, user)?;
-    commands::build(&target)?;
-    publish_script(&user, &target)?;
+    build_and_publish_script(&user, &target)?;
 
     Ok(())
 }
@@ -57,7 +55,7 @@ pub fn bind_static_site_contents(
     Ok(())
 }
 
-fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+fn build_and_publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         target.account_id, target.name,
