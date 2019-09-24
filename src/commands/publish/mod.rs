@@ -91,7 +91,26 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
 fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     for namespace in &target.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
+            if bucket.is_empty() {
+                failure::bail!(
+                    "{} You need to specify a bucket directory in your wrangler.toml",
+                    emoji::WARN
+                )
+            }
             let path = Path::new(&bucket);
+            if !path.exists() {
+                failure::bail!(
+                    "{} bucket directory \"{}\" does not exist",
+                    emoji::WARN,
+                    path.to_string_lossy()
+                )
+            } else if !path.is_dir() {
+                failure::bail!(
+                    "{} bucket \"{}\" is not a directory",
+                    emoji::WARN,
+                    path.to_string_lossy()
+                )
+            }
             kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
         }
     }
