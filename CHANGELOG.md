@@ -28,7 +28,7 @@
 
     With multiple environments defined, `wrangler build`, `wrangler preview`, and `wrangler publish` now accept a `--env` flag to indicate what environment you'd like to use, for instance, `wrangler publish --env production`.
 
-    To support developers transitioning to environments, we've written documentation for the feature, including further information about deprecations and advanced usage. [Check out the documentation here!](https://github.com/cloudflare/wrangler/blob/master/docs/environments.md)
+    To support developers transitioning to environments, we've written documentation for the feature, including further information about deprecations and advanced usage. [Check out the documentation here!](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md)
 
     [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
     [issue/385]: https://github.com/cloudflare/wrangler/issues/385
