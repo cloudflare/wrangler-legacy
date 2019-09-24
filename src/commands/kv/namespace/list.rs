@@ -6,6 +6,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 
 pub fn list(target: &Target, user: GlobalUser) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
     let client = kv::api_client(user)?;
 
     let response = client.request(&ListNamespaces {
