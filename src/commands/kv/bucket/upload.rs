@@ -1,8 +1,5 @@
 use std::collections::HashSet;
 use std::fs::metadata;
-use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
 use std::path::Path;
 
 use crate::commands::kv::bucket::directory_keys_values;
@@ -41,12 +38,12 @@ pub fn upload_files(
         Err(e) => Err(format_err!("{}", e)),
     }?;
 
-    let wignore = parse_wignore()?;
     let mut ignore = &HashSet::new();
     if let Some(exclude) = exclude_keys {
         ignore = exclude;
     }
-    pairs = filter_files(pairs, ignore, &wignore);
+
+    pairs = filter_files(pairs, ignore);
 
     validate_file_uploads(pairs.clone())?;
 
@@ -99,30 +96,29 @@ fn call_put_bulk_api(
     Ok(())
 }
 
-fn filter_files(
-    pairs: Vec<KeyValuePair>,
-    already_uploaded: &HashSet<String>,
-    wignore: &HashSet<String>,
-) -> Vec<KeyValuePair> {
+fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) -> Vec<KeyValuePair> {
     let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
     for pair in pairs {
-        if !already_uploaded.contains(&pair.key) && !wignore.contains(&pair.key) {
+        if !already_uploaded.contains(&pair.key) && !if_ignored_prefix(&pair.key) {
             filtered_pairs.push(pair);
         }
     }
     filtered_pairs
 }
 
-fn parse_wignore() -> Result<HashSet<String>, failure::Error> {
-    // Create set of ignored entries
-    let mut ignore_set = HashSet::new();
-    if let Ok(file) = File::open(".wignore") {
-        let reader = BufReader::new(file);
-        for line in reader.lines() {
-            ignore_set.insert(line?);
+// todo(gabbi): Replace all the logic below with a proper .wignore implementation
+// when possible.
+const KNOWN_UNNECESSARY_PREFIXES: &'static [&str] = &[
+    "node_modules/", // npm vendoring
+    "component---",  // Gatsby sourcemaps
+];
+fn if_ignored_prefix(key: &str) -> bool {
+    for prefix in KNOWN_UNNECESSARY_PREFIXES {
+        if key.starts_with(prefix) {
+            return true;
         }
     }
-    Ok(ignore_set)
+    false
 }
 
 // Ensure that all key-value pairs being uploaded have valid sizes (this ensures that
@@ -153,13 +149,13 @@ pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Er
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::collections::HashSet;
     use std::path::Path;
 
     use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
     use crate::commands::kv::bucket::generate_url_safe_key_and_hash;
-    use crate::commands::kv::bucket::upload::filter_unchanged_remote_files;
 
     #[test]
     fn it_can_filter_preexisting_files() {
@@ -213,7 +209,7 @@ mod tests {
             expiration: None,
             base64: None,
         }];
-        let actual = filter_unchanged_remote_files(pairs_to_upload, &exclude_keys);
+        let actual = filter_files(pairs_to_upload, &exclude_keys);
         check_kv_pairs_equality(expected, actual);
     }
 
@@ -228,6 +224,14 @@ mod tests {
             assert!(pair.key == actual[idx].key);
             assert!(pair.value == actual[idx].value);
             idx = idx + 1;
+        }
+    }
+
+    #[test]
+    fn it_can_detect_ignored_prefix() {
+        let paths = ["node_modules/file.js", "component---src-pages-post-js-c6d1c3aab5c008b72fa8.js.map-b3fd6703031f027b11dd2dc7e3448fe3838efa53e5c6436c4aa3dd9c721cc7e4"];
+        for path in &paths {
+            assert!(if_ignored_prefix(path));
         }
     }
 }
