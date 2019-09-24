@@ -204,4 +204,14 @@ mod tests {
         }
     }
 
+<<<<<<< HEAD
+=======
+    #[test]
+    fn it_can_detect_ignored_prefix() {
+        let paths = ["node_modules/file.js", "component---src-pages-post-js-c6d1c3aab5c008b72fa8.js.map-b3fd6703031f027b11dd2dc7e3448fe3838efa53e5c6436c4aa3dd9c721cc7e4"];
+        for path in &paths {
+            assert!(contains_ignored_prefix(path));
+        }
+    }
+>>>>>>> s/if_ignored_prefix/contains_ignored_prefix
 }
