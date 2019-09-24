@@ -51,7 +51,7 @@ fn get_changed_path_from_event(
     }
 }
 
-// Do not watch dotfiles. Also exclude files within ignored directories.
+// Exclude files within ignored directories from live reload.
 fn filter_ignored(path: PathBuf, ignore_dirs_opt: Option<&HashSet<String>>) -> Option<PathBuf> {
     let path_str = path.to_str();
     if path_str.is_none() {
@@ -64,7 +64,7 @@ fn filter_ignored(path: PathBuf, ignore_dirs_opt: Option<&HashSet<String>>) -> O
         return None;
     }
 
-    // First check if file in ignored directory.
+    // Check if file in ignored directory.
     if let Some(ignore_dirs) = ignore_dirs_opt {
         for ignore_dir in ignore_dirs {
             if let Some(relative) = relative_path {
