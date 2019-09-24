@@ -114,10 +114,7 @@ pub fn generate_url_safe_key_and_hash(
     let path_with_hash = if let Some(value) = value {
         let digest = get_digest(value)?;
 
-        generate_path_with_hash(path, digest)?
-            .to_str()
-            .unwrap()
-            .to_string()
+        generate_path_with_hash(path, digest)?.display().to_string()
     } else {
         url_safe_path.to_string()
     };
@@ -136,20 +133,23 @@ fn get_digest(value: String) -> Result<String, failure::Error> {
 // Assumes that `path` is a file (called from a match branch for path.is_file())
 // Assumes that `hashed_value` is a String, not an Option<String> (called from a match branch for value.is_some())
 fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<PathBuf, failure::Error> {
-    let file_stem = path.file_stem().unwrap();
-    let mut file_name = file_stem.to_os_string();
-    let extension = path.extension();
+    if let Some(file_stem) = path.file_stem() {
+        let mut file_name = file_stem.to_os_string();
+        let extension = path.extension();
 
-    file_name.push(".");
-    file_name.push(hashed_value);
-    if let Some(ext) = extension {
         file_name.push(".");
-        file_name.push(ext);
+        file_name.push(hashed_value);
+        if let Some(ext) = extension {
+            file_name.push(".");
+            file_name.push(ext);
+        }
+
+        let new_path = path.with_file_name(file_name);
+
+        Ok(new_path)
+    } else {
+        failure::bail!("no file_stem for path {}", path.display())
     }
-
-    let new_path = path.with_file_name(file_name);
-
-    Ok(new_path)
 }
 
 #[cfg(test)]
