@@ -33,7 +33,7 @@ struct V4ApiResponse {
 }
 
 pub fn upload_and_get_id(
-    target: &Target,
+    target: &mut Target,
     user: Option<&GlobalUser>,
 ) -> Result<String, failure::Error> {
     let preview = match &user {
@@ -45,6 +45,12 @@ pub fn upload_and_get_id(
             if missing_fields.is_empty() {
                 let client = http::auth_client(&user);
 
+                // todo add sites to bucket here
+                if let Some(site_config) = &target.site {
+                    publish::bind_static_site_contents(user, target, site_config, true);
+                }
+
+                publish::upload_buckets(target, user);
                 authenticated_upload(&client, &target)?
             } else {
                 message::warn(&format!(

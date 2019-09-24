@@ -20,7 +20,7 @@ use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 
-use crate::settings::target::Target;
+use crate::settings::target::{Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Error> {
@@ -30,19 +30,38 @@ pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Er
     validate_worker_name(&target.name)?;
 
     if let Some(site_config) = target.site.clone() {
-        let site_namespace = kv::namespace::site(target, user)?;
+        bind_static_site_contents(user, target, site_config, false)?;
+        // let site_namespace = kv::namespace::site(target, user)?;
 
-        target.add_kv_namespace(KvNamespace {
-            binding: "__STATIC_CONTENT".to_string(),
-            id: site_namespace.id,
-            bucket: Some(site_config.bucket.to_owned()),
-        });
+        // upload_static_site
+        // target.add_kv_namespace(KvNamespace {
+        //     binding: "__STATIC_CONTENT".to_string(),
+        //     id: site_namespace.id,
+        //     bucket: Some(site_config.bucket.to_owned()),
+        // });
     }
 
     upload_buckets(target, user)?;
     commands::build(&target)?;
     publish_script(&user, &target)?;
 
+    Ok(())
+}
+
+// Updates given Target with kv_namespace binding for a static site assets KV namespace.
+pub fn bind_static_site_contents(
+    user: &GlobalUser,
+    target: &mut Target,
+    site_config: &Site,
+    preview: bool,
+) -> Result<(), failure::Error> {
+    let site_namespace = kv::namespace::site(target, user, preview)?;
+
+    target.add_kv_namespace(KvNamespace {
+        binding: "__STATIC_CONTENT".to_string(),
+        id: site_namespace.id,
+        bucket: Some(site_config.bucket.to_owned()),
+    });
     Ok(())
 }
 
@@ -88,7 +107,7 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
     Ok(())
 }
 
-fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+pub fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     for namespace in &target.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
             let path = Path::new(&bucket);

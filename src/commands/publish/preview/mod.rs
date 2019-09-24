@@ -28,14 +28,14 @@ use ws::{Sender, WebSocket};
 const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
 
 pub fn preview(
-    target: Target,
+    mut target: Target,
     user: Option<GlobalUser>,
     method: HTTPMethod,
     body: Option<String>,
     livereload: bool,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
-    let script_id = upload_and_get_id(&target, user.as_ref())?;
+    let script_id = upload_and_get_id(&mut target, user.as_ref())?;
 
     let session = Uuid::new_v4().to_simple();
     let preview_host = "example.com";
@@ -58,7 +58,7 @@ pub fn preview(
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
-        watch_for_changes(&target, user.as_ref(), session.to_string(), broadcaster)?;
+        watch_for_changes(target, user.as_ref(), session.to_string(), broadcaster)?;
     } else {
         open_browser(&format!(
             "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
@@ -125,7 +125,7 @@ fn post(
 }
 
 fn watch_for_changes(
-    target: &Target,
+    mut target: Target,
     user: Option<&GlobalUser>,
     session_id: String,
     broadcaster: Sender,
@@ -134,7 +134,7 @@ fn watch_for_changes(
     commands::watch_and_build(&target, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        if let Ok(new_id) = upload_and_get_id(target, user) {
+        if let Ok(new_id) = upload_and_get_id(&mut target, user) {
             let msg = FiddleMessage {
                 session_id: session_id.clone(),
                 data: FiddleMessageData::LiveReload { new_id },
