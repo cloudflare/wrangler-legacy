@@ -32,9 +32,11 @@ struct V4ApiResponse {
     pub result: ApiPreview,
 }
 
-pub fn upload_and_get_id(
+// Builds and uploads the script and its bindings. Returns the ID of the uploaded script.
+pub fn build_and_upload(
     target: &mut Target,
     user: Option<&GlobalUser>,
+    sites_preview: bool,
 ) -> Result<String, failure::Error> {
     let preview = match &user {
         Some(user) => {
@@ -46,11 +48,11 @@ pub fn upload_and_get_id(
                 let client = http::auth_client(&user);
 
                 // todo add sites to bucket here
-                if let Some(site_config) = &target.site {
-                    publish::bind_static_site_contents(user, target, site_config, true);
+                if let Some(site_config) = target.site.clone() {
+                    publish::bind_static_site_contents(user, target, &site_config, true)?;
                 }
 
-                publish::upload_buckets(target, user);
+                publish::upload_buckets(target, user)?;
                 authenticated_upload(&client, &target)?
             } else {
                 message::warn(&format!(
@@ -58,6 +60,11 @@ pub fn upload_and_get_id(
                     missing_fields
                 ));
                 message::warn("Falling back to unauthenticated preview.");
+                if sites_preview {
+                    message::warn(
+                        "Note that unauthenticated preview will not preview Workers Sites.",
+                    );
+                }
 
                 let client = http::client();
                 unauthenticated_upload(&client, &target)?
@@ -70,6 +77,10 @@ pub fn upload_and_get_id(
             message::help(
                 "Run `wrangler config` or set $CF_API_KEY and $CF_EMAIL to configure your user.",
             );
+
+            if sites_preview {
+                message::warn("Note that unauthenticated preview will not preview Workers Sites.");
+            }
 
             let client = http::client();
 
@@ -115,7 +126,7 @@ fn authenticated_upload(client: &Client, target: &Target) -> Result<Preview, fai
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::build_script_upload_form(target)?;
+    let script_upload_form = publish::build_script_and_upload_form(target)?;
 
     let mut res = client
         .post(&create_address)
@@ -145,9 +156,9 @@ fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, f
         );
         let mut target = target.clone();
         target.kv_namespaces = None;
-        publish::build_script_upload_form(&target)?
+        publish::build_script_and_upload_form(&target)?
     } else {
-        publish::build_script_upload_form(&target)?
+        publish::build_script_and_upload_form(&target)?
     };
 
     let mut res = client

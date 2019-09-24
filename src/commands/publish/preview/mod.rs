@@ -7,7 +7,7 @@ mod http_method;
 pub use http_method::HTTPMethod;
 
 mod upload;
-use upload::upload_and_get_id;
+use upload::build_and_upload;
 
 use crate::commands;
 
@@ -34,8 +34,9 @@ pub fn preview(
     body: Option<String>,
     livereload: bool,
 ) -> Result<(), failure::Error> {
-    commands::build(&target)?;
-    let script_id = upload_and_get_id(&mut target, user.as_ref())?;
+    let sites_preview: bool = target.site.is_some();
+
+    let script_id = build_and_upload(&mut target, user.as_ref(), sites_preview)?;
 
     let session = Uuid::new_v4().to_simple();
     let preview_host = "example.com";
@@ -76,7 +77,12 @@ pub fn preview(
             HTTPMethod::Get => get(cookie, &client)?,
             HTTPMethod::Post => post(cookie, &client, body)?,
         };
-        let msg = format!("Your worker responded with: {}", worker_res);
+        let msg = match sites_preview {
+            false => format!("Your Worker responded with: {}", worker_res),
+            true => {
+                "Your Worker is a Workers Site, please preview it in browser window.".to_string()
+            }
+        };
         message::preview(&msg);
     }
 
@@ -130,11 +136,13 @@ fn watch_for_changes(
     session_id: String,
     broadcaster: Sender,
 ) -> Result<(), failure::Error> {
+    let sites_preview: bool = target.site.is_some();
+
     let (tx, rx) = channel();
     commands::watch_and_build(&target, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        if let Ok(new_id) = upload_and_get_id(&mut target, user) {
+        if let Ok(new_id) = build_and_upload(&mut target, user, sites_preview) {
             let msg = FiddleMessage {
                 session_id: session_id.clone(),
                 data: FiddleMessageData::LiveReload { new_id },

@@ -9,7 +9,7 @@ pub use package::Package;
 use crate::settings::target::kv_namespace::KvNamespace;
 use route::Route;
 
-use upload_form::build_script_upload_form;
+use upload_form::build_script_and_upload_form;
 
 use std::path::Path;
 
@@ -30,15 +30,7 @@ pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Er
     validate_worker_name(&target.name)?;
 
     if let Some(site_config) = target.site.clone() {
-        bind_static_site_contents(user, target, site_config, false)?;
-        // let site_namespace = kv::namespace::site(target, user)?;
-
-        // upload_static_site
-        // target.add_kv_namespace(KvNamespace {
-        //     binding: "__STATIC_CONTENT".to_string(),
-        //     id: site_namespace.id,
-        //     bucket: Some(site_config.bucket.to_owned()),
-        // });
+        bind_static_site_contents(user, target, &site_config, false)?;
     }
 
     upload_buckets(target, user)?;
@@ -73,7 +65,7 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
 
     let client = http::auth_client(user);
 
-    let script_upload_form = build_script_upload_form(target)?;
+    let script_upload_form = build_script_and_upload_form(target)?;
 
     let mut res = client
         .put(&worker_addr)
