@@ -7,6 +7,7 @@ use crate::terminal::message;
 use crate::{commands, install};
 
 use notify::{self, RecursiveMode, Watcher};
+use std::collections::HashSet;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -14,6 +15,9 @@ use std::time::Duration;
 pub const COOLDOWN_PERIOD: Duration = Duration::from_millis(2000);
 const JAVASCRIPT_PATH: &str = "./";
 const RUST_PATH: &str = "./";
+
+// Paths to ignore live watching in Rust Workers
+const RUST_IGNORE: &'static [&str] = &["pkg", "target", "worker/generated"];
 
 /// watch a project for changes and re-build it when necessary,
 /// outputting a build event to tx.
@@ -34,7 +38,7 @@ pub fn watch_and_build(
                 message::info(&format!("watching {:?}", &JAVASCRIPT_PATH));
 
                 loop {
-                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
+                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD, None) {
                         Ok(_path) => {
                             if let Some(tx) = tx.clone() {
                                 tx.send(()).expect("--watch change message failed to send");
@@ -50,6 +54,8 @@ pub fn watch_and_build(
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
+            let ignore_dirs: HashSet<_> = RUST_IGNORE.iter().map(|d| d.to_string()).collect();
+
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
@@ -58,7 +64,7 @@ pub fn watch_and_build(
                 message::info(&format!("watching {:?}", &RUST_PATH));
 
                 loop {
-                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
+                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD, Some(&ignore_dirs)) {
                         Ok(_path) => {
                             let command = command(&args, &binary_path);
                             let command_name = format!("{:?}", command);
