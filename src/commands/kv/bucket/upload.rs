@@ -28,9 +28,10 @@ pub fn upload_files(
 ) -> Result<(), failure::Error> {
     let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => {
-            let (p, _) = directory_keys_values(path, verbose)?;
-            Ok(p)
+            let (upload_vec, _) = directory_keys_values(path, verbose)?;
+            Ok(upload_vec)
         }
+
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             Err(format_err!("wrangler kv:bucket upload takes a directory"))

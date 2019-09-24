@@ -10,7 +10,7 @@ pub use sync::sync;
 
 use std::collections::HashMap;
 use std::ffi::OsString;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
@@ -113,7 +113,11 @@ pub fn generate_url_safe_key_and_hash(
 
     let path_with_hash = if let Some(value) = value {
         let digest = get_digest(value)?;
-        format!("{}-{}", url_safe_path, digest)
+
+        generate_path_with_hash(path, digest)?
+            .to_str()
+            .unwrap()
+            .to_string()
     } else {
         url_safe_path.to_string()
     };
@@ -127,4 +131,73 @@ fn get_digest(value: String) -> Result<String, failure::Error> {
     let digest = hasher.result();
     let hex_digest = HEXLOWER.encode(digest.as_ref());
     Ok(hex_digest)
+}
+
+// Assumes that `path` is a file (called from a match branch for path.is_file())
+// Assumes that `hashed_value` is a String, not an Option<String> (called from a match branch for value.is_some())
+fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<PathBuf, failure::Error> {
+    let file_stem = path.file_stem().unwrap();
+    let mut file_name = file_stem.to_os_string();
+    let extension = path.extension();
+
+    file_name.push(".");
+    file_name.push(hashed_value);
+    if let Some(ext) = extension {
+        file_name.push(".");
+        file_name.push(ext);
+    }
+
+    let new_path = path.with_file_name(file_name);
+
+    Ok(new_path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_inserts_hash_before_extension() {
+        let value = "<h1>Hello World!</h1>";
+        let hashed_value = get_digest(String::from(value)).unwrap();
+
+        let path = PathBuf::from("path").join("to").join("asset.html");
+        let actual_path_with_hash = generate_path_with_hash(&path, hashed_value.to_owned())
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let expected_path_with_hash = format!("path/to/asset.{}.html", hashed_value);
+
+        assert_eq!(actual_path_with_hash, expected_path_with_hash);
+    }
+
+    #[test]
+    fn it_inserts_hash_without_extension() {
+        let value = "<h1>Hello World!</h1>";
+        let hashed_value = get_digest(String::from(value)).unwrap();
+
+        let path = PathBuf::from("path").join("to").join("asset");
+        let actual_path_with_hash = generate_path_with_hash(&path, hashed_value.to_owned())
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let expected_path_with_hash = format!("path/to/asset.{}", hashed_value);
+
+        assert_eq!(actual_path_with_hash, expected_path_with_hash);
+    }
+
+    #[test]
+    fn it_generates_a_url_safe_hash() {
+        let os_path = Path::new("./some_stuff/invalid file&name.chars");
+        let directory = Path::new("./");
+        let actual_url_safe_path = generate_url_safe_path(os_path, directory).unwrap();
+        // TODO: url-encode paths
+        let expected_url_safe_path = "some_stuff/invalid file&name.chars";
+
+        assert_eq!(actual_url_safe_path, expected_url_safe_path);
+    }
 }
