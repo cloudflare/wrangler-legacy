@@ -16,23 +16,20 @@ use std::path::Path;
 use crate::commands;
 use crate::commands::kv;
 use crate::commands::subdomain::Subdomain;
+use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 
 use crate::settings::target::Target;
 use crate::terminal::{emoji, message};
 
-pub fn publish(
-    user: &GlobalUser,
-    target: &mut Target,
-    push_worker: bool,
-    push_bucket: bool,
-) -> Result<(), failure::Error> {
+pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Error> {
     log::info!("workers_dev = {}", target.workers_dev);
 
-    validate_target(target)?;
+    validate_target_required_fields_present(target)?;
+    validate_worker_name(&target.name)?;
 
-    if let Some(site_config) = &target.site {
+    if let Some(site_config) = target.site.clone() {
         let site_namespace = kv::namespace::site(target, user)?;
 
         target.add_kv_namespace(KvNamespace {
@@ -42,13 +39,9 @@ pub fn publish(
         });
     }
 
-    if push_bucket {
-        upload_buckets(target, user)?;
-    }
-    if push_worker {
-        commands::build(&target)?;
-        publish_script(&user, &target)?;
-    }
+    upload_buckets(target, user)?;
+    commands::build(&target)?;
+    publish_script(&user, &target)?;
 
     Ok(())
 }
@@ -138,7 +131,7 @@ fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, fa
     Ok(format!("https://{}.{}.workers.dev", target.name, subdomain))
 }
 
-fn validate_target(target: &Target) -> Result<(), failure::Error> {
+fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
     let mut missing_fields = Vec::new();
 
     if target.account_id.is_empty() {

@@ -20,6 +20,8 @@ pub fn delete(
     namespace_id: &str,
     filename: &Path,
 ) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
+
     match kv::interactive_delete(&format!(
         "Are you sure you want to delete all keys in {}?",
         filename.display()

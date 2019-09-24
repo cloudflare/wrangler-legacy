@@ -2,4 +2,3 @@
 **/*.rs.bk
 config/default.toml
 npm/node_modules
-npm/package-lock.json
