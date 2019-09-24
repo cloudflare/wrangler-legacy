@@ -99,7 +99,7 @@ fn call_put_bulk_api(
 fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) -> Vec<KeyValuePair> {
     let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
     for pair in pairs {
-        if !already_uploaded.contains(&pair.key) && !if_ignored_prefix(&pair.key) {
+        if !already_uploaded.contains(&pair.key) && !contains_ignored_prefix(&pair.key) {
             filtered_pairs.push(pair);
         }
     }
@@ -112,7 +112,7 @@ const KNOWN_UNNECESSARY_PREFIXES: &'static [&str] = &[
     "node_modules/", // npm vendoring
     "component---",  // Gatsby sourcemaps
 ];
-fn if_ignored_prefix(key: &str) -> bool {
+fn contains_ignored_prefix(key: &str) -> bool {
     for prefix in KNOWN_UNNECESSARY_PREFIXES {
         if key.starts_with(prefix) {
             return true;
@@ -231,7 +231,7 @@ mod tests {
     fn it_can_detect_ignored_prefix() {
         let paths = ["node_modules/file.js", "component---src-pages-post-js-c6d1c3aab5c008b72fa8.js.map-b3fd6703031f027b11dd2dc7e3448fe3838efa53e5c6436c4aa3dd9c721cc7e4"];
         for path in &paths {
-            assert!(if_ignored_prefix(path));
+            assert!(contains_ignored_prefix(path));
         }
     }
 }
