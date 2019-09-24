@@ -111,13 +111,13 @@ pub fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure:
                 failure::bail!(
                     "{} bucket directory \"{}\" does not exist",
                     emoji::WARN,
-                    path.to_string_lossy()
+                    path.display()
                 )
             } else if !path.is_dir() {
                 failure::bail!(
                     "{} bucket \"{}\" is not a directory",
                     emoji::WARN,
-                    path.to_string_lossy()
+                    path.display()
                 )
             }
             kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
