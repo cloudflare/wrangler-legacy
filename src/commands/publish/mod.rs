@@ -29,7 +29,7 @@ pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Er
     validate_target_required_fields_present(target)?;
     validate_worker_name(&target.name)?;
 
-    if let Some(site_config) = &target.site {
+    if let Some(site_config) = target.site.clone() {
         let site_namespace = kv::namespace::site(target, user)?;
 
         target.add_kv_namespace(KvNamespace {
