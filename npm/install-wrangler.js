@@ -10,7 +10,7 @@ const { homedir } = require('os');
 
 const cwd = join(homedir(), ".wrangler");
 
-const VERSION = "1.4.0-rc.1"
+const VERSION = "1.4.0-rc.3"
 
 function getPlatform() {
   const type = os.type();
@@ -62,4 +62,7 @@ downloadAsset(VERSION, getPlatform())
   .then(() => {
     console.log("Wrangler has been installed!");
   })
-  .catch(e => { console.error("Error fetching release", e.message); });
+  .catch(e => {
+    console.error("Error fetching release", e.message);
+    throw e;
+  });

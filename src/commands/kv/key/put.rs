@@ -24,6 +24,8 @@ pub fn put(
     expiration: Option<&str>,
     expiration_ttl: Option<&str>,
 ) -> Result<(), failure::Error> {
+    kv::validate_target(target)?;
+
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
         target.account_id,

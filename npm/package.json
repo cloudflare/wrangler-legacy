@@ -1,6 +1,6 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.4.0-rc.1",
+  "version": "1.4.0-rc.3",
   "description": "Wrangle your Cloudflare Workers",
   "main": "index.js",
   "scripts": {
@@ -21,9 +21,9 @@
   },
   "homepage": "https://github.com/cloudflare/wrangler#readme",
   "dependencies": {
-    "axios": "^0.18.0",
-    "rimraf": "^2.6.3",
-    "tar": "^4.4.8"
+    "axios": "0.18.1",
+    "rimraf": "2.7.1",
+    "tar": "4.4.10"
   },
   "keywords": [
     "wrangler",

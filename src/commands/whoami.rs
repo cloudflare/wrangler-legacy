@@ -3,7 +3,7 @@ use crate::terminal::{emoji, message};
 
 pub fn whoami(user: &GlobalUser) {
     let msg = format!(
-        "{} You are logged with the email '{}'.",
+        "{} You are logged in with the email '{}'.",
         emoji::WAVING,
         user.email
     );
