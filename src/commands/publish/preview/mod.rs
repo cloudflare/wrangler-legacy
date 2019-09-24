@@ -101,8 +101,6 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
 
 fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Error> {
     let res = client.get(PREVIEW_ADDRESS).header("Cookie", cookie).send();
-    let msg = format!("GET {}", PREVIEW_ADDRESS);
-    message::preview(&msg);
     Ok(res?.text()?)
 }
 
