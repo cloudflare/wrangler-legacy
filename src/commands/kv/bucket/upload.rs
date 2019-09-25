@@ -30,7 +30,7 @@ pub fn upload_files(
 ) -> Result<AssetManifest, failure::Error> {
     let (mut pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => {
-            let (pairs, asset_manifest) = directory_keys_values(path, verbose)?;
+            let (pairs, asset_manifest) = directory _keys_values(path, verbose)?;
             Ok((pairs, asset_manifest))
         }
 
@@ -142,6 +142,7 @@ mod tests {
     use std::path::Path;
 
     use crate::commands::kv::bucket::generate_path_and_key;
+    use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
     #[test]
     fn it_can_filter_preexisting_files() {

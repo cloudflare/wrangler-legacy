@@ -253,6 +253,13 @@ mod tests {
         let expected_count = 1;
         assert!(actual_results.len() == expected_count);
     }
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> fix merge conflict stuff
+>>>>>>> fix merge conflict stuff
 
     #[test]
     fn it_inserts_hash_before_extension() {
