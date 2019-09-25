@@ -158,6 +158,7 @@ fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<PathBuf,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use regex::Regex;
 
     #[test]
     fn it_inserts_hash_before_extension() {
@@ -165,13 +166,11 @@ mod tests {
         let hashed_value = get_digest(String::from(value)).unwrap();
 
         let path = PathBuf::from("path").join("to").join("asset.html");
-        let actual_path_with_hash = generate_path_with_hash(&path, hashed_value.to_owned())
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
+        let actual_path_with_hash =
+            generate_path_with_hash(&path, hashed_value.to_owned()).unwrap();
 
-        let expected_path_with_hash = format!("path/to/asset.{}.html", hashed_value);
+        let expected_filename = format!("asset.{}.html", hashed_value);
+        let expected_path_with_hash = PathBuf::from("path").join("to").join(expected_filename);
 
         assert_eq!(actual_path_with_hash, expected_path_with_hash);
     }
@@ -182,13 +181,11 @@ mod tests {
         let hashed_value = get_digest(String::from(value)).unwrap();
 
         let path = PathBuf::from("path").join("to").join("asset");
-        let actual_path_with_hash = generate_path_with_hash(&path, hashed_value.to_owned())
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
+        let actual_path_with_hash =
+            generate_path_with_hash(&path, hashed_value.to_owned()).unwrap();
 
-        let expected_path_with_hash = format!("path/to/asset.{}", hashed_value);
+        let expected_filename = format!("asset.{}", hashed_value);
+        let expected_path_with_hash = PathBuf::from("path").join("to").join(expected_filename);
 
         assert_eq!(actual_path_with_hash, expected_path_with_hash);
     }
@@ -212,5 +209,19 @@ mod tests {
 
         assert!(!path.contains("directory"));
         assert!(!key.contains("directory"));
+    }
+
+    #[test]
+    fn it_combines_url_safe_and_hash_properly() {
+        let path = Path::new("./build/path/to/asset.ext");
+        let directory = Path::new("./build");
+        let value = Some("<h1>Hello World!</h1>".to_string());
+        let (path, key) = generate_path_and_key(path, directory, value).unwrap();
+
+        let expected_path_regex = Regex::new(r"^path/to/asset\.ext").unwrap();
+        let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-zA-Z]{64}\.ext").unwrap();
+
+        assert!(expected_path_regex.is_match(&path));
+        assert!(expected_key_regex.is_match(&key));
     }
 }
