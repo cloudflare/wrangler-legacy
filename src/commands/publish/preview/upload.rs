@@ -52,7 +52,6 @@ pub fn build_and_upload(
                     publish::upload_buckets(target, user)?;
                 }
 
-                publish::upload_buckets(target, user)?;
                 authenticated_upload(&client, &target)?
             } else {
                 message::warn(&format!(
