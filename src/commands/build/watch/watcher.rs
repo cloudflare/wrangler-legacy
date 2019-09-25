@@ -53,16 +53,18 @@ fn get_changed_path_from_event(
 
 // Exclude files within ignored directories from live reload.
 fn filter_ignored(path: PathBuf, ignore_dirs_opt: Option<&HashSet<String>>) -> Option<PathBuf> {
-    let path_str = path.to_str();
-    if path_str.is_none() {
-        return None;
-    }
+    // let path_str = path.to_str();
+    // if path_str.is_none() {
+    //     return None;
+    // }
 
-    let mut absolute_path: Vec<&str> = path_str.unwrap().split("/./").collect();
-    let relative_path = absolute_path.pop();
-    if relative_path.is_none() {
-        return None;
-    }
+    // let mut absolute_path: Vec<&str> = path_str.unwrap().split("/./").collect();
+    // let relative_path = absolute_path.pop();
+    // if relative_path.is_none() {
+    //     return None;
+    // }
+
+    
 
     // Check if file in ignored directory.
     if let Some(ignore_dirs) = ignore_dirs_opt {
@@ -87,7 +89,7 @@ mod tests {
     fn it_can_filter_ignored_path() {
         let to_ignore = ["pkg", "target", "worker/generated"];
         let ignore_dirs: HashSet<_> = to_ignore.iter().map(|d| d.to_string()).collect();
-        let test_path = "home/blah/./worker/generated/file.txt";
+        let test_path = "home/blah/worker/generated/file.txt";
         assert!(filter_ignored(Path::new(test_path).to_path_buf(), Some(&ignore_dirs)).is_none());
     }
 
@@ -95,7 +97,7 @@ mod tests {
     fn it_can_include_src_file() {
         let to_ignore = ["pkg", "target", "worker/generated"];
         let ignore_dirs: HashSet<_> = to_ignore.iter().map(|d| d.to_string()).collect();
-        let test_path = "home/blah/./src/lib.rs";
+        let test_path = "home/blah/src/lib.rs";
         assert!(filter_ignored(Path::new(test_path).to_path_buf(), Some(&ignore_dirs)).is_some());
     }
 }
