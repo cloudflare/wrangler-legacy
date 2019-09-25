@@ -192,11 +192,11 @@ fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<String, 
 mod tests {
     use super::*;
     use regex::Regex;
-    use std::path::{Path, PathBuf};
     use std::fs;
+    use std::path::{Path, PathBuf};
     use walkdir::WalkDir;
-  
-  #[test]
+
+    #[test]
     fn it_can_ignore_dir() {
         let dir_name = "node_modules";
         // If test dir already exists, delete it.
@@ -270,6 +270,7 @@ mod tests {
         // No iterations should happen above because dotfiles are ignored.
         let expected_count = 1;
         assert!(actual_count == expected_count);
+    }
 
     #[test]
     fn it_inserts_hash_before_extension() {

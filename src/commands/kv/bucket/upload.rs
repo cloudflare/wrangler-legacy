@@ -141,9 +141,8 @@ mod tests {
     use std::collections::HashSet;
     use std::path::Path;
 
-    use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
     use crate::commands::kv::bucket::generate_path_and_key;
-
+    use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
     #[test]
     fn it_can_filter_preexisting_files() {
