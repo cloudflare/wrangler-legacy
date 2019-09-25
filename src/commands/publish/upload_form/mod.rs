@@ -105,7 +105,8 @@ fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
 
-    log::info!("{:#?}", &form);
+    log::info!("building form");
+    log::info!("{:?}", &form);
 
     Ok(form)
 }

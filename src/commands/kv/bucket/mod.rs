@@ -26,6 +26,8 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut key_manifest: HashMap<String, String> = HashMap::new();
 
+    log::info!("entering directory keys values");
+
     for entry in WalkDir::new(directory)
         .into_iter()
         .filter_entry(|e| !is_ignored(e))
@@ -92,6 +94,7 @@ fn is_ignored(entry: &DirEntry) -> bool {
     for prefix in KNOWN_UNNECESSARY_FILE_PREFIXES {
         if stem.starts_with(prefix) {
             // Just need to check prefix
+            message::info(&format!("ignoring file {}", stem));
             return true;
         }
     }
@@ -100,6 +103,7 @@ fn is_ignored(entry: &DirEntry) -> bool {
     for dir in KNOWN_UNNECESSARY_DIRS {
         if stem == *dir {
             // Need to check for full equality here
+            message::info(&format!("ignoring directory {}", dir));
             return true;
         }
     }
