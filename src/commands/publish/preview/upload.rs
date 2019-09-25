@@ -49,6 +49,7 @@ pub fn build_and_upload(
 
                 if let Some(site_config) = target.site.clone() {
                     publish::bind_static_site_contents(user, target, &site_config, true)?;
+                    publish::upload_buckets(target, user)?;
                 }
 
                 publish::upload_buckets(target, user)?;
