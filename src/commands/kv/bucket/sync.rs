@@ -3,6 +3,8 @@ use std::fs::metadata;
 use std::iter::FromIterator;
 use std::path::Path;
 
+use super::manifest::AssetManifest;
+
 use crate::commands::kv;
 use crate::commands::kv::bucket::directory_keys_only;
 use crate::commands::kv::bucket::upload::upload_files;
@@ -18,7 +20,7 @@ pub fn sync(
     namespace_id: &str,
     path: &Path,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<AssetManifest, failure::Error> {
     kv::validate_target(target)?;
     // First, upload all changed files in given local directory (aka replace files
     // in Workers KV that are now stale).
@@ -41,7 +43,7 @@ pub fn sync(
     if verbose {
         message::info("Preparing to upload updated files...");
     }
-    upload_files(
+    let asset_manifest = upload_files(
         target,
         user.clone(),
         namespace_id,
@@ -74,5 +76,5 @@ pub fn sync(
     }
 
     message::success("Success");
-    Ok(())
+    Ok(asset_manifest)
 }

@@ -1,3 +1,5 @@
+use super::manifest::AssetManifest;
+
 use std::collections::HashSet;
 use std::fs::metadata;
 use std::path::Path;
@@ -25,11 +27,11 @@ pub fn upload_files(
     path: &Path,
     exclude_keys: Option<&HashSet<String>>,
     verbose: bool,
-) -> Result<(), failure::Error> {
-    let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
+) -> Result<AssetManifest, failure::Error> {
+    let (mut pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => {
-            let (p, _) = directory_keys_values(path, verbose)?;
-            Ok(p)
+            let (pairs, asset_manifest) = directory_keys_values(path, verbose)?;
+            Ok((pairs, asset_manifest))
         }
         Ok(_file_type) => {
             // any other file types (files, symlinks)
@@ -78,7 +80,7 @@ pub fn upload_files(
         }
     }
 
-    Ok(())
+    Ok(asset_manifest)
 }
 
 fn call_put_bulk_api(

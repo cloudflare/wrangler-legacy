@@ -1,14 +1,15 @@
 extern crate base64;
 
+mod manifest;
 mod sync;
 mod upload;
 
 use data_encoding::HEXLOWER;
 use sha2::{Digest, Sha256};
 
+pub use manifest::AssetManifest;
 pub use sync::sync;
 
-use std::collections::HashMap;
 use std::ffi::OsString;
 use std::path::Path;
 
@@ -22,11 +23,9 @@ use crate::terminal::message;
 pub fn directory_keys_values(
     directory: &Path,
     verbose: bool,
-) -> Result<(Vec<KeyValuePair>, HashMap<String, String>), failure::Error> {
+) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
-    let mut key_manifest: HashMap<String, String> = HashMap::new();
-
-    log::info!("entering directory keys values");
+    let mut asset_manifest: AssetManifest = AssetManifest::new();
 
     for entry in WalkDir::new(directory)
         .into_iter()
@@ -54,10 +53,10 @@ pub fn directory_keys_values(
                 base64: Some(true),
             });
 
-            key_manifest.insert(url_safe_path, key);
+            asset_manifest.insert(url_safe_path, key);
         }
     }
-    Ok((upload_vec, key_manifest))
+    Ok((upload_vec, asset_manifest))
 }
 
 // Returns only the hashed keys for a directory's files.
