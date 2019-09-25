@@ -74,7 +74,7 @@ pub fn watch_and_build(
             });
         }
         TargetType::Webpack => {
-            wranglerjs::run_build_and_watch(&target, tx)?;
+            wranglerjs::run_build_and_watch(target, tx)?;
         }
     }
 

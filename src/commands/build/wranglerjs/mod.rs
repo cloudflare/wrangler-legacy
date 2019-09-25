@@ -77,6 +77,8 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
             if Path::new(&bucket).exists() {
                 watcher.watch(&bucket, RecursiveMode::Recursive)?;
                 info!("watching static sites asset file {:?}", &bucket);
+            } else {
+                failure::bail!("Attempting to watch static assets bucket \"{}\" which doesn't exist", bucket);
             }
         }
 
