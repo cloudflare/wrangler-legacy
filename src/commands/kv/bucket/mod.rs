@@ -27,7 +27,10 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
 
-    for entry in WalkDir::new(directory).into_iter().filter_entry(|e| !is_ignored(e)) {
+    for entry in WalkDir::new(directory)
+        .into_iter()
+        .filter_entry(|e| !is_ignored(e))
+    {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
@@ -50,7 +53,11 @@ pub fn directory_keys_values(
                 base64: Some(true),
             });
 
+<<<<<<< HEAD
             asset_manifest.insert(url_safe_path, key);
+=======
+            key_manifest.insert(url_safe_path, key);
+>>>>>>> Great advice from ashley--filter at the dir walking level when possible. This approach should be readily applicable to .wignore logic down the line
         }
     }
     Ok((upload_vec, asset_manifest))
@@ -78,13 +85,27 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
 
 // todo(gabbi): Replace all the logic below with a proper .wignore implementation
 // when possible.
-const KNOWN_UNNECESSARY_PREFIXES: &'static [&str] = &[
-    "node_modules/", // npm vendoring
-    "component---",  // Gatsby sourcemaps
+const KNOWN_UNNECESSARY_DIRS: &'static [&str] = &[
+    "node_modules", // npm vendoring
 ];
-fn is_ignored(key: &str) -> bool {
-    for prefix in KNOWN_UNNECESSARY_PREFIXES {
-        if key.starts_with(prefix) {
+const KNOWN_UNNECESSARY_FILE_PREFIXES: &'static [&str] = &[
+    "component---", // Gatsby sourcemaps
+    ".",            // hidden files
+];
+fn is_ignored(entry: &DirEntry) -> bool {
+    let stem = entry.file_name().to_str().unwrap();
+    // First, ensure that files with specified prefixes are ignored
+    for prefix in KNOWN_UNNECESSARY_FILE_PREFIXES {
+        if stem.starts_with(prefix) {
+            // Just need to check prefix
+            return true;
+        }
+    }
+
+    // Then, ensure files in ignored directories are also ignored.
+    for dir in KNOWN_UNNECESSARY_DIRS {
+        if stem == *dir {
+            // Need to check for full equality here
             return true;
         }
     }
@@ -176,6 +197,7 @@ mod tests {
     use regex::Regex;
     use std::fs;
     use std::path::{Path, PathBuf};
+
     use walkdir::WalkDir;
 
     #[test]
@@ -228,6 +250,7 @@ mod tests {
         let expected_count = 0;
         assert!(actual_count == expected_count);
     }
+<<<<<<< HEAD
 
     #[test]
     fn it_can_allow_unfiltered_files() {
@@ -316,4 +339,6 @@ mod tests {
         assert_eq!(path, expected_path);
         assert!(expected_key_regex.is_match(&key));
     }
+=======
+>>>>>>> Great advice from ashley--filter at the dir walking level when possible. This approach should be readily applicable to .wignore logic down the line
 }
