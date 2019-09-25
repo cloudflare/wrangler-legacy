@@ -14,7 +14,7 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 
 use crate::terminal::message;
 
@@ -26,7 +26,10 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut key_manifest: HashMap<String, String> = HashMap::new();
 
-    for entry in WalkDir::new(directory).into_iter().filter_entry(|e| !is_ignored(e)) {
+    for entry in WalkDir::new(directory)
+        .into_iter()
+        .filter_entry(|e| !is_ignored(e))
+    {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
@@ -48,6 +51,7 @@ pub fn directory_keys_values(
                 expiration_ttl: None,
                 base64: Some(true),
             });
+
             key_manifest.insert(url_safe_path, key);
         }
     }
@@ -76,13 +80,27 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
 
 // todo(gabbi): Replace all the logic below with a proper .wignore implementation
 // when possible.
-const KNOWN_UNNECESSARY_PREFIXES: &'static [&str] = &[
-    "node_modules/", // npm vendoring
-    "component---",  // Gatsby sourcemaps
+const KNOWN_UNNECESSARY_DIRS: &'static [&str] = &[
+    "node_modules", // npm vendoring
 ];
-fn is_ignored(key: &str) -> bool {
-    for prefix in KNOWN_UNNECESSARY_PREFIXES {
-        if key.starts_with(prefix) {
+const KNOWN_UNNECESSARY_FILE_PREFIXES: &'static [&str] = &[
+    "component---", // Gatsby sourcemaps
+    ".",            // hidden files
+];
+fn is_ignored(entry: &DirEntry) -> bool {
+    let stem = entry.file_name().to_str().unwrap();
+    // First, ensure that files with specified prefixes are ignored
+    for prefix in KNOWN_UNNECESSARY_FILE_PREFIXES {
+        if stem.starts_with(prefix) {
+            // Just need to check prefix
+            return true;
+        }
+    }
+
+    // Then, ensure files in ignored directories are also ignored.
+    for dir in KNOWN_UNNECESSARY_DIRS {
+        if stem == *dir {
+            // Need to check for full equality here
             return true;
         }
     }
@@ -142,4 +160,63 @@ fn get_digest(value: String) -> Result<String, failure::Error> {
     let digest = hasher.result();
     let hex_digest = HEXLOWER.encode(digest.as_ref());
     Ok(hex_digest)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    use walkdir::WalkDir;
+
+    #[test]
+    fn it_can_ignore_dir() {
+        let dir_name = "node_modules";
+        // If test dir already exists, delete it.
+        if fs::metadata(dir_name).is_ok() {
+            fs::remove_dir_all(dir_name).unwrap();
+        }
+
+        fs::create_dir(dir_name).unwrap();
+        fs::File::create(format!("{}/ignore_me.txt", dir_name)).unwrap();
+
+        let mut actual_count = 0;
+        for _ in WalkDir::new(dir_name)
+            .into_iter()
+            .filter_entry(|e| !is_ignored(e))
+        {
+            actual_count = actual_count + 1;
+        }
+
+        fs::remove_dir_all(dir_name).unwrap();
+
+        // No iterations should happen above because "node_modules" and its contents are ignored.
+        let expected_count = 0;
+        assert!(actual_count == expected_count);
+    }
+
+    #[test]
+    fn it_can_ignore_prefix() {
+        let file_name = ".dotfile";
+        // If test file already exists, delete it.
+        if fs::metadata(file_name).is_ok() {
+            fs::remove_file(file_name).unwrap();
+        }
+
+        fs::File::create(file_name).unwrap();
+
+        let mut actual_count = 0;
+        for _ in WalkDir::new(file_name)
+            .into_iter()
+            .filter_entry(|e| !is_ignored(e))
+        {
+            actual_count = actual_count + 1;
+        }
+
+        fs::remove_file(file_name).unwrap();
+
+        // No iterations should happen above because dotfiles are ignored.
+        let expected_count = 0;
+        assert!(actual_count == expected_count);
+    }
 }
