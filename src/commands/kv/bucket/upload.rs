@@ -33,6 +33,7 @@ pub fn upload_files(
             let (pairs, asset_manifest) = directory_keys_values(path, verbose)?;
             Ok((pairs, asset_manifest))
         }
+
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             Err(format_err!("wrangler kv:bucket upload takes a directory"))
@@ -141,30 +142,21 @@ mod tests {
     use std::path::Path;
 
     use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
+    use crate::commands::kv::bucket::generate_path_and_key;
 
-    use crate::commands::kv::bucket::generate_url_safe_key_and_hash;
 
     #[test]
     fn it_can_filter_preexisting_files() {
-        let (_, key_a_old) = generate_url_safe_key_and_hash(
-            Path::new("/a"),
-            Path::new("/"),
-            Some("old".to_string()),
-        )
-        .unwrap();
-        let (_, key_b_old) = generate_url_safe_key_and_hash(
-            Path::new("/b"),
-            Path::new("/"),
-            Some("old".to_string()),
-        )
-        .unwrap();
+        let (_, key_a_old) =
+            generate_path_and_key(Path::new("/a"), Path::new("/"), Some("old".to_string()))
+                .unwrap();
+        let (_, key_b_old) =
+            generate_path_and_key(Path::new("/b"), Path::new("/"), Some("old".to_string()))
+                .unwrap();
         // Generate new key (using hash of new value) for b when to simulate its value being updated.
-        let (_, key_b_new) = generate_url_safe_key_and_hash(
-            Path::new("/b"),
-            Path::new("/"),
-            Some("new".to_string()),
-        )
-        .unwrap();
+        let (_, key_b_new) =
+            generate_path_and_key(Path::new("/b"), Path::new("/"), Some("new".to_string()))
+                .unwrap();
 
         // Old values found on remote
         let mut exclude_keys = HashSet::new();
