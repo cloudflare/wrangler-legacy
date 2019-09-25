@@ -93,6 +93,7 @@ fn is_ignored(entry: &DirEntry) -> bool {
     for prefix in KNOWN_UNNECESSARY_FILE_PREFIXES {
         if stem.starts_with(prefix) {
             // Just need to check prefix
+            message::info(&format!("ignoring file {}", stem));
             return true;
         }
     }
@@ -101,6 +102,7 @@ fn is_ignored(entry: &DirEntry) -> bool {
     for dir in KNOWN_UNNECESSARY_DIRS {
         if stem == *dir {
             // Need to check for full equality here
+            message::info(&format!("ignoring directory {}", dir));
             return true;
         }
     }
