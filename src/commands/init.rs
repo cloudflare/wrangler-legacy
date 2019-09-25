@@ -4,6 +4,7 @@ use crate::commands;
 use crate::commands::validate_worker_name;
 use crate::settings::target::{Manifest, Site, TargetType};
 use crate::terminal::message;
+use crate::settings::ignore;
 
 pub fn init(
     name: Option<&str>,
@@ -23,6 +24,9 @@ pub fn init(
     let manifest =
         Manifest::generate(name.to_string(), target_type, config_path, initialized_site)?;
     message::success("Succesfully created a `wrangler.toml`");
+
+    // Writes .wranglerignore file.
+    ignore::write_default_wranglerignore()?;
 
     if site {
         let env = None;
