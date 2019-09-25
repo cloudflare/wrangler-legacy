@@ -203,6 +203,7 @@ mod tests {
             idx = idx + 1;
         }
     }
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 =======
@@ -214,4 +215,6 @@ mod tests {
         }
     }
 >>>>>>> s/if_ignored_prefix/contains_ignored_prefix
+=======
+>>>>>>> Great advice from ashley--filter at the dir walking level when possible. This approach should be readily applicable to .wignore logic down the line
 }
