@@ -27,10 +27,7 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
 
-    for entry in WalkDir::new(directory)
-        .into_iter()
-        .filter_entry(|e| !is_ignored(e))
-    {
+    for entry in WalkDir::new(directory).into_iter().filter_entry(|e| !is_ignored(e)) {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
@@ -81,28 +78,13 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
 
 // todo(gabbi): Replace all the logic below with a proper .wignore implementation
 // when possible.
-const KNOWN_UNNECESSARY_DIRS: &[&str] = &[
-    "node_modules", // npm vendoring
+const KNOWN_UNNECESSARY_PREFIXES: &'static [&str] = &[
+    "node_modules/", // npm vendoring
+    "component---",  // Gatsby sourcemaps
 ];
-const KNOWN_UNNECESSARY_FILE_PREFIXES: &[&str] = &[
-    ".", // hidden files
-];
-fn is_ignored(entry: &DirEntry) -> bool {
-    let stem = entry.file_name().to_str().unwrap();
-    // First, ensure that files with specified prefixes are ignored
-    for prefix in KNOWN_UNNECESSARY_FILE_PREFIXES {
-        if stem.starts_with(prefix) {
-            // Just need to check prefix
-            message::info(&format!("ignoring file {}", stem));
-            return true;
-        }
-    }
-
-    // Then, ensure files in ignored directories are also ignored.
-    for dir in KNOWN_UNNECESSARY_DIRS {
-        if stem == *dir {
-            // Need to check for full equality here
-            message::info(&format!("ignoring directory {}", dir));
+fn is_ignored(key: &str) -> bool {
+    for prefix in KNOWN_UNNECESSARY_PREFIXES {
+        if key.starts_with(prefix) {
             return true;
         }
     }
