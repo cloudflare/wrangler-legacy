@@ -28,10 +28,14 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
 
+<<<<<<< HEAD
     for entry in WalkBuilder::new(directory)
         .add_custom_ignore_filename(wrangler_ignore::WRANGLER_IGNORE)
         .build()
     {
+=======
+    for entry in WalkDir::new(directory).into_iter().filter_entry(|e| !is_ignored(e)) {
+>>>>>>> intermediate progress on using walkdir
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
