@@ -53,11 +53,7 @@ pub fn directory_keys_values(
                 base64: Some(true),
             });
 
-<<<<<<< HEAD
             asset_manifest.insert(url_safe_path, key);
-=======
-            key_manifest.insert(url_safe_path, key);
->>>>>>> Great advice from ashley--filter at the dir walking level when possible. This approach should be readily applicable to .wignore logic down the line
         }
     }
     Ok((upload_vec, asset_manifest))
@@ -251,6 +247,9 @@ mod tests {
         assert!(actual_count == expected_count);
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> add regression test too
 
     #[test]
     fn it_can_allow_unfiltered_files() {
@@ -276,6 +275,7 @@ mod tests {
         let expected_count = 1;
         assert!(actual_count == expected_count);
     }
+<<<<<<< HEAD
 
     #[test]
     fn it_inserts_hash_before_extension() {
@@ -341,4 +341,6 @@ mod tests {
     }
 =======
 >>>>>>> Great advice from ashley--filter at the dir walking level when possible. This approach should be readily applicable to .wignore logic down the line
+=======
+>>>>>>> add regression test too
 }
