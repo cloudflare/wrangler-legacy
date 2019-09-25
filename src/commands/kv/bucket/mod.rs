@@ -84,8 +84,7 @@ const KNOWN_UNNECESSARY_DIRS: &'static [&str] = &[
     "node_modules", // npm vendoring
 ];
 const KNOWN_UNNECESSARY_FILE_PREFIXES: &'static [&str] = &[
-    "component---", // Gatsby sourcemaps
-    ".",            // hidden files
+    ".", // hidden files
 ];
 fn is_ignored(entry: &DirEntry) -> bool {
     let stem = entry.file_name().to_str().unwrap();
