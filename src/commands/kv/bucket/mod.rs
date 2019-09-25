@@ -28,21 +28,10 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     for entry in WalkBuilder::new(directory)
         .add_custom_ignore_filename(wrangler_ignore::WRANGLER_IGNORE)
         .build()
     {
-=======
-    for entry in WalkDir::new(directory).into_iter().filter_entry(|e| !is_ignored(e)) {
->>>>>>> intermediate progress on using walkdir
-=======
-    for entry in WalkDir::new(directory)
-        .into_iter()
-        .filter_entry(|e| !is_ignored(e))
-    {
->>>>>>> Great advice from ashley--filter at the dir walking level when possible. This approach should be readily applicable to .wignore logic down the line
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
@@ -65,11 +54,7 @@ pub fn directory_keys_values(
                 base64: Some(true),
             });
 
-<<<<<<< HEAD
             asset_manifest.insert(url_safe_path, key);
-=======
-            key_manifest.insert(url_safe_path, key);
->>>>>>> Great advice from ashley--filter at the dir walking level when possible. This approach should be readily applicable to .wignore logic down the line
         }
     }
     Ok((upload_vec, asset_manifest))
