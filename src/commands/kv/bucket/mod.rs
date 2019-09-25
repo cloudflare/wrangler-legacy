@@ -219,4 +219,29 @@ mod tests {
         let expected_count = 0;
         assert!(actual_count == expected_count);
     }
+
+    #[test]
+    fn it_can_allow_unfiltered_files() {
+        let file_name = "my_file";
+        // If test file already exists, delete it.
+        if fs::metadata(file_name).is_ok() {
+            fs::remove_file(file_name).unwrap();
+        }
+
+        fs::File::create(file_name).unwrap();
+
+        let mut actual_count = 0;
+        for _ in WalkDir::new(file_name)
+            .into_iter()
+            .filter_entry(|e| !is_ignored(e))
+        {
+            actual_count = actual_count + 1;
+        }
+
+        fs::remove_file(file_name).unwrap();
+
+        // No iterations should happen above because dotfiles are ignored.
+        let expected_count = 1;
+        assert!(actual_count == expected_count);
+    }
 }
