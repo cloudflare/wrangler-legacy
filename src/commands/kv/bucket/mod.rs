@@ -194,7 +194,6 @@ mod tests {
     use regex::Regex;
     use std::fs;
     use std::path::{Path, PathBuf};
-
     use walkdir::WalkDir;
 
     #[test]
@@ -277,6 +276,9 @@ mod tests {
         assert!(actual_count == expected_count);
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> fix merge conflict stuff
 
     #[test]
     fn it_inserts_hash_before_extension() {
