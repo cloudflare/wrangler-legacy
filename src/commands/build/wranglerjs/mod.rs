@@ -160,11 +160,12 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
     let webpack_config_path = if let Some(webpack_config) = &target.webpack_config {
-        Some(PathBuf::from(webpack_config.clone()))
+        Some(PathBuf::from(&webpack_config))
     } else if target.site.is_none() {
         message::warn("In Wrangler v1.6.0, you will need to include a webpack_config field in your wrangler.toml to build with a custom webpack configuration.");
         Some(PathBuf::from("webpack.config.js".to_string()))
     } else {
+        // don't use `webpack.config.js` if this project is a site
         None
     };
 
