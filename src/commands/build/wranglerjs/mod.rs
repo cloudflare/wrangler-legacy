@@ -159,7 +159,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
-    let webpack_config_path: Option<PathBuf> = if let Some(webpack_config) = &target.webpack_config {
+    let webpack_config_path = if let Some(webpack_config) = &target.webpack_config {
         // require webpack_config in wrangler.toml to use it in sites
         Some(PathBuf::from(&webpack_config))
     } else if target.site.is_none() {
