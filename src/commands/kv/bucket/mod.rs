@@ -10,7 +10,7 @@ pub use sync::sync;
 
 use std::collections::HashMap;
 use std::ffi::OsString;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
@@ -116,10 +116,8 @@ pub fn generate_path_and_key(
         let digest = get_digest(value)?;
 
         generate_path_with_hash(relative_path, digest)?
-            .display()
-            .to_string()
     } else {
-        url_safe_path.to_string()
+        url_safe_path.to_owned()
     };
 
     Ok((url_safe_path, path_with_hash))
@@ -135,7 +133,7 @@ fn get_digest(value: String) -> Result<String, failure::Error> {
 
 // Assumes that `path` is a file (called from a match branch for path.is_file())
 // Assumes that `hashed_value` is a String, not an Option<String> (called from a match branch for value.is_some())
-fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<PathBuf, failure::Error> {
+fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<String, failure::Error> {
     if let Some(file_stem) = path.file_stem() {
         let mut file_name = file_stem.to_os_string();
         let extension = path.extension();
@@ -149,7 +147,7 @@ fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<PathBuf,
 
         let new_path = path.with_file_name(file_name);
 
-        Ok(new_path)
+        Ok(generate_url_safe_path(&new_path)?)
     } else {
         failure::bail!("no file_stem for path {}", path.display())
     }
@@ -159,6 +157,7 @@ fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<PathBuf,
 mod tests {
     use super::*;
     use regex::Regex;
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn it_inserts_hash_before_extension() {
@@ -169,8 +168,7 @@ mod tests {
         let actual_path_with_hash =
             generate_path_with_hash(&path, hashed_value.to_owned()).unwrap();
 
-        let expected_filename = format!("asset.{}.html", hashed_value);
-        let expected_path_with_hash = PathBuf::from("path").join("to").join(expected_filename);
+        let expected_path_with_hash = format!("path/to/asset.{}.html", hashed_value);
 
         assert_eq!(actual_path_with_hash, expected_path_with_hash);
     }
@@ -184,8 +182,7 @@ mod tests {
         let actual_path_with_hash =
             generate_path_with_hash(&path, hashed_value.to_owned()).unwrap();
 
-        let expected_filename = format!("asset.{}", hashed_value);
-        let expected_path_with_hash = PathBuf::from("path").join("to").join(expected_filename);
+        let expected_path_with_hash = format!("path/to/asset.{}", hashed_value);;
 
         assert_eq!(actual_path_with_hash, expected_path_with_hash);
     }
@@ -218,10 +215,10 @@ mod tests {
         let value = Some("<h1>Hello World!</h1>".to_string());
         let (path, key) = generate_path_and_key(path, directory, value).unwrap();
 
-        let expected_path_regex = Regex::new(r"^path/to/asset\.ext").unwrap();
+        let expected_path = "path/to/asset.ext".to_string();
         let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-f]{64}\.ext").unwrap();
 
-        assert!(expected_path_regex.is_match(&path));
+        assert_eq!(path, expected_path);
         assert!(expected_key_regex.is_match(&key));
     }
 }
