@@ -80,10 +80,10 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
 
 // todo(gabbi): Replace all the logic below with a proper .wignore implementation
 // when possible.
-const KNOWN_UNNECESSARY_DIRS: &'static [&str] = &[
+const KNOWN_UNNECESSARY_DIRS: &[&str] = &[
     "node_modules", // npm vendoring
 ];
-const KNOWN_UNNECESSARY_FILE_PREFIXES: &'static [&str] = &[
+const KNOWN_UNNECESSARY_FILE_PREFIXES: &[&str] = &[
     ".", // hidden files
 ];
 fn is_ignored(entry: &DirEntry) -> bool {
