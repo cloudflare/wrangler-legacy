@@ -159,11 +159,20 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
-    let webpack_config_path = if let Some(webpack_config) = &target.webpack_config {
+    let webpack_config_path: Option<PathBuf> = if let Some(webpack_config) = &target.webpack_config {
+        // require webpack_config in wrangler.toml to use it in sites
         Some(PathBuf::from(&webpack_config))
     } else if target.site.is_none() {
-        message::warn("In Wrangler v1.6.0, you will need to include a webpack_config field in your wrangler.toml to build with a custom webpack configuration.");
-        Some(PathBuf::from("webpack.config.js".to_string()))
+        let config_path = PathBuf::from("webpack.config.js".to_string());
+        // backwards compatibility, deprecated in 1.6.0
+        // if webpack.config.js exists and is not specified in wrangler.toml, use it and warn
+        if bundle.has_webpack_config(&config_path) {
+            message::warn("In Wrangler v1.6.0, you will need to include a webpack_config field in your wrangler.toml to build with a custom webpack configuration.");
+            Some(config_path)
+        } else {
+            // if webpack.config.js does not exist, don't warn, use our default
+            None
+        }
     } else {
         // don't use `webpack.config.js` if this project is a site
         None
@@ -173,11 +182,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
     if let Some(webpack_config_path) = webpack_config_path {
-        if bundle.has_webpack_config(&webpack_config_path) {
-            build_with_custom_webpack(&mut command, &webpack_config_path);
-        } else {
-            build_with_default_webpack(&mut command, &build_dir)?;
-        }
+        build_with_custom_webpack(&mut command, &webpack_config_path);
     } else {
         build_with_default_webpack(&mut command, &build_dir)?;
     }
