@@ -26,7 +26,7 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut key_manifest: HashMap<String, String> = HashMap::new();
 
-    for entry in WalkDir::new(directory) {
+    for entry in WalkDir::new(directory).into_iter().filter_entry(|e| !is_ignored(e)) {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
@@ -72,6 +72,21 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
         }
     }
     Ok(upload_vec)
+}
+
+// todo(gabbi): Replace all the logic below with a proper .wignore implementation
+// when possible.
+const KNOWN_UNNECESSARY_PREFIXES: &'static [&str] = &[
+    "node_modules/", // npm vendoring
+    "component---",  // Gatsby sourcemaps
+];
+fn is_ignored(key: &str) -> bool {
+    for prefix in KNOWN_UNNECESSARY_PREFIXES {
+        if key.starts_with(prefix) {
+            return true;
+        }
+    }
+    false
 }
 
 // Courtesy of Steve Klabnik's PoC :) Used for bulk operations (write, delete)

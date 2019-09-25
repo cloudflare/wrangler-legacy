@@ -99,26 +99,11 @@ fn call_put_bulk_api(
 fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) -> Vec<KeyValuePair> {
     let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
     for pair in pairs {
-        if !already_uploaded.contains(&pair.key) && !contains_ignored_prefix(&pair.key) {
+        if !already_uploaded.contains(&pair.key) {
             filtered_pairs.push(pair);
         }
     }
     filtered_pairs
-}
-
-// todo(gabbi): Replace all the logic below with a proper .wignore implementation
-// when possible.
-const KNOWN_UNNECESSARY_PREFIXES: &'static [&str] = &[
-    "node_modules/", // npm vendoring
-    "component---",  // Gatsby sourcemaps
-];
-fn contains_ignored_prefix(key: &str) -> bool {
-    for prefix in KNOWN_UNNECESSARY_PREFIXES {
-        if key.starts_with(prefix) {
-            return true;
-        }
-    }
-    false
 }
 
 // Ensure that all key-value pairs being uploaded have valid sizes (this ensures that
