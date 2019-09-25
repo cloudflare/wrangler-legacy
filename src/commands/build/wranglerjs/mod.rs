@@ -58,6 +58,8 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
     let (mut command, temp_file, bundle) = setup_build(target)?;
     command.arg("--watch=1");
 
+    let is_site = target.site.clone();
+
     info!("Running {:?} in watch mode", command);
 
     //Turbofish the result of the closure so we can use ?
@@ -68,8 +70,15 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
         let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
 
         watcher.watch(&temp_file, RecursiveMode::Recursive)?;
-
         info!("watching temp file {:?}", &temp_file);
+
+        if let Some(site) = is_site {
+            let bucket = site.bucket;
+            if Path::new(&bucket).exists() {
+                watcher.watch(&bucket, RecursiveMode::Recursive)?;
+                info!("watching static sites asset file {:?}", &bucket);
+            }
+        }
 
         let mut is_first = true;
 
