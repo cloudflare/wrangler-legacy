@@ -219,7 +219,7 @@ mod tests {
         let (path, key) = generate_path_and_key(path, directory, value).unwrap();
 
         let expected_path_regex = Regex::new(r"^path/to/asset\.ext").unwrap();
-        let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-zA-Z]{64}\.ext").unwrap();
+        let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-f]{64}\.ext").unwrap();
 
         assert!(expected_path_regex.is_match(&path));
         assert!(expected_key_regex.is_match(&key));
