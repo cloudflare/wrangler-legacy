@@ -18,10 +18,12 @@ pub fn site(
     kv::validate_target(target)?;
     let client = kv::api_client(user.to_owned())?;
 
-    let title = match preview {
-        false => format!("__{}-{}", target.name, "workers_sites_assets"),
-        true => format!("__{}-{}", target.name, "workers_sites_assets_preview"),
+    let title = if preview {
+        format!("__{}-{}", target.name, "workers_sites_assets_preview")
+    } else {
+        format!("__{}-{}", target.name, "workers_sites_assets")
     };
+
     let msg = format!("Creating namespace for Workers Site \"{}\"", title);
     message::working(&msg);
 
