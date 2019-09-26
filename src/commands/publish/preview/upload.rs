@@ -50,9 +50,9 @@ pub fn build_and_upload(
 
                 if let Some(site_config) = target.site.clone() {
                     publish::bind_static_site_contents(user, target, &site_config, true)?;
-                    publish::upload_buckets(target, user)?;
                 }
 
+                let asset_manifest = publish::upload_buckets(target, user)?;
                 authenticated_upload(&client, &target, asset_manifest)?
             } else {
                 message::warn(&format!(
