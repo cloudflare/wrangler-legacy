@@ -14,7 +14,7 @@ impl Subdomain {
     pub fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
         let addr = subdomain_addr(account_id);
 
-        let client = http::auth_client(user);
+        let client = http::auth_client(None, user);
 
         let mut res = client.get(&addr).send()?;
 
@@ -77,7 +77,7 @@ pub fn subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), f
     };
     let sd_request = serde_json::to_string(&sd)?;
 
-    let client = http::auth_client(user);
+    let client = http::auth_client(None, user);
 
     let mut res = client.put(&addr).body(sd_request).send()?;
 

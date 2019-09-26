@@ -73,7 +73,11 @@ fn build_and_publish_script(
         target.account_id, target.name,
     );
 
-    let client = http::auth_client(user);
+    let client = if let Some(_) = &target.site {
+        http::auth_client(Some("site"), user)
+    } else {
+        http::auth_client(None, user)
+    };
 
     let script_upload_form = build_script_and_upload_form(target, asset_manifest)?;
 
@@ -165,7 +169,7 @@ fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, fa
         target.account_id, target.name,
     );
 
-    let client = http::auth_client(user);
+    let client = http::auth_client(None, user);
 
     log::info!("Making public on subdomain...");
     let mut res = client
