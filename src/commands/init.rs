@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use crate::commands;
 use crate::commands::validate_worker_name;
 use crate::settings::target::{Manifest, Site, TargetType};
+use crate::settings::wrangler_ignore;
 use crate::terminal::message;
-use crate::settings::ignore;
 
 pub fn init(
     name: Option<&str>,
@@ -21,12 +21,16 @@ pub fn init(
     let target_type = target_type.unwrap_or_default();
     let config_path = PathBuf::from("./");
     let initialized_site = if site { Some(Site::default()) } else { None };
-    let manifest =
-        Manifest::generate(name.to_string(), target_type, config_path, initialized_site)?;
+    let manifest = Manifest::generate(
+        name.to_string(),
+        target_type,
+        &config_path,
+        initialized_site,
+    )?;
     message::success("Succesfully created a `wrangler.toml`");
 
     // Writes .wranglerignore file.
-    ignore::write_default_wranglerignore()?;
+    wrangler_ignore::write_default_wranglerignore(&config_path)?;
 
     if site {
         let env = None;

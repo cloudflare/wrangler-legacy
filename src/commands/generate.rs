@@ -3,9 +3,9 @@ use std::process::Command;
 
 use crate::commands::validate_worker_name;
 use crate::settings::target::{Manifest, Site, TargetType};
+use crate::settings::wrangler_ignore;
 use crate::terminal::{emoji, message};
 use crate::{commands, install};
-use crate::settings::ignore;
 
 pub fn generate(
     name: &str,
@@ -25,10 +25,10 @@ pub fn generate(
     } else {
         None
     };
-    Manifest::generate(name.to_string(), target_type, config_path, generated_site)?;
+    Manifest::generate(name.to_string(), target_type, &config_path, generated_site)?;
 
     // Writes .wranglerignore file.
-    ignore::write_default_wranglerignore()?;
+    wrangler_ignore::write_default_wranglerignore(&config_path)?;
 
     Ok(())
 }
