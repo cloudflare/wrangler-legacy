@@ -48,6 +48,13 @@ pub fn bind_static_site_contents(
 ) -> Result<(), failure::Error> {
     let site_namespace = kv::namespace::site(target, user, preview)?;
 
+    // Check if namespace already is in namespace list
+    for namespace in target.kv_namespaces() {
+        if namespace.id == site_namespace.id {
+            return Ok(()); // Sites binding already exists; ignore
+        }
+    }
+
     target.add_kv_namespace(KvNamespace {
         binding: "__STATIC_CONTENT".to_string(),
         id: site_namespace.id,
