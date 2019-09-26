@@ -39,7 +39,10 @@ pub fn site(
         }
         Err(e) => match e {
             ApiFailure::Error(_status, api_errors) => {
-                if api_errors.errors.iter().any(|e| e.code == 10014) {
+                let mut error_iter = api_errors.errors.iter();
+                if error_iter.any(|e| e.code == 10026) {
+                    failure::bail!("You will need to enable Workers Unlimited for your account before you can use this feature.")
+                } else if error_iter.any(|e| e.code == 10014) {
                     log::info!("Namespace {} already exists.", title);
                     let response = client.request(&ListNamespaces {
                         account_identifier: &target.account_id,
