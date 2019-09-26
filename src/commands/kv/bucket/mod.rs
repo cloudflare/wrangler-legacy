@@ -15,8 +15,9 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
-use walkdir::{DirEntry, WalkDir};
+use ignore::WalkBuilder;
 
+use crate::settings::wrangler_ignore;
 use crate::terminal::message;
 
 // Returns the hashed key and value pair for all files in a directory.
@@ -27,9 +28,9 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
 
-    for entry in WalkDir::new(directory)
-        .into_iter()
-        .filter_entry(|e| !is_ignored(e))
+    for entry in WalkBuilder::new(directory)
+        .add_custom_ignore_filename(wrangler_ignore::WRANGLER_IGNORE)
+        .build()
     {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -62,7 +63,10 @@ pub fn directory_keys_values(
 // Returns only the hashed keys for a directory's files.
 fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> {
     let mut upload_vec: Vec<String> = Vec::new();
-    for entry in WalkDir::new(directory) {
+    for entry in WalkBuilder::new(directory)
+        .add_custom_ignore_filename(wrangler_ignore::WRANGLER_IGNORE)
+        .build()
+    {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
@@ -77,36 +81,6 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
         }
     }
     Ok(upload_vec)
-}
-
-// todo(gabbi): Replace all the logic below with a proper .wignore implementation
-// when possible.
-const KNOWN_UNNECESSARY_DIRS: &[&str] = &[
-    "node_modules", // npm vendoring
-];
-const KNOWN_UNNECESSARY_FILE_PREFIXES: &[&str] = &[
-    ".", // hidden files
-];
-fn is_ignored(entry: &DirEntry) -> bool {
-    let stem = entry.file_name().to_str().unwrap();
-    // First, ensure that files with specified prefixes are ignored
-    for prefix in KNOWN_UNNECESSARY_FILE_PREFIXES {
-        if stem.starts_with(prefix) {
-            // Just need to check prefix
-            message::info(&format!("ignoring file {}", stem));
-            return true;
-        }
-    }
-
-    // Then, ensure files in ignored directories are also ignored.
-    for dir in KNOWN_UNNECESSARY_DIRS {
-        if stem == *dir {
-            // Need to check for full equality here
-            message::info(&format!("ignoring directory {}", dir));
-            return true;
-        }
-    }
-    false
 }
 
 // Courtesy of Steve Klabnik's PoC :) Used for bulk operations (write, delete)
@@ -194,82 +168,90 @@ mod tests {
     use regex::Regex;
     use std::fs;
     use std::path::{Path, PathBuf};
-    use walkdir::WalkDir;
+
+    use crate::settings::wrangler_ignore;
 
     #[test]
     fn it_can_ignore_dir() {
-        let dir_name = "node_modules";
+        // Populate .wrangerignore file. If it already exists, replace it
+        // with the default .wranglerignore settings.
+        if fs::metadata(wrangler_ignore::WRANGLER_IGNORE).is_err() {
+            wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
+        }
+
+        let test_dir = "test1";
         // If test dir already exists, delete it.
-        if fs::metadata(dir_name).is_ok() {
-            fs::remove_dir_all(dir_name).unwrap();
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
         }
 
-        fs::create_dir(dir_name).unwrap();
-        fs::File::create(format!("{}/ignore_me.txt", dir_name)).unwrap();
+        fs::create_dir_all(format!("{}/node_modules", test_dir)).unwrap();
+        fs::File::create(format!("{}/node_modules/ignore_me.txt", test_dir)).unwrap();
 
-        let mut actual_count = 0;
-        for _ in WalkDir::new(dir_name)
-            .into_iter()
-            .filter_entry(|e| !is_ignored(e))
-        {
-            actual_count = actual_count + 1;
-        }
+        let actual_results = directory_keys_only(Path::new(test_dir)).unwrap();
 
-        fs::remove_dir_all(dir_name).unwrap();
+        fs::remove_dir_all(test_dir).unwrap();
 
         // No iterations should happen above because "node_modules" and its contents are ignored.
         let expected_count = 0;
-        assert!(actual_count == expected_count);
+        assert!(actual_results.len() == expected_count);
     }
 
     #[test]
     fn it_can_ignore_prefix() {
-        let file_name = ".dotfile";
-        // If test file already exists, delete it.
-        if fs::metadata(file_name).is_ok() {
-            fs::remove_file(file_name).unwrap();
+        // Populate .wrangerignore file. If it already exists, replace it
+        // with the default .wranglerignore settings.
+        if fs::metadata(wrangler_ignore::WRANGLER_IGNORE).is_err() {
+            wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
         }
 
-        fs::File::create(file_name).unwrap();
+        wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
 
-        let mut actual_count = 0;
-        for _ in WalkDir::new(file_name)
-            .into_iter()
-            .filter_entry(|e| !is_ignored(e))
-        {
-            actual_count = actual_count + 1;
+        let test_dir = "test2";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
         }
 
-        fs::remove_file(file_name).unwrap();
+        fs::create_dir(test_dir).unwrap();
+        fs::File::create(format!("{}/.ignoreme.txt", test_dir)).unwrap();
 
-        // No iterations should happen above because dotfiles are ignored.
+        let actual_results = directory_keys_only(Path::new(test_dir)).unwrap();
+
+        fs::remove_dir_all(test_dir).unwrap();
+
+        // No iterations should happen above because "node_modules" and its contents are ignored.
         let expected_count = 0;
-        assert!(actual_count == expected_count);
+        println!("{:?}", actual_results);
+        assert!(actual_results.len() == expected_count);
     }
 
     #[test]
     fn it_can_allow_unfiltered_files() {
-        let file_name = "my_file";
-        // If test file already exists, delete it.
-        if fs::metadata(file_name).is_ok() {
-            fs::remove_file(file_name).unwrap();
+        // Populate .wrangerignore file. If it already exists, replace it
+        // with the default .wranglerignore settings.
+        if fs::metadata(wrangler_ignore::WRANGLER_IGNORE).is_err() {
+            wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
         }
 
-        fs::File::create(file_name).unwrap();
+        wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
 
-        let mut actual_count = 0;
-        for _ in WalkDir::new(file_name)
-            .into_iter()
-            .filter_entry(|e| !is_ignored(e))
-        {
-            actual_count = actual_count + 1;
+        let test_dir = "test3";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
         }
 
-        fs::remove_file(file_name).unwrap();
+        fs::create_dir(test_dir).unwrap();
+        fs::File::create(format!("{}/notice_me.txt", test_dir)).unwrap();
 
-        // No iterations should happen above because dotfiles are ignored.
+        let actual_results = directory_keys_only(Path::new(test_dir)).unwrap();
+
+        fs::remove_dir_all(test_dir).unwrap();
+
+        // No iterations should happen above because "node_modules" and its contents are ignored.
         let expected_count = 1;
-        assert!(actual_count == expected_count);
+        assert!(actual_results.len() == expected_count);
     }
 
     #[test]
