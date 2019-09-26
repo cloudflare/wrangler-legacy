@@ -33,8 +33,9 @@ struct V4ApiResponse {
     pub result: ApiPreview,
 }
 
-const SITES_UNAUTH_PREVIEW_ERR: &str = "Unauthenticated preview does not work for previewing Workers Sites; you need to \
-                    authenticate to upload your site contents.";
+const SITES_UNAUTH_PREVIEW_ERR: &str =
+    "Unauthenticated preview does not work for previewing Workers Sites; you need to \
+     authenticate to upload your site contents.";
 
 // Builds and uploads the script and its bindings. Returns the ID of the uploaded script.
 pub fn build_and_upload(
