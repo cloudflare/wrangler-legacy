@@ -39,6 +39,7 @@ pub fn build_and_upload(
     user: Option<&GlobalUser>,
     sites_preview: bool,
 ) -> Result<String, failure::Error> {
+    let cannot_preview_message = format!("{} You must enter your credentials to preview your Worker site!", emoji::WARN);
     let preview = match &user {
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
@@ -59,10 +60,11 @@ pub fn build_and_upload(
                     "Your wrangler.toml is missing the following fields: {:?}",
                     missing_fields
                 ));
-                message::warn("Falling back to unauthenticated preview.");
+                
                 if sites_preview {
-                    failure::bail!("Unauthenticated preview does not work for previewing Workers Sites; you need to \
-                    authenticate to upload your site contents. Exiting...")
+                    failure::bail!(&cannot_preview_msg)
+                } else {
+                    message::warn("Falling back to unauthenticated preview.");
                 }
 
                 let client = http::client();
@@ -78,8 +80,7 @@ pub fn build_and_upload(
             );
 
             if sites_preview {
-                failure::bail!("Unauthenticated preview does not work for previewing Workers Sites; you need to \
-                authenticate to upload your site contents. Exiting...")
+                failure::bail!(&cannot_preview_msg)
             }
 
             let client = http::client();
