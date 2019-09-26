@@ -48,7 +48,6 @@ pub fn build_and_upload(
             if missing_fields.is_empty() {
                 let client = http::auth_client(&user);
 
-                // todo add sites to bucket here
                 if let Some(site_config) = target.site.clone() {
                     publish::bind_static_site_contents(user, target, &site_config, true)?;
                 }
