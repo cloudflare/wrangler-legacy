@@ -61,9 +61,8 @@ pub fn build_and_upload(
                 ));
                 message::warn("Falling back to unauthenticated preview.");
                 if sites_preview {
-                    message::warn(
-                        "Note that unauthenticated preview will not preview Workers Sites.",
-                    );
+                    failure::bail!("Unauthenticated preview does not work for previewing Workers Sites; you need to \
+                    authenticate to upload your site contents. Exiting...")
                 }
 
                 let client = http::client();
@@ -79,7 +78,8 @@ pub fn build_and_upload(
             );
 
             if sites_preview {
-                message::warn("Note that unauthenticated preview will not preview Workers Sites.");
+                failure::bail!("Unauthenticated preview does not work for previewing Workers Sites; you need to \
+                authenticate to upload your site contents. Exiting...")
             }
 
             let client = http::client();
