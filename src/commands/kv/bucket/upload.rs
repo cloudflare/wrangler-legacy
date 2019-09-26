@@ -30,7 +30,7 @@ pub fn upload_files(
 ) -> Result<AssetManifest, failure::Error> {
     let (mut pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => {
-            let (pairs, asset_manifest) = directory _keys_values(path, verbose)?;
+            let (pairs, asset_manifest) = directory_keys_values(path, verbose)?;
             Ok((pairs, asset_manifest))
         }
 
