@@ -141,7 +141,7 @@ impl Manifest {
     pub fn generate(
         name: String,
         target_type: TargetType,
-        config_path: PathBuf,
+        config_path: &PathBuf,
         site: Option<Site>,
     ) -> Result<Manifest, failure::Error> {
         let manifest = Manifest {
