@@ -1,3 +1,5 @@
+use super::manifest::AssetManifest;
+
 use std::collections::HashSet;
 use std::fs::metadata;
 use std::path::Path;
@@ -25,12 +27,13 @@ pub fn upload_files(
     path: &Path,
     exclude_keys: Option<&HashSet<String>>,
     verbose: bool,
-) -> Result<(), failure::Error> {
-    let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
+) -> Result<AssetManifest, failure::Error> {
+    let (mut pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => {
-            let (p, _) = directory_keys_values(path, verbose)?;
-            Ok(p)
+            let (pairs, asset_manifest) = directory_keys_values(path, verbose)?;
+            Ok((pairs, asset_manifest))
         }
+
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             Err(format_err!("wrangler kv:bucket upload takes a directory"))
@@ -38,10 +41,12 @@ pub fn upload_files(
         Err(e) => Err(format_err!("{}", e)),
     }?;
 
-    // If a list of files to skip uploading is provided, filter the filename/file key pairs
-    if let Some(excluded_keys) = exclude_keys {
-        pairs = filter_unchanged_remote_files(pairs, excluded_keys);
+    let mut ignore = &HashSet::new();
+    if let Some(exclude) = exclude_keys {
+        ignore = exclude;
     }
+
+    pairs = filter_files(pairs, ignore);
 
     validate_file_uploads(pairs.clone())?;
 
@@ -76,7 +81,7 @@ pub fn upload_files(
         }
     }
 
-    Ok(())
+    Ok(asset_manifest)
 }
 
 fn call_put_bulk_api(
@@ -94,13 +99,10 @@ fn call_put_bulk_api(
     Ok(())
 }
 
-fn filter_unchanged_remote_files(
-    pairs: Vec<KeyValuePair>,
-    exclude_keys: &HashSet<String>,
-) -> Vec<KeyValuePair> {
+fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) -> Vec<KeyValuePair> {
     let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
     for pair in pairs {
-        if !exclude_keys.contains(&pair.key) {
+        if !already_uploaded.contains(&pair.key) {
             filtered_pairs.push(pair);
         }
     }
@@ -135,35 +137,25 @@ pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Er
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::collections::HashSet;
     use std::path::Path;
 
+    use crate::commands::kv::bucket::generate_path_and_key;
     use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
-
-    use crate::commands::kv::bucket::generate_url_safe_key_and_hash;
-    use crate::commands::kv::bucket::upload::filter_unchanged_remote_files;
 
     #[test]
     fn it_can_filter_preexisting_files() {
-        let (_, key_a_old) = generate_url_safe_key_and_hash(
-            Path::new("/a"),
-            Path::new("/"),
-            Some("old".to_string()),
-        )
-        .unwrap();
-        let (_, key_b_old) = generate_url_safe_key_and_hash(
-            Path::new("/b"),
-            Path::new("/"),
-            Some("old".to_string()),
-        )
-        .unwrap();
+        let (_, key_a_old) =
+            generate_path_and_key(Path::new("/a"), Path::new("/"), Some("old".to_string()))
+                .unwrap();
+        let (_, key_b_old) =
+            generate_path_and_key(Path::new("/b"), Path::new("/"), Some("old".to_string()))
+                .unwrap();
         // Generate new key (using hash of new value) for b when to simulate its value being updated.
-        let (_, key_b_new) = generate_url_safe_key_and_hash(
-            Path::new("/b"),
-            Path::new("/"),
-            Some("new".to_string()),
-        )
-        .unwrap();
+        let (_, key_b_new) =
+            generate_path_and_key(Path::new("/b"), Path::new("/"), Some("new".to_string()))
+                .unwrap();
 
         // Old values found on remote
         let mut exclude_keys = HashSet::new();
@@ -195,7 +187,7 @@ mod tests {
             expiration: None,
             base64: None,
         }];
-        let actual = filter_unchanged_remote_files(pairs_to_upload, &exclude_keys);
+        let actual = filter_files(pairs_to_upload, &exclude_keys);
         check_kv_pairs_equality(expected, actual);
     }
 

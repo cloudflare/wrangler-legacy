@@ -1,3 +1,4 @@
+use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -52,7 +53,8 @@ pub fn build_and_upload(
                     publish::upload_buckets(target, user)?;
                 }
 
-                authenticated_upload(&client, &target)?
+                let asset_manifest = publish::upload_buckets(target, user)?;
+                authenticated_upload(&client, &target, asset_manifest)?
             } else {
                 message::warn(&format!(
                     "Your wrangler.toml is missing the following fields: {:?}",
@@ -118,14 +120,18 @@ fn validate(target: &Target) -> Vec<&str> {
     missing_fields
 }
 
-fn authenticated_upload(client: &Client, target: &Target) -> Result<Preview, failure::Error> {
+fn authenticated_upload(
+    client: &Client,
+    target: &Target,
+    asset_manifest: Option<AssetManifest>,
+) -> Result<Preview, failure::Error> {
     let create_address = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
         target.account_id, target.name
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::build_script_and_upload_form(target)?;
+    let script_upload_form = publish::build_script_and_upload_form(target, asset_manifest)?;
 
     let mut res = client
         .post(&create_address)
@@ -155,9 +161,9 @@ fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, f
         );
         let mut target = target.clone();
         target.kv_namespaces = None;
-        publish::build_script_and_upload_form(&target)?
+        publish::build_script_and_upload_form(&target, None)?
     } else {
-        publish::build_script_and_upload_form(&target)?
+        publish::build_script_and_upload_form(&target, None)?
     };
 
     let mut res = client

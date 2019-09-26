@@ -14,6 +14,7 @@ use upload_form::build_script_and_upload_form;
 use std::path::Path;
 
 use crate::commands::kv;
+use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::subdomain::Subdomain;
 use crate::commands::validate_worker_name;
 use crate::http;
@@ -32,8 +33,8 @@ pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Er
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
-    upload_buckets(target, user)?;
-    build_and_publish_script(&user, &target)?;
+    let asset_manifest = upload_buckets(target, user)?;
+    build_and_publish_script(&user, &target, asset_manifest)?;
 
     Ok(())
 }
@@ -62,7 +63,11 @@ pub fn bind_static_site_contents(
     Ok(())
 }
 
-fn build_and_publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+fn build_and_publish_script(
+    user: &GlobalUser,
+    target: &Target,
+    asset_manifest: Option<AssetManifest>,
+) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         target.account_id, target.name,
@@ -70,7 +75,7 @@ fn build_and_publish_script(user: &GlobalUser, target: &Target) -> Result<(), fa
 
     let client = http::auth_client(user);
 
-    let script_upload_form = build_script_and_upload_form(target)?;
+    let script_upload_form = build_script_and_upload_form(target, asset_manifest)?;
 
     let mut res = client
         .put(&worker_addr)
@@ -104,7 +109,11 @@ fn build_and_publish_script(user: &GlobalUser, target: &Target) -> Result<(), fa
     Ok(())
 }
 
-pub fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+pub fn upload_buckets(
+    target: &Target,
+    user: &GlobalUser,
+) -> Result<Option<AssetManifest>, failure::Error> {
+    let mut asset_manifest = None;
     for namespace in &target.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
             if bucket.is_empty() {
@@ -127,11 +136,20 @@ pub fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure:
                     path.display()
                 )
             }
-            kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
+            let manifest_result =
+                kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
+            if target.site.is_some() {
+                if asset_manifest.is_none() {
+                    asset_manifest = Some(manifest_result)
+                } else {
+                    // only site manifest should be returned
+                    unreachable!()
+                }
+            }
         }
     }
 
-    Ok(())
+    Ok(asset_manifest)
 }
 
 fn build_subdomain_request() -> String {

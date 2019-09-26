@@ -77,11 +77,10 @@ pub fn preview(
             HTTPMethod::Get => get(cookie, &client)?,
             HTTPMethod::Post => post(cookie, &client, body)?,
         };
-        let msg = match sites_preview {
-            false => format!("Your Worker responded with: {}", worker_res),
-            true => {
-                "Your Worker is a Workers Site, please preview it in browser window.".to_string()
-            }
+        let msg = if sites_preview {
+            "Your Worker is a Workers Site, please preview it in browser window.".to_string()
+        } else {
+            format!("Your Worker responded with: {}", worker_res)
         };
         message::preview(&msg);
     }
