@@ -3,7 +3,7 @@ use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
-use crate::terminal::{emoji, message};
+use crate::terminal::message;
 use reqwest::Client;
 use serde::Deserialize;
 
@@ -39,10 +39,7 @@ pub fn build_and_upload(
     user: Option<&GlobalUser>,
     sites_preview: bool,
 ) -> Result<String, failure::Error> {
-    let cannot_preview_message = format!(
-        "{} You must enter your credentials to preview your Worker site!",
-        emoji::WARN
-    );
+    let cannot_preview_message = "You must enter your credentials to preview your Worker site!";
     let preview = match &user {
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
