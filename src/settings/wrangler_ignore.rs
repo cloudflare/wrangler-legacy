@@ -11,7 +11,7 @@ pub fn write_default_wranglerignore(config_path: &Path) -> Result<(), failure::E
     let mut file = LineWriter::new(file);
 
     for expression in DEFAULT_IGNORE_FILES {
-        file.write(format!("{}\n", expression).as_bytes())?;
+        file.write_all(format!("{}\n", expression).as_bytes())?;
     }
     file.flush()?;
 
