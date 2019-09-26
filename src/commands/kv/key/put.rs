@@ -44,7 +44,7 @@ pub fn put(
     };
     let url = Url::parse_with_params(&api_endpoint, query_params);
 
-    let client = http::auth_client(&user);
+    let client = http::auth_client(None, &user);
 
     let url_into_str = url?.into_string();
 
