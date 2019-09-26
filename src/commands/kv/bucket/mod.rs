@@ -246,10 +246,6 @@ mod tests {
         let expected_count = 0;
         assert!(actual_count == expected_count);
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> add regression test too
 
     #[test]
     fn it_can_allow_unfiltered_files() {
@@ -275,10 +271,6 @@ mod tests {
         let expected_count = 1;
         assert!(actual_count == expected_count);
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> fix merge conflict stuff
 
     #[test]
     fn it_inserts_hash_before_extension() {
@@ -342,8 +334,4 @@ mod tests {
         assert_eq!(path, expected_path);
         assert!(expected_key_regex.is_match(&key));
     }
-=======
->>>>>>> Great advice from ashley--filter at the dir walking level when possible. This approach should be readily applicable to .wignore logic down the line
-=======
->>>>>>> add regression test too
 }
