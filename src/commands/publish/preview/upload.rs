@@ -3,7 +3,7 @@ use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
-use crate::terminal::message;
+use crate::terminal::{emoji, message};
 use reqwest::Client;
 use serde::Deserialize;
 
@@ -39,7 +39,10 @@ pub fn build_and_upload(
     user: Option<&GlobalUser>,
     sites_preview: bool,
 ) -> Result<String, failure::Error> {
-    let cannot_preview_message = format!("{} You must enter your credentials to preview your Worker site!", emoji::WARN);
+    let cannot_preview_message = format!(
+        "{} You must enter your credentials to preview your Worker site!",
+        emoji::WARN
+    );
     let preview = match &user {
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
@@ -60,9 +63,8 @@ pub fn build_and_upload(
                     "Your wrangler.toml is missing the following fields: {:?}",
                     missing_fields
                 ));
-                
                 if sites_preview {
-                    failure::bail!(&cannot_preview_msg)
+                    failure::bail!(cannot_preview_message)
                 } else {
                     message::warn("Falling back to unauthenticated preview.");
                 }
@@ -80,7 +82,7 @@ pub fn build_and_upload(
             );
 
             if sites_preview {
-                failure::bail!(&cannot_preview_msg)
+                failure::bail!(cannot_preview_message)
             }
 
             let client = http::client();
