@@ -53,7 +53,6 @@ pub fn build_and_upload(
                     publish::upload_buckets(target, user)?;
                 }
 
-                let asset_manifest = publish::upload_buckets(target, user)?;
                 authenticated_upload(&client, &target, asset_manifest)?
             } else {
                 message::warn(&format!(
