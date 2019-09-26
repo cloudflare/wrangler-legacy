@@ -4,6 +4,8 @@ Out of the box, Wrangler allows you to develop modern ES6 applications with supp
 
 **IMPORTANT: In order for Wrangler to use webpack to bundle your worker scripts, you must set `type = webpack` in your `wrangler.toml`, no other types will build your script with webpack.**
 
+If you're here because you're seeing warnings about specifying `webpack_config`, click [here](#backwards-compatibility)
+
 ## Sensible Defaults
 
 This is the default webpack configuration that Wrangler uses to build your worker:
@@ -88,3 +90,9 @@ module.exports = {
   "mode": "production"
 }
 ```
+
+## Backwards Compatibility
+
+If you are using a version of Wrangler before 1.6.0, worker projects will simply use any `webpack.config.js` that is in the root of your project. This is not always obvious, so we plan to require that you specify `webpack_config` in your `wrangler.toml` if you would like to use it. If you're seeing this warning and would like to use your `webpack.config.js`, simply add `webpack_config = webpack.config.js` to your wrangler.toml.
+
+If you are using Workers Sites and want to specify your own webpack configuration, you will always need to specify this. By default, Wrangler will not assume the `webpack.config.js` at the root of your project is meant to be used for building your Worker.
