@@ -33,6 +33,9 @@ struct V4ApiResponse {
     pub result: ApiPreview,
 }
 
+const SITES_UNAUTH_PREVIEW_ERR: &str = "Unauthenticated preview does not work for previewing Workers Sites; you need to \
+                    authenticate to upload your site contents.";
+
 // Builds and uploads the script and its bindings. Returns the ID of the uploaded script.
 pub fn build_and_upload(
     target: &mut Target,
@@ -61,8 +64,7 @@ pub fn build_and_upload(
                 ));
                 message::warn("Falling back to unauthenticated preview.");
                 if sites_preview {
-                    failure::bail!("Unauthenticated preview does not work for previewing Workers Sites; you need to \
-                    authenticate to upload your site contents. Exiting...")
+                    failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
                 }
 
                 let client = http::client();
@@ -78,8 +80,7 @@ pub fn build_and_upload(
             );
 
             if sites_preview {
-                failure::bail!("Unauthenticated preview does not work for previewing Workers Sites; you need to \
-                authenticate to upload your site contents. Exiting...")
+                failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
             }
 
             let client = http::client();
