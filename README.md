@@ -37,7 +37,7 @@ General documentation surrounding Workers development and using `wrangler` can b
 
 ####✨Workers Sites
 
-To learn about deploying static assets using `wrangler`, see the [Workers Site's Quickstart](https://developers.cloudflare.com/workers/sites/reference/).
+To learn about deploying static assets using `wrangler`, see the [Workers Sites Quickstart](https://developers.cloudflare.com/workers/sites/reference/).
 
 ## 🎙️ Commands
 
