@@ -6,7 +6,6 @@ use crate::settings::target::{Manifest, Site, TargetType};
 use crate::settings::wrangler_ignore;
 use crate::terminal::{emoji, message};
 use crate::{commands, install};
-use crate::settings::ignore;
 
 pub fn generate(
     name: &str,
@@ -30,9 +29,6 @@ pub fn generate(
 
     // Writes .wranglerignore file.
     wrangler_ignore::write_default_wranglerignore(&config_path)?;
-
-    // Writes .wranglerignore file.
-    ignore::write_default_wranglerignore()?;
 
     Ok(())
 }
