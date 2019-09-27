@@ -19,7 +19,7 @@ pub fn get(target: &Target, user: GlobalUser, id: &str, key: &str) -> Result<(),
         kv::url_encode_key(key)
     );
 
-    let client = http::auth_client(&user);
+    let client = http::auth_client(None, &user);
 
     let mut res = client.get(&api_endpoint).send()?;
 

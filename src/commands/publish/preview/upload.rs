@@ -50,7 +50,7 @@ pub fn build_and_upload(
             let missing_fields = validate(&target);
 
             if missing_fields.is_empty() {
-                let client = http::auth_client(&user);
+                let client = http::auth_client(None, &user);
 
                 if let Some(site_config) = target.site.clone() {
                     publish::bind_static_site_contents(user, target, &site_config, true)?;
@@ -68,7 +68,7 @@ pub fn build_and_upload(
                     failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
                 }
 
-                let client = http::client();
+                let client = http::client(None);
                 unauthenticated_upload(&client, &target)?
             }
         }
@@ -84,7 +84,7 @@ pub fn build_and_upload(
                 failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
             }
 
-            let client = http::client();
+            let client = http::client(None);
 
             unauthenticated_upload(&client, &target)?
         }

@@ -65,7 +65,7 @@ impl Route {
 fn get_routes(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure::Error> {
     let routes_addr = get_routes_addr(target)?;
 
-    let client = http::auth_client(user);
+    let client = http::auth_client(None, user);
 
     let mut res = client.get(&routes_addr).send()?;
 
@@ -85,7 +85,7 @@ fn get_routes(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure:
 }
 
 fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failure::Error> {
-    let client = http::auth_client(user);
+    let client = http::auth_client(None, user);
     let body = serde_json::to_string(&route)?;
 
     let routes_addr = get_routes_addr(target)?;
