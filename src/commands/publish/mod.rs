@@ -46,7 +46,7 @@ pub fn bind_static_site_contents(
     site_config: &Site,
     preview: bool,
 ) -> Result<(), failure::Error> {
-    let site_namespace = kv::namespace::site(target, user, preview)?;
+    let site_namespace = kv::namespace::site(target, &user, preview)?;
 
     // Check if namespace already is in namespace list
     for namespace in target.kv_namespaces() {
