@@ -12,7 +12,7 @@ use crate::settings::target::Target;
 const MAX_NAMESPACES_PER_PAGE: u32 = 100;
 const PAGE_NUMBER: u32 = 1;
 
-pub fn list(target: &Target, user: GlobalUser) -> Result<(), failure::Error> {
+pub fn list(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     let result = call_api(target, user);
     match result {
         Ok(success) => {
@@ -25,7 +25,7 @@ pub fn list(target: &Target, user: GlobalUser) -> Result<(), failure::Error> {
 
 pub fn call_api(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
 ) -> Result<Vec<WorkersKvNamespace>, failure::Error> {
     kv::validate_target(target)?;
     let client = kv::api_client(user)?;

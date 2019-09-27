@@ -8,7 +8,7 @@ use crate::terminal::message;
 
 pub fn delete(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     id: &str,
     key: &str,
 ) -> Result<(), failure::Error> {

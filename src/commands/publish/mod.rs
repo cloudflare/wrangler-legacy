@@ -141,7 +141,7 @@ pub fn upload_buckets(
                 )
             }
             let manifest_result =
-                kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
+                kv::bucket::sync(target, user, &namespace.id, path, false)?;
             if target.site.is_some() {
                 if asset_manifest.is_none() {
                     asset_manifest = Some(manifest_result)

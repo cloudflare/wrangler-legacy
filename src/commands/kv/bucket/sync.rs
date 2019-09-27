@@ -16,7 +16,7 @@ use crate::terminal::message;
 
 pub fn sync(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     namespace_id: &str,
     path: &Path,
     verbose: bool,
@@ -29,7 +29,7 @@ pub fn sync(
     // Turn it into a HashSet. This will be used by upload() to figure out which
     // files to exclude from upload (because their current version already exists in
     // the Workers KV remote).
-    let remote_keys_iter = KeyList::new(target, user.clone(), namespace_id, None)?;
+    let remote_keys_iter = KeyList::new(target, &user, namespace_id, None)?;
     let mut remote_keys: HashSet<String> = HashSet::new();
     for remote_key in remote_keys_iter {
         match remote_key {
@@ -45,7 +45,7 @@ pub fn sync(
     }
     let asset_manifest = upload_files(
         target,
-        user.clone(),
+        &user,
         namespace_id,
         path,
         Some(&remote_keys),

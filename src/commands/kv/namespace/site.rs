@@ -18,7 +18,7 @@ pub fn site(
     preview: bool,
 ) -> Result<WorkersKvNamespace, failure::Error> {
     kv::validate_target(target)?;
-    let client = kv::api_client(user.to_owned())?;
+    let client = kv::api_client(user)?;
 
     let title = if preview {
         format!("__{}-{}", target.name, "workers_sites_assets_preview")

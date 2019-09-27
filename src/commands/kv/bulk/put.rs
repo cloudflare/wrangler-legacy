@@ -16,7 +16,7 @@ use crate::terminal::message;
 
 pub fn put(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     namespace_id: &str,
     filename: &Path,
 ) -> Result<(), failure::Error> {
@@ -45,7 +45,7 @@ pub fn put(
 
 pub fn put_bulk(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     namespace_id: &str,
     pairs: Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {

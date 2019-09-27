@@ -10,7 +10,7 @@ use crate::settings::target::Target;
 // representation won't make sense)
 pub fn list(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     namespace_id: &str,
     prefix: Option<&str>,
 ) -> Result<(), failure::Error> {
