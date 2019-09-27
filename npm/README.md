@@ -33,7 +33,11 @@ For information regarding updating Wrangler, click [here](https://workers.cloudf
 
 ## Additional Documentation
 
-General documentation surrounding workers development and using `wrangler` can be found [here](https://workers.cloudflare.com/docs). This documentation will be highly valuable to you when developing with `wrangler`.
+General documentation surrounding Workers development and using `wrangler` can be found [here](https://developers.cloudflare.com/workers). This documentation will be highly valuable to you when developing with `wrangler`.
+
+####✨Workers Sites
+
+To learn about deploying static assets using `wrangler`, see the [Workers Sites Quickstart](https://developers.cloudflare.com/workers/sites/reference/).
 
 ## 🎙️ Commands
 
