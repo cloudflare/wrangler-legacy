@@ -10,7 +10,7 @@ const { homedir } = require('os');
 
 const cwd = join(homedir(), ".wrangler");
 
-const VERSION = "1.4.0-rc.6"
+const VERSION = "1.4.0-rc.7"
 
 function getPlatform() {
   const type = os.type();
