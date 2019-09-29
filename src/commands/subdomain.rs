@@ -11,7 +11,7 @@ pub struct Subdomain {
 }
 
 impl Subdomain {
-    pub fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
+    fn request(account_id: &str, user: &GlobalUser) -> Result<Response, failure::Error> {
         let addr = subdomain_addr(account_id);
 
         let client = http::auth_client(None, user);
@@ -27,11 +27,23 @@ impl Subdomain {
             )
         }
 
-        let res: Response = serde_json::from_str(&res.text()?)?;
+        Ok(serde_json::from_str(&res.text()?)?)
+    }
+
+    pub fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
+        let res = Subdomain::request(account_id, user)?;
         Ok(res
             .result
             .expect("Oops! We expected a subdomain name, but found none.")
             .subdomain)
+    }
+
+    pub fn get_as_option(
+        account_id: &str,
+        user: &GlobalUser,
+    ) -> Result<Option<String>, failure::Error> {
+        let res = Subdomain::request(account_id, user)?;
+        Ok(res.result.map(|r| r.subdomain))
     }
 }
 
@@ -58,13 +70,7 @@ fn subdomain_addr(account_id: &str) -> String {
     )
 }
 
-pub fn subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    if target.account_id.is_empty() {
-        failure::bail!(format!(
-            "{} You must provide an account_id in your wrangler.toml before creating a subdomain!",
-            emoji::WARN
-        ))
-    }
+fn register_domain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     let msg = format!(
         "Registering your subdomain, {}.workers.dev, this could take up to a minute.",
         name
@@ -124,6 +130,41 @@ pub fn subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), f
     let msg = format!("Success! You've registered {}.", name);
     message::success(&msg);
     Ok(())
+}
+
+pub fn subdomain(
+    name: Option<&str>,
+    user: &GlobalUser,
+    target: &Target,
+) -> Result<(), failure::Error> {
+    if target.account_id.is_empty() {
+        failure::bail!(format!(
+            "{} You must provide an account_id in your wrangler.toml before creating a subdomain!",
+            emoji::WARN
+        ))
+    }
+    let subdomain = Subdomain::get_as_option(&target.account_id, user);
+    return match (name, subdomain) {
+        (None, Ok(None)) => {
+            let msg = format!(
+                "No subdomain registered. Use `wrangler subdomain <name>` to register one."
+            );
+            message::user_error(&msg);
+            Ok(())
+        }
+        (None, Ok(Some(subdomain))) => {
+            let msg = format!("{}.workers.dev", subdomain);
+            message::info(&msg);
+            Ok(())
+        }
+        (Some(name), Ok(None)) => register_domain(&name, &user, &target),
+        (Some(_), Ok(Some(subdomain))) => {
+            let msg = format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain);
+            message::user_error(&msg);
+            Ok(())
+        }
+        (_, Err(error)) => Err(error),
+    };
 }
 
 fn already_has_subdomain(errors: Vec<Error>) -> bool {

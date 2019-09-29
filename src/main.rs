@@ -373,8 +373,7 @@ fn run() -> Result<(), failure::Error> {
                 .arg(
                     Arg::with_name("name")
                         .help("the subdomain on workers.dev you'd like to reserve")
-                        .index(1)
-                        .required(true),
+                        .index(1),
                 ),
         )
         .subcommand(SubCommand::with_name("whoami").about(&*format!(
@@ -498,9 +497,7 @@ fn run() -> Result<(), failure::Error> {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        let name = matches
-            .value_of("name")
-            .expect("The subdomain name you are requesting must be provided.");
+        let name = matches.value_of("name");
 
         commands::subdomain(name, &user, &target)?;
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
