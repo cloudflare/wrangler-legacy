@@ -26,8 +26,7 @@ pub fn init(
 
     if site {
         let env = None;
-        let release = false;
-        let target = manifest.get_target(env, release)?;
+        let target = manifest.get_target(env)?;
         commands::build::wranglerjs::scaffold_site_worker(&target)?;
     }
     Ok(())

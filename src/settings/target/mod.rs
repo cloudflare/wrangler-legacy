@@ -167,22 +167,7 @@ impl Manifest {
         Ok(manifest)
     }
 
-    pub fn get_target(
-        &self,
-        environment_name: Option<&str>,
-        release: bool,
-    ) -> Result<Target, failure::Error> {
-        if release && self.workers_dev.is_some() {
-            failure::bail!(format!(
-                "{} The --release flag is not compatible with use of the workers_dev field.",
-                emoji::WARN
-            ))
-        }
-
-        if release {
-            message::warn("--release will be deprecated.");
-        }
-
+    pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
         // Site projects are always Webpack for now; don't let toml override this.
         let target_type = match self.site {
             Some(_) => TargetType::Webpack,
@@ -208,7 +193,7 @@ impl Manifest {
 
         self.check_private(environment);
 
-        let (route, workers_dev) = self.negotiate_zoneless(environment, release)?;
+        let (route, workers_dev) = self.negotiate_zoneless(environment)?;
         target.route = route;
         target.workers_dev = workers_dev;
         if let Some(environment) = environment {
@@ -266,88 +251,54 @@ impl Manifest {
         }
     }
 
-    // TODO: when --release is deprecated, this will be much easier
     fn negotiate_zoneless(
         &self,
         environment: Option<&Environment>,
-        release: bool,
     ) -> Result<(Option<String>, bool), failure::Error> {
-        let use_dot_dev_failure =
-            "Please specify the workers_dev boolean in the top level of your wrangler.toml.";
-        let use_dot_dev_warning =
-            format!("{}\n{} If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.", use_dot_dev_failure, emoji::WARN);
-        let wdd_failure = format!(
-            "{} Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.",
-            emoji::WARN
-        );
+        let wdd_failure = "Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.";
+        let pick_target_failure =
+            "You must specify either `workers_dev` or `route` and `zone_id` in order to publish.";
 
-        // TODO: deprecate --release, remove warnings and parsing
-        // switch wrangler publish behavior to act the same at top level
-        // and environments
-        // brace yourself, this is hairy
-        let workers_dev = match environment {
-            // top level configuration
-            None => {
-                if release {
-                    match self.workers_dev {
-                        Some(_) => {
-                            failure::bail!(format!("{} {}", emoji::WARN, use_dot_dev_failure))
-                        }
-                        None => {
-                            message::warn(&use_dot_dev_warning);
-                            false // wrangler publish --release w/o workers_dev is zoned deploy
+        if let Some(env) = &environment {
+            if let Some(wdd) = env.workers_dev {
+                if let Some(route) = &env.route {
+                    if !route.is_empty() {
+                        if wdd {
+                            failure::bail!(wdd_failure)
+                        } else {
+                            return Ok((Some(route.clone()), false));
                         }
                     }
-                } else if let Some(wdd) = self.workers_dev {
-                    if wdd {
-                        if let Some(route) = &self.route {
-                            if !route.is_empty() {
-                                failure::bail!(wdd_failure)
-                            }
-                        }
+                }
+            } else if let Some(wdd) = self.workers_dev {
+                if let Some(route) = &env.route {
+                    if wdd && !route.is_empty() {
+                        return Ok((Some(route.clone()), false)); // allow route to override workers_dev = true if wdd is inherited
                     }
-                    wdd
-                } else {
-                    message::warn(&use_dot_dev_warning);
-                    true // wrangler publish w/o workers_dev is zoneless deploy
+                } else if wdd {
+                    return Ok((None, true));
+                }
+            } else if let Some(route) = &env.route {
+                if !route.is_empty() {
+                    return Ok((Some(route.clone()), false));
                 }
             }
-
-            // environment configuration
-            Some(environment) => {
-                if let Some(wdd) = environment.workers_dev {
-                    if wdd && environment.route.is_some() {
-                        failure::bail!(wdd_failure)
-                    }
-                    wdd
-                } else if let Some(wdd) = self.workers_dev {
-                    if wdd && environment.route.is_some() {
-                        false // allow route to override workers_dev = true if wdd is inherited
-                    } else {
-                        wdd // inherit from top level
-                    }
-                } else {
-                    false // if absent -> false
+        } else if let Some(route) = &self.route {
+            if let Some(wdd) = self.workers_dev {
+                if wdd && !route.is_empty() {
+                    failure::bail!(wdd_failure)
+                } else if wdd {
+                    return Ok((None, true));
                 }
+            }
+            return Ok((Some(route.clone()), false));
+        } else if let Some(wdd) = self.workers_dev {
+            if wdd {
+                return Ok((None, true));
             }
         };
 
-        let route = if let Some(environment) = environment {
-            if let Some(route) = &environment.route {
-                if let Some(wdd) = environment.workers_dev {
-                    if wdd {
-                        failure::bail!(wdd_failure);
-                    }
-                }
-                Some(route.clone())
-            } else {
-                None
-            }
-        } else {
-            self.route.clone()
-        };
-
-        Ok((route, workers_dev))
+        failure::bail!(pick_target_failure)
     }
 
     fn check_private(&self, environment: Option<&Environment>) {
