@@ -2,7 +2,7 @@ use cloudflare::endpoints::workerskv::create_namespace::CreateNamespace;
 use cloudflare::endpoints::workerskv::create_namespace::CreateNamespaceParams;
 use cloudflare::endpoints::workerskv::WorkersKvNamespace;
 use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::response::{ApiSuccess, ApiFailure};
+use cloudflare::framework::response::{ApiFailure, ApiSuccess};
 
 use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
@@ -53,10 +53,7 @@ pub fn create(
                         )),
                         None => message::success("Add the following to your wrangler.toml's \"kv-namespaces\" array:"),
                     };
-                    println!(
-                        "{{ binding = \"{}\", id = \"{}\" }}",
-                        binding, namespace.id
-                    );
+                    println!("{{ binding = \"{}\", id = \"{}\" }}", binding, namespace.id);
                 }
             }
         }

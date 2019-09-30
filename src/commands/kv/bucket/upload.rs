@@ -60,14 +60,14 @@ pub fn upload_files(
     while !(pairs.is_empty() && key_value_batch.is_empty()) {
         if pairs.is_empty() {
             // Last batch to upload
-            call_put_bulk_api(target, &user, namespace_id, &mut key_value_batch)?;
+            call_api(target, &user, namespace_id, &mut key_value_batch)?;
         } else {
             let pair = pairs.pop().unwrap();
             if key_count + 1 > PAIRS_MAX_COUNT
             // Keep upload size small to keep KV bulk API happy
             || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
             {
-                call_put_bulk_api(target, &user, namespace_id, &mut key_value_batch)?;
+                call_api(target, &user, namespace_id, &mut key_value_batch)?;
 
                 // If upload successful, reset counters
                 key_count = 0;
@@ -84,7 +84,7 @@ pub fn upload_files(
     Ok(asset_manifest)
 }
 
-fn call_put_bulk_api(
+fn call_api(
     target: &Target,
     user: &GlobalUser,
     namespace_id: &str,
