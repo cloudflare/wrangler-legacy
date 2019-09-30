@@ -39,6 +39,6 @@ pub fn call_api(
 
     client.request(&ListNamespaces {
         account_identifier: &target.account_id,
-        params: params,
+        params,
     })
 }
