@@ -31,7 +31,7 @@ pub fn call_api(
     user: &GlobalUser,
 ) -> Result<ApiSuccess<Vec<WorkersKvNamespace>>, ApiFailure> {
     let client = kv::api_client(user);
-
+    
     let params = ListNamespacesParams {
         page: Some(PAGE_NUMBER),
         per_page: Some(MAX_NAMESPACES_PER_PAGE),
