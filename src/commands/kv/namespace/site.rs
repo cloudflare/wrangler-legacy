@@ -14,7 +14,6 @@ pub fn site(
     preview: bool,
 ) -> Result<WorkersKvNamespace, failure::Error> {
     kv::validate_target(target)?;
-    let client = kv::api_client(user)?;
 
     let title = if preview {
         format!("__{}-{}", target.name, "workers_sites_assets_preview")
@@ -22,6 +21,10 @@ pub fn site(
         format!("__{}-{}", target.name, "workers_sites_assets")
     };
 
+    // We call CreateNamespace here directly because we want raw access to the
+    // response codes; the implementations in commands::kv::namespace cannot surface
+    // the raw response
+    let client = kv::api_client(user)?;
     let response = client.request(&CreateNamespace {
         account_identifier: &target.account_id,
         params: CreateNamespaceParams {
