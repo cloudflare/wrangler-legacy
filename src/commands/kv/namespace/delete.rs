@@ -6,7 +6,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn delete(target: &Target, user: GlobalUser, id: &str) -> Result<(), failure::Error> {
+pub fn delete(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
     let client = kv::api_client(user)?;
 
