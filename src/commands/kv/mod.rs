@@ -63,8 +63,8 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
     )
 }
 
-fn api_client(user: GlobalUser) -> Result<HttpApiClient, failure::Error> {
-    Ok(HttpApiClient::new(Credentials::from(user)))
+fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
+    Ok(HttpApiClient::new(Credentials::from(user.to_owned())))
 }
 
 fn format_error(e: ApiFailure) -> String {

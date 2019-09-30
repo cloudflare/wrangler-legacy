@@ -11,7 +11,7 @@ use regex::Regex;
 pub fn create(
     target: &Target,
     env: Option<&str>,
-    user: GlobalUser,
+    user: &GlobalUser,
     binding: &str,
 ) -> Result<(), failure::Error> {
     kv::validate_target(target)?;

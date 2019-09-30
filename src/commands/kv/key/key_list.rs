@@ -25,7 +25,7 @@ pub struct KeyList {
 impl KeyList {
     pub fn new(
         target: &Target,
-        user: GlobalUser,
+        user: &GlobalUser,
         namespace_id: &str,
         prefix: Option<&str>,
     ) -> Result<KeyList, failure::Error> {
