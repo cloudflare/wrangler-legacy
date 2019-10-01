@@ -439,12 +439,14 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("build") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = &manifest.get_target(matches.value_of("env"))?;
+        let env = matches.value_of("env");
+        let target = &manifest.get_target(env)?;
         commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"))?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
 
         // the preview command can be called with or without a Global User having been config'd
         // so we convert this Result into an Option
@@ -471,13 +473,15 @@ fn run() -> Result<(), failure::Error> {
 
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
-        let mut target = manifest.get_target(matches.value_of("env"))?;
+        let env = matches.value_of("env");
+        let mut target = manifest.get_target(env)?;
 
         commands::publish(&user, &mut target)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"))?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -499,7 +503,8 @@ fn run() -> Result<(), failure::Error> {
                 commands::kv::namespace::create(&target, env, &user, binding)?;
             }
             ("delete", Some(delete_matches)) => {
-                let target = manifest.get_target(delete_matches.value_of("env"))?;
+                let env = delete_matches.value_of("env");
+                let target = manifest.get_target(env)?;
                 let namespace_id = match delete_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -512,8 +517,9 @@ fn run() -> Result<(), failure::Error> {
                 commands::kv::namespace::delete(&target, &user, &namespace_id)?;
             }
             ("list", Some(list_matches)) => {
-                let target = manifest.get_target(list_matches.value_of("env"))?;
-                commands::kv::namespace::list(&target, user)?;
+                let env = list_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                commands::kv::namespace::list(&target, &user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
             _ => unreachable!(),
@@ -526,7 +532,8 @@ fn run() -> Result<(), failure::Error> {
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
-                let target = manifest.get_target(subcommand_matches.value_of("env"))?;
+                let env = subcommand_matches.value_of("env");
+                let target = manifest.get_target(env)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -584,7 +591,8 @@ fn run() -> Result<(), failure::Error> {
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
-                let target = manifest.get_target(subcommand_matches.value_of("env"))?;
+                let env = subcommand_matches.value_of("env");
+                let target = manifest.get_target(env)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
