@@ -71,7 +71,7 @@ fn run() -> Result<(), failure::Error> {
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
-        .author("ashley g williams <ashley666ashley@gmail.com>")
+        .author("The Wrangler Team <wrangler@cloudflare.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
         .subcommand(
@@ -509,7 +509,7 @@ fn run() -> Result<(), failure::Error> {
                 let env = create_matches.value_of("env");
                 let target = manifest.get_target(env, false)?;
                 let binding = create_matches.value_of("binding").unwrap();
-                commands::kv::namespace::create(&target, env, user, binding)?;
+                commands::kv::namespace::create(&target, env, &user, binding)?;
             }
             ("delete", Some(delete_matches)) => {
                 let target = manifest.get_target(delete_matches.value_of("env"), false)?;
@@ -522,11 +522,11 @@ fn run() -> Result<(), failure::Error> {
                         .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                         .to_string(),
                 };
-                commands::kv::namespace::delete(&target, user, &namespace_id)?;
+                commands::kv::namespace::delete(&target, &user, &namespace_id)?;
             }
             ("list", Some(list_matches)) => {
                 let target = manifest.get_target(list_matches.value_of("env"), false)?;
-                commands::kv::namespace::list(&target, user)?;
+                commands::kv::namespace::list(&target, &user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
             _ => unreachable!(),
@@ -557,7 +557,7 @@ fn run() -> Result<(), failure::Error> {
         match (subcommand, subcommand_matches) {
             ("get", Some(get_key_matches)) => {
                 let key = get_key_matches.value_of("key").unwrap();
-                commands::kv::key::get(&target, user, &namespace_id, key)?
+                commands::kv::key::get(&target, &user, &namespace_id, key)?
             }
             ("put", Some(put_key_matches)) => {
                 let key = put_key_matches.value_of("key").unwrap();
@@ -569,7 +569,7 @@ fn run() -> Result<(), failure::Error> {
                 let ttl = put_key_matches.value_of("expiration-ttl");
                 commands::kv::key::put(
                     &target,
-                    user,
+                    &user,
                     &namespace_id,
                     key,
                     &value,
@@ -580,11 +580,11 @@ fn run() -> Result<(), failure::Error> {
             }
             ("delete", Some(delete_key_matches)) => {
                 let key = delete_key_matches.value_of("key").unwrap();
-                commands::kv::key::delete(&target, user, &namespace_id, key)?
+                commands::kv::key::delete(&target, &user, &namespace_id, key)?
             }
             ("list", Some(list_key_matches)) => {
                 let prefix = list_key_matches.value_of("prefix");
-                commands::kv::key::list(&target, user, &namespace_id, prefix)?
+                commands::kv::key::list(&target, &user, &namespace_id, prefix)?
             }
             ("", None) => message::warn("kv:key expects a subcommand"),
             _ => unreachable!(),
@@ -615,11 +615,11 @@ fn run() -> Result<(), failure::Error> {
         match (subcommand, subcommand_matches) {
             ("put", Some(put_bulk_matches)) => {
                 let path = put_bulk_matches.value_of("path").unwrap();
-                commands::kv::bulk::put(&target, user, &namespace_id, Path::new(path))?
+                commands::kv::bulk::put(&target, &user, &namespace_id, Path::new(path))?
             }
             ("delete", Some(delete_bulk_matches)) => {
                 let path = delete_bulk_matches.value_of("path").unwrap();
-                commands::kv::bulk::delete(&target, user, &namespace_id, Path::new(path))?
+                commands::kv::bulk::delete(&target, &user, &namespace_id, Path::new(path))?
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
