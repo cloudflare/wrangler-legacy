@@ -71,7 +71,7 @@ fn run() -> Result<(), failure::Error> {
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
-        .author("ashley g williams <ashley666ashley@gmail.com>")
+        .author("The Wrangler Team <wrangler@cloudflare.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
         .subcommand(
