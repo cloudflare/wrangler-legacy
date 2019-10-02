@@ -53,7 +53,6 @@ pub struct Target {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
-    pub workers_dev: bool,
     pub zone_id: Option<String>,
     pub site: Option<Site>,
 }
@@ -179,23 +178,20 @@ impl Manifest {
             account_id: self.account_id.clone(),         // MAY inherit
             webpack_config: self.webpack_config.clone(), // MAY inherit
             zone_id: self.zone_id.clone(),               // MAY inherit
-            workers_dev: true,                           // MAY inherit
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(),                   // MAY inherit
             kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
-            route: None,                               // MUST NOT inherit
-            routes: self.routes.clone(),               // MUST NOT inherit
-            site: self.site.clone(),                   // MUST NOT inherit
+            route: None, // can inherit None, but not Some (see negotiate_zoneless)
+            routes: self.routes.clone(), // MUST NOT inherit
+            site: self.site.clone(), // MUST NOT inherit
         };
 
         let environment = self.get_environment(environment_name)?;
 
         self.check_private(environment);
 
-        let (route, workers_dev) = self.negotiate_zoneless(environment)?;
-        target.route = route;
-        target.workers_dev = workers_dev;
+        target.route = self.negotiate_zoneless(environment)?;
         if let Some(environment) = environment {
             target.name = if let Some(name) = &environment.name {
                 name.clone()
@@ -254,51 +250,70 @@ impl Manifest {
     fn negotiate_zoneless(
         &self,
         environment: Option<&Environment>,
-    ) -> Result<(Option<String>, bool), failure::Error> {
-        let wdd_failure = "Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.";
+    ) -> Result<Option<String>, failure::Error> {
+        let conflicting_targets_failure = "Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.";
         let pick_target_failure =
             "You must specify either `workers_dev` or `route` and `zone_id` in order to publish.";
+        let empty_route_failure =
+            "If you want to deploy to workers.dev, remove `route` from your environment config.";
 
-        if let Some(env) = &environment {
-            if let Some(wdd) = env.workers_dev {
-                if let Some(route) = &env.route {
-                    if !route.is_empty() {
-                        if wdd {
-                            failure::bail!(wdd_failure)
-                        } else {
-                            return Ok((Some(route.clone()), false));
-                        }
-                    }
-                }
-            } else if let Some(wdd) = self.workers_dev {
-                if let Some(route) = &env.route {
-                    if wdd && !route.is_empty() {
-                        return Ok((Some(route.clone()), false)); // allow route to override workers_dev = true if wdd is inherited
-                    }
-                } else if wdd {
-                    return Ok((None, true));
-                }
-            } else if let Some(route) = &env.route {
-                if !route.is_empty() {
-                    return Ok((Some(route.clone()), false));
-                }
-            }
-        } else if let Some(route) = &self.route {
-            if let Some(wdd) = self.workers_dev {
-                if wdd && !route.is_empty() {
-                    failure::bail!(wdd_failure)
-                } else if wdd {
-                    return Ok((None, true));
-                }
-            }
-            return Ok((Some(route.clone()), false));
-        } else if let Some(wdd) = self.workers_dev {
-            if wdd {
-                return Ok((None, true));
-            }
+        log::debug!("top level workers_dev: {:?}", self.workers_dev);
+        log::debug!("top level route: {:?}", self.route);
+
+        // start with top level configuration
+        let (top_workers_dev, top_route) = match (self.workers_dev, self.route.clone()) {
+            (None, Some(route)) => (false, Some(route)),
+            (Some(workers_dev), None) => (workers_dev, None),
+            (Some(workers_dev), Some(route)) => (workers_dev, Some(route)),
+            (None, None) => (false, None),
         };
 
-        failure::bail!(pick_target_failure)
+        // override top level with environment
+        let (workers_dev, route) = if let Some(env) = &environment {
+            log::debug!("env workers_dev: {:?}", env.workers_dev);
+            log::debug!("env route: {:?}", env.route);
+            match (env.workers_dev, env.route.clone()) {
+                (None, Some(route)) => {
+                    if top_workers_dev && route.is_empty() {
+                        failure::bail!(empty_route_failure)
+                    } else {
+                        (false, Some(route))
+                    }
+                }
+                (Some(workers_dev), None) => (workers_dev, None),
+                (Some(workers_dev), Some(route)) => {
+                    if route.is_empty() && workers_dev {
+                        failure::bail!(empty_route_failure)
+                    }
+                    (workers_dev, Some(route))
+                }
+                (None, None) => (top_workers_dev, top_route),
+            }
+        } else {
+            (top_workers_dev, top_route)
+        };
+
+        log::debug!("negotiated workers_dev: {}", workers_dev);
+        log::debug!("negotiated route: {:?}", route);
+
+        match (workers_dev, route) {
+            (true, None) => Ok(None),
+            (true, Some(route)) => {
+                if route.is_empty() {
+                    Ok(None)
+                } else {
+                    failure::bail!(conflicting_targets_failure)
+                }
+            }
+            (false, Some(route)) => {
+                if route.is_empty() {
+                    failure::bail!(pick_target_failure)
+                } else {
+                    Ok(Some(route))
+                }
+            }
+            (false, None) => failure::bail!(pick_target_failure),
+        }
     }
 
     fn check_private(&self, environment: Option<&Environment>) {
