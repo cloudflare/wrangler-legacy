@@ -1,8 +1,9 @@
 use std::collections::HashSet;
+use std::time::Duration;
 
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
-use cloudflare::framework::HttpApiClient;
+use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
 
 use http::status::StatusCode;
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
@@ -63,8 +64,14 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
     )
 }
 
-fn api_client(user: &GlobalUser) -> HttpApiClient {
-    HttpApiClient::new(Credentials::from(user.to_owned()))
+fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
+    HttpApiClient::new(
+        Credentials::from(user.to_owned()),
+        HttpApiClientConfig {
+            // Use 3 minute timeout instead of default 30-second one.
+            http_timeout: Duration::from_secs(3 * 60),
+        },
+    )
 }
 
 fn format_error(e: ApiFailure) -> String {
