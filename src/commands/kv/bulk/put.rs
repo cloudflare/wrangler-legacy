@@ -49,7 +49,7 @@ pub fn put_bulk(
     namespace_id: &str,
     pairs: Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {
-    let client = kv::api_client(user)?;
+    let client = kv::api_client(user);
 
     // Validate that bulk upload is within size constraints
     if pairs.len() > MAX_PAIRS {
