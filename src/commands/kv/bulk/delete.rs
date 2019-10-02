@@ -63,7 +63,7 @@ pub fn delete_bulk(
     namespace_id: &str,
     keys: Vec<String>,
 ) -> Result<(), failure::Error> {
-    let client = kv::api_client(user)?;
+    let client = kv::api_client(user);
 
     // Check number of pairs is under limit
     if keys.len() > MAX_PAIRS {
