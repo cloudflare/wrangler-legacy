@@ -143,34 +143,27 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
             emoji::WARN
         ))
     }
-    let subdomain = Subdomain::get_as_option(&target.account_id, user);
-    match subdomain {
-        Ok(None) => register_subdomain(&name, &user, &target),
-        Ok(Some(subdomain)) => {
-            let msg = format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain);
-            message::user_error(&msg);
-            Ok(())
-        }
-        Err(error) => Err(error),
+    let subdomain = Subdomain::get_as_option(&target.account_id, user)?;
+    if let Some(subdomain) = subdomain {
+        let msg = format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain);
+        message::user_error(&msg);
+        Ok(())
+    } else {
+        register_subdomain(&name, &user, &target)
     }
 }
 
 pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    let subdomain = Subdomain::get_as_option(&target.account_id, user);
-    match subdomain {
-        Ok(None) => {
-            let msg = format!(
-                "No subdomain registered. Use `wrangler subdomain <name>` to register one."
-            );
-            message::user_error(&msg);
-            Ok(())
-        }
-        Ok(Some(subdomain)) => {
-            let msg = format!("{}.workers.dev", subdomain);
-            message::info(&msg);
-            Ok(())
-        }
-        Err(error) => Err(error),
+    let subdomain = Subdomain::get_as_option(&target.account_id, user)?;
+    if let Some(subdomain) = subdomain {
+        let msg = format!("{}.workers.dev", subdomain);
+        message::info(&msg);
+        Ok(())
+    } else {
+        let msg =
+            format!("No subdomain registered. Use `wrangler subdomain <name>` to register one.");
+        message::user_error(&msg);
+        Ok(())
     }
 }
 
