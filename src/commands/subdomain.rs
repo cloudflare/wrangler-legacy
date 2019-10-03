@@ -70,7 +70,11 @@ fn subdomain_addr(account_id: &str) -> String {
     )
 }
 
-fn register_domain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+fn register_subdomain(
+    name: &str,
+    user: &GlobalUser,
+    target: &Target,
+) -> Result<(), failure::Error> {
     let msg = format!(
         "Registering your subdomain, {}.workers.dev, this could take up to a minute.",
         name
@@ -132,11 +136,7 @@ fn register_domain(name: &str, user: &GlobalUser, target: &Target) -> Result<(),
     Ok(())
 }
 
-pub fn subdomain(
-    name: Option<&str>,
-    user: &GlobalUser,
-    target: &Target,
-) -> Result<(), failure::Error> {
+pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     if target.account_id.is_empty() {
         failure::bail!(format!(
             "{} You must provide an account_id in your wrangler.toml before creating a subdomain!",
@@ -144,26 +144,33 @@ pub fn subdomain(
         ))
     }
     let subdomain = Subdomain::get_as_option(&target.account_id, user);
-    return match (name, subdomain) {
-        (None, Ok(None)) => {
+    return match subdomain {
+        Ok(None) => register_subdomain(&name, &user, &target),
+        Ok(Some(subdomain)) => {
+            let msg = format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain);
+            message::user_error(&msg);
+            Ok(())
+        }
+        Err(error) => Err(error),
+    };
+}
+
+pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    let subdomain = Subdomain::get_as_option(&target.account_id, user);
+    return match subdomain {
+        Ok(None) => {
             let msg = format!(
                 "No subdomain registered. Use `wrangler subdomain <name>` to register one."
             );
             message::user_error(&msg);
             Ok(())
         }
-        (None, Ok(Some(subdomain))) => {
+        Ok(Some(subdomain)) => {
             let msg = format!("{}.workers.dev", subdomain);
             message::info(&msg);
             Ok(())
         }
-        (Some(name), Ok(None)) => register_domain(&name, &user, &target),
-        (Some(_), Ok(Some(subdomain))) => {
-            let msg = format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain);
-            message::user_error(&msg);
-            Ok(())
-        }
-        (_, Err(error)) => Err(error),
+        Err(error) => Err(error),
     };
 }
 

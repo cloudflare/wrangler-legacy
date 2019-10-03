@@ -499,7 +499,11 @@ fn run() -> Result<(), failure::Error> {
 
         let name = matches.value_of("name");
 
-        commands::subdomain(name, &user, &target)?;
+        if let Some(name) = name {
+            commands::subdomain::set_subdomain(&name, &user, &target)?;
+        } else {
+            commands::subdomain::get_subdomain(&user, &target)?;
+        }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::target::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;

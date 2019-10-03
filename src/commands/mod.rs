@@ -20,7 +20,8 @@ pub use publish::preview::preview;
 pub use publish::preview::HTTPMethod;
 pub use publish::publish;
 use regex::Regex;
-pub use subdomain::subdomain;
+pub use subdomain::get_subdomain;
+pub use subdomain::set_subdomain;
 pub use whoami::whoami;
 
 /// Run the given command and return its stdout.
