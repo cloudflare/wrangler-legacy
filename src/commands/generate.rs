@@ -28,7 +28,7 @@ pub fn generate(
     Manifest::generate(name.to_string(), target_type, &config_path, generated_site)?;
 
     // Writes .wranglerignore file.
-    wrangler_ignore::write_default_wranglerignore(&config_path)?;
+    wrangler_ignore::create_wrangler_ignore_file(&config_path)?;
 
     Ok(())
 }
