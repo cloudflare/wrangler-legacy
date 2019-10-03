@@ -15,6 +15,7 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
+use ignore::overrides::{Override, OverrideBuilder};
 use ignore::WalkBuilder;
 
 use crate::settings::wrangler_ignore;
@@ -28,8 +29,11 @@ pub fn directory_keys_values(
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
 
+    let required_override = build_required_ignore(directory)?;
+
     for entry in WalkBuilder::new(directory)
         .add_custom_ignore_filename(wrangler_ignore::WRANGLER_IGNORE)
+        .overrides(required_override)
         .build()
     {
         let entry = entry.unwrap();
@@ -63,8 +67,12 @@ pub fn directory_keys_values(
 // Returns only the hashed keys for a directory's files.
 fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> {
     let mut upload_vec: Vec<String> = Vec::new();
+
+    let required_override = build_required_ignore(directory)?;
+
     for entry in WalkBuilder::new(directory)
         .add_custom_ignore_filename(wrangler_ignore::WRANGLER_IGNORE)
+        .overrides(required_override)
         .build()
     {
         let entry = entry.unwrap();
@@ -81,6 +89,15 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
         }
     }
     Ok(upload_vec)
+}
+
+fn build_required_ignore(directory: &Path) -> Result<Override, failure::Error> {
+    let mut required_override = OverrideBuilder::new(directory);
+    for ignored in wrangler_ignore::REQUIRED_IGNORE_FILES {
+        required_override.add(&format!("!{}", ignored))?;
+    }
+    let exclude = required_override.build()?;
+    Ok(exclude)
 }
 
 // Courtesy of Steve Klabnik's PoC :) Used for bulk operations (write, delete)
@@ -176,7 +193,7 @@ mod tests {
         // Populate .wrangerignore file. If it already exists, replace it
         // with the default .wranglerignore settings.
         if fs::metadata(wrangler_ignore::WRANGLER_IGNORE).is_err() {
-            wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
+            wrangler_ignore::create_wrangler_ignore_file(Path::new("./")).unwrap();
         }
 
         let test_dir = "test1";
@@ -202,10 +219,10 @@ mod tests {
         // Populate .wrangerignore file. If it already exists, replace it
         // with the default .wranglerignore settings.
         if fs::metadata(wrangler_ignore::WRANGLER_IGNORE).is_err() {
-            wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
+            wrangler_ignore::create_wrangler_ignore_file(Path::new("./")).unwrap();
         }
 
-        wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
+        wrangler_ignore::create_wrangler_ignore_file(Path::new("./")).unwrap();
 
         let test_dir = "test2";
         // If test dir already exists, delete it.
@@ -231,10 +248,10 @@ mod tests {
         // Populate .wrangerignore file. If it already exists, replace it
         // with the default .wranglerignore settings.
         if fs::metadata(wrangler_ignore::WRANGLER_IGNORE).is_err() {
-            wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
+            wrangler_ignore::create_wrangler_ignore_file(Path::new("./")).unwrap();
         }
 
-        wrangler_ignore::write_default_wranglerignore(Path::new("./")).unwrap();
+        wrangler_ignore::create_wrangler_ignore_file(Path::new("./")).unwrap();
 
         let test_dir = "test3";
         // If test dir already exists, delete it.

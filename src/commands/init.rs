@@ -30,7 +30,7 @@ pub fn init(
     message::success("Succesfully created a `wrangler.toml`");
 
     // Writes .wranglerignore file.
-    wrangler_ignore::write_default_wranglerignore(&config_path)?;
+    wrangler_ignore::create_wrangler_ignore_file(&config_path)?;
 
     if site {
         let env = None;
