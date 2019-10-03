@@ -35,6 +35,22 @@ impl Site {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct TemplateConfig {
+    #[serde(rename = "type")]
+    pub target_type: TargetType,
+    pub webpack_config: Option<String>,
+}
+
+impl Default for TemplateConfig {
+    fn default() -> TemplateConfig {
+        TemplateConfig {
+            target_type: TargetType::default(),
+            webpack_config: None,
+        }
+    }
+}
+
 impl Default for Site {
     fn default() -> Site {
         Site {
@@ -143,27 +159,48 @@ impl Manifest {
 
     pub fn generate(
         name: String,
-        target_type: TargetType,
+        target_type: Option<TargetType>,
         config_path: &PathBuf,
         site: Option<Site>,
     ) -> Result<Manifest, failure::Error> {
+        let config_file = config_path.join("wrangler.toml");
+        let template_config_content = fs::read_to_string(&config_file);
+        let template_config = match &template_config_content {
+            Ok(content) => {
+                let config: TemplateConfig = toml::from_str(content)?;
+                if let Some(target_type) = target_type.clone() {
+                    if config.target_type != target_type {
+                        message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
+                    }
+                }
+                Ok(config)
+            }
+            Err(err) => Err(err),
+        };
+        let template_config = match template_config {
+            Ok(config) => config,
+            Err(err) => {
+                log::info!("Error parsing template {}", err);
+                log::debug!("template content {:?}", template_config_content);
+                TemplateConfig::default()
+            }
+        };
         let manifest = Manifest {
             account_id: String::new(),
             env: None,
             kv_namespaces: None,
             name: name.clone(),
             private: None,
-            target_type: target_type.clone(),
+            target_type: target_type.unwrap_or_else(|| template_config.clone().target_type),
             route: Some(String::new()),
             routes: None,
-            webpack_config: None,
+            webpack_config: template_config.webpack_config,
             workers_dev: Some(true),
             zone_id: Some(String::new()),
             site,
         };
 
         let toml = toml::to_string(&manifest)?;
-        let config_file = config_path.join("wrangler.toml");
 
         log::info!("Writing a wrangler.toml file at {}", config_file.display());
         fs::write(&config_file, &toml)?;

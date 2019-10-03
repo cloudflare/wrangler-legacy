@@ -13,9 +13,7 @@ pub fn generate(
     site: bool,
 ) -> Result<(), failure::Error> {
     validate_worker_name(name)?;
-
-    let target_type = target_type.unwrap_or_else(|| get_target_type(template));
-    run_generate(name, template, &target_type)?;
+    run_generate(name, template)?;
     let config_path = PathBuf::from("./").join(&name);
     // TODO: this is tightly coupled to our site template. Need to remove once
     // we refine our generate logic.
@@ -29,28 +27,23 @@ pub fn generate(
     Ok(())
 }
 
-pub fn run_generate(
-    name: &str,
-    template: &str,
-    target_type: &TargetType,
-) -> Result<(), failure::Error> {
+pub fn run_generate(name: &str, template: &str) -> Result<(), failure::Error> {
     let tool_name = "cargo-generate";
     let binary_path = install::install(tool_name, "ashleygwilliams")?.binary(tool_name)?;
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
 
-    let command = command(name, binary_path, &args, &target_type);
+    let command = command(name, binary_path, &args);
     let command_name = format!("{:?}", command);
 
     commands::run(command, &command_name)?;
     Ok(())
 }
 
-fn command(name: &str, binary_path: PathBuf, args: &[&str], project_type: &TargetType) -> Command {
+fn command(name: &str, binary_path: PathBuf, args: &[&str]) -> Command {
     let msg = format!(
-        "{} Generating a new {} worker project with name '{}'...",
+        "{} Generating a new worker project with name '{}'...",
         emoji::SHEEP,
-        project_type,
         name
     );
 
@@ -67,11 +60,4 @@ fn command(name: &str, binary_path: PathBuf, args: &[&str], project_type: &Targe
 
     c.args(args);
     c
-}
-
-fn get_target_type(template: &str) -> TargetType {
-    if template.contains("rust") {
-        return TargetType::Rust;
-    }
-    TargetType::default()
 }
