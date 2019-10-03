@@ -122,10 +122,12 @@ fn url_encode_key(key: &str) -> String {
 // (no KV error code is given).
 fn print_status_code_context(status_code: StatusCode) {
     match status_code {
+        // Folks should never hit PAYLOAD_TOO_LARGE, given that Wrangler ensures that bulk file uploads
+        // are max ~50 MB in size. This case is handled anyways out of an abundance of caution.
         StatusCode::PAYLOAD_TOO_LARGE =>
-            message::warn("Returned status code 413, Payload Too Large. Make sure your upload is less than 100MB in size"),
+            message::warn("Returned status code 413, Payload Too Large. Please make sure your upload is less than 100MB in size"),
         StatusCode::GATEWAY_TIMEOUT =>
-            message::warn("Returned status code 504, Gateway Timeout. Try again in a few seconds"),
+            message::warn("Returned status code 504, Gateway Timeout. Please try again in a few seconds"),
         _ => (),
     }
 }
