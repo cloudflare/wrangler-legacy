@@ -18,22 +18,22 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::WalkBuilder;
 
-use crate::settings::wrangler_ignore;
 use crate::terminal::message;
+use crate::settings::target::{Target, Site};
 
 // Returns the hashed key and value pair for all files in a directory.
 pub fn directory_keys_values(
+    target: &Target,
     directory: &Path,
     verbose: bool,
 ) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
 
-    let required_override = build_required_ignore(directory)?;
+    let ignore = build_ignore(target.site, directory)?;
 
     for entry in WalkBuilder::new(directory)
-        .add_custom_ignore_filename(wrangler_ignore::WRANGLER_IGNORE)
-        .overrides(required_override)
+        .overrides(ignore)
         .build()
     {
         let entry = entry.unwrap();
@@ -65,14 +65,13 @@ pub fn directory_keys_values(
 }
 
 // Returns only the hashed keys for a directory's files.
-fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> {
+fn directory_keys_only(target: &Target, directory: &Path) -> Result<Vec<String>, failure::Error> {
     let mut upload_vec: Vec<String> = Vec::new();
 
-    let required_override = build_required_ignore(directory)?;
+    let ignore = build_ignore(target.site, directory)?;
 
     for entry in WalkBuilder::new(directory)
-        .add_custom_ignore_filename(wrangler_ignore::WRANGLER_IGNORE)
-        .overrides(required_override)
+        .overrides(ignore)
         .build()
     {
         let entry = entry.unwrap();
@@ -91,11 +90,29 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
     Ok(upload_vec)
 }
 
-fn build_required_ignore(directory: &Path) -> Result<Override, failure::Error> {
+const REQUIRED_IGNORE_FILES: &[&str] = &["node_modules"];
+
+fn build_ignore(site: Option<Site>, directory: &Path) -> Result<Override, failure::Error> {
     let mut required_override = OverrideBuilder::new(directory);
-    for ignored in wrangler_ignore::REQUIRED_IGNORE_FILES {
+    // First include files that must be ignored.
+    for ignored in REQUIRED_IGNORE_FILES {
         required_override.add(&format!("!{}", ignored))?;
     }
+
+    if let Some(s) = site {
+        // If `include` present, use it and don't touch the `exclude` field
+        if let Some(included) = s.include {
+            for i in included {
+                required_override.add(&i)?;
+            }
+        // If `exclude` only present, ignore anything in it.
+        } else if let Some(excluded) = s.exclude {
+            for e in excluded {
+                required_override.add(&format!("!{}", e))?;
+            }
+        }
+    }
+
     let exclude = required_override.build()?;
     Ok(exclude)
 }
@@ -186,15 +203,14 @@ mod tests {
     use std::fs;
     use std::path::{Path, PathBuf};
 
-    use crate::settings::wrangler_ignore;
+    use crate::settings::target::{Target, Site};
+
+    fn make_target() -> Target
 
     #[test]
     fn it_can_ignore_dir() {
         // Populate .wrangerignore file. If it already exists, replace it
         // with the default .wranglerignore settings.
-        if fs::metadata(wrangler_ignore::WRANGLER_IGNORE).is_err() {
-            wrangler_ignore::create_wrangler_ignore_file(Path::new("./")).unwrap();
-        }
 
         let test_dir = "test1";
         // If test dir already exists, delete it.

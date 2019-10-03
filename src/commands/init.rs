@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use crate::commands;
 use crate::commands::validate_worker_name;
 use crate::settings::target::{Manifest, Site, TargetType};
-use crate::settings::wrangler_ignore;
 use crate::terminal::message;
 
 pub fn init(
@@ -28,9 +27,6 @@ pub fn init(
         initialized_site,
     )?;
     message::success("Succesfully created a `wrangler.toml`");
-
-    // Writes .wranglerignore file.
-    wrangler_ignore::create_wrangler_ignore_file(&config_path)?;
 
     if site {
         let env = None;

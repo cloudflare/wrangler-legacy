@@ -3,7 +3,6 @@ use std::process::Command;
 
 use crate::commands::validate_worker_name;
 use crate::settings::target::{Manifest, Site, TargetType};
-use crate::settings::wrangler_ignore;
 use crate::terminal::{emoji, message};
 use crate::{commands, install};
 
@@ -26,9 +25,6 @@ pub fn generate(
         None
     };
     Manifest::generate(name.to_string(), target_type, &config_path, generated_site)?;
-
-    // Writes .wranglerignore file.
-    wrangler_ignore::create_wrangler_ignore_file(&config_path)?;
 
     Ok(())
 }
