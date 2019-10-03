@@ -22,8 +22,8 @@ pub struct Site {
     pub bucket: String,
     #[serde(rename = "entry-point")]
     pub entry_point: Option<String>,
-    pub exclude: Option<Vec<String>>,
     pub include: Option<Vec<String>>,
+    pub exclude: Option<Vec<String>>,
 }
 
 impl Site {
@@ -40,8 +40,8 @@ impl Default for Site {
         Site {
             bucket: String::new(),
             entry_point: Some(String::from(SITE_ENTRY_POINT)),
-            exclude: None,
             include: None,
+            exclude: None,
         }
     }
 }
