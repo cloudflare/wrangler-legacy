@@ -144,7 +144,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
         ))
     }
     let subdomain = Subdomain::get_as_option(&target.account_id, user);
-    return match subdomain {
+    match subdomain {
         Ok(None) => register_subdomain(&name, &user, &target),
         Ok(Some(subdomain)) => {
             let msg = format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain);
@@ -152,12 +152,12 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
             Ok(())
         }
         Err(error) => Err(error),
-    };
+    }
 }
 
 pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     let subdomain = Subdomain::get_as_option(&target.account_id, user);
-    return match subdomain {
+    match subdomain {
         Ok(None) => {
             let msg = format!(
                 "No subdomain registered. Use `wrangler subdomain <name>` to register one."
@@ -171,7 +171,7 @@ pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::
             Ok(())
         }
         Err(error) => Err(error),
-    };
+    }
 }
 
 fn already_has_subdomain(errors: Vec<Error>) -> bool {
