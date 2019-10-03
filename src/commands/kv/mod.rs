@@ -68,8 +68,9 @@ fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
     HttpApiClient::new(
         Credentials::from(user.to_owned()),
         HttpApiClientConfig {
-            // Use 3 minute timeout instead of default 30-second one.
-            http_timeout: Duration::from_secs(3 * 60),
+            // Use 5 minute timeout instead of default 30-second one.
+            // This is useful for bulk upload operations.
+            http_timeout: Duration::from_secs(5 * 60),
         },
     )
 }
@@ -77,7 +78,7 @@ fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
 fn format_error(e: ApiFailure) -> String {
     match e {
         ApiFailure::Error(status, api_errors) => {
-            give_status_code_context(status);
+            print_status_code_context(status);
             let mut complete_err = "".to_string();
             for error in api_errors.errors {
                 let error_msg =
@@ -119,9 +120,13 @@ fn url_encode_key(key: &str) -> String {
 
 // For handling cases where the API gateway returns errors via HTTP status codes
 // (no KV error code is given).
-fn give_status_code_context(status_code: StatusCode) {
-    if let StatusCode::PAYLOAD_TOO_LARGE = status_code {
-        message::warn("Returned status code 413, Payload Too Large. Make sure your upload is less than 100MB in size")
+fn print_status_code_context(status_code: StatusCode) {
+    match status_code {
+        StatusCode::PAYLOAD_TOO_LARGE =>
+            message::warn("Returned status code 413, Payload Too Large. Make sure your upload is less than 100MB in size"),
+        StatusCode::GATEWAY_TIMEOUT =>
+            message::warn("Returned status code 504, Gateway Timeout. Try again in a few seconds"),
+        _ => (),
     }
 }
 
