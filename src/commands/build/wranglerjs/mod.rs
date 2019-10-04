@@ -247,27 +247,22 @@ pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
     Ok(())
 }
 
-// Run {npm install} in the specified directory. Skips the install if a
-// {node_modules} is found in the directory.
+// Run {npm install} in the specified directory.
 fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
+    // avoid running multiple {npm install} at the same time (eg. in tests)
     let flock_path = dir.join(&".install.lock");
     let flock = File::create(&flock_path)?;
-    // avoid running multiple {npm install} at the same time (eg. in tests)
     flock.lock_exclusive()?;
 
-    if !dir.join("node_modules").exists() {
-        let mut command = build_npm_command();
-        command.current_dir(dir.clone());
-        command.arg("install");
-        info!("Running {:?} in directory {:?}", command, dir);
+    let mut command = build_npm_command();
+    command.current_dir(dir.clone());
+    command.arg("install");
+    info!("Running {:?} in directory {:?}", command, dir);
 
-        let status = command.status()?;
+    let status = command.status()?;
 
-        if !status.success() {
-            failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
-        }
-    } else {
-        info!("skipping npm install because node_modules exists");
+    if !status.success() {
+        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
 
     // TODO(sven): figure out why the file doesn't exits in some cases?
