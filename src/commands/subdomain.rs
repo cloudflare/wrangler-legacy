@@ -30,18 +30,7 @@ impl Subdomain {
         Ok(serde_json::from_str(&res.text()?)?)
     }
 
-    pub fn get(account_id: &str, user: &GlobalUser) -> Result<String, failure::Error> {
-        let res = Subdomain::request(account_id, user)?;
-        Ok(res
-            .result
-            .expect("Oops! We expected a subdomain name, but found none.")
-            .subdomain)
-    }
-
-    pub fn get_as_option(
-        account_id: &str,
-        user: &GlobalUser,
-    ) -> Result<Option<String>, failure::Error> {
+    pub fn get(account_id: &str, user: &GlobalUser) -> Result<Option<String>, failure::Error> {
         let res = Subdomain::request(account_id, user)?;
         Ok(res.result.map(|r| r.subdomain))
     }
@@ -49,13 +38,7 @@ impl Subdomain {
 
 #[derive(Deserialize)]
 struct Response {
-    errors: Vec<Error>,
     result: Option<SubdomainResult>,
-}
-
-#[derive(Deserialize)]
-struct Error {
-    code: u32,
 }
 
 #[derive(Deserialize)]
@@ -82,44 +65,24 @@ fn register_subdomain(
     message::working(&msg);
     let account_id = &target.account_id;
     let addr = subdomain_addr(account_id);
-    let sd = Subdomain {
+    let subdomain = Subdomain {
         subdomain: name.to_string(),
     };
-    let sd_request = serde_json::to_string(&sd)?;
+    let subdomain_request = serde_json::to_string(&subdomain)?;
 
     let client = http::auth_client(None, user);
 
-    let mut res = client.put(&addr).body(sd_request).send()?;
+    let mut res = client.put(&addr).body(subdomain_request).send()?;
 
     let msg;
     if !res.status().is_success() {
         let res_text = res.text()?;
-        let res_json: Response = serde_json::from_str(&res_text)?;
-        if already_has_subdomain(res_json.errors) {
-            let sd = Subdomain::get(account_id, user)?;
-            if sd == name {
-                msg = format!(
-                    "{} You have previously registered {}.workers.dev \n Status Code: {}\n Msg: {}",
-                    emoji::WARN,
-                    sd,
-                    res.status(),
-                    res_text,
-                )
-            } else {
-                msg = format!(
-                    "{} This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev \n Status Code: {}\n Msg: {}",
-                    emoji::WARN,
-                    sd,
-                    res.status(),
-                    res_text,
-                )
-            }
-        } else if res.status() == 409 {
+        log::debug!("Status Code: {}", res.status());
+        log::debug!("Status Message: {}", res_text);
+        if res.status() == 409 {
             msg = format!(
-                "{} Your requested subdomain is not available. Please pick another one.\n Status Code: {}\n Msg: {}",
-                emoji::WARN,
-                res.status(),
-                res_text
+                "{} Your requested subdomain is not available. Please pick another one.",
+                emoji::WARN
             );
         } else {
             msg = format!(
@@ -143,35 +106,29 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
             emoji::WARN
         ))
     }
-    let subdomain = Subdomain::get_as_option(&target.account_id, user)?;
+    let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {
-        let msg = format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain);
-        message::user_error(&msg);
-        Ok(())
+        let msg;
+        if subdomain == name {
+            msg = "{} You have previously registered {}.workers.dev";
+        } else {
+            msg = "{} This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev";
+        }
+        failure::bail!(format!(msg, emoji::WARN, subdomain))
     } else {
         register_subdomain(&name, &user, &target)
     }
 }
 
 pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    let subdomain = Subdomain::get_as_option(&target.account_id, user)?;
+    let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {
         let msg = format!("{}.workers.dev", subdomain);
         message::info(&msg);
-        Ok(())
     } else {
         let msg =
             format!("No subdomain registered. Use `wrangler subdomain <name>` to register one.");
         message::user_error(&msg);
-        Ok(())
     }
-}
-
-fn already_has_subdomain(errors: Vec<Error>) -> bool {
-    for error in errors {
-        if error.code == 10036 {
-            return true;
-        }
-    }
-    false
+    Ok(())
 }
