@@ -161,7 +161,7 @@ pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::
         Ok(())
     } else {
         let msg =
-            format!("No subdomain registered. Use `wrangler subdomain <name>` to register one.");
+            "No subdomain registered. Use `wrangler subdomain <name>` to register one.".to_string();
         message::user_error(&msg);
         Ok(())
     }
