@@ -1,4 +1,5 @@
 use cloudflare::endpoints::workerskv::WorkersKvNamespace;
+use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 
 use crate::commands::kv;
@@ -19,7 +20,8 @@ pub fn site(
         format!("__{}-{}", target.name, "workers_sites_assets")
     };
 
-    let response = kv::namespace::create::call_api(target, user, &title);
+    let client = kv::api_client(user)?;
+    let response = kv::namespace::create::call_api(&client, target, &title);
 
     match response {
         Ok(success) => {
@@ -37,7 +39,7 @@ pub fn site(
                     let msg = format!("Using namespace for Workers Site \"{}\"", title);
                     message::working(&msg);
 
-                    get_id_from_namespace_list(target, user, &title)
+                    get_id_from_namespace_list(&client, target, &title)
                 } else {
                     failure::bail!("{:?}", api_errors.errors)
                 }
@@ -48,11 +50,11 @@ pub fn site(
 }
 
 fn get_id_from_namespace_list(
+    client: &impl ApiClient,
     target: &Target,
-    user: &GlobalUser,
     title: &str,
 ) -> Result<WorkersKvNamespace, failure::Error> {
-    let result = kv::namespace::list::call_api(target, user);
+    let result = kv::namespace::list::call_api(client, target);
 
     match result {
         Ok(success) => Ok(success
