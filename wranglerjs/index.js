@@ -4,7 +4,11 @@ const fs = require("fs");
 const WasmMainTemplatePlugin = require("webpack/lib/wasm/WasmMainTemplatePlugin");
 
 function error(msg) {
-  console.error("Error: " + msg);
+  if (!msg.startsWith("Error: ") {
+    msg = msg.substring(7)
+  }
+
+  console.error(msg);
   process.exit(1);
   return new Error("error");
 }
