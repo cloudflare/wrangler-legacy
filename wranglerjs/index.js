@@ -4,7 +4,7 @@ const fs = require("fs");
 const WasmMainTemplatePlugin = require("webpack/lib/wasm/WasmMainTemplatePlugin");
 
 function error(msg) {
-  if (!msg.startsWith("Error: ") {
+  if (!msg.startsWith("Error: ")) {
     msg = msg.substring(7)
   }
 
