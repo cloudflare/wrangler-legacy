@@ -246,8 +246,6 @@ There are two types of configuration that `wrangler` uses: global user and per p
 
     #### Environments
 
-    #### Environments
-
     Additionally, you can configure Wrangler to publish to multiple environments. This means that your same codebase can be deployed to multiple places on your [workers.dev](https://workers.dev) subdomain, across multiple accounts, zones, and routes. Read more [here](/docs/content/environments.md).
 
 ## Additional Installation Instructions
