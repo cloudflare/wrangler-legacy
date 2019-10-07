@@ -168,8 +168,8 @@ impl Manifest {
         let template_config = match &template_config_content {
             Ok(content) => {
                 let config: TemplateConfig = toml::from_str(content)?;
-                if let Some(target_type) = target_type.clone() {
-                    if config.target_type != target_type {
+                if let Some(target_type) = &target_type {
+                    if config.target_type != *target_type {
                         message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
                     }
                 }
