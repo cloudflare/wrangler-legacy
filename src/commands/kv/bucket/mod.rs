@@ -96,18 +96,21 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::
     // First include files that must be ignored.
     for ignored in REQUIRED_IGNORE_FILES {
         required_override.add(&format!("!{}", ignored))?;
+        log::info!("Ignoring {}", ignored);
     }
 
-    if let Some(s) = &target.site {
+    if let Some(site) = &target.site {
         // If `include` present, use it and don't touch the `exclude` field
-        if let Some(included) = &s.include {
+        if let Some(included) = &site.include {
             for i in included {
                 required_override.add(&i)?;
+                log::info!("Including {}", i);
             }
         // If `exclude` only present, ignore anything in it.
-        } else if let Some(excluded) = &s.exclude {
+        } else if let Some(excluded) = &site.exclude {
             for e in excluded {
                 required_override.add(&format!("!{}", e))?;
+                log::info!("Ignoring {}", e);
             }
         }
     }
