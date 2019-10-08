@@ -2,13 +2,13 @@ type = "webpack"
 name = "worker"
 zone_id = ""
 account_id = ""
-route = ""
+route = "dev.example.com/*"
 
 [env.production]
 name = "production-worker"
 zone_id = ""
 account_id = ""
-route = ""
+route = "example.com/*"
 
 [[env.production.kv-namespaces]]
 id = "somecrazylongidentifierstring"
@@ -22,7 +22,7 @@ binding = "prodKV-2"
 name = "staging-worker"
 zone_id = ""
 account_id = ""
-route = ""
+route = "staging.example.com/*"
 
 [[env.staging.kv-namespaces]]
 id = "somecrazylongidentifierstring"
