@@ -20,8 +20,12 @@ pub fn init(
     let target_type = target_type.unwrap_or_default();
     let config_path = PathBuf::from("./");
     let initialized_site = if site { Some(Site::default()) } else { None };
-    let manifest =
-        Manifest::generate(name.to_string(), target_type, config_path, initialized_site)?;
+    let manifest = Manifest::generate(
+        name.to_string(),
+        target_type,
+        &config_path,
+        initialized_site,
+    )?;
     message::success("Succesfully created a `wrangler.toml`");
 
     if site {

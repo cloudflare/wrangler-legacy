@@ -22,6 +22,8 @@ pub struct Site {
     pub bucket: String,
     #[serde(rename = "entry-point")]
     pub entry_point: Option<String>,
+    pub include: Option<Vec<String>>,
+    pub exclude: Option<Vec<String>>,
 }
 
 impl Site {
@@ -38,6 +40,8 @@ impl Default for Site {
         Site {
             bucket: String::new(),
             entry_point: Some(String::from(SITE_ENTRY_POINT)),
+            include: None,
+            exclude: None,
         }
     }
 }
@@ -140,7 +144,7 @@ impl Manifest {
     pub fn generate(
         name: String,
         target_type: TargetType,
-        config_path: PathBuf,
+        config_path: &PathBuf,
         site: Option<Site>,
     ) -> Result<Manifest, failure::Error> {
         let manifest = Manifest {

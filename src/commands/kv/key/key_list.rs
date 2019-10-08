@@ -32,7 +32,7 @@ impl KeyList {
         let iter = KeyList {
             keys_result: None,
             prefix: prefix.map(str::to_string),
-            client: kv::api_client(user),
+            client: kv::api_client(user)?,
             account_id: target.account_id.to_owned(),
             namespace_id: namespace_id.to_string(),
             cursor: None,

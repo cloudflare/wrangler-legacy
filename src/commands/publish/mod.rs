@@ -78,7 +78,7 @@ fn build_and_publish_script(
         target.account_id, target.name,
     );
 
-    let client = if let Some(_) = &target.site {
+    let client = if target.site.is_some() {
         http::auth_client(Some("site"), user)
     } else {
         http::auth_client(None, user)
