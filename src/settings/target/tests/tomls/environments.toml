@@ -2,12 +2,11 @@ type = "webpack"
 name = "worker"
 zone_id = ""
 account_id = ""
-route = ""
+route = "staging.example.com/*"
 
 [env.production]
 type = "webpack"
 name = "staging-worker"
 zone_id = ""
-private = false
 account_id = ""
-route = ""
+route = "example.com/*"

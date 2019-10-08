@@ -24,7 +24,12 @@ use crate::settings::target::{Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Error> {
-    log::info!("workers_dev = {}", target.workers_dev);
+    let msg = match &target.route {
+        Some(route) => &route,
+        None => "workers_dev",
+    };
+
+    log::info!("{}", msg);
 
     validate_target_required_fields_present(target)?;
     validate_worker_name(&target.name)?;
@@ -94,7 +99,7 @@ fn build_and_publish_script(
         )
     }
 
-    let pattern = if !target.workers_dev {
+    let pattern = if target.route.is_some() {
         let route = Route::new(&target)?;
         Route::publish(&user, &target, &route)?;
         log::info!("publishing to route");
@@ -212,8 +217,8 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         None => {}
     }
 
-    let destination = if !target.workers_dev {
-        // check required fields for release
+    let destination = if target.route.is_some() {
+        // check required fields for publishing to a route
         if target
             .zone_id
             .as_ref()

@@ -198,7 +198,6 @@ mod tests {
             route: None,
             routes: None,
             webpack_config: None,
-            workers_dev: false,
             zone_id: None,
             site: None,
         };
