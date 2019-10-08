@@ -11,28 +11,59 @@ pub struct Subdomain {
 }
 
 impl Subdomain {
-    fn request(account_id: &str, user: &GlobalUser) -> Result<Response, failure::Error> {
+    pub fn get(account_id: &str, user: &GlobalUser) -> Result<Option<String>, failure::Error> {
         let addr = subdomain_addr(account_id);
 
         let client = http::auth_client(None, user);
 
-        let mut res = client.get(&addr).send()?;
+        let mut response = client.get(&addr).send()?;
 
-        if !res.status().is_success() {
+        if !response.status().is_success() {
             failure::bail!(
                 "{} There was an error fetching your subdomain.\n Status Code: {}\n Msg: {}",
                 emoji::WARN,
-                res.status(),
-                res.text()?,
+                response.status(),
+                response.text()?,
             )
         }
-
-        Ok(serde_json::from_str(&res.text()?)?)
+        let response: Response = serde_json::from_str(&response.text()?)?;
+        Ok(response.result.map(|r| r.subdomain))
     }
 
-    pub fn get(account_id: &str, user: &GlobalUser) -> Result<Option<String>, failure::Error> {
-        let res = Subdomain::request(account_id, user)?;
-        Ok(res.result.map(|r| r.subdomain))
+    pub fn put(name: &str, account_id: &str, user: &GlobalUser) -> Result<(), failure::Error> {
+        let addr = subdomain_addr(account_id);
+        let subdomain = Subdomain {
+            subdomain: name.to_string(),
+        };
+        let subdomain_request = serde_json::to_string(&subdomain)?;
+
+        let client = http::auth_client(None, user);
+
+        let mut res = client.put(&addr).body(subdomain_request).send()?;
+
+        let msg;
+        if !res.status().is_success() {
+            let res_text = res.text()?;
+            log::debug!("Status Code: {}", res.status());
+            log::debug!("Status Message: {}", res_text);
+            if res.status() == 409 {
+                msg = format!(
+                    "{} Your requested subdomain is not available. Please pick another one.",
+                    emoji::WARN
+                );
+            } else {
+                msg = format!(
+                "{} There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
+                emoji::WARN,
+                res.status(),
+                res_text
+            );
+            }
+            failure::bail!(msg)
+        }
+        let msg = format!("Success! You've registered {}.", name);
+        message::success(&msg);
+        Ok(())
     }
 }
 
@@ -63,40 +94,7 @@ fn register_subdomain(
         name
     );
     message::working(&msg);
-    let account_id = &target.account_id;
-    let addr = subdomain_addr(account_id);
-    let subdomain = Subdomain {
-        subdomain: name.to_string(),
-    };
-    let subdomain_request = serde_json::to_string(&subdomain)?;
-
-    let client = http::auth_client(None, user);
-
-    let mut res = client.put(&addr).body(subdomain_request).send()?;
-
-    let msg;
-    if !res.status().is_success() {
-        let res_text = res.text()?;
-        log::debug!("Status Code: {}", res.status());
-        log::debug!("Status Message: {}", res_text);
-        if res.status() == 409 {
-            msg = format!(
-                "{} Your requested subdomain is not available. Please pick another one.",
-                emoji::WARN
-            );
-        } else {
-            msg = format!(
-                "{} There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
-                emoji::WARN,
-                res.status(),
-                res_text
-            );
-        }
-        failure::bail!(msg)
-    }
-    let msg = format!("Success! You've registered {}.", name);
-    message::success(&msg);
-    Ok(())
+    Subdomain::put(name, &target.account_id, user)
 }
 
 pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
@@ -126,7 +124,7 @@ pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::
         message::info(&msg);
     } else {
         let msg =
-            format!("No subdomain registered. Use `wrangler subdomain <name>` to register one.");
+            "No subdomain registered. Use `wrangler subdomain <name>` to register one.".to_string();
         message::user_error(&msg);
     }
     Ok(())
