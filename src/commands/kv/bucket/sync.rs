@@ -55,7 +55,7 @@ pub fn sync(
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
     let local_keys_vec: Vec<String> = match &metadata(path) {
-        Ok(file_type) if file_type.is_dir() => directory_keys_only(path),
+        Ok(file_type) if file_type.is_dir() => directory_keys_only(target, path),
         Ok(_) => failure::bail!("{} should be a directory", path.display()),
         Err(e) => failure::bail!("{}", e),
     }?;
