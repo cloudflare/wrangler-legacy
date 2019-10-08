@@ -39,30 +39,28 @@ impl Subdomain {
 
         let client = http::auth_client(None, user);
 
-        let mut res = client.put(&addr).body(subdomain_request).send()?;
+        let mut response = client.put(&addr).body(subdomain_request).send()?;
 
-        let msg;
-        if !res.status().is_success() {
-            let res_text = res.text()?;
-            log::debug!("Status Code: {}", res.status());
-            log::debug!("Status Message: {}", res_text);
-            if res.status() == 409 {
-                msg = format!(
+        if !response.status().is_success() {
+            let response_text = response.text()?;
+            log::debug!("Status Code: {}", response.status());
+            log::debug!("Status Message: {}", response_text);
+            let msg = if response.status() == 409 {
+                format!(
                     "{} Your requested subdomain is not available. Please pick another one.",
                     emoji::WARN
-                );
+                )
             } else {
-                msg = format!(
+                format!(
                 "{} There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
                 emoji::WARN,
-                res.status(),
-                res_text
-            );
-            }
+                response.status(),
+                response_text
+            )
+            };
             failure::bail!(msg)
         }
-        let msg = format!("Success! You've registered {}.", name);
-        message::success(&msg);
+        message::success(&format!("Success! You've registered {}.", name));
         Ok(())
     }
 }
