@@ -162,10 +162,9 @@ fn build_subdomain_request() -> String {
 fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, failure::Error> {
     log::info!("checking that subdomain is registered");
     let subdomain = Subdomain::get(&target.account_id, user)?;
-    let subdomain = if let Some(subdomain) = subdomain {
-        subdomain
-    } else {
-        failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
+    let subdomain = match subdomain {
+        Some(subdomain) => subdomain,
+        None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
     };
 
     let sd_worker_addr = format!(

@@ -108,12 +108,11 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     }
     let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {
-        let msg;
-        if subdomain == name {
-            msg = format!("You have previously registered {}.workers.dev", subdomain);
+        let msg = if subdomain == name {
+            format!("You have previously registered {}.workers.dev", subdomain)
         } else {
-            msg = format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain);
-        }
+            format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain)
+        };
         failure::bail!(msg)
     } else {
         register_subdomain(&name, &user, &target)
