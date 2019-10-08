@@ -251,6 +251,38 @@ impl Manifest {
         }
     }
 
+    // this function takes the workers_dev booleans and the routes in a manifest
+    // and then returns an Option<String> representing the deploy target
+    // if it is None, it means deploy to workers.dev, otherwise deploy to the route
+
+    // no environments:
+    // +-------------+---------------------+------------------------------+
+    // | workers_dev |        route        |            result            |
+    // +-------------+---------------------+------------------------------+
+    // | None        | None                | failure: pick target         |
+    // | None        | Some("")            | failure: pick target         |
+    // | None        | Some("example.com") | Some("example.com")          |
+    // | false       | None                | failure: pick target         |
+    // | false       | Some("")            | failure: pick target         |
+    // | false       | Some("example.com") | Some("example.com")          |
+    // | true        | None                | None                         |
+    // | true        | Some("")            | None                         |
+    // | true        | Some("example.com") | failure: conflicting targets |
+    // +-------------+---------------------+------------------------------+
+    //
+    // When environments are introduced, this truth table holds true with workers_dev being inherited
+    // and route being ignored.
+    // if top level workers_dev is true, it is inherited but can be overridden by an env route
+    //
+    // this will fail with empty_route_failure
+    // workers_dev = true
+    // [env.foo]
+    // route = ""
+    //
+    // this will return Some("example.com")
+    // workers_dev = true
+    // [env.foo]
+    // route = "example.com"
     fn negotiate_zoneless(
         &self,
         environment: Option<&Environment>,
