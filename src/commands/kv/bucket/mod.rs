@@ -216,7 +216,6 @@ mod tests {
             route: None,
             routes: None,
             webpack_config: None,
-            workers_dev: true,
             zone_id: None,
             site: Some(site),
         }
