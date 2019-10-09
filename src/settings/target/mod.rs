@@ -278,6 +278,7 @@ impl Manifest {
                 TemplateConfig::default()
             }
         };
+        // TODO: https://github.com/cloudflare/wrangler/issues/773
         let manifest = Manifest {
             account_id: template_config
                 .account_id
