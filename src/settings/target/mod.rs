@@ -195,11 +195,11 @@ impl Manifest {
             name: name.clone(),
             private: None,
             target_type: target_type.unwrap_or_else(|| template_config.clone().target_type),
-            route: template_config.route.or(Some(String::new())),
+            route: template_config.route.or_else(|| Some(String::new())),
             routes: None,
             webpack_config: template_config.webpack_config,
-            workers_dev: template_config.workers_dev.or(Some(true)),
-            zone_id: template_config.zone_id.or(Some(String::new())),
+            workers_dev: template_config.workers_dev.or_else(|| Some(true)),
+            zone_id: template_config.zone_id.or_else(|| Some(String::new())),
             site: template_config.site.or(site),
         };
 
