@@ -62,6 +62,98 @@ pub struct TemplateConfig {
     pub site: Option<Site>,
 }
 
+impl TemplateConfig {
+    pub fn warn_on_account_info(&self) {
+        let mut top_level_fields: Vec<String> = Vec::new();
+        if let Some(account_id) = &self.account_id {
+            if !account_id.is_empty() {
+                top_level_fields.push("account_id".to_string());
+            }
+        }
+        if let Some(kv_namespaces) = &self.kv_namespaces {
+            for kv_namespace in kv_namespaces {
+                if !kv_namespace.id.is_empty() && !kv_namespace.binding.is_empty() {
+                    top_level_fields.push(format!("kv-namespace {}", kv_namespace.binding));
+                }
+            }
+        }
+        if let Some(route) = &self.route {
+            if !route.is_empty() {
+                top_level_fields.push("route".to_string());
+            }
+        }
+        if let Some(zone_id) = &self.zone_id {
+            if !zone_id.is_empty() {
+                top_level_fields.push("zone_id".to_string());
+            }
+        }
+
+        let mut env_fields: HashMap<String, Vec<String>> = HashMap::new();
+
+        if let Some(env) = &self.env {
+            for (env_name, env) in env {
+                let mut current_env_fields: Vec<String> = Vec::new();
+                if let Some(account_id) = &env.account_id {
+                    if !account_id.is_empty() {
+                        current_env_fields.push("account_id".to_string());
+                    }
+                }
+                if let Some(kv_namespaces) = &env.kv_namespaces {
+                    for kv_namespace in kv_namespaces {
+                        if !kv_namespace.id.is_empty() && !kv_namespace.binding.is_empty() {
+                            current_env_fields
+                                .push(format!("kv-namespace {}", kv_namespace.binding));
+                        }
+                    }
+                }
+                if let Some(route) = &env.route {
+                    if !route.is_empty() {
+                        current_env_fields.push("route".to_string());
+                    }
+                }
+                if let Some(zone_id) = &env.zone_id {
+                    if !zone_id.is_empty() {
+                        current_env_fields.push("zone_id".to_string());
+                    }
+                }
+                if !current_env_fields.is_empty() {
+                    env_fields.insert(env_name.to_string(), current_env_fields);
+                }
+            }
+        }
+
+        if !top_level_fields.is_empty() || !env_fields.is_empty() {
+            message::warn("Your generated project contains user-specific information that you will likely need to change.");
+            if !top_level_fields.is_empty() {
+                let msg_prefix = match top_level_fields.len() {
+                    1 => "Top level field",
+                    _ => "Top level fields:",
+                };
+                let top_level_fields = top_level_fields
+                    .clone()
+                    .into_iter()
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                message::warn(&format!("{} {}", msg_prefix, top_level_fields));
+            }
+            if !env_fields.is_empty() {
+                for (env_name, env_fields) in env_fields {
+                    let msg_prefix = match env_fields.len() {
+                        1 => format!("[env.{}] field:", env_name),
+                        _ => format!("[env.{}] fields:", env_name),
+                    };
+                    let env_fields = env_fields
+                        .clone()
+                        .into_iter()
+                        .collect::<Vec<String>>()
+                        .join(", ");
+                    message::warn(&format!("{} {}", msg_prefix, env_fields));
+                }
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Target {
     pub account_id: String,
@@ -168,6 +260,7 @@ impl Manifest {
         let template_config = match &template_config_content {
             Ok(content) => {
                 let config: TemplateConfig = toml::from_str(content)?;
+                config.warn_on_account_info();
                 if let Some(target_type) = &target_type {
                     if config.target_type != *target_type {
                         message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
@@ -190,7 +283,8 @@ impl Manifest {
                 .account_id
                 .clone()
                 .unwrap_or_else(|| String::new()),
-            env: template_config.env.clone(),
+            env: template_config.env.clone(), // comment this line to make warnings work with environments
+            // env: None,                     // and uncomment this line
             kv_namespaces: template_config.kv_namespaces.clone(),
             name: name.clone(),
             private: None,
