@@ -35,22 +35,6 @@ impl Site {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct TemplateConfig {
-    #[serde(rename = "type")]
-    pub target_type: TargetType,
-    pub webpack_config: Option<String>,
-}
-
-impl Default for TemplateConfig {
-    fn default() -> TemplateConfig {
-        TemplateConfig {
-            target_type: TargetType::default(),
-            webpack_config: None,
-        }
-    }
-}
-
 impl Default for Site {
     fn default() -> Site {
         Site {
@@ -60,6 +44,22 @@ impl Default for Site {
             exclude: None,
         }
     }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct TemplateConfig {
+    pub account_id: Option<String>,
+    pub env: Option<HashMap<String, Environment>>,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    #[serde(rename = "type")]
+    pub target_type: TargetType,
+    pub route: Option<String>,
+    pub routes: Option<HashMap<String, String>>,
+    pub webpack_config: Option<String>,
+    pub workers_dev: Option<bool>,
+    pub zone_id: Option<String>,
+    pub site: Option<Site>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -186,18 +186,21 @@ impl Manifest {
             }
         };
         let manifest = Manifest {
-            account_id: String::new(),
-            env: None,
-            kv_namespaces: None,
+            account_id: template_config
+                .account_id
+                .clone()
+                .unwrap_or_else(|| String::new()),
+            env: template_config.env.clone(),
+            kv_namespaces: template_config.kv_namespaces.clone(),
             name: name.clone(),
             private: None,
             target_type: target_type.unwrap_or_else(|| template_config.clone().target_type),
-            route: Some(String::new()),
+            route: template_config.route.or(Some(String::new())),
             routes: None,
             webpack_config: template_config.webpack_config,
-            workers_dev: Some(true),
-            zone_id: Some(String::new()),
-            site,
+            workers_dev: template_config.workers_dev.or(Some(true)),
+            zone_id: template_config.zone_id.or(Some(String::new())),
+            site: template_config.site.or(site),
         };
 
         let toml = toml::to_string(&manifest)?;
