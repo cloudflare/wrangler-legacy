@@ -18,7 +18,7 @@ Within 3 days, any incoming issue should be triaged. Triage involves:
 - reading the issue and requesting any further information
 - always thank the user for submitting
 
-### Labelling
+### Labelling.
 
 - label all issues coming from non-team members with User Report
 - labelling the category of the issue: Feature, External Bug, Bug, Maintenance, Docs
