@@ -2,7 +2,6 @@
 type = "webpack"
 name = "staging-worker"
 zone_id = ""
-private = false
 account_id = ""
 route = ""
 
@@ -10,6 +9,5 @@ route = ""
 type = "webpack"
 name = "staging-worker"
 zone_id = ""
-private = false
 account_id = ""
 route = ""

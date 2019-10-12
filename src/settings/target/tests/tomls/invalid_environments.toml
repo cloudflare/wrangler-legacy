@@ -1,21 +1,12 @@
 type = "webpack"
 name = "worker"
 zone_id = ""
-private = false
 account_id = ""
 route = ""
 
 [env.name_conflict]
 name = "worker"
 zone_id = ""
-private = false
-account_id = ""
-route = ""
-
-[env.has_private]
-name = "worker"
-zone_id = ""
-private = false
 account_id = ""
 route = ""
 
@@ -23,14 +14,12 @@ route = ""
 type = "webpack"
 name = "worker"
 zone_id = ""
-private = false
 account_id = ""
 route = ""
 
 [env.route_and_dot_dev]
 name = "worker"
 zone_id = ""
-private = false
 account_id = ""
 route = "example.com/*"
 workersdotdev = true

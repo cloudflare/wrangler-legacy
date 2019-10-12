@@ -94,7 +94,6 @@ pub struct Environment {
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: Option<String>,
-    pub private: Option<bool>,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
@@ -110,7 +109,6 @@ pub struct Manifest {
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: String,
-    pub private: Option<bool>,
     #[serde(rename = "type")]
     pub target_type: TargetType,
     pub route: Option<String>,
@@ -149,7 +147,6 @@ impl Manifest {
             env: None,
             kv_namespaces: None,
             name: name.clone(),
-            private: None,
             target_type: target_type.clone(),
             route: Some(String::new()),
             routes: None,
@@ -205,8 +202,6 @@ impl Manifest {
         };
 
         let environment = self.get_environment(environment_name)?;
-
-        self.check_private(environment);
 
         let (route, workers_dev) = self.negotiate_zoneless(environment, release)?;
         target.route = route;
@@ -348,23 +343,6 @@ impl Manifest {
         };
 
         Ok((route, workers_dev))
-    }
-
-    fn check_private(&self, environment: Option<&Environment>) {
-        let deprecate_private_warning = "The `private` field is deprecated; please use \
-        `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.";
-
-        // Check for the presence of the 'private' field in top-level config; if present, warn.
-        if self.private.is_some() {
-            message::warn(deprecate_private_warning);
-        }
-
-        // Also check for presence of 'private' field in a provided environment; if present, warn
-        if let Some(e) = environment {
-            if e.private.is_some() {
-                message::warn(deprecate_private_warning);
-            }
-        }
     }
 }
 
