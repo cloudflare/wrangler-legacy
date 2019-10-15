@@ -7,9 +7,7 @@ contributions.
 
 ## People
 
-Wrangler is maintained by @ashleygwilliams, and her team, [Workers Developer Experience].
-
-[Workers Developer Experience]: https://github.com/orgs/cloudflare/teams/workers-devexp
+Wrangler is maintained by @ashleygwilliams, and her team, Workers Developer Experience.
 
 ## Primary Issue Triage
 
