@@ -337,6 +337,8 @@ mod tests {
             .collect();
 
         assert!(!files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
     }
 
     #[test]
@@ -365,6 +367,8 @@ mod tests {
             .collect();
 
         assert!(!files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
     }
 
     #[test]
@@ -393,6 +397,8 @@ mod tests {
             .collect();
 
         assert!(files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
     }
 
     #[test]
