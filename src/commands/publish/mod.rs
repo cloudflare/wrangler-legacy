@@ -6,7 +6,7 @@ mod upload_form;
 
 pub use package::Package;
 
-use crate::settings::target::kv_namespace::KvNamespace;
+use crate::settings::target::KvNamespace;
 use route::Route;
 
 use upload_form::build_script_and_upload_form;
