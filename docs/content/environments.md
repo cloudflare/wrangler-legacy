@@ -16,7 +16,6 @@ name = "my-worker-dev"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "dev.example.com/*"
-workers_dev = false
 
 # environment configuration
 [env.staging]
@@ -33,9 +32,9 @@ route = "example.com/*"
 
 The most common use case for environments is deploying to a staging subdomain before your production environment. `wrangler publish` will look at your top level configuration, and you can specify other environments beneath it. Each of these environments will inherit the values from the top level configuration if they are not specified, with the following caveats.
 
-* `type` will always be inherited from the top-level configuration; you cannot specify different types for different environments.
-* Fields that can be inherited from the top level are `account_id`, `zone_id`, `workers_dev`, and `webpack_config`. `kv_namespaces` and `route` must be defined for each environment and will not be inherited.
-* `name` is inherited. If left out of the environment configuration, a Worker project named `my-worker` with an environment `[env.dev]` would become `my-worker-dev`.
+- `type` will always be inherited from the top-level configuration; you cannot specify different types for different environments.
+- Fields that can be inherited from the top level are `account_id`, `zone_id`, `workers_dev`, and `webpack_config`. `kv_namespaces` and `route` must be defined for each environment and will not be inherited.
+- `name` is inherited. If left out of the environment configuration, a Worker project named `my-worker` with an environment `[env.dev]` would become `my-worker-dev`.
 
 ### Examples
 
@@ -51,7 +50,6 @@ name = "my-worker"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
-workers_dev = false # this field specifies that the worker should not be deployed to workers.dev
 ```
 
 ```console
@@ -87,7 +85,6 @@ name = "my-worker-dev"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "dev.example.com/*"
-workers_dev = false
 
 [env.staging]
 name = "my-worker-staging"
@@ -130,7 +127,6 @@ type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
-workers_dev = false
 
 [env.staging]
 workers_dev = true
@@ -257,7 +253,6 @@ type = "webpack"
 account_id = "12345678901234567890"
 zone_id = "09876543210987654321"
 route = "example.com/*"
-workers_dev = false
 
 [env.staging]
 name = "my-worker"
@@ -272,27 +267,6 @@ Error: ⚠️  Each name in your `wrangler.toml` must be unique, this name is du
 ```console
 $ wrangler publish --env staging
 Error: ⚠️  Each name in your `wrangler.toml` must be unique, this name is duplicated: my-worker
-```
-
-### Ambiguous top level configuration
-
-```toml
-name = "my-worker"
-type = "webpack"
-account_id = "12345678901234567890"
-zone_id = "09876543210987654321"
-route = "example.com/*
-```
-
-You will be warned if `workers_dev` is left out of the top level configuration because if it is not specified, it is unclear what the behavior of `wrangler publish` should be. See [the section on backwards compatibility](#Backwards-compatibility) for more information.
-
-```console
-$ wrangler publish
-⚠️  Please specify the workers_dev boolean in the top level of your wrangler.toml.
-⚠️  If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.
-✨  Built successfully, built project size is 517 bytes.
-✨  Successfully published your script.
-✨  Success! Your worker was successfully published. You can view it at https://my-worker.<your-subdomain>.workers.dev
 ```
 
 ### Defining workers_dev and route

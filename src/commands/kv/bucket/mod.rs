@@ -15,22 +15,24 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
-use walkdir::{DirEntry, WalkDir};
+use ignore::overrides::{Override, OverrideBuilder};
+use ignore::{Walk, WalkBuilder};
 
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 // Returns the hashed key and value pair for all files in a directory.
 pub fn directory_keys_values(
+    target: &Target,
     directory: &Path,
     verbose: bool,
 ) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
 
-    for entry in WalkDir::new(directory)
-        .into_iter()
-        .filter_entry(|e| !is_ignored(e))
-    {
+    let dir_walker = get_dir_iterator(target, directory)?;
+
+    for entry in dir_walker {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
@@ -60,9 +62,12 @@ pub fn directory_keys_values(
 }
 
 // Returns only the hashed keys for a directory's files.
-fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> {
+fn directory_keys_only(target: &Target, directory: &Path) -> Result<Vec<String>, failure::Error> {
     let mut upload_vec: Vec<String> = Vec::new();
-    for entry in WalkDir::new(directory) {
+
+    let dir_walker = get_dir_iterator(target, directory)?;
+
+    for entry in dir_walker {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
@@ -79,34 +84,39 @@ fn directory_keys_only(directory: &Path) -> Result<Vec<String>, failure::Error> 
     Ok(upload_vec)
 }
 
-// todo(gabbi): Replace all the logic below with a proper .wignore implementation
-// when possible.
-const KNOWN_UNNECESSARY_DIRS: &[&str] = &[
-    "node_modules", // npm vendoring
-];
-const KNOWN_UNNECESSARY_FILE_PREFIXES: &[&str] = &[
-    ".", // hidden files
-];
-fn is_ignored(entry: &DirEntry) -> bool {
-    let stem = entry.file_name().to_str().unwrap();
-    // First, ensure that files with specified prefixes are ignored
-    for prefix in KNOWN_UNNECESSARY_FILE_PREFIXES {
-        if stem.starts_with(prefix) {
-            // Just need to check prefix
-            message::info(&format!("ignoring file {}", stem));
-            return true;
+fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
+    let ignore = build_ignore(target, directory)?;
+    Ok(WalkBuilder::new(directory).overrides(ignore).build())
+}
+
+const REQUIRED_IGNORE_FILES: &[&str] = &["node_modules"];
+
+fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
+    let mut required_override = OverrideBuilder::new(directory);
+    // First include files that must be ignored.
+    for ignored in REQUIRED_IGNORE_FILES {
+        required_override.add(&format!("!{}", ignored))?;
+        log::info!("Ignoring {}", ignored);
+    }
+
+    if let Some(site) = &target.site {
+        // If `include` present, use it and don't touch the `exclude` field
+        if let Some(included) = &site.include {
+            for i in included {
+                required_override.add(&i)?;
+                log::info!("Including {}", i);
+            }
+        // If `exclude` only present, ignore anything in it.
+        } else if let Some(excluded) = &site.exclude {
+            for e in excluded {
+                required_override.add(&format!("!{}", e))?;
+                log::info!("Ignoring {}", e);
+            }
         }
     }
 
-    // Then, ensure files in ignored directories are also ignored.
-    for dir in KNOWN_UNNECESSARY_DIRS {
-        if stem == *dir {
-            // Need to check for full equality here
-            message::info(&format!("ignoring directory {}", dir));
-            return true;
-        }
-    }
-    false
+    let exclude = required_override.build()?;
+    Ok(exclude)
 }
 
 // Courtesy of Steve Klabnik's PoC :) Used for bulk operations (write, delete)
@@ -194,82 +204,201 @@ mod tests {
     use regex::Regex;
     use std::fs;
     use std::path::{Path, PathBuf};
-    use walkdir::WalkDir;
 
-    #[test]
-    fn it_can_ignore_dir() {
-        let dir_name = "node_modules";
-        // If test dir already exists, delete it.
-        if fs::metadata(dir_name).is_ok() {
-            fs::remove_dir_all(dir_name).unwrap();
+    use crate::settings::target::{Site, Target, TargetType};
+
+    fn make_target(site: Site) -> Target {
+        Target {
+            account_id: "".to_string(),
+            kv_namespaces: None,
+            name: "".to_string(),
+            target_type: TargetType::JavaScript,
+            route: None,
+            routes: None,
+            webpack_config: None,
+            zone_id: None,
+            site: Some(site),
         }
-
-        fs::create_dir(dir_name).unwrap();
-        fs::File::create(format!("{}/ignore_me.txt", dir_name)).unwrap();
-
-        let mut actual_count = 0;
-        for _ in WalkDir::new(dir_name)
-            .into_iter()
-            .filter_entry(|e| !is_ignored(e))
-        {
-            actual_count = actual_count + 1;
-        }
-
-        fs::remove_dir_all(dir_name).unwrap();
-
-        // No iterations should happen above because "node_modules" and its contents are ignored.
-        let expected_count = 0;
-        assert!(actual_count == expected_count);
     }
 
     #[test]
-    fn it_can_ignore_prefix() {
-        let file_name = ".dotfile";
-        // If test file already exists, delete it.
-        if fs::metadata(file_name).is_ok() {
-            fs::remove_file(file_name).unwrap();
+    fn it_can_ignore_node_modules() {
+        let target = make_target(Site {
+            bucket: "fake".to_string(),
+            entry_point: None,
+            include: None,
+            exclude: None,
+        });
+
+        let test_dir = "test1";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
         }
 
-        fs::File::create(file_name).unwrap();
+        fs::create_dir_all(format!("{}/node_modules", test_dir)).unwrap();
+        let test_pathname = format!("{}/node_modules/ignore_me.txt", test_dir);
+        let test_path = PathBuf::from(&test_pathname);
+        fs::File::create(&test_path).unwrap();
 
-        let mut actual_count = 0;
-        for _ in WalkDir::new(file_name)
-            .into_iter()
-            .filter_entry(|e| !is_ignored(e))
-        {
-            actual_count = actual_count + 1;
+        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+            .unwrap()
+            .map(|entry| entry.unwrap().path().to_owned())
+            .collect();
+
+        assert!(!files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[test]
+    fn it_can_ignore_hidden() {
+        let target = make_target(Site {
+            bucket: "fake".to_string(),
+            entry_point: None,
+            include: None,
+            exclude: None,
+        });
+
+        let test_dir = "test2";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
         }
 
-        fs::remove_file(file_name).unwrap();
+        fs::create_dir(test_dir).unwrap();
+        let test_pathname = format!("{}/.ignore_me.txt", test_dir);
+        let test_path = PathBuf::from(&test_pathname);
+        fs::File::create(&test_path).unwrap();
 
-        // No iterations should happen above because dotfiles are ignored.
-        let expected_count = 0;
-        assert!(actual_count == expected_count);
+        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+            .unwrap()
+            .map(|entry| entry.unwrap().path().to_owned())
+            .collect();
+
+        assert!(!files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
     }
 
     #[test]
     fn it_can_allow_unfiltered_files() {
-        let file_name = "my_file";
-        // If test file already exists, delete it.
-        if fs::metadata(file_name).is_ok() {
-            fs::remove_file(file_name).unwrap();
+        let target = make_target(Site {
+            bucket: "fake".to_string(),
+            entry_point: None,
+            include: None,
+            exclude: None,
+        });
+
+        let test_dir = "test3";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
         }
 
-        fs::File::create(file_name).unwrap();
+        fs::create_dir(test_dir).unwrap();
+        let test_pathname = format!("{}/notice_me.txt", test_dir);
+        let test_path = PathBuf::from(&test_pathname);
+        fs::File::create(&test_path).unwrap();
 
-        let mut actual_count = 0;
-        for _ in WalkDir::new(file_name)
-            .into_iter()
-            .filter_entry(|e| !is_ignored(e))
-        {
-            actual_count = actual_count + 1;
+        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+            .unwrap()
+            .map(|entry| entry.unwrap().path().to_owned())
+            .collect();
+
+        assert!(files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[test]
+    fn it_can_filter_by_include() {
+        let target = make_target(Site {
+            bucket: "fake".to_string(),
+            entry_point: None,
+            include: Some(vec!["this_isnt_here.txt".to_string()]),
+            exclude: None,
+        });
+
+        let test_dir = "test4";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
         }
 
-        fs::remove_file(file_name).unwrap();
+        fs::create_dir(test_dir).unwrap();
+        let test_pathname = format!("{}/ignore_me.txt", test_dir);
+        let test_path = PathBuf::from(&test_pathname);
+        fs::File::create(&test_path).unwrap();
 
-        // No iterations should happen above because dotfiles are ignored.
-        let expected_count = 1;
-        assert!(actual_count == expected_count);
+        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+            .unwrap()
+            .map(|entry| entry.unwrap().path().to_owned())
+            .collect();
+
+        assert!(!files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[test]
+    fn it_can_filter_by_exclude() {
+        let target = make_target(Site {
+            bucket: "fake".to_string(),
+            entry_point: None,
+            include: None,
+            exclude: Some(vec!["ignore_me.txt".to_string()]),
+        });
+
+        let test_dir = "test5";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
+        }
+
+        fs::create_dir(test_dir).unwrap();
+        let test_pathname = format!("{}/ignore_me.txt", test_dir);
+        let test_path = PathBuf::from(&test_pathname);
+        fs::File::create(&test_path).unwrap();
+
+        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+            .unwrap()
+            .map(|entry| entry.unwrap().path().to_owned())
+            .collect();
+
+        assert!(!files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[test]
+    fn it_can_prioritize_include_over_exclude() {
+        let target = make_target(Site {
+            bucket: "fake".to_string(),
+            entry_point: None,
+            include: Some(vec!["notice_me.txt".to_string()]),
+            exclude: Some(vec!["notice_me.txt".to_string()]),
+        });
+
+        let test_dir = "test6";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
+        }
+
+        fs::create_dir(test_dir).unwrap();
+        let test_pathname = format!("{}/notice_me.txt", test_dir);
+        let test_path = PathBuf::from(&test_pathname);
+        fs::File::create(&test_path).unwrap();
+
+        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+            .unwrap()
+            .map(|entry| entry.unwrap().path().to_owned())
+            .collect();
+
+        assert!(files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
     }
 
     #[test]

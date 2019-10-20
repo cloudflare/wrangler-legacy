@@ -35,7 +35,7 @@ For information regarding updating Wrangler, click [here](https://workers.cloudf
 
 General documentation surrounding Workers development and using `wrangler` can be found [here](https://developers.cloudflare.com/workers). This documentation will be highly valuable to you when developing with `wrangler`.
 
-####✨Workers Sites
+#### ✨Workers Sites
 
 To learn about deploying static assets using `wrangler`, see the [Workers Sites Quickstart](https://developers.cloudflare.com/workers/sites/reference/).
 
@@ -243,8 +243,6 @@ There are two types of configuration that `wrangler` uses: global user and per p
         ```
 
         Note: Creating your KV Namespaces should be handled using Wrangler's [KV Commands](./docs/content/kv_commands.md).
-
-    #### Environments
 
     #### Environments
 

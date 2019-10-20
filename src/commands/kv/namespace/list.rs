@@ -15,7 +15,9 @@ const PAGE_NUMBER: u32 = 1;
 
 pub fn list(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
-    let result = call_api(target, user);
+
+    let client = kv::api_client(user)?;
+    let result = call_api(&client, target);
     match result {
         Ok(success) => {
             let namespaces = success.result;
@@ -27,11 +29,9 @@ pub fn list(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
 }
 
 pub fn call_api(
+    client: &impl ApiClient,
     target: &Target,
-    user: &GlobalUser,
 ) -> Result<ApiSuccess<Vec<WorkersKvNamespace>>, ApiFailure> {
-    let client = kv::api_client(user);
-
     let params = ListNamespacesParams {
         page: Some(PAGE_NUMBER),
         per_page: Some(MAX_NAMESPACES_PER_PAGE),

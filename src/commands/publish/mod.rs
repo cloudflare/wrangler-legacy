@@ -24,7 +24,12 @@ use crate::settings::target::{Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Error> {
-    log::info!("workers_dev = {}", target.workers_dev);
+    let msg = match &target.route {
+        Some(route) => &route,
+        None => "workers_dev",
+    };
+
+    log::info!("{}", msg);
 
     validate_target_required_fields_present(target)?;
     validate_worker_name(&target.name)?;
@@ -73,7 +78,7 @@ fn build_and_publish_script(
         target.account_id, target.name,
     );
 
-    let client = if let Some(_) = &target.site {
+    let client = if target.site.is_some() {
         http::auth_client(Some("site"), user)
     } else {
         http::auth_client(None, user)
@@ -94,7 +99,7 @@ fn build_and_publish_script(
         )
     }
 
-    let pattern = if !target.workers_dev {
+    let pattern = if target.route.is_some() {
         let route = Route::new(&target)?;
         Route::publish(&user, &target, &route)?;
         log::info!("publishing to route");
@@ -162,6 +167,10 @@ fn build_subdomain_request() -> String {
 fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, failure::Error> {
     log::info!("checking that subdomain is registered");
     let subdomain = Subdomain::get(&target.account_id, user)?;
+    let subdomain = match subdomain {
+        Some(subdomain) => subdomain,
+        None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
+    };
 
     let sd_worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
@@ -212,8 +221,8 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         None => {}
     }
 
-    let destination = if !target.workers_dev {
-        // check required fields for release
+    let destination = if target.route.is_some() {
+        // check required fields for publishing to a route
         if target
             .zone_id
             .as_ref()

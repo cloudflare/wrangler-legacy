@@ -1,8 +1,9 @@
 use std::collections::HashSet;
+use std::time::Duration;
 
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
-use cloudflare::framework::HttpApiClient;
+use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
 
 use http::status::StatusCode;
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
@@ -63,14 +64,21 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
     )
 }
 
-fn api_client(user: &GlobalUser) -> HttpApiClient {
-    HttpApiClient::new(Credentials::from(user.to_owned()))
+fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
+    HttpApiClient::new(
+        Credentials::from(user.to_owned()),
+        HttpApiClientConfig {
+            // Use 5 minute timeout instead of default 30-second one.
+            // This is useful for bulk upload operations.
+            http_timeout: Duration::from_secs(5 * 60),
+        },
+    )
 }
 
 fn format_error(e: ApiFailure) -> String {
     match e {
         ApiFailure::Error(status, api_errors) => {
-            give_status_code_context(status);
+            print_status_code_context(status);
             let mut complete_err = "".to_string();
             for error in api_errors.errors {
                 let error_msg =
@@ -112,9 +120,15 @@ fn url_encode_key(key: &str) -> String {
 
 // For handling cases where the API gateway returns errors via HTTP status codes
 // (no KV error code is given).
-fn give_status_code_context(status_code: StatusCode) {
-    if let StatusCode::PAYLOAD_TOO_LARGE = status_code {
-        message::warn("Returned status code 413, Payload Too Large. Make sure your upload is less than 100MB in size")
+fn print_status_code_context(status_code: StatusCode) {
+    match status_code {
+        // Folks should never hit PAYLOAD_TOO_LARGE, given that Wrangler ensures that bulk file uploads
+        // are max ~50 MB in size. This case is handled anyways out of an abundance of caution.
+        StatusCode::PAYLOAD_TOO_LARGE =>
+            message::warn("Returned status code 413, Payload Too Large. Please make sure your upload is less than 100MB in size"),
+        StatusCode::GATEWAY_TIMEOUT =>
+            message::warn("Returned status code 504, Gateway Timeout. Please try again in a few seconds"),
+        _ => (),
     }
 }
 
@@ -184,7 +198,6 @@ mod tests {
             route: None,
             routes: None,
             webpack_config: None,
-            workers_dev: false,
             zone_id: None,
             site: None,
         };

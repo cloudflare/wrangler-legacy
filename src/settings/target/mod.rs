@@ -22,6 +22,8 @@ pub struct Site {
     pub bucket: String,
     #[serde(rename = "entry-point")]
     pub entry_point: Option<String>,
+    pub include: Option<Vec<String>>,
+    pub exclude: Option<Vec<String>>,
 }
 
 impl Site {
@@ -38,6 +40,8 @@ impl Default for Site {
         Site {
             bucket: String::new(),
             entry_point: Some(String::from(SITE_ENTRY_POINT)),
+            include: None,
+            exclude: None,
         }
     }
 }
@@ -53,7 +57,6 @@ pub struct Target {
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
-    pub workers_dev: bool,
     pub zone_id: Option<String>,
     pub site: Option<Site>,
 }
@@ -141,7 +144,7 @@ impl Manifest {
     pub fn generate(
         name: String,
         target_type: TargetType,
-        config_path: PathBuf,
+        config_path: &PathBuf,
         site: Option<Site>,
     ) -> Result<Manifest, failure::Error> {
         let manifest = Manifest {
@@ -167,22 +170,7 @@ impl Manifest {
         Ok(manifest)
     }
 
-    pub fn get_target(
-        &self,
-        environment_name: Option<&str>,
-        release: bool,
-    ) -> Result<Target, failure::Error> {
-        if release && self.workers_dev.is_some() {
-            failure::bail!(format!(
-                "{} The --release flag is not compatible with use of the workers_dev field.",
-                emoji::WARN
-            ))
-        }
-
-        if release {
-            message::warn("--release will be deprecated.");
-        }
-
+    pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
         // Site projects are always Webpack for now; don't let toml override this.
         let target_type = match self.site {
             Some(_) => TargetType::Webpack,
@@ -194,23 +182,20 @@ impl Manifest {
             account_id: self.account_id.clone(),         // MAY inherit
             webpack_config: self.webpack_config.clone(), // MAY inherit
             zone_id: self.zone_id.clone(),               // MAY inherit
-            workers_dev: true,                           // MAY inherit
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(),                   // MAY inherit
             kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
-            route: None,                               // MUST NOT inherit
-            routes: self.routes.clone(),               // MUST NOT inherit
-            site: self.site.clone(),                   // MUST NOT inherit
+            route: None, // can inherit None, but not Some (see negotiate_zoneless)
+            routes: self.routes.clone(), // MUST NOT inherit
+            site: self.site.clone(), // MUST NOT inherit
         };
 
         let environment = self.get_environment(environment_name)?;
 
         self.check_private(environment);
 
-        let (route, workers_dev) = self.negotiate_zoneless(environment, release)?;
-        target.route = route;
-        target.workers_dev = workers_dev;
+        target.route = self.negotiate_zoneless(environment)?;
         if let Some(environment) = environment {
             target.name = if let Some(name) = &environment.name {
                 name.clone()
@@ -266,88 +251,105 @@ impl Manifest {
         }
     }
 
-    // TODO: when --release is deprecated, this will be much easier
+    // this function takes the workers_dev booleans and the routes in a manifest
+    // and then returns an Option<String> representing the deploy target
+    // if it is None, it means deploy to workers.dev, otherwise deploy to the route
+
+    // no environments:
+    // +-------------+---------------------+------------------------------+
+    // | workers_dev |        route        |            result            |
+    // +-------------+---------------------+------------------------------+
+    // | None        | None                | failure: pick target         |
+    // | None        | Some("")            | failure: pick target         |
+    // | None        | Some("example.com") | Some("example.com")          |
+    // | false       | None                | failure: pick target         |
+    // | false       | Some("")            | failure: pick target         |
+    // | false       | Some("example.com") | Some("example.com")          |
+    // | true        | None                | None                         |
+    // | true        | Some("")            | None                         |
+    // | true        | Some("example.com") | failure: conflicting targets |
+    // +-------------+---------------------+------------------------------+
+    //
+    // When environments are introduced, this truth table holds true with workers_dev being inherited
+    // and route being ignored.
+    // if top level workers_dev is true, it is inherited but can be overridden by an env route
+    //
+    // this will fail with empty_route_failure
+    // workers_dev = true
+    // [env.foo]
+    // route = ""
+    //
+    // this will return Some("example.com")
+    // workers_dev = true
+    // [env.foo]
+    // route = "example.com"
     fn negotiate_zoneless(
         &self,
         environment: Option<&Environment>,
-        release: bool,
-    ) -> Result<(Option<String>, bool), failure::Error> {
-        let use_dot_dev_failure =
-            "Please specify the workers_dev boolean in the top level of your wrangler.toml.";
-        let use_dot_dev_warning =
-            format!("{}\n{} If you do not add workers_dev, this command may act unexpectedly in v1.5.0. Please see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.", use_dot_dev_failure, emoji::WARN);
-        let wdd_failure = format!(
-            "{} Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.",
-            emoji::WARN
-        );
+    ) -> Result<Option<String>, failure::Error> {
+        let conflicting_targets_failure = "Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.";
+        let pick_target_failure =
+            "You must specify either `workers_dev` or `route` and `zone_id` in order to publish.";
+        let empty_route_failure =
+            "If you want to deploy to workers.dev, remove `route` from your environment config.";
 
-        // TODO: deprecate --release, remove warnings and parsing
-        // switch wrangler publish behavior to act the same at top level
-        // and environments
-        // brace yourself, this is hairy
-        let workers_dev = match environment {
-            // top level configuration
-            None => {
-                if release {
-                    match self.workers_dev {
-                        Some(_) => {
-                            failure::bail!(format!("{} {}", emoji::WARN, use_dot_dev_failure))
-                        }
-                        None => {
-                            message::warn(&use_dot_dev_warning);
-                            false // wrangler publish --release w/o workers_dev is zoned deploy
-                        }
-                    }
-                } else if let Some(wdd) = self.workers_dev {
-                    if wdd {
-                        if let Some(route) = &self.route {
-                            if !route.is_empty() {
-                                failure::bail!(wdd_failure)
-                            }
-                        }
-                    }
-                    wdd
-                } else {
-                    message::warn(&use_dot_dev_warning);
-                    true // wrangler publish w/o workers_dev is zoneless deploy
-                }
-            }
+        log::debug!("top level workers_dev: {:?}", self.workers_dev);
+        log::debug!("top level route: {:?}", self.route);
 
-            // environment configuration
-            Some(environment) => {
-                if let Some(wdd) = environment.workers_dev {
-                    if wdd && environment.route.is_some() {
-                        failure::bail!(wdd_failure)
-                    }
-                    wdd
-                } else if let Some(wdd) = self.workers_dev {
-                    if wdd && environment.route.is_some() {
-                        false // allow route to override workers_dev = true if wdd is inherited
-                    } else {
-                        wdd // inherit from top level
-                    }
-                } else {
-                    false // if absent -> false
-                }
-            }
+        // start with top level configuration
+        let (top_workers_dev, top_route) = match (self.workers_dev, self.route.clone()) {
+            (None, Some(route)) => (false, Some(route)),
+            (Some(workers_dev), None) => (workers_dev, None),
+            (Some(workers_dev), Some(route)) => (workers_dev, Some(route)),
+            (None, None) => (false, None),
         };
 
-        let route = if let Some(environment) = environment {
-            if let Some(route) = &environment.route {
-                if let Some(wdd) = environment.workers_dev {
-                    if wdd {
-                        failure::bail!(wdd_failure);
+        // override top level with environment
+        let (workers_dev, route) = if let Some(env) = &environment {
+            log::debug!("env workers_dev: {:?}", env.workers_dev);
+            log::debug!("env route: {:?}", env.route);
+            match (env.workers_dev, env.route.clone()) {
+                (None, Some(route)) => {
+                    if top_workers_dev && route.is_empty() {
+                        failure::bail!(empty_route_failure)
+                    } else {
+                        (false, Some(route))
                     }
                 }
-                Some(route.clone())
-            } else {
-                None
+                (Some(workers_dev), None) => (workers_dev, None),
+                (Some(workers_dev), Some(route)) => {
+                    if route.is_empty() && workers_dev {
+                        failure::bail!(empty_route_failure)
+                    }
+                    (workers_dev, Some(route))
+                }
+                (None, None) => (top_workers_dev, top_route),
             }
         } else {
-            self.route.clone()
+            (top_workers_dev, top_route)
         };
 
-        Ok((route, workers_dev))
+        log::debug!("negotiated workers_dev: {}", workers_dev);
+        log::debug!("negotiated route: {:?}", route);
+
+        match (workers_dev, route) {
+            (true, None) => Ok(None),
+            (true, Some(route)) => {
+                if route.is_empty() {
+                    Ok(None)
+                } else {
+                    failure::bail!(conflicting_targets_failure)
+                }
+            }
+            (false, Some(route)) => {
+                if route.is_empty() {
+                    failure::bail!(pick_target_failure)
+                } else {
+                    Ok(Some(route))
+                }
+            }
+            (false, None) => failure::bail!(pick_target_failure),
+        }
     }
 
     fn check_private(&self, environment: Option<&Environment>) {

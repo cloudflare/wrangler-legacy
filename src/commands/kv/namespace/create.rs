@@ -23,7 +23,8 @@ pub fn create(
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
 
-    let result = call_api(target, user, &title);
+    let client = kv::api_client(user)?;
+    let result = call_api(&client, target, &title);
 
     match result {
         Ok(success) => {
@@ -64,11 +65,10 @@ pub fn create(
 }
 
 pub fn call_api(
+    client: &impl ApiClient,
     target: &Target,
-    user: &GlobalUser,
     title: &str,
 ) -> Result<ApiSuccess<WorkersKvNamespace>, ApiFailure> {
-    let client = kv::api_client(user);
     client.request(&CreateNamespace {
         account_identifier: &target.account_id,
         params: CreateNamespaceParams {
