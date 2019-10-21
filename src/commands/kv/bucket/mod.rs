@@ -25,7 +25,7 @@ use crate::terminal::message;
 pub fn directory_keys_values(
     target: &Target,
     directory: &Path,
-    verbose: bool,
+    print_files: bool,
 ) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
     let mut upload_vec: Vec<KeyValuePair> = Vec::new();
     let mut asset_manifest: AssetManifest = AssetManifest::new();
@@ -36,7 +36,7 @@ pub fn directory_keys_values(
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
-            if verbose {
+            if print_files {
                 message::working(&format!("Parsing {}...", path.display()));
             }
 

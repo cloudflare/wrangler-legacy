@@ -26,7 +26,7 @@ use crate::terminal::{emoji, message};
 pub fn publish(
     user: &GlobalUser,
     target: &mut Target,
-    verbose: bool,
+    print_files: bool,
 ) -> Result<(), failure::Error> {
     let msg = match &target.route {
         Some(route) => &route,
@@ -42,7 +42,7 @@ pub fn publish(
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
-    let asset_manifest = upload_buckets(target, user, verbose)?;
+    let asset_manifest = upload_buckets(target, user, print_files)?;
     build_and_publish_script(&user, &target, asset_manifest)?;
 
     Ok(())
@@ -125,7 +125,7 @@ fn build_and_publish_script(
 pub fn upload_buckets(
     target: &Target,
     user: &GlobalUser,
-    verbose: bool,
+    print_files: bool,
 ) -> Result<Option<AssetManifest>, failure::Error> {
     let mut asset_manifest = None;
     for namespace in &target.kv_namespaces() {
@@ -150,7 +150,7 @@ pub fn upload_buckets(
                     path.display()
                 )
             }
-            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
+            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, print_files)?;
             if target.site.is_some() {
                 if asset_manifest.is_none() {
                     asset_manifest = Some(manifest_result)
