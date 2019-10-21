@@ -1,6 +1,8 @@
 use cloudflare::endpoints::workerskv::create_namespace::CreateNamespace;
 use cloudflare::endpoints::workerskv::create_namespace::CreateNamespaceParams;
+use cloudflare::endpoints::workerskv::WorkersKvNamespace;
 use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::response::{ApiFailure, ApiSuccess};
 
 use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
@@ -11,29 +13,23 @@ use regex::Regex;
 pub fn create(
     target: &Target,
     env: Option<&str>,
-    user: GlobalUser,
+    user: &GlobalUser,
     binding: &str,
 ) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
-
-    let client = kv::api_client(user)?;
-
     validate_binding(binding)?;
 
     let title = format!("{}-{}", target.name, binding);
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
 
-    let response = client.request(&CreateNamespace {
-        account_identifier: &target.account_id,
-        params: CreateNamespaceParams {
-            title: title.to_string(),
-        },
-    });
+    let client = kv::api_client(user)?;
+    let result = call_api(&client, target, &title);
 
-    match response {
+    match result {
         Ok(success) => {
-            message::success(&format!("Success: {:#?}", success.result));
+            let namespace = success.result;
+            message::success(&format!("Success: {:#?}", namespace));
             match target.kv_namespaces {
                 None => {
                     match env {
@@ -47,7 +43,7 @@ pub fn create(
                         "kv-namespaces = [ \n\
                          \t {{ binding = \"{}\", id = \"{}\" }} \n\
                          ]",
-                        binding, success.result.id
+                        binding, namespace.id
                     );
                 }
                 Some(_) => {
@@ -58,10 +54,7 @@ pub fn create(
                         )),
                         None => message::success("Add the following to your wrangler.toml's \"kv-namespaces\" array:"),
                     };
-                    println!(
-                        "{{ binding = \"{}\", id = \"{}\" }}",
-                        binding, success.result.id
-                    );
+                    println!("{{ binding = \"{}\", id = \"{}\" }}", binding, namespace.id);
                 }
             }
         }
@@ -69,6 +62,19 @@ pub fn create(
     }
 
     Ok(())
+}
+
+pub fn call_api(
+    client: &impl ApiClient,
+    target: &Target,
+    title: &str,
+) -> Result<ApiSuccess<WorkersKvNamespace>, ApiFailure> {
+    client.request(&CreateNamespace {
+        account_identifier: &target.account_id,
+        params: CreateNamespaceParams {
+            title: title.to_string(),
+        },
+    })
 }
 
 fn validate_binding(binding: &str) -> Result<(), failure::Error> {

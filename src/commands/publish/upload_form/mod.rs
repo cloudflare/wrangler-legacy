@@ -6,8 +6,9 @@ use reqwest::multipart::{Form, Part};
 use std::fs;
 use std::path::Path;
 
+use crate::commands;
 use crate::commands::build::wranglerjs;
-use crate::commands::kv::bucket::directory_keys_values;
+use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
 use crate::settings::target::kv_namespace;
@@ -19,7 +20,13 @@ use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error> {
+pub fn build_script_and_upload_form(
+    target: &Target,
+    asset_manifest: Option<AssetManifest>,
+) -> Result<Form, failure::Error> {
+    // Build the script before uploading.
+    commands::build(&target)?;
+
     let target_type = &target.target_type;
     let kv_namespaces = target.kv_namespaces();
     match target_type {
@@ -71,11 +78,11 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
 
             let mut text_blobs = Vec::new();
 
-            if let Some(site) = &target.site {
+            if let Some(asset_manifest) = asset_manifest {
                 log::info!("adding __STATIC_CONTENT_MANIFEST");
                 let binding = "__STATIC_CONTENT_MANIFEST".to_string();
-                let asset_manifest = get_asset_manifest(&site.bucket)?;
-                let text_blob = TextBlob::new(asset_manifest, binding)?;
+                let asset_manifest_blob = get_asset_manifest_blob(asset_manifest)?;
+                let text_blob = TextBlob::new(asset_manifest_blob, binding)?;
                 text_blobs.push(text_blob);
             }
 
@@ -86,11 +93,9 @@ pub fn build_script_upload_form(target: &Target) -> Result<Form, failure::Error>
     }
 }
 
-fn get_asset_manifest(directory: &str) -> Result<String, failure::Error> {
-    let directory = Path::new(&directory);
-    let (_, manifest) = directory_keys_values(directory, false)?;
-    let manifest = serde_json::to_string(&manifest)?;
-    Ok(manifest)
+fn get_asset_manifest_blob(asset_manifest: AssetManifest) -> Result<String, failure::Error> {
+    let asset_manifest = serde_json::to_string(&asset_manifest)?;
+    Ok(asset_manifest)
 }
 
 fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
@@ -101,7 +106,8 @@ fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
 
-    log::info!("{:#?}", &form);
+    log::info!("building form");
+    log::info!("{:?}", &form);
 
     Ok(form)
 }

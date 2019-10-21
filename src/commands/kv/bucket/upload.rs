@@ -1,13 +1,16 @@
+use super::manifest::AssetManifest;
+
 use std::collections::HashSet;
 use std::fs::metadata;
 use std::path::Path;
 
+use crate::commands::kv;
 use crate::commands::kv::bucket::directory_keys_values;
-use crate::commands::kv::bulk::put::put_bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
+use cloudflare::framework::apiclient::ApiClient;
 use failure::format_err;
 
 const KEY_MAX_SIZE: usize = 512;
@@ -20,17 +23,18 @@ const UPLOAD_MAX_SIZE: usize = 50 * 1024 * 1024;
 
 pub fn upload_files(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     namespace_id: &str,
     path: &Path,
     exclude_keys: Option<&HashSet<String>>,
     verbose: bool,
-) -> Result<(), failure::Error> {
-    let mut pairs: Vec<KeyValuePair> = match &metadata(path) {
+) -> Result<AssetManifest, failure::Error> {
+    let (mut pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => {
-            let (p, _) = directory_keys_values(path, verbose)?;
-            Ok(p)
+            let (pairs, asset_manifest) = directory_keys_values(target, path, verbose)?;
+            Ok((pairs, asset_manifest))
         }
+
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             Err(format_err!("wrangler kv:bucket upload takes a directory"))
@@ -38,13 +42,16 @@ pub fn upload_files(
         Err(e) => Err(format_err!("{}", e)),
     }?;
 
-    // If a list of files to skip uploading is provided, filter the filename/file key pairs
-    if let Some(excluded_keys) = exclude_keys {
-        pairs = filter_unchanged_remote_files(pairs, excluded_keys);
+    let mut ignore = &HashSet::new();
+    if let Some(exclude) = exclude_keys {
+        ignore = exclude;
     }
+
+    pairs = filter_files(pairs, ignore);
 
     validate_file_uploads(pairs.clone())?;
 
+    let client = kv::api_client(user)?;
     // Iterate over all key-value pairs and create batches of uploads, each of which are
     // maximum 10K key-value pairs in size OR maximum ~50MB in size. Upload each batch
     // as it is created.
@@ -55,14 +62,14 @@ pub fn upload_files(
     while !(pairs.is_empty() && key_value_batch.is_empty()) {
         if pairs.is_empty() {
             // Last batch to upload
-            call_put_bulk_api(target, user.clone(), namespace_id, &mut key_value_batch)?;
+            upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
         } else {
             let pair = pairs.pop().unwrap();
             if key_count + 1 > PAIRS_MAX_COUNT
             // Keep upload size small to keep KV bulk API happy
             || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
             {
-                call_put_bulk_api(target, user.clone(), namespace_id, &mut key_value_batch)?;
+                upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
 
                 // If upload successful, reset counters
                 key_count = 0;
@@ -76,31 +83,31 @@ pub fn upload_files(
         }
     }
 
-    Ok(())
+    Ok(asset_manifest)
 }
 
-fn call_put_bulk_api(
+fn upload_batch(
+    client: &impl ApiClient,
     target: &Target,
-    user: GlobalUser,
     namespace_id: &str,
     key_value_batch: &mut Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {
     message::info("Uploading...");
     // If partial upload fails (e.g. server error), return that error message
-    put_bulk(target, user.clone(), namespace_id, key_value_batch.clone())?;
-
-    // Can clear batch now that we've uploaded it
-    key_value_batch.clear();
-    Ok(())
+    match kv::bulk::put::call_api(client, target, namespace_id, &key_value_batch) {
+        Ok(_) => {
+            // Can clear batch now that we've uploaded it
+            key_value_batch.clear();
+            Ok(())
+        }
+        Err(e) => failure::bail!("Failed to upload file batch. {}", kv::format_error(e)),
+    }
 }
 
-fn filter_unchanged_remote_files(
-    pairs: Vec<KeyValuePair>,
-    exclude_keys: &HashSet<String>,
-) -> Vec<KeyValuePair> {
+fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) -> Vec<KeyValuePair> {
     let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
     for pair in pairs {
-        if !exclude_keys.contains(&pair.key) {
+        if !already_uploaded.contains(&pair.key) {
             filtered_pairs.push(pair);
         }
     }
@@ -135,35 +142,25 @@ pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Er
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::collections::HashSet;
     use std::path::Path;
 
+    use crate::commands::kv::bucket::generate_path_and_key;
     use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
-
-    use crate::commands::kv::bucket::generate_url_safe_key_and_hash;
-    use crate::commands::kv::bucket::upload::filter_unchanged_remote_files;
 
     #[test]
     fn it_can_filter_preexisting_files() {
-        let (_, key_a_old) = generate_url_safe_key_and_hash(
-            Path::new("/a"),
-            Path::new("/"),
-            Some("old".to_string()),
-        )
-        .unwrap();
-        let (_, key_b_old) = generate_url_safe_key_and_hash(
-            Path::new("/b"),
-            Path::new("/"),
-            Some("old".to_string()),
-        )
-        .unwrap();
+        let (_, key_a_old) =
+            generate_path_and_key(Path::new("/a"), Path::new("/"), Some("old".to_string()))
+                .unwrap();
+        let (_, key_b_old) =
+            generate_path_and_key(Path::new("/b"), Path::new("/"), Some("old".to_string()))
+                .unwrap();
         // Generate new key (using hash of new value) for b when to simulate its value being updated.
-        let (_, key_b_new) = generate_url_safe_key_and_hash(
-            Path::new("/b"),
-            Path::new("/"),
-            Some("new".to_string()),
-        )
-        .unwrap();
+        let (_, key_b_new) =
+            generate_path_and_key(Path::new("/b"), Path::new("/"), Some("new".to_string()))
+                .unwrap();
 
         // Old values found on remote
         let mut exclude_keys = HashSet::new();
@@ -195,7 +192,7 @@ mod tests {
             expiration: None,
             base64: None,
         }];
-        let actual = filter_unchanged_remote_files(pairs_to_upload, &exclude_keys);
+        let actual = filter_files(pairs_to_upload, &exclude_keys);
         check_kv_pairs_equality(expected, actual);
     }
 

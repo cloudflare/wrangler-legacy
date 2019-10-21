@@ -58,6 +58,8 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
     let (mut command, temp_file, bundle) = setup_build(target)?;
     command.arg("--watch=1");
 
+    let is_site = target.site.clone();
+
     info!("Running {:?} in watch mode", command);
 
     //Turbofish the result of the closure so we can use ?
@@ -68,8 +70,20 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
         let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
 
         watcher.watch(&temp_file, RecursiveMode::Recursive)?;
-
         info!("watching temp file {:?}", &temp_file);
+
+        if let Some(site) = is_site {
+            let bucket = site.bucket;
+            if Path::new(&bucket).exists() {
+                watcher.watch(&bucket, RecursiveMode::Recursive)?;
+                info!("watching static sites asset file {:?}", &bucket);
+            } else {
+                failure::bail!(
+                    "Attempting to watch static assets bucket \"{}\" which doesn't exist",
+                    bucket
+                );
+            }
+        }
 
         let mut is_first = true;
 
@@ -159,33 +173,57 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
-    let webpack_config_path = PathBuf::from(
-        &target
-            .webpack_config
-            .clone()
-            .unwrap_or_else(|| "webpack.config.js".to_string()),
-    );
+    let webpack_config_path = if let Some(webpack_config) = &target.webpack_config {
+        // require webpack_config in wrangler.toml to use it in sites
+        Some(PathBuf::from(&webpack_config))
+    } else if target.site.is_none() {
+        let config_path = PathBuf::from("webpack.config.js".to_string());
+        // backwards compatibility, deprecated in 1.6.0
+        // if webpack.config.js exists and is not specified in wrangler.toml, use it and warn
+        if bundle.has_webpack_config(&config_path) {
+            message::warn("In Wrangler v1.6.0, you will need to include a webpack_config field in your wrangler.toml to build with a custom webpack configuration.");
+            Some(config_path)
+        } else {
+            // if webpack.config.js does not exist, don't warn, use our default
+            None
+        }
+    } else {
+        // don't use `webpack.config.js` if this project is a site
+        None
+    };
 
     // if {webpack.config.js} is not present, we infer the entry based on the
     // {package.json} file and pass it to {wranglerjs}.
     // https://github.com/cloudflare/wrangler/issues/98
-    if !bundle.has_webpack_config(&webpack_config_path) {
-        let package = Package::new(&build_dir)?;
-        let package_main = build_dir
-            .join(package.main(&build_dir)?)
-            .to_str()
-            .unwrap()
-            .to_string();
-        command.arg("--no-webpack-config=1");
-        command.arg(format!("--use-entry={}", package_main));
+    if let Some(webpack_config_path) = webpack_config_path {
+        build_with_custom_webpack(&mut command, &webpack_config_path);
     } else {
-        command.arg(format!(
-            "--webpack-config={}",
-            &webpack_config_path.to_str().unwrap().to_string()
-        ));
+        build_with_default_webpack(&mut command, &build_dir)?;
     }
 
     Ok((command, temp_file, bundle))
+}
+
+fn build_with_custom_webpack(command: &mut Command, webpack_config_path: &PathBuf) {
+    command.arg(format!(
+        "--webpack-config={}",
+        &webpack_config_path.to_str().unwrap().to_string()
+    ));
+}
+
+fn build_with_default_webpack(
+    command: &mut Command,
+    build_dir: &PathBuf,
+) -> Result<(), failure::Error> {
+    let package = Package::new(&build_dir)?;
+    let package_main = build_dir
+        .join(package.main(&build_dir)?)
+        .to_str()
+        .unwrap()
+        .to_string();
+    command.arg("--no-webpack-config=1");
+    command.arg(format!("--use-entry={}", package_main));
+    Ok(())
 }
 
 pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {

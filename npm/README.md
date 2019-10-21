@@ -33,7 +33,11 @@ For information regarding updating Wrangler, click [here](https://workers.cloudf
 
 ## Additional Documentation
 
-General documentation surrounding workers development and using `wrangler` can be found [here](https://workers.cloudflare.com/docs). This documentation will be highly valuable to you when developing with `wrangler`.
+General documentation surrounding Workers development and using `wrangler` can be found [here](https://developers.cloudflare.com/workers). This documentation will be highly valuable to you when developing with `wrangler`.
+
+#### ✨Workers Sites
+
+To learn about deploying static assets using `wrangler`, see the [Workers Sites Quickstart](https://developers.cloudflare.com/workers/sites/reference/).
 
 ## 🎙️ Commands
 
@@ -50,7 +54,7 @@ General documentation surrounding workers development and using `wrangler` can b
   
   - `name`: defaults to `worker`
   - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
-  - `type`: defaults to "webpack"
+  - `type`: defaults to ["webpack"](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md)
 
 - ### 📥 `init`
 
@@ -63,7 +67,7 @@ General documentation surrounding workers development and using `wrangler` can b
   All of the arguments and flags to this command are options:
 
   - `name`: defaults to the name of your working directory
-  - `type`: defaults to "webpack"
+  - `type`: defaults to ["webpack"](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md).
 
 - ### 🦀⚙️ `build`
 
@@ -168,6 +172,7 @@ If you would like to be able to publish your code to multiple places, please see
   Additionally, you can preview different environments. This is useful if you have different builds for different environments (like staging vs. production), but typically isn't needed. For more information see the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
 
 - ### 🗂️ `kv`
+
   Interact with your Cloudflare Workers KV store. [Check out the docs.](./docs/content/kv_commands.md)
 
 ## 🔩 Configuration
@@ -210,7 +215,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
         - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
             WebAssembly. Rust files will be built with `wasm-pack`.
-            This project type uses webpack and webpack plugins in the background to build your worker.
+            This project type uses webpack and webpack plugins in the background to build your worker. You can read more about this type [here](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md).
     - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md) configuration.
     - `account_id`: This is the ID of the account associated with your zone. You might have more than one account, so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
     - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
@@ -220,7 +225,7 @@ There are two types of configuration that `wrangler` uses: global user and per p
         
         This key is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md). 
 
-    - `webpack_config`: This is the path to the webpack configuration file for your worker. This is optional and defaults to `webpack.config.js`
+    - `webpack_config`: This is the path to a custom webpack configuration file for your worker. You must specify this field to use a custom webpack configuration, otherwise Wrangler will use a default configuration for you. You can read more [here](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md).
     - `workers_dev`: This is a boolean flag that specifies if your worker will be deployed to your [workers.dev](https://workers.dev) subdomain. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
     - `kv-namespaces`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) Namespaces you want to access from
         inside your Worker. Each namespace you include should have an entry in your `wrangler.toml` that includes:
@@ -238,8 +243,6 @@ There are two types of configuration that `wrangler` uses: global user and per p
         ```
 
         Note: Creating your KV Namespaces should be handled using Wrangler's [KV Commands](./docs/content/kv_commands.md).
-
-    #### Environments
 
     #### Environments
 
