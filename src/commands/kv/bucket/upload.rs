@@ -27,11 +27,11 @@ pub fn upload_files(
     namespace_id: &str,
     path: &Path,
     exclude_keys: Option<&HashSet<String>>,
-    print_files: bool,
+    verbose: bool,
 ) -> Result<AssetManifest, failure::Error> {
     let (mut pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) = match &metadata(path) {
         Ok(file_type) if file_type.is_dir() => {
-            let (pairs, asset_manifest) = directory_keys_values(target, path, print_files)?;
+            let (pairs, asset_manifest) = directory_keys_values(target, path, verbose)?;
             Ok((pairs, asset_manifest))
         }
 

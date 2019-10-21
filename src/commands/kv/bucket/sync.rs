@@ -19,7 +19,7 @@ pub fn sync(
     user: &GlobalUser,
     namespace_id: &str,
     path: &Path,
-    print_files: bool,
+    verbose: bool,
 ) -> Result<AssetManifest, failure::Error> {
     kv::validate_target(target)?;
     // First, upload all changed files in given local directory (aka replace files
@@ -40,7 +40,7 @@ pub fn sync(
         }
     }
     // First, upload all existing files in given directory
-    if print_files {
+    if verbose {
         message::info("Preparing to upload updated files...");
     }
     let asset_manifest = upload_files(
@@ -49,7 +49,7 @@ pub fn sync(
         namespace_id,
         path,
         Some(&remote_keys),
-        print_files,
+        verbose,
     )?;
 
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
@@ -69,7 +69,7 @@ pub fn sync(
         .collect();
 
     if !keys_to_delete.is_empty() {
-        if print_files {
+        if verbose {
             message::info("Deleting stale files...");
         }
         delete_bulk(target, user, namespace_id, keys_to_delete)?;
