@@ -16,7 +16,7 @@ use crate::terminal::message;
 
 pub fn delete(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     namespace_id: &str,
     filename: &Path,
 ) -> Result<(), failure::Error> {
@@ -59,7 +59,7 @@ pub fn delete(
 
 pub fn delete_bulk(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     namespace_id: &str,
     keys: Vec<String>,
 ) -> Result<(), failure::Error> {

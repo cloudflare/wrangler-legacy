@@ -9,52 +9,82 @@ pub use package::Package;
 use crate::settings::target::kv_namespace::KvNamespace;
 use route::Route;
 
-use upload_form::build_script_upload_form;
+use upload_form::build_script_and_upload_form;
 
 use std::path::Path;
 
-use crate::commands;
 use crate::commands::kv;
+use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::subdomain::Subdomain;
 use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 
-use crate::settings::target::Target;
+use crate::settings::target::{Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Error> {
-    log::info!("workers_dev = {}", target.workers_dev);
+    let msg = match &target.route {
+        Some(route) => &route,
+        None => "workers_dev",
+    };
+
+    log::info!("{}", msg);
 
     validate_target_required_fields_present(target)?;
     validate_worker_name(&target.name)?;
 
     if let Some(site_config) = target.site.clone() {
-        let site_namespace = kv::namespace::site(target, user)?;
-
-        target.add_kv_namespace(KvNamespace {
-            binding: "__STATIC_CONTENT".to_string(),
-            id: site_namespace.id,
-            bucket: Some(site_config.bucket.to_owned()),
-        });
+        bind_static_site_contents(user, target, &site_config, false)?;
     }
 
-    upload_buckets(target, user)?;
-    commands::build(&target)?;
-    publish_script(&user, &target)?;
+    let asset_manifest = upload_buckets(target, user)?;
+    build_and_publish_script(&user, &target, asset_manifest)?;
 
     Ok(())
 }
 
-fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+// Updates given Target with kv_namespace binding for a static site assets KV namespace.
+pub fn bind_static_site_contents(
+    user: &GlobalUser,
+    target: &mut Target,
+    site_config: &Site,
+    preview: bool,
+) -> Result<(), failure::Error> {
+    let site_namespace = kv::namespace::site(target, &user, preview)?;
+
+    // Check if namespace already is in namespace list
+    for namespace in target.kv_namespaces() {
+        if namespace.id == site_namespace.id {
+            return Ok(()); // Sites binding already exists; ignore
+        }
+    }
+
+    target.add_kv_namespace(KvNamespace {
+        binding: "__STATIC_CONTENT".to_string(),
+        id: site_namespace.id,
+        bucket: Some(site_config.bucket.to_owned()),
+    });
+    Ok(())
+}
+
+fn build_and_publish_script(
+    user: &GlobalUser,
+    target: &Target,
+    asset_manifest: Option<AssetManifest>,
+) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         target.account_id, target.name,
     );
 
-    let client = http::auth_client(user);
+    let client = if target.site.is_some() {
+        http::auth_client(Some("site"), user)
+    } else {
+        http::auth_client(None, user)
+    };
 
-    let script_upload_form = build_script_upload_form(target)?;
+    let script_upload_form = build_script_and_upload_form(target, asset_manifest)?;
 
     let mut res = client
         .put(&worker_addr)
@@ -69,7 +99,7 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
         )
     }
 
-    let pattern = if !target.workers_dev {
+    let pattern = if target.route.is_some() {
         let route = Route::new(&target)?;
         Route::publish(&user, &target, &route)?;
         log::info!("publishing to route");
@@ -88,7 +118,11 @@ fn publish_script(user: &GlobalUser, target: &Target) -> Result<(), failure::Err
     Ok(())
 }
 
-fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+pub fn upload_buckets(
+    target: &Target,
+    user: &GlobalUser,
+) -> Result<Option<AssetManifest>, failure::Error> {
+    let mut asset_manifest = None;
     for namespace in &target.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
             if bucket.is_empty() {
@@ -102,20 +136,28 @@ fn upload_buckets(target: &Target, user: &GlobalUser) -> Result<(), failure::Err
                 failure::bail!(
                     "{} bucket directory \"{}\" does not exist",
                     emoji::WARN,
-                    path.to_string_lossy()
+                    path.display()
                 )
             } else if !path.is_dir() {
                 failure::bail!(
                     "{} bucket \"{}\" is not a directory",
                     emoji::WARN,
-                    path.to_string_lossy()
+                    path.display()
                 )
             }
-            kv::bucket::sync(target, user.to_owned(), &namespace.id, path, false)?;
+            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, false)?;
+            if target.site.is_some() {
+                if asset_manifest.is_none() {
+                    asset_manifest = Some(manifest_result)
+                } else {
+                    // only site manifest should be returned
+                    unreachable!()
+                }
+            }
         }
     }
 
-    Ok(())
+    Ok(asset_manifest)
 }
 
 fn build_subdomain_request() -> String {
@@ -125,13 +167,17 @@ fn build_subdomain_request() -> String {
 fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, failure::Error> {
     log::info!("checking that subdomain is registered");
     let subdomain = Subdomain::get(&target.account_id, user)?;
+    let subdomain = match subdomain {
+        Some(subdomain) => subdomain,
+        None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
+    };
 
     let sd_worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
         target.account_id, target.name,
     );
 
-    let client = http::auth_client(user);
+    let client = http::auth_client(None, user);
 
     log::info!("Making public on subdomain...");
     let mut res = client
@@ -175,8 +221,8 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         None => {}
     }
 
-    let destination = if !target.workers_dev {
-        // check required fields for release
+    let destination = if target.route.is_some() {
+        // check required fields for publishing to a route
         if target
             .zone_id
             .as_ref()

@@ -71,7 +71,7 @@ fn run() -> Result<(), failure::Error> {
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
-        .author("ashley g williams <ashley666ashley@gmail.com>")
+        .author("The Wrangler Team <wrangler@cloudflare.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
         .subcommand(
@@ -344,12 +344,6 @@ fn run() -> Result<(), failure::Error> {
                     emoji::UP
                 ))
                 .arg(
-                    Arg::with_name("release")
-                        .long("release")
-                        .takes_value(false)
-                        .help("[planned deprecation in v1.5.0, use --env instead. see https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information]\nshould this be published to a workers.dev subdomain or a domain name you have registered"),
-                )
-                .arg(
                     Arg::with_name("env")
                         .help("environments to publish to")
                         .short("e")
@@ -373,8 +367,7 @@ fn run() -> Result<(), failure::Error> {
                 .arg(
                     Arg::with_name("name")
                         .help("the subdomain on workers.dev you'd like to reserve")
-                        .index(1)
-                        .required(true),
+                        .index(1),
                 ),
         )
         .subcommand(SubCommand::with_name("whoami").about(&*format!(
@@ -445,12 +438,14 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("build") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = &manifest.get_target(matches.value_of("env"), false)?;
+        let env = matches.value_of("env");
+        let target = &manifest.get_target(env)?;
         commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"), false)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
 
         // the preview command can be called with or without a Global User having been config'd
         // so we convert this Result into an Option
@@ -476,33 +471,27 @@ fn run() -> Result<(), failure::Error> {
         let user = settings::global_user::GlobalUser::new()?;
 
         info!("Getting project settings");
-        if matches.is_present("env") && matches.is_present("release") {
-            failure::bail!("You can only pass --env or --release, not both")
-        }
         let manifest = settings::target::Manifest::new(config_path)?;
-        let mut target;
-        if matches.is_present("env") {
-            target = manifest.get_target(matches.value_of("env"), false)?;
-        } else if matches.is_present("release") {
-            target = manifest.get_target(None, true)?;
-        } else {
-            target = manifest.get_target(None, false)?;
-        }
+        let env = matches.value_of("env");
+        let mut target = manifest.get_target(env)?;
 
         commands::publish(&user, &mut target)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
-        let target = manifest.get_target(matches.value_of("env"), false)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
 
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        let name = matches
-            .value_of("name")
-            .expect("The subdomain name you are requesting must be provided.");
+        let name = matches.value_of("name");
 
-        commands::subdomain(name, &user, &target)?;
+        if let Some(name) = name {
+            commands::subdomain::set_subdomain(&name, &user, &target)?;
+        } else {
+            commands::subdomain::get_subdomain(&user, &target)?;
+        }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::target::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
@@ -510,12 +499,13 @@ fn run() -> Result<(), failure::Error> {
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
                 let env = create_matches.value_of("env");
-                let target = manifest.get_target(env, false)?;
+                let target = manifest.get_target(env)?;
                 let binding = create_matches.value_of("binding").unwrap();
-                commands::kv::namespace::create(&target, env, user, binding)?;
+                commands::kv::namespace::create(&target, env, &user, binding)?;
             }
             ("delete", Some(delete_matches)) => {
-                let target = manifest.get_target(delete_matches.value_of("env"), false)?;
+                let env = delete_matches.value_of("env");
+                let target = manifest.get_target(env)?;
                 let namespace_id = match delete_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -525,11 +515,12 @@ fn run() -> Result<(), failure::Error> {
                         .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                         .to_string(),
                 };
-                commands::kv::namespace::delete(&target, user, &namespace_id)?;
+                commands::kv::namespace::delete(&target, &user, &namespace_id)?;
             }
             ("list", Some(list_matches)) => {
-                let target = manifest.get_target(list_matches.value_of("env"), false)?;
-                commands::kv::namespace::list(&target, user)?;
+                let env = list_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                commands::kv::namespace::list(&target, &user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
             _ => unreachable!(),
@@ -542,7 +533,8 @@ fn run() -> Result<(), failure::Error> {
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
-                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
+                let env = subcommand_matches.value_of("env");
+                let target = manifest.get_target(env)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -560,7 +552,7 @@ fn run() -> Result<(), failure::Error> {
         match (subcommand, subcommand_matches) {
             ("get", Some(get_key_matches)) => {
                 let key = get_key_matches.value_of("key").unwrap();
-                commands::kv::key::get(&target, user, &namespace_id, key)?
+                commands::kv::key::get(&target, &user, &namespace_id, key)?
             }
             ("put", Some(put_key_matches)) => {
                 let key = put_key_matches.value_of("key").unwrap();
@@ -572,7 +564,7 @@ fn run() -> Result<(), failure::Error> {
                 let ttl = put_key_matches.value_of("expiration-ttl");
                 commands::kv::key::put(
                     &target,
-                    user,
+                    &user,
                     &namespace_id,
                     key,
                     &value,
@@ -583,11 +575,11 @@ fn run() -> Result<(), failure::Error> {
             }
             ("delete", Some(delete_key_matches)) => {
                 let key = delete_key_matches.value_of("key").unwrap();
-                commands::kv::key::delete(&target, user, &namespace_id, key)?
+                commands::kv::key::delete(&target, &user, &namespace_id, key)?
             }
             ("list", Some(list_key_matches)) => {
                 let prefix = list_key_matches.value_of("prefix");
-                commands::kv::key::list(&target, user, &namespace_id, prefix)?
+                commands::kv::key::list(&target, &user, &namespace_id, prefix)?
             }
             ("", None) => message::warn("kv:key expects a subcommand"),
             _ => unreachable!(),
@@ -600,7 +592,8 @@ fn run() -> Result<(), failure::Error> {
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
-                let target = manifest.get_target(subcommand_matches.value_of("env"), false)?;
+                let env = subcommand_matches.value_of("env");
+                let target = manifest.get_target(env)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -618,11 +611,11 @@ fn run() -> Result<(), failure::Error> {
         match (subcommand, subcommand_matches) {
             ("put", Some(put_bulk_matches)) => {
                 let path = put_bulk_matches.value_of("path").unwrap();
-                commands::kv::bulk::put(&target, user, &namespace_id, Path::new(path))?
+                commands::kv::bulk::put(&target, &user, &namespace_id, Path::new(path))?
             }
             ("delete", Some(delete_bulk_matches)) => {
                 let path = delete_bulk_matches.value_of("path").unwrap();
-                commands::kv::bulk::delete(&target, user, &namespace_id, Path::new(path))?
+                commands::kv::bulk::delete(&target, &user, &namespace_id, Path::new(path))?
             }
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),

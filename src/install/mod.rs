@@ -10,6 +10,7 @@ use which::which;
 
 use std::env;
 use std::path::Path;
+use std::process::Command;
 
 use lazy_static::lazy_static;
 
@@ -18,7 +19,7 @@ lazy_static! {
 }
 
 pub fn install(tool_name: &str, owner: &str) -> Result<Download, failure::Error> {
-    if let Some(download) = tool_exists(tool_name) {
+    if let Some(download) = tool_exists(tool_name)? {
         return Ok(download);
     }
 
@@ -38,7 +39,7 @@ pub fn install_artifact(
     owner: &str,
     version: &str,
 ) -> Result<Download, failure::Error> {
-    if let Some(download) = tool_exists(tool_name) {
+    if let Some(download) = tool_exists(tool_name)? {
         return Ok(download);
     }
 
@@ -51,14 +52,53 @@ pub fn install_artifact(
     }
 }
 
-fn tool_exists(tool_name: &str) -> Option<Download> {
+fn tool_exists(tool_name: &str) -> Result<Option<Download>, failure::Error> {
     if let Ok(path) = which(tool_name) {
-        log::debug!("found global {} binary at: {}", tool_name, path.display());
         let no_parent_msg = format!("{} There is no path parent", emoji::WARN);
-        Some(Download::at(path.parent().expect(&no_parent_msg)))
-    } else {
-        None
+        log::debug!("found global {} binary at: {}", tool_name, path.display());
+        if !tool_needs_update(tool_name, &path)? {
+            return Ok(Some(Download::at(path.parent().expect(&no_parent_msg))));
+        }
     }
+
+    Ok(None)
+}
+
+fn tool_needs_update(tool_name: &str, path: &Path) -> Result<bool, failure::Error> {
+    let no_version_msg = format!("failed to find version for {}", tool_name);
+
+    let tool_version_output = Command::new(path.as_os_str())
+        .arg("--version")
+        .output()
+        .expect(&no_version_msg);
+
+    if !tool_version_output.status.success() {
+        let error = String::from_utf8_lossy(&tool_version_output.stderr);
+        log::debug!("could not find version for {}\n{}", tool_name, error);
+        return Ok(true);
+    }
+
+    let installed_tool_version = String::from_utf8_lossy(&tool_version_output.stdout);
+    let installed_tool_version = match installed_tool_version.split_whitespace().last() {
+        None => return Ok(true),
+        Some(v) => v,
+    };
+    let latest_tool_version = get_latest_version(tool_name)?;
+    if installed_tool_version == latest_tool_version {
+        log::debug!(
+            "installed {} version {} is up to date",
+            tool_name,
+            installed_tool_version
+        );
+        return Ok(false);
+    }
+    log::info!(
+        "installed {} version {} is out of date with latest version {}",
+        tool_name,
+        installed_tool_version,
+        latest_tool_version
+    );
+    Ok(true)
 }
 
 fn download_prebuilt(

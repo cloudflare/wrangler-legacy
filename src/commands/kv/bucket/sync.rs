@@ -3,6 +3,8 @@ use std::fs::metadata;
 use std::iter::FromIterator;
 use std::path::Path;
 
+use super::manifest::AssetManifest;
+
 use crate::commands::kv;
 use crate::commands::kv::bucket::directory_keys_only;
 use crate::commands::kv::bucket::upload::upload_files;
@@ -14,11 +16,11 @@ use crate::terminal::message;
 
 pub fn sync(
     target: &Target,
-    user: GlobalUser,
+    user: &GlobalUser,
     namespace_id: &str,
     path: &Path,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<AssetManifest, failure::Error> {
     kv::validate_target(target)?;
     // First, upload all changed files in given local directory (aka replace files
     // in Workers KV that are now stale).
@@ -27,7 +29,7 @@ pub fn sync(
     // Turn it into a HashSet. This will be used by upload() to figure out which
     // files to exclude from upload (because their current version already exists in
     // the Workers KV remote).
-    let remote_keys_iter = KeyList::new(target, user.clone(), namespace_id, None)?;
+    let remote_keys_iter = KeyList::new(target, &user, namespace_id, None)?;
     let mut remote_keys: HashSet<String> = HashSet::new();
     for remote_key in remote_keys_iter {
         match remote_key {
@@ -41,9 +43,9 @@ pub fn sync(
     if verbose {
         message::info("Preparing to upload updated files...");
     }
-    upload_files(
+    let asset_manifest = upload_files(
         target,
-        user.clone(),
+        &user,
         namespace_id,
         path,
         Some(&remote_keys),
@@ -53,7 +55,7 @@ pub fn sync(
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
     let local_keys_vec: Vec<String> = match &metadata(path) {
-        Ok(file_type) if file_type.is_dir() => directory_keys_only(path),
+        Ok(file_type) if file_type.is_dir() => directory_keys_only(target, path),
         Ok(_) => failure::bail!("{} should be a directory", path.display()),
         Err(e) => failure::bail!("{}", e),
     }?;
@@ -74,5 +76,5 @@ pub fn sync(
     }
 
     message::success("Success");
-    Ok(())
+    Ok(asset_manifest)
 }

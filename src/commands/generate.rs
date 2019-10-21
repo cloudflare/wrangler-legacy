@@ -24,7 +24,7 @@ pub fn generate(
     } else {
         None
     };
-    Manifest::generate(name.to_string(), target_type, config_path, generated_site)?;
+    Manifest::generate(name.to_string(), target_type, &config_path, generated_site)?;
 
     Ok(())
 }
