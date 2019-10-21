@@ -349,6 +349,13 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("env")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("print-files")
+                        .short("p")
+                        .long("print-files")
+                        .takes_value(false)
+                        .help("Print out files being uploaded for a Workers Site. Only applies to Workers Sites."),
                 ),
         )
         .subcommand(
@@ -475,7 +482,7 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
 
-        commands::publish(&user, &mut target)?;
+        commands::publish(&user, &mut target, matches.is_present("print-files"))?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;

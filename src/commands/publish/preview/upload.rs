@@ -56,7 +56,8 @@ pub fn build_and_upload(
                     publish::bind_static_site_contents(user, target, &site_config, true)?;
                 }
 
-                let asset_manifest = publish::upload_buckets(target, user)?;
+                // Uploads to preview service, by default, are not done in verbose mode.
+                let asset_manifest = publish::upload_buckets(target, user, false)?;
                 authenticated_upload(&client, &target, asset_manifest)?
             } else {
                 message::warn(&format!(
