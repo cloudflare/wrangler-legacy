@@ -390,9 +390,13 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let site = matches.is_present("site");
+        let template_value = matches.value_of("template");
         let mut target_type = None;
 
         let template = if site {
+            if template_value.is_some() {
+                failure::bail!("You cannot specify a template when generating a Workers Site. If you want to generate site boilerplate, run wrangler generate --site")
+            }
             "https://github.com/cloudflare/worker-sites-template"
         } else {
             if let Some(type_value) = matches.value_of("type") {
@@ -400,7 +404,7 @@ fn run() -> Result<(), failure::Error> {
             }
 
             let default_template = "https://github.com/cloudflare/worker-template";
-            let template = matches.value_of("template").unwrap_or(match target_type {
+            let template = template_value.unwrap_or(match target_type {
                 Some(ref pt) => match pt {
                     TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
                     _ => default_template,
