@@ -545,7 +545,7 @@ fn run() -> Result<(), failure::Error> {
                         .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                         .to_string(),
                 };
-                (target, namespace_id.to_string())
+                (target, namespace_id)
             }
             None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
         };
@@ -608,7 +608,7 @@ fn run() -> Result<(), failure::Error> {
                         .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                         .to_string(),
                 };
-                (target, namespace_id.to_string())
+                (target, namespace_id)
             }
             None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
         };
