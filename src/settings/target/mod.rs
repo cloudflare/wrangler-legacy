@@ -121,20 +121,20 @@ impl TemplateConfig {
                 }
             }
         }
-        let separator = "\n  - ";
+        let top_level_separator = "\n- ";
+        let env_separator = "\n  - ";
         if !top_level_fields.is_empty() || !env_fields.is_empty() {
             message::warn("Replace all account specific info in your wrangler.toml.");
             message::warn(
-                "Your zone_id and account_id can be found in the right sidebar at https://dash.cloudflare.com\n",
+                "Your zone_id and account_id can be found in the right sidebar at https://dash.cloudflare.com",
             );
             if !top_level_fields.is_empty() {
-                let msg_prefix = "Top level fields";
                 let top_level_fields = top_level_fields
                     .clone()
                     .into_iter()
                     .collect::<Vec<String>>()
-                    .join(separator);
-                println!("{}{}{}", msg_prefix, separator, top_level_fields);
+                    .join(top_level_separator);
+                println!("{}{}", top_level_separator, top_level_fields);
             }
             if !env_fields.is_empty() {
                 for (env_name, env_fields) in env_fields {
@@ -143,8 +143,8 @@ impl TemplateConfig {
                         .clone()
                         .into_iter()
                         .collect::<Vec<String>>()
-                        .join(separator);
-                    println!("{}{}{}", msg_prefix, separator, env_fields);
+                        .join(env_separator);
+                    println!("{}{}{}", msg_prefix, env_separator, env_fields);
                 }
             }
         }
