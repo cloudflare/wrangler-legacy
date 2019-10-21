@@ -390,18 +390,14 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let site = matches.is_present("site");
+        let mut target_type = None;
 
-        let (target_type, template) = if site {
-            // Workers Sites projects are always Webpack for now
-            let target_type = Some(TargetType::Webpack);
-            let template = "https://github.com/cloudflare/worker-sites-template";
-
-            (target_type, template)
+        let template = if site {
+            "https://github.com/cloudflare/worker-sites-template"
         } else {
-            let target_type = match matches.value_of("type") {
-                Some(s) => Some(TargetType::from_str(&s.to_lowercase())?),
-                None => None,
-            };
+            if let Some(type_value) = matches.value_of("type") {
+                target_type = Some(TargetType::from_str(&type_value.to_lowercase())?);
+            }
 
             let default_template = "https://github.com/cloudflare/worker-template";
             let template = matches.value_of("template").unwrap_or(match target_type {
@@ -412,7 +408,7 @@ fn run() -> Result<(), failure::Error> {
                 _ => default_template,
             });
 
-            (target_type, template)
+            template
         };
 
         info!(
