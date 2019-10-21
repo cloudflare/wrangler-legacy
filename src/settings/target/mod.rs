@@ -121,33 +121,30 @@ impl TemplateConfig {
                 }
             }
         }
-
+        let separator = "\n  - ";
         if !top_level_fields.is_empty() || !env_fields.is_empty() {
-            message::warn("Your generated project contains user-specific information that you will likely need to change.");
+            message::warn("Replace all account specific info in your wrangler.toml.");
+            message::warn(
+                "Your zone_id and account_id can be found in the right sidebar at https://dash.cloudflare.com\n",
+            );
             if !top_level_fields.is_empty() {
-                let msg_prefix = match top_level_fields.len() {
-                    1 => "Top level field",
-                    _ => "Top level fields:",
-                };
+                let msg_prefix = "Top level fields";
                 let top_level_fields = top_level_fields
                     .clone()
                     .into_iter()
                     .collect::<Vec<String>>()
-                    .join(", ");
-                message::warn(&format!("{} {}", msg_prefix, top_level_fields));
+                    .join(separator);
+                println!("{}{}{}", msg_prefix, separator, top_level_fields);
             }
             if !env_fields.is_empty() {
                 for (env_name, env_fields) in env_fields {
-                    let msg_prefix = match env_fields.len() {
-                        1 => format!("[env.{}] field:", env_name),
-                        _ => format!("[env.{}] fields:", env_name),
-                    };
+                    let msg_prefix = format!("[env.{}]", env_name);
                     let env_fields = env_fields
                         .clone()
                         .into_iter()
                         .collect::<Vec<String>>()
-                        .join(", ");
-                    message::warn(&format!("{} {}", msg_prefix, env_fields));
+                        .join(separator);
+                    println!("{}{}{}", msg_prefix, separator, env_fields);
                 }
             }
         }
