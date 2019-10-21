@@ -14,32 +14,32 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 
-pub fn put(
-    target: &Target,
-    user: &GlobalUser,
-    id: &str,
-    key: &str,
-    value: &str,
-    is_file: bool,
-    expiration: Option<&str>,
-    expiration_ttl: Option<&str>,
-) -> Result<(), failure::Error> {
+pub struct KVMetaData {
+    pub namespace_id: String,
+    pub key: String,
+    pub value: String,
+    pub is_file: bool,
+    pub expiration: Option<String>,
+    pub expiration_ttl: Option<String>,
+}
+
+pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
 
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
         target.account_id,
-        id,
-        kv::url_encode_key(key)
+        &data.namespace_id,
+        kv::url_encode_key(&data.key)
     );
 
     // Add expiration and expiration_ttl query options as necessary.
     let mut query_params: Vec<(&str, &str)> = vec![];
 
-    if let Some(exp) = expiration {
+    if let Some(exp) = &data.expiration {
         query_params.push(("expiration", exp))
     };
-    if let Some(ttl) = expiration_ttl {
+    if let Some(ttl) = &data.expiration_ttl {
         query_params.push(("expiration_ttl", ttl))
     };
     let url = Url::parse_with_params(&api_endpoint, query_params);
@@ -50,20 +50,21 @@ pub fn put(
 
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
-    let mut res = if is_file {
-        match &metadata(value) {
+    let mut res = if data.is_file {
+        match &metadata(&data.value) {
             Ok(file_type) if file_type.is_file() => {
-                let file = fs::File::open(value)?;
+                let file = fs::File::open(&data.value)?;
                 client.put(&url_into_str).body(file).send()?
             }
-            Ok(file_type) if file_type.is_dir() => {
-                failure::bail!("--path argument takes a file, {} is a directory", value)
-            }
-            Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", value), // last remaining value is symlink
+            Ok(file_type) if file_type.is_dir() => failure::bail!(
+                "--path argument takes a file, {} is a directory",
+                data.value
+            ),
+            Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", data.value), // last remaining value is symlink
             Err(e) => failure::bail!("{}", e),
         }
     } else {
-        client.put(&url_into_str).body(value.to_string()).send()?
+        client.put(&url_into_str).body(data.value).send()?
     };
 
     if res.status().is_success() {
