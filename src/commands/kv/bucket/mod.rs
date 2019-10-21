@@ -84,12 +84,23 @@ fn directory_keys_only(target: &Target, directory: &Path) -> Result<Vec<String>,
     Ok(upload_vec)
 }
 
+const REQUIRED_IGNORE_FILES: &[&str] = &["node_modules"];
+const NODE_MODULES: &str = "node_modules";
+
 fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
+    // The directory provided should never be node_modules!
+    match directory.file_name() {
+        Some(name) => {
+            if name == NODE_MODULES {
+                failure::bail!("Your directory of files to upload cannot be named node_modules.");
+            }
+        }
+        _ => (),
+    }
+
     let ignore = build_ignore(target, directory)?;
     Ok(WalkBuilder::new(directory).overrides(ignore).build())
 }
-
-const REQUIRED_IGNORE_FILES: &[&str] = &["node_modules"];
 
 fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
     let mut required_override = OverrideBuilder::new(directory);
