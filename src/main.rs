@@ -335,6 +335,13 @@ fn run() -> Result<(), failure::Error> {
                         .help("watch your project for changes and update the preview automagically")
                         .long("watch")
                         .takes_value(false),
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .short("v")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -351,11 +358,11 @@ fn run() -> Result<(), failure::Error> {
                         .takes_value(true)
                 )
                 .arg(
-                    Arg::with_name("print-files")
-                        .short("p")
-                        .long("print-files")
+                    Arg::with_name("verbose")
+                        .short("v")
+                        .long("verbose")
                         .takes_value(false)
-                        .help("Print out files being uploaded for a Workers Site. Only applies to Workers Sites."),
+                        .help("toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -467,7 +474,14 @@ fn run() -> Result<(), failure::Error> {
 
         let watch = matches.is_present("watch");
 
-        commands::preview(target, user, method, body, watch)?;
+        commands::preview(
+            target,
+            user,
+            method,
+            body,
+            watch,
+            matches.is_present("verbose"),
+        )?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -482,7 +496,7 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
 
-        commands::publish(&user, &mut target, matches.is_present("print-files"))?;
+        commands::publish(&user, &mut target, matches.is_present("verbose"))?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
