@@ -34,7 +34,7 @@ pub fn wait_for_changes(
 }
 
 fn get_changed_path_from_event(event: DebouncedEvent) -> Result<Option<PathBuf>, Error> {
-    info!("debounced event is {:?}", event);
+    info!("Detected Event {:?}", event);
     match event {
         DebouncedEvent::Error(error, _) => Err(format_err!("{:?}", error)),
         DebouncedEvent::NoticeWrite(path) => Ok(Some(path)),
