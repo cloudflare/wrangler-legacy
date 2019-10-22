@@ -37,7 +37,7 @@ pub fn directory_keys_values(
         let path = entry.path();
         if path.is_file() {
             if verbose {
-                message::working(&format!("Parsing {}...", path.display()));
+                message::working(&format!("Preparing {}", path.display()));
             }
 
             let value = std::fs::read(path)?;
