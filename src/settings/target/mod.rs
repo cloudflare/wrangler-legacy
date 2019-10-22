@@ -71,6 +71,7 @@ impl TemplateConfig {
             }
         }
         if let Some(kv_namespaces) = &self.kv_namespaces {
+            dbg!(kv_namespaces);
             for kv_namespace in kv_namespaces {
                 if !kv_namespace.id.is_empty() && !kv_namespace.binding.is_empty() {
                     top_level_fields.push(format!("kv-namespace {}", kv_namespace.binding));
@@ -199,8 +200,6 @@ impl Target {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Environment {
     pub account_id: Option<String>,
-    #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: Option<String>,
     pub private: Option<bool>,
     pub route: Option<String>,
@@ -209,14 +208,13 @@ pub struct Environment {
     pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
     pub site: Option<Site>,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
     pub account_id: String,
-    pub env: Option<HashMap<String, Environment>>,
-    #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: String,
     pub private: Option<bool>,
     #[serde(rename = "type")]
@@ -227,6 +225,9 @@ pub struct Manifest {
     pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
     pub site: Option<Site>,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub env: Option<HashMap<String, Environment>>,
 }
 
 impl Manifest {
@@ -275,24 +276,34 @@ impl Manifest {
                 TemplateConfig::default()
             }
         };
+
+        let default_workers_dev = if let Some(route) = &template_config.route {
+            if route.is_empty() {
+                Some(true)
+            } else {
+                None
+            }
+        } else {
+            Some(true)
+        };
+
         // TODO: https://github.com/cloudflare/wrangler/issues/773
         let manifest = Manifest {
             account_id: template_config
                 .account_id
                 .clone()
                 .unwrap_or_else(|| String::new()),
-            env: template_config.env.clone(), // comment this line to make warnings work with environments
-            // env: None,                     // and uncomment this line
-            kv_namespaces: template_config.kv_namespaces.clone(),
-            name: name.clone(),
+            name,
             private: None,
             target_type: target_type.unwrap_or_else(|| template_config.clone().target_type),
             route: template_config.route.or_else(|| Some(String::new())),
             routes: None,
             webpack_config: template_config.webpack_config,
-            workers_dev: template_config.workers_dev.or_else(|| Some(true)),
+            workers_dev: template_config.workers_dev.or_else(|| default_workers_dev),
             zone_id: template_config.zone_id.or_else(|| Some(String::new())),
             site: template_config.site.or(site),
+            kv_namespaces: template_config.kv_namespaces.clone(),
+            env: template_config.env.clone(),
         };
 
         let toml = toml::to_string(&manifest)?;
