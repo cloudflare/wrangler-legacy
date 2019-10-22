@@ -392,10 +392,10 @@ fn run() -> Result<(), failure::Error> {
     let config_path = Path::new("./wrangler.toml");
 
     if let Some(_matches) = matches.subcommand_matches("config") {
-        println!("Enter email: ");
+        println!("Enter your cloudflare account's email: ");
         let mut email: String = read!("{}\n");
         email.truncate(email.trim_end().len());
-        println!("Enter api key: ");
+        println!("Enter your cloudflare account's global api key: ");
         let mut api_key: String = read!("{}\n");
         api_key.truncate(api_key.trim_end().len());
 
