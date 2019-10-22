@@ -336,6 +336,12 @@ fn run() -> Result<(), failure::Error> {
                         .help("watch your project for changes and update the preview automagically")
                         .long("watch")
                         .takes_value(false),
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -350,6 +356,12 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("env")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -454,8 +466,9 @@ fn run() -> Result<(), failure::Error> {
         };
 
         let watch = matches.is_present("watch");
+        let verbose = matches.is_present("verbose");
 
-        commands::preview(target, user, method, body, watch)?;
+        commands::preview(target, user, method, body, watch, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -470,7 +483,9 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
 
-        commands::publish(&user, &mut target)?;
+        let verbose = matches.is_present("verbose");
+
+        commands::publish(&user, &mut target, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
