@@ -33,10 +33,11 @@ pub fn preview(
     method: HTTPMethod,
     body: Option<String>,
     livereload: bool,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
     let sites_preview: bool = target.site.is_some();
 
-    let script_id = build_and_upload(&mut target, user.as_ref(), sites_preview)?;
+    let script_id = build_and_upload(&mut target, user.as_ref(), sites_preview, verbose)?;
 
     let session = Uuid::new_v4().to_simple();
     let preview_host = "example.com";
@@ -59,7 +60,13 @@ pub fn preview(
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
-        watch_for_changes(target, user.as_ref(), session.to_string(), broadcaster)?;
+        watch_for_changes(
+            target,
+            user.as_ref(),
+            session.to_string(),
+            broadcaster,
+            verbose,
+        )?;
     } else {
         open_browser(&format!(
             "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
@@ -132,6 +139,7 @@ fn watch_for_changes(
     user: Option<&GlobalUser>,
     session_id: String,
     broadcaster: Sender,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
     let sites_preview: bool = target.site.is_some();
 
@@ -139,7 +147,7 @@ fn watch_for_changes(
     commands::watch_and_build(&target, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        if let Ok(new_id) = build_and_upload(&mut target, user, sites_preview) {
+        if let Ok(new_id) = build_and_upload(&mut target, user, sites_preview, verbose) {
             let msg = FiddleMessage {
                 session_id: session_id.clone(),
                 data: FiddleMessageData::LiveReload { new_id },
