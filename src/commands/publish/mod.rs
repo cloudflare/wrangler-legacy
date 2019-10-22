@@ -23,7 +23,11 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::{Site, Target};
 use crate::terminal::{emoji, message};
 
-pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Error> {
+pub fn publish(
+    user: &GlobalUser,
+    target: &mut Target,
+    verbose: bool,
+) -> Result<(), failure::Error> {
     let msg = match &target.route {
         Some(route) => &route,
         None => "workers_dev",
@@ -38,7 +42,7 @@ pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Er
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
-    let asset_manifest = upload_buckets(target, user)?;
+    let asset_manifest = upload_buckets(target, user, verbose)?;
     build_and_publish_script(&user, &target, asset_manifest)?;
 
     Ok(())
@@ -147,6 +151,7 @@ fn fails_with_good_error_msg_on_verify_email_err() {
 pub fn upload_buckets(
     target: &Target,
     user: &GlobalUser,
+    verbose: bool,
 ) -> Result<Option<AssetManifest>, failure::Error> {
     let mut asset_manifest = None;
     for namespace in &target.kv_namespaces() {
@@ -171,7 +176,7 @@ pub fn upload_buckets(
                     path.display()
                 )
             }
-            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, false)?;
+            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
             if target.site.is_some() {
                 if asset_manifest.is_none() {
                     asset_manifest = Some(manifest_result)

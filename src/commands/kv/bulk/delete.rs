@@ -38,10 +38,9 @@ pub fn delete(
         Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
             let keys_vec = serde_json::from_str(&data);
-            if keys_vec.is_err() {
-                failure::bail!("Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]")
-            } else {
-                Ok(keys_vec.unwrap())
+            match keys_vec {
+                Ok(keys_vec) => Ok(keys_vec),
+                Err(_) => failure::bail!("Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]")
             }
         }
         Ok(_) => failure::bail!("{} should be a JSON file, but is not", filename.display()),

@@ -36,6 +36,10 @@ pub fn directory_keys_values(
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
+            if verbose {
+                message::working(&format!("Preparing {}", path.display()));
+            }
+
             let value = std::fs::read(path)?;
 
             // Need to base64 encode value
@@ -44,9 +48,6 @@ pub fn directory_keys_values(
             let (url_safe_path, key) =
                 generate_path_and_key(path, directory, Some(b64_value.clone()))?;
 
-            if verbose {
-                message::working(&format!("Parsing {}...", key.clone()));
-            }
             upload_vec.push(KeyValuePair {
                 key: key.clone(),
                 value: b64_value,
@@ -435,7 +436,7 @@ mod tests {
         let actual_path_with_hash =
             generate_path_with_hash(&path, hashed_value.to_owned()).unwrap();
 
-        let expected_path_with_hash = format!("path/to/asset.{}", hashed_value);;
+        let expected_path_with_hash = format!("path/to/asset.{}", hashed_value);
 
         assert_eq!(actual_path_with_hash, expected_path_with_hash);
     }

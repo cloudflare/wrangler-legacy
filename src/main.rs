@@ -20,6 +20,7 @@ mod settings;
 mod terminal;
 mod util;
 
+use crate::commands::kv::key::KVMetaData;
 use crate::settings::target::TargetType;
 use exitfailure::ExitFailure;
 use terminal::emoji;
@@ -335,6 +336,12 @@ fn run() -> Result<(), failure::Error> {
                         .help("watch your project for changes and update the preview automagically")
                         .long("watch")
                         .takes_value(false),
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -349,6 +356,12 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("env")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -459,8 +472,9 @@ fn run() -> Result<(), failure::Error> {
         };
 
         let watch = matches.is_present("watch");
+        let verbose = matches.is_present("verbose");
 
-        commands::preview(target, user, method, body, watch)?;
+        commands::preview(target, user, method, body, watch, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -475,7 +489,9 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
 
-        commands::publish(&user, &mut target)?;
+        let verbose = matches.is_present("verbose");
+
+        commands::publish(&user, &mut target, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
@@ -544,7 +560,7 @@ fn run() -> Result<(), failure::Error> {
                         .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                         .to_string(),
                 };
-                (target, namespace_id.to_string())
+                (target, namespace_id)
             }
             None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
         };
@@ -555,23 +571,27 @@ fn run() -> Result<(), failure::Error> {
                 commands::kv::key::get(&target, &user, &namespace_id, key)?
             }
             ("put", Some(put_key_matches)) => {
-                let key = put_key_matches.value_of("key").unwrap();
+                let key = put_key_matches.value_of("key").unwrap().to_string();
 
                 // If is_file is true, overwrite value to be the contents of the given
                 // filename in the 'value' arg.
-                let value = put_key_matches.value_of("value").unwrap();
-                let expiration = put_key_matches.value_of("expiration");
-                let ttl = put_key_matches.value_of("expiration-ttl");
-                commands::kv::key::put(
-                    &target,
-                    &user,
-                    &namespace_id,
+                let value = put_key_matches.value_of("value").unwrap().to_string();
+                let is_file = put_key_matches.is_present("path");
+                let expiration = put_key_matches
+                    .value_of("expiration")
+                    .map(|e| e.to_string());
+                let expiration_ttl = put_key_matches
+                    .value_of("expiration-ttl")
+                    .map(|t| t.to_string());
+                let kv_metadata = KVMetaData {
+                    namespace_id,
                     key,
-                    &value,
-                    put_key_matches.is_present("path"),
+                    value,
+                    is_file,
                     expiration,
-                    ttl,
-                )?
+                    expiration_ttl,
+                };
+                commands::kv::key::put(&target, &user, kv_metadata)?
             }
             ("delete", Some(delete_key_matches)) => {
                 let key = delete_key_matches.value_of("key").unwrap();
@@ -603,7 +623,7 @@ fn run() -> Result<(), failure::Error> {
                         .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
                         .to_string(),
                 };
-                (target, namespace_id.to_string())
+                (target, namespace_id)
             }
             None => unreachable!(), // this is unreachable because all kv:key commands have required arguments.
         };
