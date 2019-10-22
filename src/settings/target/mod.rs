@@ -214,7 +214,6 @@ pub struct Environment {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
     pub account_id: String,
-    pub env: Option<HashMap<String, Environment>>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub name: String,
@@ -227,6 +226,7 @@ pub struct Manifest {
     pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
     pub site: Option<Site>,
+    pub env: Option<HashMap<String, Environment>>,
 }
 
 impl Manifest {
@@ -281,7 +281,6 @@ impl Manifest {
                 .account_id
                 .clone()
                 .unwrap_or_else(|| String::new()),
-            env: template_config.env.clone(), // comment this line to make warnings work with environments
             // env: None,                     // and uncomment this line
             kv_namespaces: template_config.kv_namespaces.clone(),
             name: name.clone(),
@@ -293,6 +292,7 @@ impl Manifest {
             workers_dev: template_config.workers_dev.or_else(|| Some(true)),
             zone_id: template_config.zone_id.or_else(|| Some(String::new())),
             site: template_config.site.or(site),
+            env: template_config.env.clone(), // comment this line to make warnings work with environments
         };
 
         let toml = toml::to_string(&manifest)?;
