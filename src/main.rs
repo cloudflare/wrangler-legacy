@@ -408,7 +408,7 @@ fn run() -> Result<(), failure::Error> {
 
         let template = if site {
             if template.is_some() {
-                failure::bail!("You cannot specify a template when generating a Workers Site. If you'd like to use the default site boilerplate, run wrangler generate --site. If you'd like to use another site boilerplate, omit the --site when running wrangler generate.")
+                failure::bail!("You cannot pass a template and the --site flag to wrangler generate. If you'd like to use the default site boilerplate, run wrangler generate --site. If you'd like to use another site boilerplate, omit --site when running wrangler generate.")
             }
             "https://github.com/cloudflare/worker-sites-template"
         } else {
