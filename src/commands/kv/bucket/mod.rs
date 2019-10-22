@@ -435,7 +435,7 @@ mod tests {
         let actual_path_with_hash =
             generate_path_with_hash(&path, hashed_value.to_owned()).unwrap();
 
-        let expected_path_with_hash = format!("path/to/asset.{}", hashed_value);;
+        let expected_path_with_hash = format!("path/to/asset.{}", hashed_value);
 
         assert_eq!(actual_path_with_hash, expected_path_with_hash);
     }
