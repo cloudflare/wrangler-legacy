@@ -105,7 +105,7 @@ mod tests {
         fs::create_dir_all(test_path.clone()).unwrap();
 
         let outcome = filter_ignored(test_dir.to_path_buf(), test_path, Some(&ignore_dirs));
-        // fs::remove_dir_all(test_dir).unwrap();
+        fs::remove_dir_all(test_dir).unwrap();
         assert!(outcome.is_ok());
         assert!(outcome.unwrap().is_some());
     }
