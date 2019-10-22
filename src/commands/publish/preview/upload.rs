@@ -42,6 +42,7 @@ pub fn build_and_upload(
     target: &mut Target,
     user: Option<&GlobalUser>,
     sites_preview: bool,
+    verbose: bool,
 ) -> Result<String, failure::Error> {
     let preview = match &user {
         Some(user) => {
@@ -56,7 +57,7 @@ pub fn build_and_upload(
                     publish::bind_static_site_contents(user, target, &site_config, true)?;
                 }
 
-                let asset_manifest = publish::upload_buckets(target, user)?;
+                let asset_manifest = publish::upload_buckets(target, user, verbose)?;
                 authenticated_upload(&client, &target, asset_manifest)?
             } else {
                 message::warn(&format!(
