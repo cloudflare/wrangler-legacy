@@ -37,7 +37,7 @@ pub fn build_script_and_upload_form(
             build_generated_dir()?;
             concat_js(&name)?;
 
-            let path = format!("./pkg/{}_bg.wasm", name).to_string();
+            let path = format!("./pkg/{}_bg.wasm", name);
             let binding = "wasm".to_string();
             let wasm_module = WasmModule::new(path, binding)?;
 

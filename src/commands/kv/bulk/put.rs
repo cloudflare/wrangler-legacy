@@ -27,11 +27,9 @@ pub fn put(
         Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
             let data_vec = serde_json::from_str(&data);
-            if data_vec.is_err() {
-                Err(failure::format_err!("Failed to decode JSON. Please make sure to follow the format, [{{\"key\": \"test_key\", \"value\": \"test_value\"}}, ...]"))
-            } else {
-                let data_vec: Vec<KeyValuePair> = data_vec.unwrap();
-                Ok(data_vec)
+            match data_vec {
+                Ok(data_vec) => Ok(data_vec),
+                Err(_) => Err(failure::format_err!("Failed to decode JSON. Please make sure to follow the format, [{{\"key\": \"test_key\", \"value\": \"test_value\"}}, ...]"))
             }
         }
         Ok(_) => Err(failure::format_err!(
@@ -62,7 +60,7 @@ pub fn call_api(
     client: &impl ApiClient,
     target: &Target,
     namespace_id: &str,
-    pairs: &Vec<KeyValuePair>,
+    pairs: &[KeyValuePair],
 ) -> Result<ApiSuccess<()>, ApiFailure> {
     client.request(&WriteBulk {
         account_identifier: &target.account_id,

@@ -293,7 +293,7 @@ impl Manifest {
                 .account_id
                 .clone()
                 .unwrap_or_else(|| String::new()),
-            name: name.clone(),
+            name,
             private: None,
             target_type: target_type.unwrap_or_else(|| template_config.clone().target_type),
             route: template_config.route.or_else(|| Some(String::new())),
