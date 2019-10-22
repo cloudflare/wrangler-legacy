@@ -71,6 +71,7 @@ impl TemplateConfig {
             }
         }
         if let Some(kv_namespaces) = &self.kv_namespaces {
+            dbg!(kv_namespaces);
             for kv_namespace in kv_namespaces {
                 if !kv_namespace.id.is_empty() && !kv_namespace.binding.is_empty() {
                     top_level_fields.push(format!("kv-namespace {}", kv_namespace.binding));
@@ -275,6 +276,17 @@ impl Manifest {
                 TemplateConfig::default()
             }
         };
+
+        let default_workers_dev = if let Some(route) = &template_config.route {
+            if route.is_empty() {
+                Some(true)
+            } else {
+                None
+            }
+        } else {
+            Some(true)
+        };
+
         // TODO: https://github.com/cloudflare/wrangler/issues/773
         let manifest = Manifest {
             account_id: template_config
@@ -287,7 +299,7 @@ impl Manifest {
             route: template_config.route.or_else(|| Some(String::new())),
             routes: None,
             webpack_config: template_config.webpack_config,
-            workers_dev: template_config.workers_dev.or_else(|| Some(true)),
+            workers_dev: template_config.workers_dev.or_else(|| default_workers_dev),
             zone_id: template_config.zone_id.or_else(|| Some(String::new())),
             site: template_config.site.or(site),
             kv_namespaces: template_config.kv_namespaces.clone(),
