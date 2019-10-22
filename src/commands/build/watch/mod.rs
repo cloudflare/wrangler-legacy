@@ -1,4 +1,6 @@
 mod watcher;
+use ignore::overrides::OverrideBuilder;
+use ignore::WalkBuilder;
 pub use watcher::wait_for_changes;
 
 use crate::commands::build::{command, wranglerjs};
@@ -7,7 +9,6 @@ use crate::terminal::message;
 use crate::{commands, install};
 
 use notify::{self, RecursiveMode, Watcher};
-use std::collections::HashSet;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -38,7 +39,7 @@ pub fn watch_and_build(
                 message::info(&format!("watching {:?}", &JAVASCRIPT_PATH));
 
                 loop {
-                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD, None) {
+                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
                         Ok(_path) => {
                             if let Some(tx) = tx.clone() {
                                 tx.send(()).expect("--watch change message failed to send");
@@ -54,17 +55,36 @@ pub fn watch_and_build(
             let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
-            let ignore_dirs: HashSet<_> = RUST_IGNORE.iter().map(|d| d.to_string()).collect();
-
             thread::spawn(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-                watcher.watch(RUST_PATH, RecursiveMode::Recursive).unwrap();
+                // Populate walker with ignored files so we ensure that the watcher does not watch
+                // ignored directories
+                let mut ignored_files = OverrideBuilder::new("./");
+                for ignore in RUST_IGNORE {
+                    ignored_files.add(&format!("!{}", ignore)).unwrap();
+                }
+                let ignored_file_override = ignored_files.build().unwrap();
+
+                let walker = WalkBuilder::new("./")
+                    .overrides(ignored_file_override)
+                    .build();
+
+                for entry in walker {
+                    let entry = entry.unwrap();
+                    if entry.path().is_dir() {
+                        continue;
+                    }
+                    println!("{:?}", entry.path());
+                    watcher
+                        .watch(entry.path(), RecursiveMode::Recursive)
+                        .unwrap();
+                }
                 message::info(&format!("watching {:?}", &RUST_PATH));
 
                 loop {
-                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD, Some(&ignore_dirs)) {
+                    match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
                         Ok(_path) => {
                             let command = command(&args, &binary_path);
                             let command_name = format!("{:?}", command);

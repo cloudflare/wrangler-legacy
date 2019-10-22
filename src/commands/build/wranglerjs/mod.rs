@@ -88,7 +88,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
         let mut is_first = true;
 
         loop {
-            match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD, None) {
+            match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
                 Ok(_) => {
                     if is_first {
                         is_first = false;
