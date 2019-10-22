@@ -417,7 +417,7 @@ fn run() -> Result<(), failure::Error> {
             }
 
             let default_template = "https://github.com/cloudflare/worker-template";
-            let template = template.unwrap_or(match target_type {
+            template.unwrap_or(match target_type {
                 Some(ref pt) => match pt {
                     TargetType::Rust => "https://github.com/cloudflare/rustwasm-worker-template",
                     _ => default_template,
