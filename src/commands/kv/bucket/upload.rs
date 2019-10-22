@@ -165,7 +165,7 @@ mod tests {
         // Old values found on remote
         let mut exclude_keys = HashSet::new();
         exclude_keys.insert(key_a_old.clone());
-        exclude_keys.insert(key_b_old.clone());
+        exclude_keys.insert(key_b_old);
 
         // local files (with b updated) to upload
         let pairs_to_upload = vec![
@@ -206,7 +206,7 @@ mod tests {
             // todo(gabbi): Implement PartialEq for KeyValuePair in cloudflare-rs.
             assert!(pair.key == actual[idx].key);
             assert!(pair.value == actual[idx].value);
-            idx = idx + 1;
+            idx += 1;
         }
     }
 }
