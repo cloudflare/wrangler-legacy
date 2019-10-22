@@ -8,4 +8,4 @@ pub use delete::delete;
 pub use get::get;
 pub use key_list::KeyList;
 pub use list::list;
-pub use put::put;
+pub use put::{put, KVMetaData};

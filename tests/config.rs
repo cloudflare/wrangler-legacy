@@ -34,7 +34,7 @@ fn generate_config_with(eol: &str) {
     let config_file = fake_home_dir.join("config").join("default.toml");
 
     let config = fs::read_to_string(&config_file)
-        .expect(&format!("could not read config at {:?}", &config_file));
+        .unwrap_or_else(|_| panic!("could not read config at {:?}", &config_file));
     assert_eq!(
         config,
         r#"email = "email@example.com"
