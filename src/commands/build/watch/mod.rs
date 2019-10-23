@@ -76,7 +76,6 @@ pub fn watch_and_build(
                     if entry.path().is_dir() {
                         continue;
                     }
-                    println!("{:?}", entry.path());
                     watcher
                         .watch(entry.path(), RecursiveMode::Recursive)
                         .unwrap();
