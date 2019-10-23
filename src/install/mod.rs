@@ -151,7 +151,7 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
         };
 
         let url = format!(
-            "https://workers.cloudflare.com/get-wrangler-binary/{0}/{1}/v{2}/{3}.tar.gz",
+            "https://workers.cloudflare.com/get-binary/{0}/{1}/v{2}/{3}.tar.gz",
             owner, tool_name, version, target
         );
         Some(url)
