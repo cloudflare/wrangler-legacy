@@ -136,7 +136,7 @@ fn download_prebuilt(
 fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
     if tool_name == "wranglerjs" {
         Some(format!(
-            "https://workers.cloudflare.com/get-wranglerjs-binary/v{0}/v{1}",
+            "https://workers.cloudflare.com/get-wranglerjs-binary/{0}/v{1}.tar.gz",
             tool_name, version
         ))
     } else {
@@ -151,7 +151,7 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
         };
 
         let url = format!(
-            "https://workers.cloudflare.com/get-wrangler-binary/v{0}/{1}/{2}/{3}",
+            "https://workers.cloudflare.com/get-wrangler-binary/{0}/{1}/v{2}/{3}.tar.gz",
             owner, tool_name, version, target
         );
         Some(url)
