@@ -3,7 +3,6 @@ use std::process::Command;
 
 use crate::commands::validate_worker_name;
 use crate::settings::target::{Manifest, Site, TargetType};
-use crate::terminal::{emoji, message};
 use crate::{commands, install};
 
 pub fn generate(
@@ -40,13 +39,7 @@ pub fn run_generate(name: &str, template: &str) -> Result<(), failure::Error> {
 }
 
 fn command(name: &str, binary_path: PathBuf, args: &[&str]) -> Command {
-    let msg = format!(
-        "{} Generating a new worker project with name '{}'...",
-        emoji::SHEEP,
-        name
-    );
-
-    message::working(&msg);
+    log::info!("Generating a new worker project with name '{}'", name);
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
