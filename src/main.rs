@@ -9,22 +9,15 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
-
-use log::info;
-
-mod commands;
-mod http;
-mod install;
-mod installer;
-mod settings;
-mod terminal;
-mod util;
-
-use crate::commands::kv::key::KVMetaData;
-use crate::settings::target::TargetType;
 use exitfailure::ExitFailure;
-use terminal::emoji;
-use terminal::message;
+
+use wrangler::commands;
+use wrangler::commands::kv::key::KVMetaData;
+use wrangler::installer;
+use wrangler::settings;
+use wrangler::settings::target::TargetType;
+use wrangler::terminal::emoji;
+use wrangler::terminal::message;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -426,9 +419,10 @@ fn run() -> Result<(), failure::Error> {
             })
         };
 
-        info!(
+        log::info!(
             "Generate command called with template {}, and name {}",
-            template, name
+            template,
+            name
         );
 
         commands::generate(name, template, target_type, site)?;
@@ -447,13 +441,13 @@ fn run() -> Result<(), failure::Error> {
 
         commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
-        info!("Getting project settings");
+        log::info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = &manifest.get_target(env)?;
         commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
-        info!("Getting project settings");
+        log::info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
@@ -474,15 +468,15 @@ fn run() -> Result<(), failure::Error> {
 
         commands::preview(target, user, method, body, watch, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
-        info!("Getting User settings");
+        log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
         commands::whoami(&user);
     } else if let Some(matches) = matches.subcommand_matches("publish") {
-        info!("Getting User settings");
+        log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        info!("Getting project settings");
+        log::info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
@@ -491,12 +485,12 @@ fn run() -> Result<(), failure::Error> {
 
         commands::publish(&user, &mut target, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
-        info!("Getting project settings");
+        log::info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
 
-        info!("Getting User settings");
+        log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
         let name = matches.value_of("name");

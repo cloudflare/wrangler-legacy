@@ -2,9 +2,10 @@ use failure::format_err;
 
 use super::binding::Binding;
 use super::filename_from_path;
-use super::kv_namespace::KvNamespace;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
+
+use crate::settings::target::KvNamespace;
 
 #[derive(Debug)]
 pub struct ProjectAssets {
