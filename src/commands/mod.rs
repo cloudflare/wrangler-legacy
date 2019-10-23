@@ -1,7 +1,5 @@
 use std::process::Command;
 
-use log::info;
-
 pub mod build;
 pub mod config;
 pub mod generate;
@@ -24,21 +22,36 @@ pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
 pub use whoami::whoami;
 
+use std::str;
+
+const UNKNOWN_ERR: &str =
+    "An unexpected error occurred, try running the command again with RUSTLOG=info";
+
 /// Run the given command and return its stdout.
 pub fn run(mut command: Command, command_name: &str) -> Result<(), failure::Error> {
-    info!("Running {:?}", command);
+    log::info!("Running {:?}", command);
 
-    let status = command.status()?;
+    let output = command.output()?;
+    dbg!(output.clone());
 
-    if status.success() {
-        Ok(())
-    } else {
-        failure::bail!(
+    println!(
+        "{}",
+        String::from_utf8(output.stdout).expect(UNKNOWN_ERR).trim()
+    );
+
+    if !output.status.success() {
+        log::info!(
             "failed to execute `{}`: exited with {}",
             command_name,
-            status
-        )
+            output.status
+        );
+        let mut serr = String::from_utf8(output.stderr).expect(UNKNOWN_ERR);
+        if serr.starts_with("Error: ") {
+            serr = serr.get(7..).unwrap_or(UNKNOWN_ERR).to_string();
+        }
+        failure::bail!("{}", serr.trim())
     }
+    Ok(())
 }
 
 // Ensures that Worker name is valid.

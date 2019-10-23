@@ -36,8 +36,7 @@ pub fn run_generate(name: &str, template: &str) -> Result<(), failure::Error> {
     let command = command(name, binary_path, &args);
     let command_name = format!("{:?}", command);
 
-    commands::run(command, &command_name)?;
-    Ok(())
+    commands::run(command, &command_name)
 }
 
 fn command(name: &str, binary_path: PathBuf, args: &[&str]) -> Command {
