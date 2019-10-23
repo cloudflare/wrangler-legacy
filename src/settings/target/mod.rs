@@ -199,14 +199,14 @@ impl Target {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Environment {
-    pub account_id: Option<String>,
     pub name: Option<String>,
-    pub private: Option<bool>,
+    pub account_id: Option<String>,
+    pub workers_dev: Option<bool>,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
-    pub webpack_config: Option<String>,
-    pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
+    pub webpack_config: Option<String>,
+    pub private: Option<bool>,
     pub site: Option<Site>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
@@ -214,16 +214,16 @@ pub struct Environment {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
-    pub account_id: String,
     pub name: String,
-    pub private: Option<bool>,
     #[serde(rename = "type")]
     pub target_type: TargetType,
+    pub account_id: String,
+    pub workers_dev: Option<bool>,
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
-    pub webpack_config: Option<String>,
-    pub workers_dev: Option<bool>,
     pub zone_id: Option<String>,
+    pub webpack_config: Option<String>,
+    pub private: Option<bool>,
     pub site: Option<Site>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
@@ -289,18 +289,18 @@ impl Manifest {
 
         // TODO: https://github.com/cloudflare/wrangler/issues/773
         let manifest = Manifest {
+            name,
+            target_type: target_type.unwrap_or_else(|| template_config.clone().target_type),
             account_id: template_config
                 .account_id
                 .clone()
                 .unwrap_or_else(|| String::new()),
-            name,
-            private: None,
-            target_type: target_type.unwrap_or_else(|| template_config.clone().target_type),
+            workers_dev: template_config.workers_dev.or_else(|| default_workers_dev),
             route: template_config.route.or_else(|| Some(String::new())),
             routes: None,
-            webpack_config: template_config.webpack_config,
-            workers_dev: template_config.workers_dev.or_else(|| default_workers_dev),
             zone_id: template_config.zone_id.or_else(|| Some(String::new())),
+            webpack_config: template_config.webpack_config,
+            private: None,
             site: template_config.site.or(site),
             kv_namespaces: template_config.kv_namespaces.clone(),
             env: template_config.env.clone(),
