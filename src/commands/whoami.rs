@@ -5,7 +5,9 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
     // If using email + API key for auth, simply prints out email from config file.
     let email: String = match &user.email {
         Some(email) => email.to_string(),
-        None => failure::bail!("At the moment, Wrangler cannot get user information for users using API tokens")
+        None => failure::bail!(
+            "At the moment, Wrangler cannot get user information for users using API tokens"
+        ),
     };
 
     let msg = format!(
