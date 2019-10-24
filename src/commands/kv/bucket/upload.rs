@@ -5,16 +5,13 @@ use std::fs::metadata;
 use std::path::Path;
 
 use crate::commands::kv;
-use crate::commands::kv::bucket::directory_keys_values;
+use crate::commands::kv::bucket::{directory_keys_values, KEY_MAX_SIZE};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::framework::apiclient::ApiClient;
 use failure::format_err;
-
-const KEY_MAX_SIZE: usize = 512;
-const VALUE_MAX_SIZE: usize = 2 * 1024 * 1024;
 
 // The consts below are halved from the API's true capacity to help avoid
 // hammering it with large requests.
@@ -126,14 +123,6 @@ pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Er
                 pair.key,
                 pair.key.len(),
                 KEY_MAX_SIZE
-            );
-        }
-        if pair.value.len() > VALUE_MAX_SIZE {
-            failure::bail!(
-                "File `{}` of {} bytes exceeds the maximum value size limit of {} bytes",
-                pair.key,
-                pair.value.len(),
-                VALUE_MAX_SIZE
             );
         }
     }

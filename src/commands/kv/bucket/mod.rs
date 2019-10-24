@@ -11,6 +11,7 @@ pub use manifest::AssetManifest;
 pub use sync::sync;
 
 use std::ffi::OsString;
+use std::fs;
 use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
@@ -20,6 +21,10 @@ use ignore::{Walk, WalkBuilder};
 
 use crate::settings::target::Target;
 use crate::terminal::message;
+
+pub const KEY_MAX_SIZE: usize = 512;
+// Oddly enough, metadata.len() returns a u64, not usize.
+pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
 
 // Returns the hashed key and value pair for all files in a directory.
 pub fn directory_keys_values(
@@ -38,6 +43,19 @@ pub fn directory_keys_values(
         if path.is_file() {
             if verbose {
                 message::working(&format!("Preparing {}", path.display()));
+            }
+
+            // Ensure that all files in upload directory do not exceed the MAX_VALUE_SIZE.
+            let metadata = fs::metadata(path)?;
+            let file_len = metadata.len();
+
+            if file_len > VALUE_MAX_SIZE {
+                failure::bail!(
+                    "File `{}` of {} bytes exceeds the maximum value size limit of {} bytes",
+                    path.display(),
+                    file_len,
+                    VALUE_MAX_SIZE
+                );
             }
 
             let value = std::fs::read(path)?;
