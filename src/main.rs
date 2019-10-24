@@ -136,7 +136,14 @@ fn run() -> Result<(), failure::Error> {
                 .about(&*format!(
                     "{} Setup wrangler with your Cloudflare account",
                     emoji::SLEUTH
-                )),
+                ))
+                .arg(
+                    Arg::with_name("token")
+                        .help("use an API token for authentication. API tokens are still in beta")
+                        .short("t")
+                        .long("token")
+                        .takes_value(false),
+                ),
         )
         .subcommand(
             SubCommand::with_name("subdomain")
@@ -157,8 +164,9 @@ fn run() -> Result<(), failure::Error> {
         )))
         .get_matches();
 
-    if let Some(_matches) = matches.subcommand_matches("config") {
-        commands::global_config()?;
+    if let Some(matches) = matches.subcommand_matches("config") {
+        let token = matches.is_present("token");
+        commands::global_config(token)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let project_type = match matches.value_of("type") {
