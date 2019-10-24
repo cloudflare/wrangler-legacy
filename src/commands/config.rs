@@ -7,6 +7,8 @@ use std::path::PathBuf;
 
 use crate::settings::global_user::{get_global_config_dir, GlobalUser};
 
+use dialoguer::Select;
+
 // set the permissions on the dir, we want to avoid that other user reads to
 // file
 #[cfg(not(target_os = "windows"))]
@@ -17,18 +19,46 @@ pub fn set_file_mode(file: &PathBuf) {
         .expect("could not set permissions on file");
 }
 
-pub fn global_config(
-    email: String,
-    api_key: Option<String>,
-    api_token: Option<String>,
-) -> Result<(), failure::Error> {
-    let s = GlobalUser {
-        email,
-        api_key,
-        api_token,
+pub fn global_config() -> Result<(), failure::Error> {
+    let mut selector = Select::new();
+    selector.items(&["Use API token", "Use email and API key"]);
+    selector.with_prompt("Please select your authentication method");
+    selector.default(0); // default to "Use API token" option
+
+    let mut user = GlobalUser {
+        email: None,
+        api_key: None,
+        api_token: None,
     };
 
-    let toml = toml::to_string(&s)?;
+    match selector.interact()? {
+        0 => {
+            println!("Enter API token: ");
+            let mut api_token_str: String = read!("{}\n");
+            api_token_str.truncate(api_token_str.trim_end().len());
+            if !api_token_str.is_empty() {
+                user.api_token = Some(api_token_str);
+            }
+        }
+        1 => {
+            println!("Enter email: ");
+            let mut email_str: String = read!("{}\n");
+            email_str.truncate(email_str.trim_end().len());
+            if !email_str.is_empty() {
+                user.email = Some(email_str);
+            }
+
+            println!("Enter API key: ");
+            let mut api_key_str: String = read!("{}\n");
+            api_key_str.truncate(api_key_str.trim_end().len());
+            if !api_key_str.is_empty() {
+                user.api_key = Some(api_key_str);
+            }
+        }
+        _ => unreachable!(),
+    }
+
+    let toml = toml::to_string(&user)?;
 
     let config_dir = get_global_config_dir().expect("could not find global config directory");
     fs::create_dir_all(&config_dir)?;

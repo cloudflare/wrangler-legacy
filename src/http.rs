@@ -33,25 +33,37 @@ pub fn client() -> Client {
 }
 
 pub fn auth_client(user: &GlobalUser) -> Client {
+    let auth_headers = create_auth_headers(user);
+
+    builder()
+        .default_headers(auth_headers)
+        .redirect(RedirectPolicy::none())
+        .build()
+        .expect("could not create authenticated http client")
+}
+
+fn create_auth_headers(user: &GlobalUser) -> HeaderMap {
     let mut headers = headers();
-    headers.insert("X-Auth-Email", HeaderValue::from_str(&user.email).unwrap());
-    // If API Key is present (not None), use API Key.
-    match &user.api_key {
-        Some(key) => headers.insert("X-Auth-Key", HeaderValue::from_str(&key).unwrap()),
-        None => None,
-    };
 
     match &user.api_token {
         Some(token) => headers.insert(
             "Authorization",
             HeaderValue::from_str(&format!("Bearer {}", &token)).unwrap(),
         ),
-        None => None,
+        None => {
+            // fallback to email + API key auth option
+            match &user.email {
+                Some(email) => {
+                    headers.insert("X-Auth-Email", HeaderValue::from_str(&email).unwrap())
+                }
+                None => None,
+            };
+            match &user.api_key {
+                Some(key) => headers.insert("X-Auth-Key", HeaderValue::from_str(&key).unwrap()),
+                None => None,
+            };
+            None
+        }
     };
-
-    builder()
-        .default_headers(headers)
-        .redirect(RedirectPolicy::none())
-        .build()
-        .expect("could not create authenticated http client")
+    headers
 }

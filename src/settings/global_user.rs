@@ -9,7 +9,7 @@ use config::{Config, Environment, File};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GlobalUser {
-    pub email: String,
+    pub email: Option<String>,
     pub api_key: Option<String>,
     pub api_token: Option<String>,
 }

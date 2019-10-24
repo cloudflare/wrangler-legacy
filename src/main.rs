@@ -158,27 +158,7 @@ fn run() -> Result<(), failure::Error> {
         .get_matches();
 
     if let Some(_matches) = matches.subcommand_matches("config") {
-        println!("Enter email: ");
-        let mut email: String = read!("{}\n");
-        email.truncate(email.trim_end().len());
-
-        println!("If using API key, enter API key (otherwise press Enter): ");
-        let mut api_key_str: String = read!("{}\n");
-        api_key_str.truncate(api_key_str.trim_end().len());
-        let mut api_key = None;
-        if !api_key_str.is_empty() {
-            api_key = Some(api_key_str);
-        }
-
-        println!("If using API token, enter API token (otherwise press Enter): ");
-        let mut api_token_str: String = read!("{}\n");
-        api_token_str.truncate(api_token_str.trim_end().len());
-        let mut api_token = None;
-        if !api_token_str.is_empty() {
-            api_token = Some(api_token_str);
-        }
-
-        commands::global_config(email, api_key, api_token)?;
+        commands::global_config()?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let project_type = match matches.value_of("type") {
