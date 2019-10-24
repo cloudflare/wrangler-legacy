@@ -1,4 +1,6 @@
 mod watcher;
+use ignore::overrides::OverrideBuilder;
+use ignore::WalkBuilder;
 pub use watcher::wait_for_changes;
 
 use crate::commands::build::{command, wranglerjs};
@@ -14,6 +16,9 @@ use std::time::Duration;
 pub const COOLDOWN_PERIOD: Duration = Duration::from_millis(2000);
 const JAVASCRIPT_PATH: &str = "./";
 const RUST_PATH: &str = "./";
+
+// Paths to ignore live watching in Rust Workers
+const RUST_IGNORE: &'static [&str] = &["pkg", "target", "worker/generated"];
 
 /// watch a project for changes and re-build it when necessary,
 /// outputting a build event to tx.
@@ -54,7 +59,27 @@ pub fn watch_and_build(
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1)).unwrap();
 
-                watcher.watch(RUST_PATH, RecursiveMode::Recursive).unwrap();
+                // Populate walker with ignored files so we ensure that the watcher does not watch
+                // ignored directories
+                let mut ignored_files = OverrideBuilder::new("./");
+                for ignore in RUST_IGNORE {
+                    ignored_files.add(&format!("!{}", ignore)).unwrap();
+                }
+                let ignored_file_override = ignored_files.build().unwrap();
+
+                let walker = WalkBuilder::new("./")
+                    .overrides(ignored_file_override)
+                    .build();
+
+                for entry in walker {
+                    let entry = entry.unwrap();
+                    if entry.path().is_dir() {
+                        continue;
+                    }
+                    watcher
+                        .watch(entry.path(), RecursiveMode::Recursive)
+                        .unwrap();
+                }
                 message::info(&format!("watching {:?}", &RUST_PATH));
 
                 loop {
