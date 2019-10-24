@@ -139,7 +139,7 @@ fn run() -> Result<(), failure::Error> {
                 ))
                 .arg(
                     Arg::with_name("token")
-                        .help("use an API token for authentication. API tokens are still in beta")
+                        .help("use an API token for authentication. API tokens are still in beta. You can issue them on the Cloudflare dashboard.")
                         .short("t")
                         .long("token")
                         .takes_value(false),

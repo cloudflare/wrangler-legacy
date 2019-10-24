@@ -39,7 +39,7 @@ pub fn global_config(token: bool) -> Result<(), failure::Error> {
             user.email = Some(email_str);
         }
 
-        println!("Enter API key: ");
+        println!("Enter global API key: ");
         let mut api_key_str: String = read!("{}\n");
         api_key_str.truncate(api_key_str.trim_end().len());
         if !api_key_str.is_empty() {
