@@ -95,12 +95,11 @@ fn build_and_publish_script(
         .multipart(script_upload_form)
         .send()?;
 
-    if !res.status().is_success() {
-        failure::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
+    let res_status = res.status();
+    let res_text = res.text()?;
+
+    if !res_status.is_success() {
+        failure::bail!(error_msg(res_status, res_text))
     }
 
     let pattern = if target.route.is_some() {
@@ -120,6 +119,33 @@ fn build_and_publish_script(
     ));
 
     Ok(())
+}
+
+fn error_msg(status: reqwest::StatusCode, text: String) -> String {
+    if text.contains("\"code\": 10034,") {
+        "You need to verify your account's email address before you can publish. You can do this by checking your email or logging in to https://dash.cloudflare.com.".to_string()
+    } else {
+        format!("Something went wrong! Status: {}, Details {}", status, text)
+    }
+}
+
+#[test]
+fn fails_with_good_error_msg_on_verify_email_err() {
+    let status = reqwest::StatusCode::FORBIDDEN;
+    let text = r#"{
+  "result": null,
+  "success": false,
+  "errors": [
+    {
+      "code": 10034,
+      "message": "workers.api.error.email_verification_required"
+    }
+  ],
+  "messages": []
+}"#
+    .to_string();
+    let result = error_msg(status, text);
+    assert!(result.contains("https://dash.cloudflare.com"));
 }
 
 pub fn upload_buckets(
