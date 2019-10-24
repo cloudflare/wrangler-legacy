@@ -30,9 +30,9 @@ pub fn run(mut command: Command, command_name: &str) -> Result<(), failure::Erro
 
     if !status.success() {
         failure::bail!(
-            "command exited with {}\n`{}`",
-            status,
-            command_name.replace("\"", "")
+            "tried running command:\n{}\nexited with {}",
+            command_name.replace("\"", ""),
+            status
         )
     }
     Ok(())
