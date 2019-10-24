@@ -1,0 +1,12 @@
+type = "webpack"
+name = "worker"
+zone_id = ""
+account_id = ""
+route = "staging.example.com/*"
+
+[env.production]
+type = "webpack"
+name = "staging-worker"
+zone_id = ""
+account_id = ""
+route = "example.com/*"

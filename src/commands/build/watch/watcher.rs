@@ -8,7 +8,7 @@ use failure::{format_err, Error};
 use crate::terminal::message;
 use log::info;
 
-///Add cooldown for all types of events to watching logic
+/// Add cooldown for all types of events to watching logic
 pub fn wait_for_changes(
     rx: &Receiver<DebouncedEvent>,
     cooldown: Duration,
@@ -18,15 +18,12 @@ pub fn wait_for_changes(
         match get_changed_path_from_event(event) {
             Ok(Some(path)) => {
                 message::working("Detected changes...");
-                //wait for cooldown
-                while let Ok(_) = rx.recv_timeout(cooldown) {
-                    message::working("Detected change during cooldown...");
-                }
-                message::working("Cooldown over, propogating changes...");
+                // wait for cooldown
+                while let Ok(_) = rx.recv_timeout(cooldown) {}
                 return Ok(path);
             }
             Ok(None) => {
-                continue; //was an event type we don't care about, continue
+                continue; // was an event type we don't care about, continue
             }
             Err(error) => {
                 message::user_error(&format!("WatchError {:?}", error));

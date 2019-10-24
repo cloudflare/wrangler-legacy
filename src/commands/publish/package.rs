@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::PathBuf;
 
 use serde::{self, Deserialize};
 
@@ -9,12 +9,12 @@ pub struct Package {
     main: String,
 }
 impl Package {
-    pub fn main(&self) -> Result<String, failure::Error> {
+    pub fn main(&self, build_dir: &PathBuf) -> Result<String, failure::Error> {
         if self.main == "" {
             failure::bail!(
                 "The `main` key in your `package.json` file is required; please specified the entrypoint of your Worker.",
             )
-        } else if !Path::new(&self.main).exists() {
+        } else if !build_dir.join(&self.main).exists() {
             failure::bail!(
                 "The entrypoint of your Worker ({}) could not be found.",
                 self.main
@@ -26,11 +26,11 @@ impl Package {
 }
 
 impl Package {
-    pub fn new(pkg_path: &str) -> Result<Package, failure::Error> {
-        let manifest_path = Path::new(pkg_path).join("package.json");
+    pub fn new(pkg_path: &PathBuf) -> Result<Package, failure::Error> {
+        let manifest_path = pkg_path.join("package.json");
         if !manifest_path.is_file() {
             failure::bail!(
-                "Your JavaScript project is missing a `package.json` file; is `{}` the \
+                "Your JavaScript project is missing a `package.json` file; is `{:?}` the \
                  wrong directory?",
                 pkg_path
             )

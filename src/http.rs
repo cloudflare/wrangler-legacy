@@ -5,13 +5,17 @@ use std::time::Duration;
 use crate::install;
 use crate::settings::global_user::GlobalUser;
 
-fn headers() -> HeaderMap {
+fn headers(feature: Option<&str>) -> HeaderMap {
     let version = if install::target::DEBUG {
         "dev"
     } else {
         env!("CARGO_PKG_VERSION")
     };
-    let user_agent = format!("wrangler/{}", version);
+    let user_agent = if let Some(feature) = feature {
+        format!("wrangler/{}/{}", version, feature)
+    } else {
+        format!("wrangler/{}", version)
+    };
 
     let mut headers = HeaderMap::new();
     headers.insert(USER_AGENT, HeaderValue::from_str(&user_agent).unwrap());
@@ -25,9 +29,9 @@ fn builder() -> ClientBuilder {
         .timeout(Duration::from_secs(30))
 }
 
-pub fn client() -> Client {
+pub fn client(feature: Option<&str>) -> Client {
     builder()
-        .default_headers(headers())
+        .default_headers(headers(feature))
         .build()
         .expect("could not create http client")
 }

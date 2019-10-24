@@ -1,5 +1,330 @@
 # Changelog
 
+## 🎂 1.4.0
+
+- ### Features
+
+  - **Workers Sites - [pull/509]**
+
+    Wrangler 1.4.0 includes supports for **Workers Sites**, enabling developers to deploy static applications directly to Workers. Workers Sites is perfect for frontend frameworks like [React](https://reactjs.org) and [Vue](https://vuejs.org/), as well as static site generators like [Hugo](https://gohugo.io/) and [Gatsby](https://gohugo.io/).
+
+    Workers Sites is a feature exclusive to Wrangler, and combines a great developer experience with excellent performance. The `--site` flag has been added to `wrangler init` and `wrangler generate` to use Workers Sites with new and existing projects:
+
+    ```sh
+    # Add Workers Sites to an existing project
+    $ wrangler init --site
+
+    # Start a new Workers Sites project
+    $ wrangler generate --site
+    ```
+
+    If you're ready to get started using Workers Sites, we've written guides for the various routes you might take with your project:
+
+    - [Create a new project from scratch](https://developers.cloudflare.com/workers/sites/start-from-scratch)
+    - [Deploy a pre-existing static site project](https://developers.cloudflare.com/workers/sites/start-from-existing)
+    - [Add static assets to a pre-existing Workers project](https://developers.cloudflare.com/workers/sites/start-from-worker)
+
+    For more details on how Workers Sites works with Wrangler, check out [the documentation](https://developers.cloudflare.com/workers/sites/reference). We also have a brand new [tutorial](https://developers.cloudflare.com/workers/tutorials/deploy-a-react-app) to help you learn the Workers Sites workflow, by deploying a React application!
+
+    Workers Sites has been a heroic effort by the entire Workers Developer Experience team, comprising of Wrangler updates, new [project templates](https://github.com/cloudflare/worker-sites-template), and [open-source packages](https://github.com/cloudflare/kv-asset-handler). We're super excited about the future that Workers Sites represents, where static sites and serverless functions can work together to build powerful, cutting-edge applications. 
+
+    Make sure to try out Workers Sites to build your next app! 🎉🎉🎉
+
+    [pull/509]: https://github.com/cloudflare/wrangler/pull/509
+
+  - **Download release from our proxy rather than GitHub - [zackbloom], [pull/692]**
+
+    [zackbloom]: https://github.com/zackbloom
+    [pull/692]: https://github.com/cloudflare/wrangler/pull/692
+
+  - **Add validation for workers names in wrangler init and wrangler generate - [gabbifish], [issue/470][pull/686]**
+
+    There are a number of requirements around _what_ your Workers script is named – previously, Wrangler would opaquely fail and not indicate that your script name was invalid: this PR updates the `init` and `generate` commands to validate the potential name before continuing to create a new project.
+
+    [gabbifish]: https://github.com/gabbifish
+    [issue/470]: https://github.com/cloudflare/wrangler/issues/470
+    [pull/686]: https://github.com/cloudflare/wrangler/pull/686
+
+  - **Ensure KV subcommands check for presence of required fields in wrangler.toml - [gabbifish], [issue/607] [pull/665]**
+
+    There's a number of commands in `wrangler` that require a properly configured `wrangler.toml` file: instead of failing, this PR ensures that these commands now check your configuration file before attempting any action. Hooray for clarity! 😇
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/665]: https://github.com/cloudflare/wrangler/pull/665
+
+  - **Show size when a KV upload error occurs - [stevenfranks], [issue/650] [pull/651]**
+
+    Previously, when uploading a file to Workers KV from Wrangler, the error output didn't indicate the size of the file that was being uploaded. This PR improves the output of that message by showing both the file size and the maximum file size that can be uploaded to Workers KV.
+
+    [stevenfranks]: https://github.com/stevenfranks
+    [issue/650]: https://github.com/cloudflare/wrangler/issues/650
+    [pull/651]: https://github.com/cloudflare/wrangler/pull/651
+
+  - **Better file support for kv:put - [phayes], [pull/633]**
+
+    The `kv:put` command, introduced in Wrangler 1.3.1, has been improved to support uploading non-UT8 files. In addition, the command now streams files directly to the Cloudflare API when uploading, instead of buffering them in memory during the upload process.
+
+    [phayes]: https://github.com/phayes
+    [pull/633]: https://github.com/cloudflare/wrangler/pull/633
+
+- ### Fixes
+
+  **Ensure we install and cache the latest version of cargo-generate and wasm-pack if user has an outdated cargo installed version - [EverlastingBugstopper], [issue/666] [pull/726]**
+
+    Wrangler orchestrates a few other tools under the hood, notably [`wasm-pack`](https://github.com/rustwasm/wasm-pack) and [`cargo-generate`](https://github.com/ashleygwilliams/cargo-generate). We use a library called [`binary-install`](https://github.com/rustwasm/binary-install) to fetch and cache binaries we download. However, to avoid downloading unecessarily, we first check if the user has a copy locally on their machine that they had `cargo install`'d. We had a bug where in this logic branch, we *didn't* check that the local version was the most up-to-date version. This meant that users who had an older installed version may run into errors when wrangler expected to use features of a newer version of that tool. This PR adds the logic to check for the version and will install and cache a newer version for wrangler to use (leaving your local version as is!).
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [issue/666]: https://github.com/cloudflare/wrnagler/issues/666
+    [pull/726]: https://github.com/cloudflare/wrangler/pull/726
+
+  - **Remove link to 000000000000000000.cloudflareworkers.com - [EverlastingBugstopper], [pull]**
+
+    Have you ever run `wrangler preview` in your project and wondered why the URL to preview your application is `000000000000000000.cloudflareworkers.com`? The writer of this CHANGELOG finds it confusing, too: this PR removes that line, making it easier to parse the output from `wrangler preview`.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull]: https://github.com/cloudflare/wrangler/pull/698
+
+  - **Make install actually fail if the release can't be downloaded - [zackbloom], [pull/672]**
+
+    When Wrangler's installation shim attempts to install Wrangler on your machine, there's the possibility that the installation can fail – instead of failing silently, the installation shim now properly throws an error, allowing us to better diagnose installation failures.
+
+    [zackbloom]: https://github.com/zackbloom
+    [pull/672]: https://github.com/cloudflare/wrangler/pull/672
+
+- ### Maintenance
+
+  - **KV command error output improvements - [gabbifish], [issue/608] [pull/613]**
+
+    The Wrangler team is always on the quest for perfect error messages. In pursuit of that goal, we've improved how errors in the `wrangler kv` subcommands output to your terminal. 😎
+
+    [gabbifish]: https://github.com/gabbifish
+    [issue/608]: https://github.com/cloudflare/wrangler/pull/608
+    [pull/613]: https://github.com/cloudflare/wrangler/pull/613
+
+  - **Added missing word to whoami response - [stevenfranks], [pull/695]**
+
+    Clear writing is good! It's hard to write clearly when words are missing in a sentence. This PR corrects the output of `wrangler whoami` to add a missing word, making this command easier to read. 🤔
+
+    [stevenfranks]: https://github.com/stevenfranks
+    [pull/695]: https://github.com/cloudflare/wrangler/pull/695
+
+- ### Documentation
+
+  - **Webpack documentation - [EverlastingBugstopper], [issue/721] [pull/724]**
+
+    For our default build type, aptly named "webpack", Wrangler uses webpack under the hood to bundle all of your assets. We hadn't documented how we do that, what our default config is, and how you can specify your own custom webpack config if you'd like. We have those docs now, so [check them out]!
+
+    [check them out]: https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [issue/721]: https://github.com/cloudflare/wrangler/issues/721
+    [pull/724]: https://github.com/cloudflare/wrangler/pull/724
+    
+
+## 🐛 1.3.1
+
+- ### Features
+
+  - **Environments - [EverlastingBugstopper], [issue/385][pull/386]**
+
+    Wrangler 1.3.1 includes supports for **environments**, allowing developers to deploy Workers projects to multiple places. For instance, an application can be deployed to a production URL _and_ a staging URL, without having to juggle multiple configuration files.
+
+    To use environments, you can now pass in `[env.$env_name]` properties in your `wrangler.toml`. Here's an example:
+
+    ```toml
+    type = "webpack"
+    name = "my-worker-dev"
+    account_id = "12345678901234567890"
+    zone_id = "09876543210987654321"
+    workers_dev = false
+
+    [env.staging]
+    name = "my-worker-staging"
+    route = "staging.example.com/*"
+
+    [env.production]
+    name = "my-worker"
+    route = "example.com/*"
+    ```
+
+    With multiple environments defined, `wrangler build`, `wrangler preview`, and `wrangler publish` now accept a `--env` flag to indicate what environment you'd like to use, for instance, `wrangler publish --env production`.
+
+    To support developers transitioning to environments, we've written documentation for the feature, including further information about deprecations and advanced usage. [Check out the documentation here!](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md)
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [issue/385]: https://github.com/cloudflare/wrangler/issues/385
+    [pull/386]: https://github.com/cloudflare/wrangler/pull/386
+
+  - **KV commands - [ashleymichal], [gabbifish], [issue/339][pull/405]**
+
+    Wrangler 1.3.1 includes commands for managing and updating [Workers KV](https://www.cloudflare.com/products/workers-kv/) namespaces, keys, and values directly from the CLI.
+
+    - `wrangler kv:namespace`
+
+      `wrangler kv:namespace` allows developers to `create`, `list`, and `delete` KV namespaces, from the CLI. This allows Wrangler users to configure new namespaces without having to navigate into the Cloudflare Web UI to manage namespaces. Once a namespace has been created, Wrangler will even give you the exact configuration to copy into your `wrangler.toml` to begin using your new namespace in your project. Neat!
+
+      ```console
+      $ wrangler kv:namespace create "MY_KV"
+      🌀  Creating namespace with title "worker-MY_KV"
+      ✨  Success: WorkersKvNamespace {
+        id: "e29b263ab50e42ce9b637fa8370175e8",
+        title: "worker-MY_KV",
+      }
+      ✨  Add the following to your wrangler.toml:
+      kv-namespaces = [
+        { binding = "MY_KV", id = "e29b263ab50e42ce9b637fa8370175e8" }
+      ]
+      ```
+
+    - `wrangler kv:key`
+
+      `wrangler kv:key` gives CLI users access to reading, listing, and updating KV keys inside of a namespace. For instance, given a namespace with the binding `KV`, you can directly set keys and values from the CLI, including passing expiration data, such as below:
+
+      ```console
+      $ wrangler kv:key put --binding=KV "key" "value" --ttl=10000
+      ✨  Success
+      ```
+
+    - `wrangler kv:bulk`
+
+      `wrangler kv:bulk` can be used to quickly upload or remove a large number of values from Workers KV, by accepting a JSON file containing KV data. Let's define a JSON file, `data.json`:
+
+      ```json
+      [
+        {
+          "key": "test_key",
+          "value": "test_value",
+          "expiration_ttl": 3600
+        },
+        {
+          "key": "test_key2",
+          "value": "test_value2",
+          "expiration_ttl": 3600
+        }
+      ]
+      ```
+
+      By calling `wrangler kv:bulk put --binding=KV data.json`, I can quickly create two new keys in Workers KV - `test_key` and `test_key2`, with the corresponding values `test_value` and `test_value2`:
+
+      ```console
+      $ wrangler kv:bulk put --binding=KV data.json
+      ✨  Success
+      ```
+
+    The KV subcommands in Wrangler 1.3.1 make it super easy to comfortably query and manage your Workers KV data without ever having to leave the command-line. For more information on the available commands and their usage, see [the documentation](https://github.com/cloudflare/wrangler/blob/master/docs/content/kv_commands.md). 🤯
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [gabbifish]: https://github.com/gabbifish
+    [issue/339]: https://github.com/cloudflare/wrangler/issues/339
+    [pull/405]: https://github.com/cloudflare/wrangler/pull/405
+
+  - **Reduce output from publish command - [EverlastingBugstopper], [issue/523][pull/584]**
+
+    This PR improves the messaging of `wrangler publish`.
+
+    **Before:**
+
+    ```console
+    ✨  Built successfully, built project size is 517 bytes.
+    ✨  Successfully published your script.
+    ✨  Success! Your worker was successfully published. You can view it at example.com/*
+    ```
+
+    **After:**
+
+    ```console
+    $ wrangler publish
+    ✨  Built successfully, built project size is 523 bytes.
+    ✨  Successfully published your script to example.com/*
+    ```
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [issue/523]: https://github.com/cloudflare/wrangler/issues/523
+    [pull/584]: https://github.com/cloudflare/wrangler/pull/584
+
+  - **feat #323: Allow fn & promise from webpack config - [third774], [issue/323][pull/325]**
+
+    This PR fixes Wrangler's handling of `webpack.config.js` files to support functions and promises, as per the [Webpack documentation](https://webpack.js.org/configuration/configuration-types/).
+
+    [third774]: https://github.com/third774
+    [issue/323]: https://github.com/cloudflare/wrangler/issues/323
+    [pull/325]: https://github.com/cloudflare/wrangler/pull/325
+
+  - **Use webworker target - [xtuc], [issue/477][pull/490]**
+
+    This PR updates how Wrangler builds JavaScript projects with Webpack to conform to the [`webworker`](https://webpack.js.org/configuration/target/) build target. This ensures that projects built with Wrangler are less likely to generate code that isn't supported by the Workers runtime.
+
+    [xtuc]: https://github.com/xtuc
+    [issue/477]: https://github.com/cloudflare/wrangler/issues/477
+    [pull/490]: https://github.com/cloudflare/wrangler/pull/490
+
+- ### Fixes
+
+  - **Have live reload preview watch over entire rust worker directory - [gabbifish], [pull/535]**
+
+    This change updates the live reload functionality to watch over the entire Rust worker directory, and does not look for `package.json` files that do not typically exist for Rust and WASM projects.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/535]: https://github.com/cloudflare/wrangler/pull/535
+
+  - **Fix javascript live preview for linux - [gabbifish], [issue/517][pull/528]**
+
+    This PR fixes an issue with Wrangler's live preview (`wrangler preview --watch`) functionality on Linux. In addition, it simplifies the console output for a live preview instance, which could get pretty noisy during development!
+
+    [gabbifish]: https://github.com/gabbifish
+    [issue/517]: https://github.com/cloudflare/wrangler/issues/517
+    [pull/528]: https://github.com/cloudflare/wrangler/pull/528
+
+  - **Different emojis for different commands - [EverlastingBugstopper], [pull/605]**
+
+    KV subcommands would return the same emoji value in `--help` output. This PR updates the command-line output to use different emoji, making the output easier to read!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/605]: https://github.com/cloudflare/wrangler/pull/605
+
+- ### Maintenance
+
+  - **Add keywords for npm SEO - [EverlastingBugstopper], [pull/583]**
+
+    This PR improves the discoverability for wrangler on npm by adding keywords to the installer's `package.json`.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/583]: https://github.com/cloudflare/wrangler/pull/583
+
+  - **Clean up emoji - [xortive], [pull/455]**
+
+    This PR removes some extraneous unicode that keeps our emoji from displaying correctly in certain terminal emulators, especially for multi-codepoint emoji.
+
+    [xortive]: https://github.com/xortive
+    [pull/455]: https://github.com/cloudflare/wrangler/pull/455
+
+- ### Documentation
+
+  - **Add documentation for init to the README - [EverlastingBugstopper], [pull/585]**
+
+    This PR adds documentation in our README for `wrangler init`, which allows you to begin using an existing project with Wrangler.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/585]: https://github.com/cloudflare/wrangler/pull/585
+
+  - **Remove link to docs for installation because they link back to wrangler README - [EverlastingBugstopper], [pull/494]**
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/494]: https://github.com/cloudflare/wrangler/pull/494
+
+  - **Minor formatting fix in README.md - [kentonv], [pull/515]**
+
+    This PR fixes a small syntax issue in the Wrangler README, causing Markdown lists to render incorrectly.
+
+    [kentonv]: https://github.com/kentonv
+    [pull/515]: https://github.com/cloudflare/wrangler/pull/515
+
+  - **Fix link to Cloudflare Workers preview service - [dentarg], [pull/472]**
+
+    This PR fixes a link to the [Cloudflare Workers preview service](https://cloudflareworkers.com) in the Wrangler README.
+
+    [dentarg]: https://github.com/dentarg
+    [pull/472]: https://github.com/cloudflare/wrangler/pull/472
+
 ## 💆🏻‍♂️ 1.2.0
 
 - ### Features
@@ -13,7 +338,7 @@
     [xortive]: https://github.com/xortive
     [pull/451]: https://github.com/cloudflare/wrangler/pull/451
 
-  - **Authenticate calls to preview service when possible - [ashleymichal], [issue/423] [issue/431] [pull/429]**
+  - **Authenticate calls to preview service when possible - [ashleymichal], [issue/423][issue/431] [pull/429]**
 
     This PR allows developers to use the preview service with account and user-specific functionality, such as KV support inside of the preview service. Previously, attempting to preview a Workers project with KV bindings would cause an error - this PR fixes that, by allowing `wrangler preview` to make authenticated calls to the preview service.
 
@@ -40,7 +365,7 @@
 
 - ### Fixes
 
-  - **Fix ignoring exit code from spawnSync - run-wrangler.js - [defjosiah], [issue/433] [issue/335] [pull/432]**
+  - **Fix ignoring exit code from spawnSync - run-wrangler.js - [defjosiah], [issue/433][issue/335] [pull/432]**
 
     This PR fixes an issue where an NPM-installed `wrangler` would _always_ return an exit code of 0, even when `wrangler` had errored. This improves `wrangler`'s ability to be scripted, e.g. in CI projects.
 
@@ -51,7 +376,21 @@
 
 - ### Maintenance
 
-  - **[chore] Deny clippy warnings in CI, run rustfmt in --check mode - [xortive], [issue/426] [pull/435]**
+  - **Test maintenance - [EverlastingBugstopper], [pull/563]**
+
+    This PR cleans up some incorrectly named tests and adds fixtures to support testing new functionality in 1.3.1, such as environments. ✨
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/563]: https://github.com/cloudflare/wrangler/pull/563
+
+  - **Guard test against potential races - [xtuc], [pull/567]**
+
+    This PR fixes a race condition during `wrangler build` that can occur when two builds are taking place at the same time. To fix it, a file lock has been implemented, which Wrangler will wait on until the previous build completes.
+
+    [xtuc]: https://github.com/xtuc
+    [pull/567]: https://github.com/cloudflare/wrangler/pull/567
+
+  - **Deny clippy warnings in CI, run rustfmt in --check mode - [xortive], [issue/426][pull/435]**
 
     This PR updates some of the CI steps for testing Wrangler, to make sure that [rust-clippy](https://github.com/rust-lang/rust-clippy) warnings cause CI to fail. This helps Wrangler code stay well-written and consistent - hooray!
 
@@ -106,13 +445,13 @@
 
       Previously:
 
-        ```
-        $ wrangler preview
-        ⬇️ Installing wasm-pack...
-        ⬇️ Installing wranglerjs...
-        ✨   Built successfully.
-        Error: Error("expected value", line: 2, column: 1)
-        ```
+      ```
+      $ wrangler preview
+      ⬇️ Installing wasm-pack...
+      ⬇️ Installing wranglerjs...
+      ✨   Built successfully.
+      Error: Error("expected value", line: 2, column: 1)
+      ```
 
       Now:
 

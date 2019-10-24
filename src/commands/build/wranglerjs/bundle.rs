@@ -7,27 +7,25 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
-#[cfg(test)]
-use crate::terminal::message;
 
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
-const BUNDLE_OUT: &str = "./worker";
+const BUNDLE_OUT: &str = "worker";
 pub struct Bundle {
-    out: String,
+    out: PathBuf,
 }
 
 // We call a {Bundle} the output of a {Bundler}; representing what {Webpack}
 // produces.
 impl Bundle {
-    pub fn new() -> Bundle {
+    pub fn new(build_dir: &PathBuf) -> Bundle {
         Bundle {
-            out: BUNDLE_OUT.to_string(),
+            out: build_dir.join(BUNDLE_OUT),
         }
     }
 
     #[cfg(test)]
-    fn new_at(out: String) -> Bundle {
+    fn new_at(out: PathBuf) -> Bundle {
         Bundle { out }
     }
 
@@ -38,8 +36,6 @@ impl Bundle {
         }
 
         let mut script_file = File::create(self.script_path())?;
-        let mut script = create_prologue();
-        script += &wranglerjs_output.script;
 
         if let Some(encoded_wasm) = &wranglerjs_output.wasm {
             let wasm = decode(encoded_wasm).expect("could not decode Wasm in base64");
@@ -47,7 +43,7 @@ impl Bundle {
             wasm_file.write_all(&wasm)?;
         }
 
-        script_file.write_all(script.as_bytes())?;
+        script_file.write_all(wranglerjs_output.script.as_bytes())?;
 
         Ok(())
     }
@@ -81,20 +77,11 @@ impl Bundle {
     }
 }
 
-// We inject some code at the top-level of the Worker; called {prologue}.
-// This aims to provide additional support, for instance providing {window}.
-pub fn create_prologue() -> String {
-    r#"
-        const window = this;
-    "#
-    .to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn create_temp_dir(name: &str) -> String {
+    fn create_temp_dir(name: &str) -> PathBuf {
         let mut dir = env::temp_dir();
         dir.push(name);
         if dir.exists() {
@@ -102,7 +89,7 @@ mod tests {
         }
         fs::create_dir(&dir).expect("could not create temp dir");
 
-        dir.to_str().unwrap().to_string()
+        dir
     }
 
     #[test]
@@ -150,10 +137,9 @@ mod tests {
         assert!(wranglerjs_output.get_errors() == "a\nb");
     }
 
-    fn cleanup(name: String) {
+    fn cleanup(name: PathBuf) {
         let current_dir = env::current_dir().unwrap();
         let path = Path::new(&current_dir).join(name);
-        message::info(&format!("p: {:?}", path));
         fs::remove_dir_all(path).unwrap();
     }
 }

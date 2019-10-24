@@ -2,8 +2,10 @@ use failure::format_err;
 
 use super::binding::Binding;
 use super::filename_from_path;
-use super::kv_namespace::KvNamespace;
+use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
+
+use crate::settings::target::KvNamespace;
 
 #[derive(Debug)]
 pub struct ProjectAssets {
@@ -11,6 +13,7 @@ pub struct ProjectAssets {
     script_path: String,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub text_blobs: Vec<TextBlob>,
 }
 
 impl ProjectAssets {
@@ -18,6 +21,7 @@ impl ProjectAssets {
         script_path: String,
         wasm_modules: Vec<WasmModule>,
         kv_namespaces: Vec<KvNamespace>,
+        text_blobs: Vec<TextBlob>,
     ) -> Result<Self, failure::Error> {
         let script_name = filename_from_path(&script_path)
             .ok_or_else(|| format_err!("filename should not be empty: {}", script_path))?;
@@ -27,6 +31,7 @@ impl ProjectAssets {
             script_path,
             wasm_modules,
             kv_namespaces,
+            text_blobs,
         })
     }
 
@@ -39,6 +44,10 @@ impl ProjectAssets {
         }
         for kv in &self.kv_namespaces {
             let binding = kv.binding();
+            bindings.push(binding);
+        }
+        for blob in &self.text_blobs {
+            let binding = blob.binding();
             bindings.push(binding);
         }
 

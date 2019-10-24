@@ -1,7 +1,8 @@
+use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 use reqwest::Client;
 use serde::Deserialize;
@@ -32,29 +33,44 @@ struct V4ApiResponse {
     pub result: ApiPreview,
 }
 
-pub fn upload_and_get_id(
-    project: &Project,
+const SITES_UNAUTH_PREVIEW_ERR: &str =
+    "Unauthenticated preview does not work for previewing Workers Sites; you need to \
+     authenticate to upload your site contents.";
+
+// Builds and uploads the script and its bindings. Returns the ID of the uploaded script.
+pub fn build_and_upload(
+    target: &mut Target,
     user: Option<&GlobalUser>,
+    sites_preview: bool,
+    verbose: bool,
 ) -> Result<String, failure::Error> {
     let preview = match &user {
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
 
-            let missing_fields = validate(&project);
+            let missing_fields = validate(&target);
 
             if missing_fields.is_empty() {
-                let client = http::auth_client(&user);
+                let client = http::auth_client(None, &user);
 
-                authenticated_upload(&client, &project)?
+                if let Some(site_config) = target.site.clone() {
+                    publish::bind_static_site_contents(user, target, &site_config, true)?;
+                }
+
+                let asset_manifest = publish::upload_buckets(target, user, verbose)?;
+                authenticated_upload(&client, &target, asset_manifest)?
             } else {
                 message::warn(&format!(
                     "Your wrangler.toml is missing the following fields: {:?}",
                     missing_fields
                 ));
                 message::warn("Falling back to unauthenticated preview.");
+                if sites_preview {
+                    failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
+                }
 
-                let client = http::client();
-                unauthenticated_upload(&client, &project)?
+                let client = http::client(None);
+                unauthenticated_upload(&client, &target)?
             }
         }
         None => {
@@ -65,26 +81,30 @@ pub fn upload_and_get_id(
                 "Run `wrangler config` or set $CF_EMAIL and $CF_API_KEY/$CF_API_TOKEN to configure your user.",
             );
 
-            let client = http::client();
+            if sites_preview {
+                failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
+            }
 
-            unauthenticated_upload(&client, &project)?
+            let client = http::client(None);
+
+            unauthenticated_upload(&client, &target)?
         }
     };
 
     Ok(preview.id)
 }
 
-fn validate(project: &Project) -> Vec<&str> {
+fn validate(target: &Target) -> Vec<&str> {
     let mut missing_fields = Vec::new();
 
-    if project.account_id.is_empty() {
+    if target.account_id.is_empty() {
         missing_fields.push("account_id")
     };
-    if project.name.is_empty() {
+    if target.name.is_empty() {
         missing_fields.push("name")
     };
 
-    match &project.kv_namespaces {
+    match &target.kv_namespaces {
         Some(kv_namespaces) => {
             for kv in kv_namespaces {
                 if kv.binding.is_empty() {
@@ -102,14 +122,18 @@ fn validate(project: &Project) -> Vec<&str> {
     missing_fields
 }
 
-fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+fn authenticated_upload(
+    client: &Client,
+    target: &Target,
+    asset_manifest: Option<AssetManifest>,
+) -> Result<Preview, failure::Error> {
     let create_address = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
-        project.account_id, project.name
+        target.account_id, target.name
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::build_script_upload_form(&project)?;
+    let script_upload_form = publish::build_script_and_upload_form(target, asset_manifest)?;
 
     let mut res = client
         .post(&create_address)
@@ -126,22 +150,22 @@ fn authenticated_upload(client: &Client, project: &Project) -> Result<Preview, f
     Ok(Preview::from(response.result))
 }
 
-fn unauthenticated_upload(client: &Client, project: &Project) -> Result<Preview, failure::Error> {
+fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
     // KV namespaces are not supported by the preview service unless you authenticate
     // so we omit them and provide the user with a little guidance. We don't error out, though,
     // because there are valid workarounds for this for testing purposes.
-    let script_upload_form = if project.kv_namespaces.is_some() {
+    let script_upload_form = if target.kv_namespaces.is_some() {
         message::warn(
             "KV Namespaces are not supported in preview without setting API credentials and account_id",
         );
-        let mut project = project.clone();
-        project.kv_namespaces = None;
-        publish::build_script_upload_form(&project)?
+        let mut target = target.clone();
+        target.kv_namespaces = None;
+        publish::build_script_and_upload_form(&target, None)?
     } else {
-        publish::build_script_upload_form(&project)?
+        publish::build_script_and_upload_form(&target, None)?
     };
 
     let mut res = client

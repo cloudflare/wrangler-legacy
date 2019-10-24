@@ -1,16 +1,38 @@
-use crate::settings::project::{Project, ProjectType};
-use crate::terminal::message;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-pub fn init(name: Option<&str>, project_type: Option<ProjectType>) -> Result<(), failure::Error> {
+use crate::commands;
+use crate::commands::validate_worker_name;
+use crate::settings::target::{Manifest, Site, TargetType};
+use crate::terminal::message;
+
+pub fn init(
+    name: Option<&str>,
+    target_type: Option<TargetType>,
+    site: bool,
+) -> Result<(), failure::Error> {
     if Path::new("./wrangler.toml").exists() {
         failure::bail!("A wrangler.toml file already exists! Please remove it before running this command again.");
     }
     let dirname = get_current_dirname()?;
     let name = name.unwrap_or_else(|| &dirname);
-    let project_type = project_type.unwrap_or_default();
-    Project::generate(name.to_string(), project_type, true)?;
+    validate_worker_name(name)?;
+
+    let target_type = target_type.unwrap_or_default();
+    let config_path = PathBuf::from("./");
+    let initialized_site = if site { Some(Site::default()) } else { None };
+    let manifest = Manifest::generate(
+        name.to_string(),
+        target_type,
+        &config_path,
+        initialized_site,
+    )?;
     message::success("Succesfully created a `wrangler.toml`");
+
+    if site {
+        let env = None;
+        let target = manifest.get_target(env)?;
+        commands::build::wranglerjs::scaffold_site_worker(&target)?;
+    }
     Ok(())
 }
 

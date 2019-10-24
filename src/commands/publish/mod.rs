@@ -5,61 +5,97 @@ mod route;
 mod upload_form;
 
 pub use package::Package;
+
+use crate::settings::target::KvNamespace;
 use route::Route;
-use upload_form::build_script_upload_form;
 
-use log::info;
+use upload_form::build_script_and_upload_form;
 
-use crate::commands;
+use std::path::Path;
+
+use crate::commands::kv;
+use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::subdomain::Subdomain;
+use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
-use crate::terminal::message;
 
-pub fn publish(user: &GlobalUser, project: &Project, release: bool) -> Result<(), failure::Error> {
-    info!("release = {}", release);
+use crate::settings::target::{Site, Target};
+use crate::terminal::{emoji, message};
 
-    validate_project(project, release)?;
-    commands::build(&project)?;
-    publish_script(&user, &project, release)?;
-    if release {
-        info!("release mode detected, making a route...");
-        let route = Route::new(&project)?;
-        Route::publish(&user, &project, &route)?;
-        let msg = format!(
-            "Success! Your worker was successfully published. You can view it at {}.",
-            &route.pattern
-        );
-        message::success(&msg);
-    } else {
-        message::success("Success! Your worker was successfully published.");
+pub fn publish(
+    user: &GlobalUser,
+    target: &mut Target,
+    verbose: bool,
+) -> Result<(), failure::Error> {
+    let msg = match &target.route {
+        Some(route) => &route,
+        None => "workers_dev",
+    };
+
+    log::info!("{}", msg);
+
+    validate_target_required_fields_present(target)?;
+    validate_worker_name(&target.name)?;
+
+    if let Some(site_config) = target.site.clone() {
+        bind_static_site_contents(user, target, &site_config, false)?;
     }
+
+    let asset_manifest = upload_buckets(target, user, verbose)?;
+    build_and_publish_script(&user, &target, asset_manifest)?;
+
     Ok(())
 }
 
-fn publish_script(
+// Updates given Target with kv_namespace binding for a static site assets KV namespace.
+pub fn bind_static_site_contents(
     user: &GlobalUser,
-    project: &Project,
-    release: bool,
+    target: &mut Target,
+    site_config: &Site,
+    preview: bool,
+) -> Result<(), failure::Error> {
+    let site_namespace = kv::namespace::site(target, &user, preview)?;
+
+    // Check if namespace already is in namespace list
+    for namespace in target.kv_namespaces() {
+        if namespace.id == site_namespace.id {
+            return Ok(()); // Sites binding already exists; ignore
+        }
+    }
+
+    target.add_kv_namespace(KvNamespace {
+        binding: "__STATIC_CONTENT".to_string(),
+        id: site_namespace.id,
+        bucket: Some(site_config.bucket.to_owned()),
+    });
+    Ok(())
+}
+
+fn build_and_publish_script(
+    user: &GlobalUser,
+    target: &Target,
+    asset_manifest: Option<AssetManifest>,
 ) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
-        project.account_id, project.name,
+        target.account_id, target.name,
     );
 
-    let client = http::auth_client(user);
+    let client = if target.site.is_some() {
+        http::auth_client(Some("site"), user)
+    } else {
+        http::auth_client(None, user)
+    };
 
-    let script_upload_form = build_script_upload_form(project)?;
+    let script_upload_form = build_script_and_upload_form(target, asset_manifest)?;
 
     let mut res = client
         .put(&worker_addr)
         .multipart(script_upload_form)
         .send()?;
 
-    if res.status().is_success() {
-        message::success("Successfully published your script.");
-    } else {
+    if !res.status().is_success() {
         failure::bail!(
             "Something went wrong! Status: {}, Details {}",
             res.status(),
@@ -67,66 +103,115 @@ fn publish_script(
         )
     }
 
-    if !release {
-        let private = project.private.unwrap_or(false);
-        if !private {
-            info!("--release not passed, publishing to subdomain");
-            make_public_on_subdomain(project, user)?;
-        }
-    }
+    let pattern = if target.route.is_some() {
+        let route = Route::new(&target)?;
+        Route::publish(&user, &target, &route)?;
+        log::info!("publishing to route");
+        route.pattern
+    } else {
+        log::info!("publishing to subdomain");
+        publish_to_subdomain(target, user)?
+    };
+
+    log::info!("{}", &pattern);
+    message::success(&format!(
+        "Successfully published your script to {}",
+        &pattern
+    ));
 
     Ok(())
 }
 
-fn build_subdomain_request() -> String {
-    serde_json::json!({ "enabled":true}).to_string()
+pub fn upload_buckets(
+    target: &Target,
+    user: &GlobalUser,
+    verbose: bool,
+) -> Result<Option<AssetManifest>, failure::Error> {
+    let mut asset_manifest = None;
+    for namespace in &target.kv_namespaces() {
+        if let Some(bucket) = &namespace.bucket {
+            if bucket.is_empty() {
+                failure::bail!(
+                    "{} You need to specify a bucket directory in your wrangler.toml",
+                    emoji::WARN
+                )
+            }
+            let path = Path::new(&bucket);
+            if !path.exists() {
+                failure::bail!(
+                    "{} bucket directory \"{}\" does not exist",
+                    emoji::WARN,
+                    path.display()
+                )
+            } else if !path.is_dir() {
+                failure::bail!(
+                    "{} bucket \"{}\" is not a directory",
+                    emoji::WARN,
+                    path.display()
+                )
+            }
+            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
+            if target.site.is_some() {
+                if asset_manifest.is_none() {
+                    asset_manifest = Some(manifest_result)
+                } else {
+                    // only site manifest should be returned
+                    unreachable!()
+                }
+            }
+        }
+    }
+
+    Ok(asset_manifest)
 }
 
-fn make_public_on_subdomain(project: &Project, user: &GlobalUser) -> Result<(), failure::Error> {
-    info!("checking that subdomain is registered");
-    let subdomain = Subdomain::get(&project.account_id, user)?;
+fn build_subdomain_request() -> String {
+    serde_json::json!({ "enabled": true }).to_string()
+}
+
+fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, failure::Error> {
+    log::info!("checking that subdomain is registered");
+    let subdomain = Subdomain::get(&target.account_id, user)?;
+    let subdomain = match subdomain {
+        Some(subdomain) => subdomain,
+        None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
+    };
 
     let sd_worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
-        project.account_id, project.name,
+        target.account_id, target.name,
     );
 
-    let client = http::auth_client(user);
+    let client = http::auth_client(None, user);
 
-    info!("Making public on subdomain...");
+    log::info!("Making public on subdomain...");
     let mut res = client
         .post(&sd_worker_addr)
         .header("Content-type", "application/json")
         .body(build_subdomain_request())
         .send()?;
 
-    if res.status().is_success() {
-        let msg = format!(
-            "Successfully made your script available at https://{}.{}.workers.dev",
-            project.name, subdomain
-        );
-        message::success(&msg)
-    } else {
+    if !res.status().is_success() {
         failure::bail!(
             "Something went wrong! Status: {}, Details {}",
             res.status(),
             res.text()?
         )
     }
-    Ok(())
+    Ok(format!("https://{}.{}.workers.dev", target.name, subdomain))
 }
 
-fn validate_project(project: &Project, release: bool) -> Result<(), failure::Error> {
+fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
     let mut missing_fields = Vec::new();
 
-    if project.account_id.is_empty() {
+    if target.account_id.is_empty() {
         missing_fields.push("account_id")
     };
-    if project.name.is_empty() {
+    if target.name.is_empty() {
         missing_fields.push("name")
     };
 
-    match &project.kv_namespaces {
+    match &target.kv_namespaces {
         Some(kv_namespaces) => {
             for kv in kv_namespaces {
                 if kv.binding.is_empty() {
@@ -141,9 +226,9 @@ fn validate_project(project: &Project, release: bool) -> Result<(), failure::Err
         None => {}
     }
 
-    let destination = if release {
-        //check required fields for release
-        if project
+    let destination = if target.route.is_some() {
+        // check required fields for publishing to a route
+        if target
             .zone_id
             .as_ref()
             .unwrap_or(&"".to_string())
@@ -151,13 +236,13 @@ fn validate_project(project: &Project, release: bool) -> Result<(), failure::Err
         {
             missing_fields.push("zone_id")
         };
-        if project.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
+        if target.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
             missing_fields.push("route")
         };
-        //zoned deploy destination
+        // zoned deploy destination
         "a route"
     } else {
-        //zoneless deploy destination
+        // zoneless deploy destination
         "your subdomain"
     };
 
@@ -169,7 +254,8 @@ fn validate_project(project: &Project, release: bool) -> Result<(), failure::Err
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
+            "{} Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
+            emoji::WARN,
             field_pluralization,
             missing_fields,
             is_are,

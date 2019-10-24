@@ -7,7 +7,7 @@ mod http_method;
 pub use http_method::HTTPMethod;
 
 mod upload;
-use upload::upload_and_get_id;
+use upload::build_and_upload;
 
 use crate::commands;
 
@@ -17,7 +17,7 @@ use log::info;
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::project::Project;
+use crate::settings::target::Target;
 use crate::terminal::message;
 
 use std::sync::mpsc::channel;
@@ -28,14 +28,16 @@ use ws::{Sender, WebSocket};
 const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
 
 pub fn preview(
-    project: Project,
+    mut target: Target,
     user: Option<GlobalUser>,
     method: HTTPMethod,
     body: Option<String>,
     livereload: bool,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
-    commands::build(&project)?;
-    let script_id = upload_and_get_id(&project, user.as_ref())?;
+    let sites_preview: bool = target.site.is_some();
+
+    let script_id = build_and_upload(&mut target, user.as_ref(), sites_preview, verbose)?;
 
     let session = Uuid::new_v4().to_simple();
     let preview_host = "example.com";
@@ -58,7 +60,13 @@ pub fn preview(
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
-        watch_for_changes(&project, user.as_ref(), session.to_string(), broadcaster)?;
+        watch_for_changes(
+            target,
+            user.as_ref(),
+            session.to_string(),
+            broadcaster,
+            verbose,
+        )?;
     } else {
         open_browser(&format!(
             "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
@@ -70,13 +78,17 @@ pub fn preview(
             script_id, session, https as u8, preview_host
         );
 
-        let client = http::client();
+        let client = http::client(None);
 
         let worker_res = match method {
             HTTPMethod::Get => get(cookie, &client)?,
             HTTPMethod::Post => post(cookie, &client, body)?,
         };
-        let msg = format!("Your worker responded with: {}", worker_res);
+        let msg = if sites_preview {
+            "Your Worker is a Workers Site, please preview it in browser window.".to_string()
+        } else {
+            format!("Your Worker responded with: {}", worker_res)
+        };
         message::preview(&msg);
     }
 
@@ -101,8 +113,6 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
 
 fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Error> {
     let res = client.get(PREVIEW_ADDRESS).header("Cookie", cookie).send();
-    let msg = format!("GET {}", PREVIEW_ADDRESS);
-    message::preview(&msg);
     Ok(res?.text()?)
 }
 
@@ -125,16 +135,19 @@ fn post(
 }
 
 fn watch_for_changes(
-    project: &Project,
+    mut target: Target,
     user: Option<&GlobalUser>,
     session_id: String,
     broadcaster: Sender,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
+    let sites_preview: bool = target.site.is_some();
+
     let (tx, rx) = channel();
-    commands::watch_and_build(&project, Some(tx))?;
+    commands::watch_and_build(&target, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        if let Ok(new_id) = upload_and_get_id(project, user) {
+        if let Ok(new_id) = build_and_upload(&mut target, user, sites_preview, verbose) {
             let msg = FiddleMessage {
                 session_id: session_id.clone(),
                 data: FiddleMessageData::LiveReload { new_id },

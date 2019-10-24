@@ -1,0 +1,13 @@
+[env.production]
+type = "webpack"
+name = "staging-worker"
+zone_id = ""
+account_id = ""
+route = ""
+
+[env.staging]
+type = "webpack"
+name = "staging-worker"
+zone_id = ""
+account_id = ""
+route = ""
