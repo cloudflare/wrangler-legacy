@@ -81,14 +81,15 @@ impl Manifest {
             }
         };
 
-        let default_workers_dev = if let Some(route) = &template_config.route {
-            if route.is_empty() {
-                Some(true)
-            } else {
-                None
+        let default_workers_dev = match &template_config.route {
+            Some(route) => {
+                if route.is_empty() {
+                    Some(true)
+                } else {
+                    None
+                }
             }
-        } else {
-            Some(true)
+            None => Some(true),
         };
 
         // TODO: https://github.com/cloudflare/wrangler/issues/773
