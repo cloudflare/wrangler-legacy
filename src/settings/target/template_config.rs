@@ -31,11 +31,15 @@ impl TemplateConfig {
                 top_level_fields.push(format!("kv-namespace {}", kv_namespace.binding));
             }
         }
-        if let Some(_) = &self.route {
-            top_level_fields.push("route".to_string());
+        if let Some(route) = &self.route {
+            if !route.is_empty() {
+                top_level_fields.push("route".to_string());
+            }
         }
-        if let Some(_) = &self.zone_id {
-            top_level_fields.push("zone_id".to_string());
+        if let Some(zone_id) = &self.zone_id {
+            if !zone_id.is_empty() {
+                top_level_fields.push("zone_id".to_string());
+            }
         }
 
         let mut env_fields: HashMap<String, Vec<String>> = HashMap::new();
@@ -51,11 +55,15 @@ impl TemplateConfig {
                         current_env_fields.push(format!("kv-namespace {}", kv_namespace.binding));
                     }
                 }
-                if let Some(_) = &env.route {
-                    current_env_fields.push("route".to_string());
+                if let Some(route) = &env.route {
+                    if !route.is_empty() {
+                        current_env_fields.push("route".to_string());
+                    }
                 }
-                if let Some(_) = &env.zone_id {
-                    current_env_fields.push("zone_id".to_string());
+                if let Some(zone_id) = &env.zone_id {
+                    if !zone_id.is_empty() {
+                        current_env_fields.push("zone_id".to_string());
+                    }
                 }
                 if !current_env_fields.is_empty() {
                     env_fields.insert(env_name.to_string(), current_env_fields);
@@ -65,7 +73,7 @@ impl TemplateConfig {
         let top_level_separator = "\n- ";
         let env_separator = "\n  - ";
         if !top_level_fields.is_empty() || !env_fields.is_empty() {
-            message::warn("Replace all account specific info in your wrangler.toml.");
+            message::warn("You will need to update your wrangler.toml with your account-related info. More documentation can be found here: https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md");
             message::warn(
                 "Your zone_id and account_id can be found in the right sidebar at https://dash.cloudflare.com",
             );
