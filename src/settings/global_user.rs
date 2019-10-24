@@ -23,9 +23,16 @@ impl GlobalUser {
 
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
+        if let Some(token) = user.api_token {
+            return Credentials::UserAuthToken { token: token };
+        }
+
+        // fallback to email and global API key.
+        // If either of the fields below are empty, just substitute in an empty string
+        // and these credentials will trigger the appropriate "missing field" response from the API.
         Credentials::UserAuthKey {
-            key: user.api_key,
-            email: user.email,
+            key: user.api_key.unwrap_or("".to_string()),
+            email: user.email.unwrap_or("".to_string()),
         }
     }
 }

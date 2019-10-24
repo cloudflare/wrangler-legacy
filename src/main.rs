@@ -389,6 +389,8 @@ fn run() -> Result<(), failure::Error> {
         )))
         .get_matches();
 
+    let config_path = Path::new("./wrangler.toml");
+
     if let Some(matches) = matches.subcommand_matches("config") {
         let token = matches.is_present("token");
         commands::global_config(token)?;
@@ -472,7 +474,7 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        commands::whoami(&user);
+        commands::whoami(&user)?;
     } else if let Some(matches) = matches.subcommand_matches("publish") {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

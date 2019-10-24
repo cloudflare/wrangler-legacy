@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
-use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
+use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
 
 use http::status::StatusCode;
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
@@ -72,6 +72,7 @@ fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
             // This is useful for bulk upload operations.
             http_timeout: Duration::from_secs(5 * 60),
         },
+        Environment::Production,
     )
 }
 
