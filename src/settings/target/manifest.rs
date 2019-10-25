@@ -302,13 +302,11 @@ impl Manifest {
     }
 
     fn warn_on_account_info(&self) {
-        let account_id_help =
-            "account_id (see https://dash.cloudflare.com/?account=workers)".to_string();
         let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
         let zone_id_env = env::var("CF_ZONE_ID").is_ok();
         let mut top_level_fields: Vec<String> = Vec::new();
         if !account_id_env {
-            top_level_fields.push(account_id_help);
+            top_level_fields.push("account_id".to_string());
         }
         if let Some(kv_namespaces) = &self.kv_namespaces {
             for kv_namespace in kv_namespaces {
@@ -336,7 +334,7 @@ impl Manifest {
                 let mut current_env_fields: Vec<String> = Vec::new();
                 if let Some(_) = &env.account_id {
                     if !account_id_env {
-                        current_env_fields.push(account_id_help);
+                        current_env_fields.push("account_id".to_string());
                     }
                 }
                 if let Some(kv_namespaces) = &env.kv_namespaces {
@@ -368,6 +366,9 @@ impl Manifest {
         if has_top_level_fields || has_env_fields {
             message::help(
                 "You will need to update the following fields in the created wrangler.toml file before continuing:"
+            );
+            message::help(
+                "You can find your account_id and zone_id in the right sidebar of the zone overview tab at https://dash.cloudflare.com"
             );
             if has_top_level_fields {
                 needs_new_line = true;
