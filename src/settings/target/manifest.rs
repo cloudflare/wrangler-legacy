@@ -311,7 +311,7 @@ impl Manifest {
         if let Some(kv_namespaces) = &self.kv_namespaces {
             for kv_namespace in kv_namespaces {
                 top_level_fields.push(format!(
-                    "kv-namespace {} needs namespace_id",
+                    "kv-namespace {} needs a namespace_id",
                     kv_namespace.binding
                 ));
             }
@@ -340,7 +340,7 @@ impl Manifest {
                 if let Some(kv_namespaces) = &env.kv_namespaces {
                     for kv_namespace in kv_namespaces {
                         current_env_fields.push(format!(
-                            "kv-namespace {} needs namespace_id",
+                            "kv-namespace {} needs a namespace_id",
                             kv_namespace.binding
                         ));
                     }
