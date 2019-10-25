@@ -11,6 +11,7 @@ pub use manifest::AssetManifest;
 pub use sync::sync;
 
 use std::ffi::OsString;
+use std::fs;
 use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
@@ -20,6 +21,10 @@ use ignore::{Walk, WalkBuilder};
 
 use crate::settings::target::Target;
 use crate::terminal::message;
+
+pub const KEY_MAX_SIZE: usize = 512;
+// Oddly enough, metadata.len() returns a u64, not usize.
+pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
 
 // Returns the hashed key and value pair for all files in a directory.
 pub fn directory_keys_values(
@@ -40,6 +45,8 @@ pub fn directory_keys_values(
                 message::working(&format!("Preparing {}", path.display()));
             }
 
+            validate_file_size(&path)?;
+
             let value = std::fs::read(path)?;
 
             // Need to base64 encode value
@@ -47,6 +54,8 @@ pub fn directory_keys_values(
 
             let (url_safe_path, key) =
                 generate_path_and_key(path, directory, Some(b64_value.clone()))?;
+
+            validate_key_size(&key)?;
 
             upload_vec.push(KeyValuePair {
                 key: key.clone(),
@@ -64,7 +73,7 @@ pub fn directory_keys_values(
 
 // Returns only the hashed keys for a directory's files.
 fn directory_keys_only(target: &Target, directory: &Path) -> Result<Vec<String>, failure::Error> {
-    let mut upload_vec: Vec<String> = Vec::new();
+    let mut key_vec: Vec<String> = Vec::new();
 
     let dir_walker = get_dir_iterator(target, directory)?;
 
@@ -79,10 +88,44 @@ fn directory_keys_only(target: &Target, directory: &Path) -> Result<Vec<String>,
 
             let (_, key) = generate_path_and_key(path, directory, Some(b64_value))?;
 
-            upload_vec.push(key);
+            validate_key_size(&key)?;
+
+            key_vec.push(key);
         }
     }
-    Ok(upload_vec)
+    Ok(key_vec)
+}
+
+// Ensure that all files in upload directory do not exceed the MAX_VALUE_SIZE (this ensures that
+// no partial uploads happen). I don't like this functionality (and the similar key length checking
+// logic in validate_key_size()) because it duplicates the size checking the API already does--but
+// doing a preemptive check like this (before calling the API) will prevent partial bucket uploads
+// from happening.
+fn validate_file_size(path: &Path) -> Result<(), failure::Error> {
+    let metadata = fs::metadata(path)?;
+    let file_len = metadata.len();
+
+    if file_len > VALUE_MAX_SIZE {
+        failure::bail!(
+            "File `{}` of {} bytes exceeds the maximum value size limit of {} bytes",
+            path.display(),
+            file_len,
+            VALUE_MAX_SIZE
+        );
+    }
+    Ok(())
+}
+
+fn validate_key_size(key: &str) -> Result<(), failure::Error> {
+    if key.len() > KEY_MAX_SIZE {
+        failure::bail!(
+            "Path `{}` of {} bytes exceeds the maximum key size limit of {} bytes",
+            key,
+            key.len(),
+            KEY_MAX_SIZE
+        );
+    }
+    Ok(())
 }
 
 const REQUIRED_IGNORE_FILES: &[&str] = &["node_modules"];
