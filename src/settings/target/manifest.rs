@@ -5,6 +5,7 @@ use super::target_type::TargetType;
 use crate::settings::target::Target;
 
 use std::collections::{HashMap, HashSet};
+use std::env;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -301,8 +302,12 @@ impl Manifest {
     }
 
     fn warn_on_account_info(&self) {
+        let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
+        let zone_id_env = env::var("CF_ZONE_ID").is_ok();
         let mut top_level_fields: Vec<String> = Vec::new();
-        top_level_fields.push("account_id".to_string());
+        if !account_id_env {
+            top_level_fields.push("account_id".to_string());
+        }
         if let Some(kv_namespaces) = &self.kv_namespaces {
             for kv_namespace in kv_namespaces {
                 top_level_fields.push(format!("kv-namespace {}", kv_namespace.binding));
@@ -314,7 +319,7 @@ impl Manifest {
             }
         }
         if let Some(zone_id) = &self.zone_id {
-            if !zone_id.is_empty() {
+            if !zone_id.is_empty() && !zone_id_env {
                 top_level_fields.push("zone_id".to_string());
             }
         }
@@ -325,7 +330,9 @@ impl Manifest {
             for (env_name, env) in env {
                 let mut current_env_fields: Vec<String> = Vec::new();
                 if let Some(_) = &env.account_id {
-                    current_env_fields.push("account_id".to_string());
+                    if !account_id_env {
+                        current_env_fields.push("account_id".to_string());
+                    }
                 }
                 if let Some(kv_namespaces) = &env.kv_namespaces {
                     for kv_namespace in kv_namespaces {
@@ -338,7 +345,7 @@ impl Manifest {
                     }
                 }
                 if let Some(zone_id) = &env.zone_id {
-                    if !zone_id.is_empty() {
+                    if !zone_id.is_empty() && !zone_id_env {
                         current_env_fields.push("zone_id".to_string());
                     }
                 }
@@ -347,30 +354,32 @@ impl Manifest {
                 }
             }
         }
-        let top_level_separator = "\n- ";
-        let env_separator = "\n  - ";
-        if !top_level_fields.is_empty() || !env_fields.is_empty() {
-            message::warn("You will need to update your wrangler.toml with your account-related info. More documentation can be found here: https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md");
-            message::warn(
-                "Your zone_id and account_id can be found in the right sidebar at https://dash.cloudflare.com",
+        let has_top_level_fields = !top_level_fields.is_empty();
+        let has_env_fields = !env_fields.is_empty();
+        let mut needs_new_line = false;
+        if has_top_level_fields || has_env_fields {
+            message::help(
+                "Your zone_id and account_id can be found in the right sidebar at https://dash.cloudflare.com/?account=workers",
             );
-            if !top_level_fields.is_empty() {
-                let top_level_fields = top_level_fields
-                    .clone()
-                    .into_iter()
-                    .collect::<Vec<String>>()
-                    .join(top_level_separator);
-                println!("{}{}", top_level_separator, top_level_fields);
+            message::help(
+                "You will need to update the following fields in the created wrangler.toml file before continuing:"
+            );
+            if has_top_level_fields {
+                needs_new_line = true;
+                for top_level_field in top_level_fields {
+                    println!("- {}", top_level_field);
+                }
             }
-            if !env_fields.is_empty() {
+            if has_env_fields {
                 for (env_name, env_fields) in env_fields {
-                    let msg_prefix = format!("[env.{}]", env_name);
-                    let env_fields = env_fields
-                        .clone()
-                        .into_iter()
-                        .collect::<Vec<String>>()
-                        .join(env_separator);
-                    println!("{}{}{}", msg_prefix, env_separator, env_fields);
+                    if needs_new_line {
+                        println!();
+                    }
+                    println!("[env.{}]", env_name);
+                    needs_new_line = true;
+                    for env_field in env_fields {
+                        println!("  - {}", env_field);
+                    }
                 }
             }
         }
