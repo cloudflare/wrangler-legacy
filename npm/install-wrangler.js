@@ -37,7 +37,7 @@ function downloadAsset(version, platform) {
   }
   mkdirSync(dest);
 
-  const url = `https://cloudflare.works/download-wrangler/${ version }/${ platform }`
+  const url = `https://workers.cloudflare.com/get-npm-wrangler-binary/${ version }/${ platform }`
 
   console.log("Downloading release", url);
 

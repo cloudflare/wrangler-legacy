@@ -6,7 +6,7 @@ mod upload_form;
 
 pub use package::Package;
 
-use crate::settings::target::kv_namespace::KvNamespace;
+use crate::settings::target::KvNamespace;
 use route::Route;
 
 use upload_form::build_script_and_upload_form;
@@ -23,7 +23,11 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::{Site, Target};
 use crate::terminal::{emoji, message};
 
-pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Error> {
+pub fn publish(
+    user: &GlobalUser,
+    target: &mut Target,
+    verbose: bool,
+) -> Result<(), failure::Error> {
     let msg = match &target.route {
         Some(route) => &route,
         None => "workers_dev",
@@ -38,7 +42,7 @@ pub fn publish(user: &GlobalUser, target: &mut Target) -> Result<(), failure::Er
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
-    let asset_manifest = upload_buckets(target, user)?;
+    let asset_manifest = upload_buckets(target, user, verbose)?;
     build_and_publish_script(&user, &target, asset_manifest)?;
 
     Ok(())
@@ -91,12 +95,11 @@ fn build_and_publish_script(
         .multipart(script_upload_form)
         .send()?;
 
-    if !res.status().is_success() {
-        failure::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
+    let res_status = res.status();
+    let res_text = res.text()?;
+
+    if !res_status.is_success() {
+        failure::bail!(error_msg(res_status, res_text))
     }
 
     let pattern = if target.route.is_some() {
@@ -118,9 +121,37 @@ fn build_and_publish_script(
     Ok(())
 }
 
+fn error_msg(status: reqwest::StatusCode, text: String) -> String {
+    if text.contains("\"code\": 10034,") {
+        "You need to verify your account's email address before you can publish. You can do this by checking your email or logging in to https://dash.cloudflare.com.".to_string()
+    } else {
+        format!("Something went wrong! Status: {}, Details {}", status, text)
+    }
+}
+
+#[test]
+fn fails_with_good_error_msg_on_verify_email_err() {
+    let status = reqwest::StatusCode::FORBIDDEN;
+    let text = r#"{
+  "result": null,
+  "success": false,
+  "errors": [
+    {
+      "code": 10034,
+      "message": "workers.api.error.email_verification_required"
+    }
+  ],
+  "messages": []
+}"#
+    .to_string();
+    let result = error_msg(status, text);
+    assert!(result.contains("https://dash.cloudflare.com"));
+}
+
 pub fn upload_buckets(
     target: &Target,
     user: &GlobalUser,
+    verbose: bool,
 ) -> Result<Option<AssetManifest>, failure::Error> {
     let mut asset_manifest = None;
     for namespace in &target.kv_namespaces() {
@@ -145,7 +176,7 @@ pub fn upload_buckets(
                     path.display()
                 )
             }
-            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, false)?;
+            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
             if target.site.is_some() {
                 if asset_manifest.is_none() {
                     asset_manifest = Some(manifest_result)

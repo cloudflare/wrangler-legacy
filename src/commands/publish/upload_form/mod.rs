@@ -11,7 +11,6 @@ use crate::commands::build::wranglerjs;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
-use crate::settings::target::kv_namespace;
 use crate::settings::target::{Target, TargetType};
 
 use project_assets::ProjectAssets;
@@ -37,7 +36,7 @@ pub fn build_script_and_upload_form(
             build_generated_dir()?;
             concat_js(&name)?;
 
-            let path = format!("./pkg/{}_bg.wasm", name).to_string();
+            let path = format!("./pkg/{}_bg.wasm", name);
             let binding = "wasm".to_string();
             let wasm_module = WasmModule::new(path, binding)?;
 

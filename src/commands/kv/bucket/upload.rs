@@ -13,9 +13,6 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::framework::apiclient::ApiClient;
 use failure::format_err;
 
-const KEY_MAX_SIZE: usize = 512;
-const VALUE_MAX_SIZE: usize = 2 * 1024 * 1024;
-
 // The consts below are halved from the API's true capacity to help avoid
 // hammering it with large requests.
 const PAIRS_MAX_COUNT: usize = 5000;
@@ -48,8 +45,6 @@ pub fn upload_files(
     }
 
     pairs = filter_files(pairs, ignore);
-
-    validate_file_uploads(pairs.clone())?;
 
     let client = kv::api_client(user)?;
     // Iterate over all key-value pairs and create batches of uploads, each of which are
@@ -114,32 +109,6 @@ fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) ->
     filtered_pairs
 }
 
-// Ensure that all key-value pairs being uploaded have valid sizes (this ensures that
-// no partial uploads happen). I don't like this function because it duplicates the
-// size checking the API already does--but doing a preemptive check like this (before
-// calling the API) will prevent partial bucket uploads from happening.
-pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Error> {
-    for pair in pairs {
-        if pair.key.len() > KEY_MAX_SIZE {
-            failure::bail!(
-                "Path `{}` of {} bytes exceeds the maximum key size limit of {} bytes",
-                pair.key,
-                pair.key.len(),
-                KEY_MAX_SIZE
-            );
-        }
-        if pair.value.len() > VALUE_MAX_SIZE {
-            failure::bail!(
-                "File `{}` of {} bytes exceeds the maximum value size limit of {} bytes",
-                pair.key,
-                pair.value.len(),
-                VALUE_MAX_SIZE
-            );
-        }
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -165,7 +134,7 @@ mod tests {
         // Old values found on remote
         let mut exclude_keys = HashSet::new();
         exclude_keys.insert(key_a_old.clone());
-        exclude_keys.insert(key_b_old.clone());
+        exclude_keys.insert(key_b_old);
 
         // local files (with b updated) to upload
         let pairs_to_upload = vec![
@@ -206,7 +175,7 @@ mod tests {
             // todo(gabbi): Implement PartialEq for KeyValuePair in cloudflare-rs.
             assert!(pair.key == actual[idx].key);
             assert!(pair.value == actual[idx].value);
-            idx = idx + 1;
+            idx += 1;
         }
     }
 }
