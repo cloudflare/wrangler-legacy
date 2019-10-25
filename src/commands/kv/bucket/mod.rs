@@ -98,7 +98,7 @@ fn directory_keys_only(target: &Target, directory: &Path) -> Result<Vec<String>,
 
 // Ensure that all files in upload directory do not exceed the MAX_VALUE_SIZE (this ensures that
 // no partial uploads happen). I don't like this functionality (and the similar key length checking
-// logic later in this function) because it duplicates the size checking the API already does--but
+// logic in validate_key_size()) because it duplicates the size checking the API already does--but
 // doing a preemptive check like this (before calling the API) will prevent partial bucket uploads
 // from happening.
 fn validate_file_size(path: &Path) -> Result<(), failure::Error> {
