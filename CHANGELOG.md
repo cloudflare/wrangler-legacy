@@ -75,7 +75,7 @@
 
     [pull/699]: https://github.com/cloudflare/wrangler/pull/699
 
-  - **Eliminate timeout errors for bulk uploads - [gabbifish], [pull/757]**
+  - **Minimize timeout errors for bulk uploads - [gabbifish], [pull/757]**
 
     Sometimes Wrangler would make API calls to Workers KV that would timeout if there were too many files. We dumped the timeout limit to prevent this. 
 
@@ -83,7 +83,7 @@
 
   - **Print readable error message when external commands fail - [EverlastingBugstopper], [pull/799]**
 
-    Wrangler depends on a few external applications. Inevitably external calls will occasionally fail. Prior to this change, Wrangler would tell you the external command it tried to run and included a bunch of quotes. This change removes those quotes so the command is easily readable and can be copy/pastable.
+    Wrangler depends on a few external applications. Inevitably external calls will occasionally fail. Prior to this change, Wrangler would tell you the external command it tried to run and included a bunch of quotes. This change removes those quotes so the command is easily readable and can be copy/pasted.
 
     [pull/799]: https://github.com/cloudflare/wrangler/pull/799
 
@@ -97,7 +97,7 @@
 
   - **Begin refactoring test suite - [ashleymichal], [pull/787]**
 
-    You may have noticed that we're constantly shipping features in Wrangler. With more features comes a larger codebase, and as a codebase expands, it goes through some growing pains. This release includes some much needed changes to the way Wrangler's code is organized and is intended to make our lives and our contributors' lives easier as we continue to make Wrangler better!
+   We're constantly shipping features in Wrangler. With more features comes a larger codebase and as a codebase expands, comes some growing pains. This release includes some improvements to the organization of Wrangler's codeand is intended to make our lives and our contributors' lives easier as we continue to make Wrangler better!
 
     - Moved all "fixture" helper functions to "utils" module to share between build/preview tests
 
@@ -126,7 +126,7 @@
 
     [pull/793]: https://github.com/cloudflare/wrangler/pull/793
 
-  - **Make test directories clean up after themselves - [ashleymichal], [pull/785]**
+  - **Clean up after test directories - [ashleymichal], [pull/785]**
 
     [pull/785]: https://github.com/cloudflare/wrangler/pull/785
 
