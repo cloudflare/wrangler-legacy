@@ -6,7 +6,7 @@
 
   - ***BREAKING CHANGE:* Deprecate `wrangler publish --release` - [EverlastingBugstopper], [pull/751]**
 
-    `wrangler publish --release` is now simply an alias of `wrangler publish`. This is related to the introduction of [environments](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md) made in [1.3.1](#-131) and is intended to reduce confusion surrounding deploy targets. Previously, `wrangler publish --release` would deploy to your route, and `wrangler publish` would deploy to your workers.dev subdomain. Environments changed this behavior to require either `workers_dev = true` or both a `route` and `zone_id` in each section of `wrangler.toml` to make it clear where your Workers code was being deployed. If you're not using `wrangler publish --release` but you added `workers_dev = false` to the top level of your `wrangler.toml` because Wrangler warned you to - you can now safely remove it! If you *are* using `wrangler publish --release`, know that it is functionally the same as `wrangler publish`, and if you want to deploy to workers.dev and also a route on your own domain, you will need to set up multiple environments.
+    `wrangler publish --release` is now simply an alias of `wrangler publish`. This is related to the introduction of [environments](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md) made in [1.3.1](#-131) and is intended to reduce confusion surrounding deploy targets. Previously, `wrangler publish --release` would deploy to a zone's route, and `wrangler publish` would deploy to the account's workers.dev's subdomain. After [environments](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md) to make it clear where your Worker was deployed, the wrangler.toml changed to require either `workers_dev = true` *or* both a `route` and `zone_id` in each section. If you're not using `wrangler publish --release` but you added `workers_dev = false` to the top level of your `wrangler.toml` because Wrangler warned you to - you can now safely remove it! If you *are* using `wrangler publish --release`, know that it is functionally the same as `wrangler publish`, and if you want to deploy to workers.dev and also a route on your own domain, you will need to set up multiple environments.
 
     [pull/751]: https://github.com/cloudflare/wrangler/pull/751
 
@@ -17,7 +17,7 @@
     [stevenfranks]: https://github.com/stevenfranks
     [pull/782]: https://github.com/cloudflare/wrangler/pull/782
 
-  - **Include/exclude static assets in a Workers Sites project - [gabbifish], [pull/760]**
+  - **Include/exclude static assets in a Worker's Sites project - [gabbifish], [pull/760]**
 
     Your `wrangler.toml` has two new optional fields: `include` and `exclude`. These fields give you more granular control over what files are uploaded to Workers KV. This behavior mirrors Cargo's [include/exclude](https://doc.rust-lang.org/cargo/reference/manifest.html#the-exclude-and-include-fields-optional) functionality. Further documentation for this feature is available [here](https://developers.cloudflare.com/workers/sites/ignore-assets/).
 
@@ -25,11 +25,11 @@
 
   - **A more robust `wrangler generate` - [EverlastingBugstopper], [pull/759]**
 
-    `wrangler generate` is now much smarter about `wrangler.toml` files. Previously, `wrangler generate` would simply create the same configuration for every project, and it would ignore any `wrangler.toml` that was committed to the template. This hopefully means much less guesswork when using `wrangler generate` with existing Workers projects.
+    `wrangler generate` is now much smarter about `wrangler.toml` files. Previously, `wrangler generate` would simply create the same configuration for every project, and it would ignore any `wrangler.toml` that was committed to the template. This change means much less guesswork when using `wrangler generate` with existing Workers projects.
 
     [pull/759]: https://github.com/cloudflare/wrangler/pull/759
 
-  - **Check if you've already registered a workers.dev subdomain - [gusvargas], [pull/747]**
+  - **Add check for registered a workers.dev subdomain - [gusvargas], [pull/747]**
 
     You can now run `wrangler subdomain` without any arguments to see if you have registered a [workers.dev](https://workers.dev) subdomain.
 
@@ -63,7 +63,7 @@
 
   - **Provide a better error message when using an unverified email address - [ashleygwilliams], [pull/795]**
 
-    When attempting to publish a Worker as a user with an unverified email address, the Cloudflare API refuses and Wrangler will now inform you if you need to do that.
+    The Cloudflare API refuses unverified email addresses. Wrangler will now inform you if you need to do verify email address.
 
     [pull/795]: https://github.com/cloudflare/wrangler/pull/795
   
@@ -77,13 +77,13 @@
 
   - **Eliminate timeout errors for bulk uploads - [gabbifish], [pull/757]**
 
-    Sometimes Wrangler would make API calls to Workers KV that would timeout if there were too many files. This shouldn't happen anymore!
+    Sometimes Wrangler would make API calls to Workers KV that would timeout if there were too many files. We dumped the timeout limit to prevent this. 
 
     [pull/757]: https://github.com/cloudflare/wrangler/pull/757
 
   - **Print readable error message when external commands fail - [EverlastingBugstopper], [pull/799]**
 
-    Wrangler depends on a few external applications, and sometimes the calls to them fail! When this happens, Wrangler would tell you the command it tried to run, but it included a bunch of quotes. This change removes those quotes so the command is easily readable and can be copy/pasted.
+    Wrangler depends on a few external applications. Inevitably external calls will occasionally fail. Prior to this change, Wrangler would tell you the external command it tried to run and included a bunch of quotes. This change removes those quotes so the command is easily readable and can be copy/pastable.
 
     [pull/799]: https://github.com/cloudflare/wrangler/pull/799
 
