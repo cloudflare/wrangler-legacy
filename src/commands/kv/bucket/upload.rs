@@ -5,7 +5,7 @@ use std::fs::metadata;
 use std::path::Path;
 
 use crate::commands::kv;
-use crate::commands::kv::bucket::{directory_keys_values, KEY_MAX_SIZE};
+use crate::commands::kv::bucket::directory_keys_values;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::message;
@@ -45,8 +45,6 @@ pub fn upload_files(
     }
 
     pairs = filter_files(pairs, ignore);
-
-    validate_file_uploads(pairs.clone())?;
 
     let client = kv::api_client(user)?;
     // Iterate over all key-value pairs and create batches of uploads, each of which are
@@ -109,24 +107,6 @@ fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) ->
         }
     }
     filtered_pairs
-}
-
-// Ensure that all key-value pairs being uploaded have valid sizes (this ensures that
-// no partial uploads happen). I don't like this function because it duplicates the
-// size checking the API already does--but doing a preemptive check like this (before
-// calling the API) will prevent partial bucket uploads from happening.
-pub fn validate_file_uploads(pairs: Vec<KeyValuePair>) -> Result<(), failure::Error> {
-    for pair in pairs {
-        if pair.key.len() > KEY_MAX_SIZE {
-            failure::bail!(
-                "Path `{}` of {} bytes exceeds the maximum key size limit of {} bytes",
-                pair.key,
-                pair.key.len(),
-                KEY_MAX_SIZE
-            );
-        }
-    }
-    Ok(())
 }
 
 #[cfg(test)]
