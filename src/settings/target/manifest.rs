@@ -302,15 +302,20 @@ impl Manifest {
     }
 
     fn warn_on_account_info(&self) {
+        let account_id_help =
+            "account_id (see https://dash.cloudflare.com/?account=workers)".to_string();
         let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
         let zone_id_env = env::var("CF_ZONE_ID").is_ok();
         let mut top_level_fields: Vec<String> = Vec::new();
         if !account_id_env {
-            top_level_fields.push("account_id".to_string());
+            top_level_fields.push(account_id_help);
         }
         if let Some(kv_namespaces) = &self.kv_namespaces {
             for kv_namespace in kv_namespaces {
-                top_level_fields.push(format!("kv-namespace {}", kv_namespace.binding));
+                top_level_fields.push(format!(
+                    "kv-namespace {} needs namespace_id",
+                    kv_namespace.binding
+                ));
             }
         }
         if let Some(route) = &self.route {
@@ -331,12 +336,15 @@ impl Manifest {
                 let mut current_env_fields: Vec<String> = Vec::new();
                 if let Some(_) = &env.account_id {
                     if !account_id_env {
-                        current_env_fields.push("account_id".to_string());
+                        current_env_fields.push(account_id_help);
                     }
                 }
                 if let Some(kv_namespaces) = &env.kv_namespaces {
                     for kv_namespace in kv_namespaces {
-                        current_env_fields.push(format!("kv-namespace {}", kv_namespace.binding));
+                        current_env_fields.push(format!(
+                            "kv-namespace {} needs namespace_id",
+                            kv_namespace.binding
+                        ));
                     }
                 }
                 if let Some(route) = &env.route {
@@ -358,9 +366,6 @@ impl Manifest {
         let has_env_fields = !env_fields.is_empty();
         let mut needs_new_line = false;
         if has_top_level_fields || has_env_fields {
-            message::help(
-                "Your zone_id and account_id can be found in the right sidebar at https://dash.cloudflare.com/?account=workers",
-            );
             message::help(
                 "You will need to update the following fields in the created wrangler.toml file before continuing:"
             );
