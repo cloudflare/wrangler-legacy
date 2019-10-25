@@ -17,7 +17,7 @@
     [stevenfranks]: https://github.com/stevenfranks
     [pull/782]: https://github.com/cloudflare/wrangler/pull/782
 
-  - **Include/exclude static assets in a Worker's Sites project - [gabbifish], [pull/760]**
+  - **Include/exclude static assets in a Workers Sites project - [gabbifish], [pull/760]**
 
     Your `wrangler.toml` has two new optional fields: `include` and `exclude`. These fields give you more granular control over what files are uploaded to Workers KV. This behavior mirrors Cargo's [include/exclude](https://doc.rust-lang.org/cargo/reference/manifest.html#the-exclude-and-include-fields-optional) functionality. Further documentation for this feature is available [here](https://developers.cloudflare.com/workers/sites/ignore-assets/).
 
