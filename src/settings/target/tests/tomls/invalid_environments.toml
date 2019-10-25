@@ -10,13 +10,6 @@ zone_id = ""
 account_id = ""
 route = ""
 
-[env.has_private]
-name = "worker"
-zone_id = ""
-private = false
-account_id = ""
-route = ""
-
 [env.has_type]
 type = "webpack"
 name = "worker"
@@ -24,9 +17,9 @@ zone_id = ""
 account_id = ""
 route = ""
 
-[env.route_and_dot_dev]
+[env.route_and_workers_dev]
 name = "worker"
 zone_id = ""
 account_id = ""
 route = "example.com/*"
-workersdotdev = true
+workers_dev = true
