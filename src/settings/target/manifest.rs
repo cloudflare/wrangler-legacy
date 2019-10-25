@@ -15,17 +15,13 @@ use serde::{Deserialize, Serialize};
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-fn empty_string() -> String {
-    "".to_string()
-}
-
 fn some_string() -> Option<String> {
     Some("".to_string())
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
-    #[serde(default = "empty_string")]
+    #[serde(default)]
     pub name: String,
     #[serde(rename = "type")]
     pub target_type: TargetType,
