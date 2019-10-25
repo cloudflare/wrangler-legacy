@@ -143,8 +143,6 @@ impl Manifest {
 
         let environment = self.get_environment(environment_name)?;
 
-        self.check_private(environment);
-
         target.route = self.negotiate_zoneless(environment)?;
         if let Some(environment) = environment {
             target.name = if let Some(name) = &environment.name {
@@ -299,23 +297,6 @@ impl Manifest {
                 }
             }
             (false, None) => failure::bail!(pick_target_failure),
-        }
-    }
-
-    fn check_private(&self, environment: Option<&Environment>) {
-        let deprecate_private_warning = "The `private` field is deprecated; please use \
-        `workers_dev` to toggle between publishing to your workers.dev subdomain and your own domain.";
-
-        // Check for the presence of the 'private' field in top-level config; if present, warn.
-        if self.private.is_some() {
-            message::warn(deprecate_private_warning);
-        }
-
-        // Also check for presence of 'private' field in a provided environment; if present, warn
-        if let Some(e) = environment {
-            if e.private.is_some() {
-                message::warn(deprecate_private_warning);
-            }
         }
     }
 

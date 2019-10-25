@@ -354,7 +354,13 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("verbose")
                         .long("verbose")
                         .takes_value(false)
-                        .help("toggle verbose output"),
+                        .help("toggle verbose output")
+                )
+                .arg(
+                    Arg::with_name("release")
+                        .long("release")
+                        .takes_value(false)
+                        .help("[deprecated] alias of wrangler publish")
                 ),
         )
         .subcommand(
@@ -475,6 +481,12 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("publish") {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
+
+        let release = matches.is_present("release");
+        if release {
+            message::warn("wrangler publish --release is deprecated and behaves exactly the same as wrangler publish.");
+            message::warn("See https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.");
+        }
 
         log::info!("Getting project settings");
         let manifest = settings::target::Manifest::new(config_path)?;
