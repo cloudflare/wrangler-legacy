@@ -98,12 +98,22 @@ fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failu
         .send()?;
 
     if !res.status().is_success() {
-        let msg = format!(
+        let msg;
+        if res.status().as_u16() == 10020 {
+            msg = format!(
+            "{} There was an error creating your route. Worker with a different name was found on {} route.\n",
+            emoji::WARN,
+            serde_json::to_string(&route)?
+            );
+        } else {
+            msg = format!(
             "{} There was an error creating your route.\n Status Code: {}\n Msg: {}",
             emoji::WARN,
             res.status(),
             res.text()?
         );
+        }
+         
         failure::bail!(msg)
     }
     Ok(())
