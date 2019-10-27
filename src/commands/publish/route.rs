@@ -107,13 +107,13 @@ fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failu
             );
         } else {
             msg = format!(
-            "{} There was an error creating your route.\n Status Code: {}\n Msg: {}",
-            emoji::WARN,
-            res.status(),
-            res.text()?
-        );
+                "{} There was an error creating your route.\n Status Code: {}\n Msg: {}",
+                emoji::WARN,
+                res.status(),
+                res.text()?
+            );
         }
-         
+
         failure::bail!(msg)
     }
     Ok(())
