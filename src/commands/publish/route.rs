@@ -101,7 +101,7 @@ fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failu
         let msg;
         if res.status().as_u16() == 10020 {
             msg = format!(
-            "{} There was an error creating your route. Worker with a different name was found on {} route.\n",
+            "{} A worker with a different name was previously deployed to `{}`. If you would like to overwrite that worker, you will need to change `name` in your `wrangler.toml` to match the currently deployed worker, or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n",
             emoji::WARN,
             serde_json::to_string(&route)?
             );
