@@ -34,6 +34,7 @@ pub fn preview(
     body: Option<String>,
     livereload: bool,
     verbose: bool,
+    browser: bool,
 ) -> Result<(), failure::Error> {
     let sites_preview: bool = target.site.is_some();
 
@@ -51,10 +52,12 @@ pub fn preview(
 
         info!("Opened websocket server on port {}", ws_port);
 
-        open_browser(&format!(
+        if browser {
+            open_browser(&format!(
             "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}{4}",
             &session.to_string(), ws_port, script_id, https_str, preview_host,
         ))?;
+        }
 
         //don't do initial GET + POST with livereload as the expected behavior is unclear.
 
@@ -68,10 +71,12 @@ pub fn preview(
             verbose,
         )?;
     } else {
-        open_browser(&format!(
-            "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
-            script_id, https_str, preview_host
-        ))?;
+        if browser {
+            open_browser(&format!(
+                "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
+                script_id, https_str, preview_host
+            ))?;
+        }
 
         let cookie = format!(
             "__ew_fiddle_preview={}{}{}{}",

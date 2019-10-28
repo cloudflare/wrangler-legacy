@@ -308,6 +308,13 @@ fn run() -> Result<(), failure::Error> {
                     emoji::MICROSCOPE
                 ))
                 .arg(
+                    Arg::with_name("terminal")
+                        .help("Preview your worker in the terminal and not the browser")
+                        .short("t")
+                        .long("terminal")
+                        .takes_value(false)
+                )
+                .arg(
                     Arg::with_name("method")
                         .help("Type of request to preview your worker with (get, post)")
                         .index(1),
@@ -471,8 +478,9 @@ fn run() -> Result<(), failure::Error> {
 
         let watch = matches.is_present("watch");
         let verbose = matches.is_present("verbose");
+        let browser = !matches.is_present("terminal");
 
-        commands::preview(target, user, method, body, watch, verbose)?;
+        commands::preview(target, user, method, body, watch, verbose, browser)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
