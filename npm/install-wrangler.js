@@ -10,7 +10,7 @@ const { homedir } = require('os');
 
 const cwd = join(homedir(), ".wrangler");
 
-const VERSION = "1.5.0"
+const VERSION = require("./package.json").version;
 
 function getPlatform() {
   const type = os.type();
