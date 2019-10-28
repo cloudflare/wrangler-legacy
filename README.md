@@ -171,6 +171,8 @@ If you would like to be able to publish your code to multiple places, please see
 
   Additionally, you can preview different environments. This is useful if you have different builds for different environments (like staging vs. production), but typically isn't needed. For more information see the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
 
+  <!-- TODO: Document changes to wrangler preview -->
+
 - ### 🗂️ `kv`
 
   Interact with your Cloudflare Workers KV store. [Check out the docs.](./docs/content/kv_commands.md)
