@@ -65,7 +65,7 @@ impl Bundle {
     }
 
     pub fn get_wasm_binding(&self) -> String {
-        "wasmprogram".to_string()
+        "wasm".to_string()
     }
 
     pub fn script_path(&self) -> String {
