@@ -54,7 +54,7 @@ To learn about deploying static assets using `wrangler`, see the [Workers Sites 
   
   - `name`: defaults to `worker`
   - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
-  - `type`: defaults to ["webpack"](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md)
+  - `type`: defaults to ["webpack"](https://developers.cloudflare.com/workers/tooling/wrangler/webpack)
 
 - ### 📥 `init`
 
@@ -67,14 +67,14 @@ To learn about deploying static assets using `wrangler`, see the [Workers Sites 
   All of the arguments and flags to this command are options:
 
   - `name`: defaults to the name of your working directory
-  - `type`: defaults to ["webpack"](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md).
+  - `type`: defaults to ["webpack"](webpackhttps://developers.cloudflare.com/workers/tooling/wrangler/..
 
 - ### 🦀⚙️ `build`
 
   Build your project. This command looks at your `wrangler.toml` file and runs the build steps associated
   with the `"type"` declared there.
 
-  Additionally, you can build different environments. This is useful if you have different builds for different environments, but typically isn't needed. For more information see the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
+  Additionally, you can build different environments. This is useful if you have different builds for different environments, but typically isn't needed. For more information see the [environments documentation](environmentshttps://developers.cloudflare.com/workers/tooling/wrangler/..
 
 - ### 🔧 `config`
 
@@ -134,7 +134,7 @@ If you would like to publish to your own domain, you will need to specify these 
 
 #### Publishing the same code to multiple places
 
-If you would like to be able to publish your code to multiple places, please see the documentation for [environments](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
+If you would like to be able to publish your code to multiple places, please see the documentation for [environments](environmentshttps://developers.cloudflare.com/workers/tooling/wrangler/..
 
 - ### 🔬 `preview`
 
@@ -169,11 +169,11 @@ If you would like to be able to publish your code to multiple places, please see
   wrangler preview post hello=hello
   ```
 
-  Additionally, you can preview different environments. This is useful if you have different builds for different environments (like staging vs. production), but typically isn't needed. For more information see the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
+  Additionally, you can preview different environments. This is useful if you have different builds for different environments (like staging vs. production), but typically isn't needed. For more information see the [environments documentation](environmentshttps://developers.cloudflare.com/workers/tooling/wrangler/..
 
 - ### 🗂️ `kv`
 
-  Interact with your Cloudflare Workers KV store. [Check out the docs.](./docs/content/kv_commands.md)
+  Interact with your Cloudflare Workers KV store. [Check out the docs.](https://developers.cloudflare.com/workers/tooling/wrangler/kv_commands)
 
 ## 🔩 Configuration
 
@@ -215,18 +215,18 @@ There are two types of configuration that `wrangler` uses: global user and per p
         - `rust`: This project contains a Rust crate that uses `wasm-bindgen`. It will be built with `wasm-pack`.
         - `webpack`: This project contains any number of JavaScript files or Rust/C/C++ files that compile to
             WebAssembly. Rust files will be built with `wasm-pack`.
-            This project type uses webpack and webpack plugins in the background to build your worker. You can read more about this type [here](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md).
-    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md) configuration.
+            This project type uses webpack and webpack plugins in the background to build your worker. You can read more about this type [here](webpackhttps://developers.cloudflare.com/workers/tooling/wrangler/..
+    - `zone_id`: This is the ID of the "zone" or domain you want to run your script on. This is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](environments.md) https://developers.cloudflare.com/workers/tooling/wrangler/configurat.
     - `account_id`: This is the ID of the account associated with your zone. You might have more than one account, so make sure to use the ID of the account associated with the `zone_id` you provide, if you provide one.
     - `route`: This is the route you'd like to use your worker on. You need to include the hostname. Examples:
 
         - `*example.com/*`
         - `http://example.com/hello`
         
-        This key is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md). 
+        This key is optional if you are using a [workers.dev](https://workers.dev) subdomain and is only required when `workers_dev` is false, or excluded from an [environment](environments.https://developers.cloudflare.com/workers/tooling/wrangler/m 
 
-    - `webpack_config`: This is the path to a custom webpack configuration file for your worker. You must specify this field to use a custom webpack configuration, otherwise Wrangler will use a default configuration for you. You can read more [here](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md).
-    - `workers_dev`: This is a boolean flag that specifies if your worker will be deployed to your [workers.dev](https://workers.dev) subdomain. For more information, please read the [environments documentation](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
+    - `webpack_config`: This is the path to a custom webpack configuration file for your worker. You must specify this field to use a custom webpack configuration, otherwise Wrangler will use a default configuration for you. You can read more [here](webpackhttps://developers.cloudflare.com/workers/tooling/wrangler/..
+    - `workers_dev`: This is a boolean flag that specifies if your worker will be deployed to your [workers.dev](https://workers.dev) subdomain. For more information, please read the [environments documentation](environmentshttps://developers.cloudflare.com/workers/tooling/wrangler/..
     - `kv-namespaces`: These specify any [Workers KV](https://workers.cloudflare.com/docs/reference/storage/) Namespaces you want to access from
         inside your Worker. Each namespace you include should have an entry in your `wrangler.toml` that includes:
 
@@ -242,11 +242,11 @@ There are two types of configuration that `wrangler` uses: global user and per p
         ]
         ```
 
-        Note: Creating your KV Namespaces should be handled using Wrangler's [KV Commands](./docs/content/kv_commands.md).
+        Note: Creating your KV Namespaces should be handled using Wrangler's [KV Commands](https://developers.cloudflare.com/workers/tooling/wrangler/kv_commands..
 
     #### Environments
 
-    Additionally, you can configure Wrangler to publish to multiple environments. This means that your same codebase can be deployed to multiple places on your [workers.dev](https://workers.dev) subdomain, across multiple accounts, zones, and routes. Read more [here](/docs/content/environments.md).
+    Additionally, you can configure Wrangler to publish to multiple environments. This means that your same codebase can be deployed to multiple places on your [workers.dev](https://workers.dev) subdomain, across multiple accounts, zones, and routes. Read more [here](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments).
 
 ## Additional Installation Instructions
 
