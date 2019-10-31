@@ -68,6 +68,7 @@ fn run() -> Result<(), failure::Error> {
         .author("The Wrangler Team <wrangler@cloudflare.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::VersionlessSubcommands)
         .subcommand(
             SubCommand::with_name("kv:namespace")
                 .about(&*format!(
