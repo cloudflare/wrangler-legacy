@@ -16,8 +16,8 @@ impl Package {
             )
         } else if !build_dir.join(&self.main).exists() {
             failure::bail!(
-                "The entrypoint of your Worker ({:?}) could not be found.",
-                self.main
+                "The entrypoint of your Worker ({}) could not be found.",
+                self.main.display()
             )
         } else {
             Ok(self.main.clone())
@@ -30,15 +30,15 @@ impl Package {
         let manifest_path = pkg_path.join("package.json");
         if !manifest_path.is_file() {
             failure::bail!(
-                "Your JavaScript project is missing a `package.json` file; is `{:?}` the \
+                "Your JavaScript project is missing a `package.json` file; is `{}` the \
                  wrong directory?",
-                pkg_path
+                pkg_path.display()
             )
         }
 
         let package_json: String = fs::read_to_string(manifest_path.clone())?.parse()?;
         let package: Package = serde_json::from_str(&package_json)
-            .unwrap_or_else(|_| panic!("could not parse {:?}", manifest_path));
+            .unwrap_or_else(|_| panic!("could not parse {}", manifest_path.display()));
 
         Ok(package)
     }

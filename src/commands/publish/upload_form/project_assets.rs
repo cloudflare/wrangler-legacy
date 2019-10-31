@@ -25,8 +25,9 @@ impl ProjectAssets {
         kv_namespaces: Vec<KvNamespace>,
         text_blobs: Vec<TextBlob>,
     ) -> Result<Self, failure::Error> {
-        let script_name = filename_from_path(&script_path)
-            .ok_or_else(|| format_err!("filename should not be empty: {:?}", script_path))?;
+        let script_name = filename_from_path(&script_path).ok_or_else(|| {
+            format_err!("filename should not be empty: {}", script_path.display())
+        })?;
 
         Ok(Self {
             script_name,
