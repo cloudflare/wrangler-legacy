@@ -6,17 +6,17 @@ use serde::{self, Deserialize};
 #[derive(Debug, Deserialize)]
 pub struct Package {
     #[serde(default)]
-    main: String,
+    main: PathBuf,
 }
 impl Package {
-    pub fn main(&self, build_dir: &PathBuf) -> Result<String, failure::Error> {
-        if self.main == "" {
+    pub fn main(&self, build_dir: &PathBuf) -> Result<PathBuf, failure::Error> {
+        if self.main == PathBuf::from("") {
             failure::bail!(
                 "The `main` key in your `package.json` file is required; please specified the entrypoint of your Worker.",
             )
         } else if !build_dir.join(&self.main).exists() {
             failure::bail!(
-                "The entrypoint of your Worker ({}) could not be found.",
+                "The entrypoint of your Worker ({:?}) could not be found.",
                 self.main
             )
         } else {
