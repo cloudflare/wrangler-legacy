@@ -5,6 +5,7 @@ use super::target_type::TargetType;
 use crate::settings::target::Target;
 
 use std::collections::{HashMap, HashSet};
+use std::env;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -15,21 +16,30 @@ use serde::{Deserialize, Serialize};
 use crate::terminal::emoji;
 use crate::terminal::message;
 
+fn some_string() -> Option<String> {
+    Some("".to_string())
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
-    pub account_id: String,
-    pub env: Option<HashMap<String, Environment>>,
-    #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    #[serde(default)]
     pub name: String,
     #[serde(rename = "type")]
     pub target_type: TargetType,
+    #[serde(default)]
+    pub account_id: String,
+    pub workers_dev: Option<bool>,
+    #[serde(default = "some_string")]
     pub route: Option<String>,
     pub routes: Option<HashMap<String, String>>,
-    pub webpack_config: Option<String>,
-    pub workers_dev: Option<bool>,
+    #[serde(default = "some_string")]
     pub zone_id: Option<String>,
+    pub webpack_config: Option<String>,
+    pub private: Option<bool>,
     pub site: Option<Site>,
+    #[serde(rename = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub env: Option<HashMap<String, Environment>>,
 }
 
 impl Manifest {
@@ -51,30 +61,64 @@ impl Manifest {
 
     pub fn generate(
         name: String,
-        target_type: TargetType,
+        target_type: Option<TargetType>,
         config_path: &PathBuf,
         site: Option<Site>,
     ) -> Result<Manifest, failure::Error> {
-        let manifest = Manifest {
-            account_id: String::new(),
-            env: None,
-            kv_namespaces: None,
-            name: name.clone(),
-            target_type: target_type.clone(),
-            route: Some(String::new()),
-            routes: None,
-            webpack_config: None,
-            workers_dev: Some(true),
-            zone_id: Some(String::new()),
-            site,
+        let config_file = config_path.join("wrangler.toml");
+        let template_config_content = fs::read_to_string(&config_file);
+        let template_config = match &template_config_content {
+            Ok(content) => {
+                let config: Manifest = toml::from_str(content)?;
+                config.warn_on_account_info();
+                if let Some(target_type) = &target_type {
+                    if config.target_type != *target_type {
+                        message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
+                    }
+                }
+                Ok(config)
+            }
+            Err(err) => Err(err),
+        };
+        let mut template_config = match template_config {
+            Ok(config) => config,
+            Err(err) => {
+                log::info!("Error parsing template {}", err);
+                log::debug!("template content {:?}", template_config_content);
+                Manifest::default()
+            }
         };
 
-        let toml = toml::to_string(&manifest)?;
-        let config_file = config_path.join("wrangler.toml");
+        let default_workers_dev = match &template_config.route {
+            Some(route) => {
+                if route.is_empty() {
+                    Some(true)
+                } else {
+                    None
+                }
+            }
+            None => Some(true),
+        };
+
+        template_config.name = name;
+        template_config.workers_dev = default_workers_dev;
+        if let Some(target_type) = &target_type {
+            template_config.target_type = target_type.clone();
+        }
+
+        if let Some(arg_site) = site {
+            if template_config.site.is_none() {
+                template_config.site = Some(arg_site);
+            }
+        }
+
+        // TODO: https://github.com/cloudflare/wrangler/issues/773
+
+        let toml = toml::to_string(&template_config)?;
 
         log::info!("Writing a wrangler.toml file at {}", config_file.display());
         fs::write(&config_file, &toml)?;
-        Ok(manifest)
+        Ok(template_config)
     }
 
     pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
@@ -254,6 +298,96 @@ impl Manifest {
                 }
             }
             (false, None) => failure::bail!(pick_target_failure),
+        }
+    }
+
+    fn warn_on_account_info(&self) {
+        let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
+        let zone_id_env = env::var("CF_ZONE_ID").is_ok();
+        let mut top_level_fields: Vec<String> = Vec::new();
+        if !account_id_env {
+            top_level_fields.push("account_id".to_string());
+        }
+        if let Some(kv_namespaces) = &self.kv_namespaces {
+            for kv_namespace in kv_namespaces {
+                top_level_fields.push(format!(
+                    "kv-namespace {} needs a namespace_id",
+                    kv_namespace.binding
+                ));
+            }
+        }
+        if let Some(route) = &self.route {
+            if !route.is_empty() {
+                top_level_fields.push("route".to_string());
+            }
+        }
+        if let Some(zone_id) = &self.zone_id {
+            if !zone_id.is_empty() && !zone_id_env {
+                top_level_fields.push("zone_id".to_string());
+            }
+        }
+
+        let mut env_fields: HashMap<String, Vec<String>> = HashMap::new();
+
+        if let Some(env) = &self.env {
+            for (env_name, env) in env {
+                let mut current_env_fields: Vec<String> = Vec::new();
+                if let Some(_) = &env.account_id {
+                    if !account_id_env {
+                        current_env_fields.push("account_id".to_string());
+                    }
+                }
+                if let Some(kv_namespaces) = &env.kv_namespaces {
+                    for kv_namespace in kv_namespaces {
+                        current_env_fields.push(format!(
+                            "kv-namespace {} needs a namespace_id",
+                            kv_namespace.binding
+                        ));
+                    }
+                }
+                if let Some(route) = &env.route {
+                    if !route.is_empty() {
+                        current_env_fields.push("route".to_string());
+                    }
+                }
+                if let Some(zone_id) = &env.zone_id {
+                    if !zone_id.is_empty() && !zone_id_env {
+                        current_env_fields.push("zone_id".to_string());
+                    }
+                }
+                if !current_env_fields.is_empty() {
+                    env_fields.insert(env_name.to_string(), current_env_fields);
+                }
+            }
+        }
+        let has_top_level_fields = !top_level_fields.is_empty();
+        let has_env_fields = !env_fields.is_empty();
+        let mut needs_new_line = false;
+        if has_top_level_fields || has_env_fields {
+            message::help(
+                "You will need to update the following fields in the created wrangler.toml file before continuing:"
+            );
+            message::help(
+                "You can find your account_id and zone_id in the right sidebar of the zone overview tab at https://dash.cloudflare.com"
+            );
+            if has_top_level_fields {
+                needs_new_line = true;
+                for top_level_field in top_level_fields {
+                    println!("- {}", top_level_field);
+                }
+            }
+            if has_env_fields {
+                for (env_name, env_fields) in env_fields {
+                    if needs_new_line {
+                        println!();
+                    }
+                    println!("[env.{}]", env_name);
+                    needs_new_line = true;
+                    for env_field in env_fields {
+                        println!("  - {}", env_field);
+                    }
+                }
+            }
         }
     }
 }

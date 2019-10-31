@@ -22,7 +22,7 @@ pub fn init(
     let initialized_site = if site { Some(Site::default()) } else { None };
     let manifest = Manifest::generate(
         name.to_string(),
-        target_type,
+        Some(target_type),
         &config_path,
         initialized_site,
     )?;
