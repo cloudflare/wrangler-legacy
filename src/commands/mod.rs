@@ -9,6 +9,7 @@ pub mod preview;
 pub mod publish;
 pub mod subdomain;
 pub mod whoami;
+pub mod cloudflared;
 
 pub use self::config::global_config;
 pub use build::build;
@@ -17,6 +18,7 @@ pub use generate::generate;
 pub use init::init;
 pub use preview::{preview, HTTPMethod};
 pub use publish::publish;
+pub use cloudflared::run_cloudflared;
 use regex::Regex;
 pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
