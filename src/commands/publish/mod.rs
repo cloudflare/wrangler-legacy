@@ -9,8 +9,6 @@ pub use package::Package;
 use crate::settings::target::KvNamespace;
 use route::Route;
 
-use upload_form::build_upload_form;
-
 use std::path::Path;
 
 use crate::commands;
@@ -93,7 +91,7 @@ fn publish_script(
         http::auth_client(None, user)
     };
 
-    let script_upload_form = build_upload_form(target, asset_manifest)?;
+    let script_upload_form = upload_form::build(target, asset_manifest)?;
 
     let mut res = client
         .put(&worker_addr)

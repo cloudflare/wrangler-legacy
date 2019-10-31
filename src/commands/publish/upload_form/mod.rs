@@ -19,7 +19,7 @@ use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_upload_form(
+pub fn build(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Form, failure::Error> {
