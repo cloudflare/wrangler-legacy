@@ -5,8 +5,8 @@ mod wasm_module;
 use reqwest::multipart::{Form, Part};
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 
-use crate::commands;
 use crate::commands::build::wranglerjs;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
@@ -19,13 +19,10 @@ use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_script_and_upload_form(
+pub fn build(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Form, failure::Error> {
-    // Build the script before uploading.
-    commands::build(&target)?;
-
     let target_type = &target.target_type;
     let kv_namespaces = target.kv_namespaces();
     match target_type {
@@ -36,11 +33,11 @@ pub fn build_script_and_upload_form(
             build_generated_dir()?;
             concat_js(&name)?;
 
-            let path = format!("./pkg/{}_bg.wasm", name);
+            let path = PathBuf::from(format!("./pkg/{}_bg.wasm", name));
             let binding = "wasm".to_string();
             let wasm_module = WasmModule::new(path, binding)?;
 
-            let script_path = "./worker/generated/script.js".to_string();
+            let script_path = PathBuf::from("./worker/generated/script.js");
 
             let assets =
                 ProjectAssets::new(script_path, vec![wasm_module], kv_namespaces, Vec::new())?;
@@ -144,8 +141,7 @@ fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure:
     Ok(form)
 }
 
-fn filename_from_path(path: &str) -> Option<String> {
-    let path = Path::new(path);
+fn filename_from_path(path: &PathBuf) -> Option<String> {
     path.file_stem()?.to_str().map(|s| s.to_string())
 }
 
