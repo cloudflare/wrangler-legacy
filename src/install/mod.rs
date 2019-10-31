@@ -84,6 +84,7 @@ fn tool_needs_update(tool_name: &str, path: &Path) -> Result<bool, failure::Erro
         Some(v) => v,
     };
     let latest_tool_version = get_latest_version(tool_name)?;
+    // todo(gabbi): If latest_tool_version is error, try getting latest version via a github api call.
     if installed_tool_version == latest_tool_version {
         log::debug!(
             "installed {} version {} is up to date",
