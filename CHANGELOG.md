@@ -1,5 +1,177 @@
 # Changelog
 
+## 👻 1.5.0
+
+- ### Features
+
+  - **Deprecate `wrangler publish --release` - [EverlastingBugstopper], [issue/538] [pull/751]**
+
+    `wrangler publish --release` is now simply an alias of `wrangler publish`. This is related to the introduction of [environments](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md) made in [1.3.1](#-131) and is intended to reduce confusion surrounding deploy targets. Previously, `wrangler publish --release` would deploy to a route on your own domain, and `wrangler publish` would deploy to your workers.dev subdomain. This was a confusing API, and we now require individual environments to have either `workers_dev = true` **or** both a `route` and `zone_id` in each section of `wrangler.toml`. This makes it very clear where your Workers code is being deployed. If you're not using `wrangler publish --release` but you added `workers_dev = false` to the top level of your `wrangler.toml` because Wrangler warned you to - you can now safely remove it! If you **are** using `wrangler publish --release`, know that it is functionally the same as `wrangler publish`. If you want to deploy to workers.dev and also a route on your own domain, you will need to set up multiple environments.
+
+    [issue/538]: https://github.com/cloudflare/wrangler/issues/538
+    [pull/751]: https://github.com/cloudflare/wrangler/pull/751
+
+  - **Deprecate `private` field in `wrangler.toml` - [stevenfranks], [issue/782] [pull/782]**
+
+    In a related note, the `private` field no longer functions in `wrangler.toml`. The original intent behind this field was to allow "publishing" without "activating". Unfortunately this led to a lot of undefined behavior if the value was switched from `true` to `false` in between a `wrangler publish` command and a `wrangler publish --release` command and vice versa. With the removal of `wrangler publish --release`, we are also removing the `private` field. If your `wrangler.toml` files contain a value for private, you can remove it!
+
+    [stevenfranks]: https://github.com/stevenfranks
+    [pull/782]: https://github.com/cloudflare/wrangler/pull/782
+    [issue/782]: https://github.com/cloudflare/wrangler/issues/782
+
+  - **Include/exclude static assets in a Workers Sites project - [gabbifish], [issue/716] [pull/760]**
+
+    Your `wrangler.toml` has two new optional fields: `include` and `exclude`. These fields give you more granular control over what files are uploaded to Workers KV. This behavior mirrors Cargo's [include/exclude](https://doc.rust-lang.org/cargo/reference/manifest.html#the-exclude-and-include-fields-optional) functionality. Further documentation for this feature is available [here](https://developers.cloudflare.com/workers/sites/ignore-assets/).
+
+    [issue/716]: https://github.com/cloudflare/wrangler/issues/716
+    [pull/760]: https://github.com/cloudflare/wrangler/pull/760
+
+  - **A more robust `wrangler generate` - [EverlastingBugstopper], [issue/315] [pull/759]**
+
+    `wrangler generate` is now much smarter about `wrangler.toml` files. Previously, `wrangler generate` would simply create the same configuration for every project, and it would ignore any `wrangler.toml` that was committed to the template. This means much less guesswork when using `wrangler generate` with existing Workers projects.
+
+    [issue/315]: https://github.com/cloudflare/wrangler/issues/315
+    [pull/759]: https://github.com/cloudflare/wrangler/pull/759
+
+  - **Add the ability to check if you've already registered a workers.dev subdomain - [gusvargas], [issue/701] [pull/747]**
+
+    You can now run `wrangler subdomain` without any arguments to see if you have registered a [workers.dev](https://workers.dev) subdomain.
+
+    ```sh
+    $ wrangler subdomain
+    💁  foo.workers.dev
+    ```
+
+    [gusvargas]: https://github.com/gusvargas
+    [pull/747]: https://github.com/cloudflare/wrangler/pull/747
+    [issue/701]: https://github.com/cloudflare/wrangler/issues/701
+
+  - **Add `--verbose` flag to `wrangler publish` and `wrangler preview` - [gabbifish], [issue/657] [pull/790]**
+
+    You can now run `wrangler publish --verbose` and `wrangler preview --verbose` on a Workers Sites project to view all of the files that are being uploaded to Workers KV.
+
+    ```sh
+    $ wrangler publish --verbose
+    🌀  Using namespace for Workers Site "__example-workers_sites_assets"
+    💁  Preparing to upload updated files...
+    🌀  Preparing ./public/favicon.ico
+    🌀  Preparing ./public/index.html
+    🌀  Preparing ./public/404.html
+    🌀  Preparing ./public/img/404-wrangler-ferris.gif
+    🌀  Preparing ./public/img/200-wrangler-ferris.gif
+    ✨  Success
+    ✨  Built successfully, built project size is 11 KiB.
+    ✨  Successfully published your script to https://test.example.workers.dev
+    ```
+
+    [issue/657]: https://github.com/cloudflare/wrangler/issues/657
+    [pull/790]: https://github.com/cloudflare/wrangler/pull/790
+
+  - **Disallow `node_modules` as a bucket for Workers Sites - [gabbifish], [issue/723] [pull/792]**
+
+    `node_modules` is no longer allowed to be a bucket for Workers Sites. It is notoriously very large and if it were specified as a bucket it would probably be a very expensive mistake.
+  
+    [issue/723]: https://github.com/cloudflare/wrangler/pull/792
+    [pull/792]: https://github.com/cloudflare/wrangler/issues/723
+
+  - **Allow installs to utilize Wrangler binaries via a caching proxy instead of Github directly - [gabbifish], [pull/797]**
+
+    To avoid dependency on one external service, Github, we enabled a cache proxy (using Workers!) for installations of Wrangler.
+
+    [gabbifish]: https://github.com/cloudflare/wrangler/pull/797
+
+  - **Provide a better error message when using an unverified email address - [ashleygwilliams], [issue/320] [pull/795]**
+
+    The Cloudflare API refuses to play nice with unverified email addresses (we don't like spam!), and now when this happens, Wrangler gives an actionable error message.
+
+    [issue/320]: https://github.com/cloudflare/wrangler/issues/320
+    [pull/795]: https://github.com/cloudflare/wrangler/pull/795
+  
+- ### Fixes
+
+  - **Fix Rust live preview - [gabbifish], [issue/618] [pull/699]**
+
+    If you use Wrangler to develop Rust Workers, you may have noticed that live preview (`wrangler preview --watch`) was not working with your project. Not to worry though, we cracked down on this bug with an (oxidized) iron fist! Wrangler now has cross-platform support for live previewing Rust Workers.
+
+    [issue/618]: https://github.com/cloudflare/wrangler/issues/618
+    [pull/699]: https://github.com/cloudflare/wrangler/pull/699
+
+  - **Minimize timeout errors for bulk uploads - [gabbifish], [issue/746] [pull/757]**
+
+    Sometimes Wrangler would make API calls to Workers KV that would timeout if there were too many files. We've increased the amount of time Wrangler will wait around for the API operations to complete.
+
+    [issue/746]: https://github.com/cloudflare/wrangler/issues/746
+    [pull/757]: https://github.com/cloudflare/wrangler/pull/757
+
+  - **Print readable error message when external commands fail - [EverlastingBugstopper], [pull/799]**
+
+    Wrangler depends on a few external applications, and sometimes the calls to them fail! When this happens, Wrangler would tell you the command it tried to run, but it included a bunch of quotes. This change removes those quotes so the command is easily readable and can be copy/pasted.
+
+    [pull/799]: https://github.com/cloudflare/wrangler/pull/799
+
+  - **Disallow `wrangler generate --site` with a template argument - [EverlastingBugstopper], [issue/776] [pull/789]**
+
+    In Wrangler 1.4.0, we introduced [Workers Sites](https://developers.cloudflare.com/workers/sites/), which included the ability to run `wrangler generate --site` which would use our site template behind the scenes. Confusingly, you could also pass a template to this command: `wrangler generate my-site https://github.com/example/worker-site --site`, which would not behave as expected. This specific usage will now correctly output an error.
+
+    [issue/776]: https://github.com/cloudflare/wrangler/issues/776
+    [pull/789]: https://github.com/cloudflare/wrangler/pull/789
+
+- ### Maintenance
+
+  - **Begin refactoring test suite - [ashleymichal], [pull/787]**
+
+    We're constantly shipping features in Wrangler, and with more features comes a larger codebase. As a codebase expands, it goes through some growing pains. This release includes some improvements to the internal organization of Wrangler's codebase, and is intended to make our lives and our contributors' lives easier moving forward.
+
+    - Moved all "fixture" helper functions to "utils" module to share between build/preview tests
+
+    - Removed "metadata_wasm.json" from `simple_rust` fixture
+
+    - Extracted all module declrations in `main.rs` to `lib.rs` to allow tests to import with `use wrangler::foo`
+
+    - Split `target/mod.rs` into one file per struct
+
+    - Cleaned up KV Namespace mod system
+
+    - Use `log::info!` instead of `info!` in `main.rs`
+
+    [pull/787]: https://github.com/cloudflare/wrangler/pull/787
+
+  - **Refactor GlobalUser to be passed as a reference consistently - [gabbifish], [pull/749]**
+
+    [pull/749]: https://github.com/cloudflare/wrangler/pull/749
+
+  - **Remove internal link from CONTRIBUTING.md - [adaptive], [pull/784]**
+
+    [adaptive]: https://github.com/adaptive
+    [pull/784]: https://github.com/cloudflare/wrangler/pull/784
+
+  - **Fix some [Clippy](https://github.com/rust-lang/rust-clippy) warnings - [EverlastingBugstopper], [pull/793]**
+
+    [pull/793]: https://github.com/cloudflare/wrangler/pull/793
+
+  - **Clean up leftover directories created by tests - [ashleymichal], [pull/785]**
+
+    [pull/785]: https://github.com/cloudflare/wrangler/pull/785
+
+  - **Refactor subdomain module - [EverlastingBugstopper], [issue/758] [pull/764]**
+
+    [issue/758]: https://github.com/cloudflare/wrangler/issues/758
+    [pull/764]: https://github.com/cloudflare/wrangler/pull/764
+
+  - **Fix README markdown misrender - [dottorblaster], [pull/763]**
+
+    [dottorblaster]: https://github.com/dottorblaster
+    [pull/763]: https://github.com/cloudflare/wrangler/pull/763
+
+  - **Remove duplicate Environments subheader from README - [bradyjoslin], [pull/766]**
+
+    [bradyjoslin]: https://github.com/bradyjoslin
+    [pull/766]: https://github.com/cloudflare/wrangler/pull/766
+
+  - **Change Crate author to the Workers Developer Experience team - [ashleygwilliams], [pull/752]**
+
+    [pull/752]: https://github.com/cloudflare/wrangler/pull/752
+
 ## 🎂 1.4.0
 
 - ### Features

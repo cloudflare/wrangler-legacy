@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.5.0-rc.0"
+version = "1.5.0"
 authors = ["Ashley Williams <ashley666ashley@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"

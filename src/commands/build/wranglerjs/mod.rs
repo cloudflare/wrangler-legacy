@@ -233,11 +233,7 @@ pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
 
     if !Path::new(&build_dir).exists() {
         // TODO: use site.entry_point instead of build_dir explicitly.
-        run_generate(
-            build_dir.file_name().unwrap().to_str().unwrap(),
-            template,
-            &target.target_type,
-        )?;
+        run_generate(build_dir.file_name().unwrap().to_str().unwrap(), template)?;
 
         // This step is to prevent having a git repo within a git repo after
         // generating the scaffold into an existing project.
