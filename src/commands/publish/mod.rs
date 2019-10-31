@@ -1,8 +1,7 @@
 mod krate;
 pub mod package;
-pub mod preview;
 mod route;
-mod upload_form;
+pub mod upload_form;
 
 pub use package::Package;
 
