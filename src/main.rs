@@ -68,6 +68,7 @@ fn run() -> Result<(), failure::Error> {
         .author("The Wrangler Team <wrangler@cloudflare.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
+        .setting(AppSettings::VersionlessSubcommands)
         .subcommand(
             SubCommand::with_name("kv:namespace")
                 .about(&*format!(
@@ -485,7 +486,7 @@ fn run() -> Result<(), failure::Error> {
         let release = matches.is_present("release");
         if release {
             message::warn("wrangler publish --release is deprecated and behaves exactly the same as wrangler publish.");
-            message::warn("See https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md for more information.");
+            message::warn("See https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments for more information.");
         }
 
         log::info!("Getting project settings");
