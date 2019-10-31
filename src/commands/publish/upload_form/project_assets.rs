@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use failure::format_err;
 
 use super::binding::Binding;
@@ -10,7 +12,7 @@ use crate::settings::target::KvNamespace;
 #[derive(Debug)]
 pub struct ProjectAssets {
     script_name: String,
-    script_path: String,
+    script_path: PathBuf,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
     pub text_blobs: Vec<TextBlob>,
@@ -18,13 +20,13 @@ pub struct ProjectAssets {
 
 impl ProjectAssets {
     pub fn new(
-        script_path: String,
+        script_path: PathBuf,
         wasm_modules: Vec<WasmModule>,
         kv_namespaces: Vec<KvNamespace>,
         text_blobs: Vec<TextBlob>,
     ) -> Result<Self, failure::Error> {
         let script_name = filename_from_path(&script_path)
-            .ok_or_else(|| format_err!("filename should not be empty: {}", script_path))?;
+            .ok_or_else(|| format_err!("filename should not be empty: {:?}", script_path))?;
 
         Ok(Self {
             script_name,
@@ -58,7 +60,7 @@ impl ProjectAssets {
         self.script_name.to_string()
     }
 
-    pub fn script_path(&self) -> String {
-        self.script_path.to_string()
+    pub fn script_path(&self) -> PathBuf {
+        self.script_path.clone()
     }
 }
