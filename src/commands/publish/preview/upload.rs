@@ -38,7 +38,7 @@ const SITES_UNAUTH_PREVIEW_ERR: &str =
      authenticate to upload your site contents.";
 
 // Builds and uploads the script and its bindings. Returns the ID of the uploaded script.
-pub fn build_and_upload(
+pub fn upload(
     target: &mut Target,
     user: Option<&GlobalUser>,
     sites_preview: bool,
@@ -133,7 +133,7 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::build_script_and_upload_form(target, asset_manifest)?;
+    let script_upload_form = publish::build_upload_form(target, asset_manifest)?;
 
     let mut res = client
         .post(&create_address)
@@ -163,9 +163,9 @@ fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, f
         );
         let mut target = target.clone();
         target.kv_namespaces = None;
-        publish::build_script_and_upload_form(&target, None)?
+        publish::build_upload_form(&target, None)?
     } else {
-        publish::build_script_and_upload_form(&target, None)?
+        publish::build_upload_form(&target, None)?
     };
 
     let mut res = client

@@ -7,7 +7,6 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
-use crate::commands;
 use crate::commands::build::wranglerjs;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
@@ -20,13 +19,10 @@ use wasm_module::WasmModule;
 
 use super::{krate, Package};
 
-pub fn build_script_and_upload_form(
+pub fn build_upload_form(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Form, failure::Error> {
-    // Build the script before uploading.
-    commands::build(&target)?;
-
     let target_type = &target.target_type;
     let kv_namespaces = target.kv_namespaces();
     match target_type {

@@ -9,10 +9,11 @@ pub use package::Package;
 use crate::settings::target::KvNamespace;
 use route::Route;
 
-use upload_form::build_script_and_upload_form;
+use upload_form::build_upload_form;
 
 use std::path::Path;
 
+use crate::commands;
 use crate::commands::kv;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::subdomain::Subdomain;
@@ -43,7 +44,11 @@ pub fn publish(
     }
 
     let asset_manifest = upload_buckets(target, user, verbose)?;
-    build_and_publish_script(&user, &target, asset_manifest)?;
+
+    // Build the script before uploading.
+    commands::build(&target)?;
+
+    publish_script(&user, &target, asset_manifest)?;
 
     Ok(())
 }
@@ -72,7 +77,7 @@ pub fn bind_static_site_contents(
     Ok(())
 }
 
-fn build_and_publish_script(
+fn publish_script(
     user: &GlobalUser,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
@@ -88,7 +93,7 @@ fn build_and_publish_script(
         http::auth_client(None, user)
     };
 
-    let script_upload_form = build_script_and_upload_form(target, asset_manifest)?;
+    let script_upload_form = build_upload_form(target, asset_manifest)?;
 
     let mut res = client
         .put(&worker_addr)
