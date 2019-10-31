@@ -25,7 +25,7 @@ npm i @cloudflare/wrangler -g
 cargo install wrangler
 ```
 
-If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](#additional-installation-instructions).
+If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](https://developers.cloudflare.com/workers/tooling/wrangler/install/).
 
 ## Updating
 
@@ -39,13 +39,13 @@ Once you have installed Wrangler, spinning up and deploying your first Worker is
 $ wrangler generate my-worker
 $ cd my-worker
 # update your wrangler.toml with your Cloudflare Account ID
-$ wrangler config # => enter your api key and email
+$ wrangler config 
 $ wrangler publish
 ```
 
 ## 🎙️ Top Level Commands
 
-- ### 👯 `generate`
+### 👯 `generate`
 
   Scaffold a project, including boilerplate code for a Rust library and a Cloudflare Worker.
 
@@ -57,9 +57,9 @@ $ wrangler publish
   
   - `name`: defaults to `worker`
   - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
-  - `type`: defaults to ["webpack"](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md)
+  - `type`: defaults to ["webpack"](https://developers.cloudflare.com/workers/tooling/wrangler/webpack)
 
-- ### 📥 `init`
+### 📥 `init`
 
   Creates a skeleton `wrangler.toml` in an existing directory. This can be used as an alternative to `generate` if you prefer to clone a repository yourself.
 
@@ -70,16 +70,18 @@ $ wrangler publish
   All of the arguments and flags to this command are optional:
 
   - `name`: defaults to the name of your working directory
-  - `type`: defaults to ["webpack"](https://github.com/cloudflare/wrangler/blob/master/docs/content/webpack.md).
+  - `type`: defaults to ["webpack"](https://developers.cloudflare.com/workers/tooling/wrangler/webpack).
 
-- ### 🦀⚙️ `build`
+
+### 🦀⚙️ `build`
 
   Build your project. This command looks at your `wrangler.toml` file and runs the build steps associated
   with the `"type"` declared there.
 
-  Additionally, you can configure different [environments](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
+  Additionally, you can configure different [environments](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments).
 
-- ### 🔧 `config`
+
+### 🔧 `config`
 
   Configure your global Cloudflare user. This is an interactive command that will prompt you for your email and API key:
 
@@ -91,20 +93,21 @@ $ wrangler publish
   ...
   ```
 
-  You can also [use environment variables](#using-environment-variables) to configure these values.
+  You can also [use environment variables](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/) to configure these values.
 
-- ### ☁️ 🆙 `publish`
+
+### ☁️ 🆙 `publish`
 
   Publish your Worker to Cloudflare. Several keys in your `wrangler.toml` determine whether you are publishing to a workers.dev subdomain or your own registered domain, proxied through Cloudflare.
 
-  Additionally, you can configure different [environments](https://github.com/cloudflare/wrangler/blob/master/docs/content/environments.md).
+  Additionally, you can configure different [environments](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments).
 
 
   ```bash
   wrangler publish
   ```
 
-- ### 🗂 `kv`
+### 🗂 `kv`
 
   Interact with your Workers KV store. This is actually a whole suite of subcommands. Read more about it [here](TODO).
 
