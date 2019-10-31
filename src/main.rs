@@ -364,10 +364,9 @@ fn run() -> Result<(), failure::Error> {
                     emoji::SLEUTH
                 ))
                 .arg(
-                    Arg::with_name("token")
-                        .help("use an API token for authentication. API tokens are still in beta. You can issue them on the Cloudflare dashboard.")
-                        .short("t")
-                        .long("token")
+                    Arg::with_name("api-key")
+                        .help("use an email and global API key for authentication. This is not recommended; use API tokens (the default) if possible.")
+                        .long("api-key")
                         .takes_value(false),
                 ),
         )
@@ -392,8 +391,8 @@ fn run() -> Result<(), failure::Error> {
     let config_path = Path::new("./wrangler.toml");
 
     if let Some(matches) = matches.subcommand_matches("config") {
-        let token = matches.is_present("token");
-        commands::global_config(token)?;
+        let api_key = matches.is_present("api-key");
+        commands::global_config(api_key)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let site = matches.is_present("site");

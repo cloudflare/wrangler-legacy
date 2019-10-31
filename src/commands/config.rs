@@ -6,6 +6,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 use crate::settings::global_user::{get_global_config_dir, GlobalUser};
+use crate::terminal::message;
 
 // set the permissions on the dir, we want to avoid that other user reads to
 // file
@@ -17,14 +18,16 @@ pub fn set_file_mode(file: &PathBuf) {
         .expect("could not set permissions on file");
 }
 
-pub fn global_config(token: bool) -> Result<(), failure::Error> {
+pub fn global_config(api_key: bool) -> Result<(), failure::Error> {
     let mut user = GlobalUser {
         email: None,
         api_key: None,
         api_token: None,
     };
 
-    if token {
+    if !api_key {
+        // Default: use API token.
+        message::info("Looking to use a Global API Key and email instead? Run \"wrangler config --api-key\". (Not Recommended)");
         println!("Enter API token: ");
         let mut api_token_str: String = read!("{}\n");
         api_token_str.truncate(api_token_str.trim_end().len());
@@ -32,6 +35,7 @@ pub fn global_config(token: bool) -> Result<(), failure::Error> {
             user.api_token = Some(api_token_str);
         }
     } else {
+        message::warn("We don't recommend using your Global API Key! Please consider using an API Token instead. https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys");
         println!("Enter email: ");
         let mut email_str: String = read!("{}\n");
         email_str.truncate(email_str.trim_end().len());
