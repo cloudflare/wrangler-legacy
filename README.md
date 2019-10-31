@@ -83,7 +83,7 @@ $ wrangler publish
 
 ### 🔧 `config`
 
-  Configure your global Cloudflare user. This is an interactive command that will prompt you for your email and API key:
+  Configure your global Cloudflare user. This is an interactive command that will prompt you for your API token:
 
   ```bash
   wrangler config
