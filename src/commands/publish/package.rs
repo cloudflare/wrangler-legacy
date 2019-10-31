@@ -12,7 +12,7 @@ impl Package {
     pub fn main(&self, build_dir: &PathBuf) -> Result<PathBuf, failure::Error> {
         if self.main == PathBuf::from("") {
             failure::bail!(
-                "The `main` key in your `package.json` file is required; please specified the entrypoint of your Worker.",
+                "The `main` key in your `package.json` file is required; please specify the entry point of your Worker.",
             )
         } else if !build_dir.join(&self.main).exists() {
             failure::bail!(
