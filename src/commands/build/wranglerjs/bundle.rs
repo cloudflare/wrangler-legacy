@@ -4,7 +4,7 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::commands::build::wranglerjs::output::WranglerjsOutput;
 
@@ -30,9 +30,8 @@ impl Bundle {
     }
 
     pub fn write(&self, wranglerjs_output: &WranglerjsOutput) -> Result<(), failure::Error> {
-        let bundle_path = Path::new(&self.out);
-        if !bundle_path.exists() {
-            fs::create_dir(bundle_path)?;
+        if !self.out.exists() {
+            fs::create_dir(&self.out)?;
         }
 
         let mut script_file = File::create(self.script_path())?;
@@ -48,16 +47,12 @@ impl Bundle {
         Ok(())
     }
 
-    pub fn wasm_path(&self) -> String {
-        Path::new(&self.out)
-            .join("module.wasm".to_string())
-            .to_str()
-            .unwrap()
-            .to_string()
+    pub fn wasm_path(&self) -> PathBuf {
+        PathBuf::from(&self.out).join("module.wasm")
     }
 
     pub fn has_wasm(&self) -> bool {
-        Path::new(&self.wasm_path()).exists()
+        self.wasm_path().exists()
     }
 
     pub fn has_webpack_config(&self, webpack_config_path: &PathBuf) -> bool {
@@ -65,21 +60,18 @@ impl Bundle {
     }
 
     pub fn get_wasm_binding(&self) -> String {
-        "wasmprogram".to_string()
+        "wasm".to_string()
     }
 
-    pub fn script_path(&self) -> String {
-        Path::new(&self.out)
-            .join("script.js".to_string())
-            .to_str()
-            .unwrap()
-            .to_string()
+    pub fn script_path(&self) -> PathBuf {
+        PathBuf::from(&self.out).join("script.js")
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
 
     fn create_temp_dir(name: &str) -> PathBuf {
         let mut dir = env::temp_dir();

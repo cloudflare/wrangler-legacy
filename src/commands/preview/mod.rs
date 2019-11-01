@@ -7,7 +7,7 @@ mod http_method;
 pub use http_method::HTTPMethod;
 
 mod upload;
-use upload::build_and_upload;
+use upload::upload;
 
 use crate::commands;
 
@@ -36,9 +36,11 @@ pub fn preview(
     verbose: bool,
     browser: bool,
 ) -> Result<(), failure::Error> {
+    commands::build(&target)?;
+
     let sites_preview: bool = target.site.is_some();
 
-    let script_id = build_and_upload(&mut target, user.as_ref(), sites_preview, verbose)?;
+    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
 
     let session = Uuid::new_v4().to_simple();
     let preview_host = "example.com";
@@ -152,7 +154,9 @@ fn watch_for_changes(
     commands::watch_and_build(&target, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        if let Ok(new_id) = build_and_upload(&mut target, user, sites_preview, verbose) {
+        commands::build(&target)?;
+
+        if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {
             let msg = FiddleMessage {
                 session_id: session_id.clone(),
                 data: FiddleMessageData::LiveReload { new_id },
