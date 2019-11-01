@@ -9,11 +9,21 @@ use crate::terminal::emoji;
 use config::{Config, Environment, File};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct GlobalUser {
-    pub email: Option<String>,
-    pub api_key: Option<String>,
-    pub api_token: Option<String>,
+pub enum GlobalUser {
+    KeyAuthUser { email: String, api_key: String },
+    TokenAuthUser { api_token: String },
 }
+
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub struct KeyAuthUser {
+//     pub email: String,
+//     pub api_key: String,
+// }
+
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub struct TokenAuthUser {
+//     pub api_token: String,
+// }
 
 impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
@@ -23,16 +33,17 @@ impl GlobalUser {
 
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
-        if let Some(token) = user.api_token {
-            return Credentials::UserAuthToken { token: token };
-        }
-
-        // fallback to email and global API key.
-        // If either of the fields below are None, just substitute in an empty string
-        // and these credentials will trigger the appropriate "missing field" response from the API.
-        Credentials::UserAuthKey {
-            key: user.api_key.unwrap_or("".to_string()),
-            email: user.email.unwrap_or("".to_string()),
+        match user {
+            GlobalUser::TokenAuthUser {
+                api_token,
+            } => Credentials::UserAuthToken { token: api_token },
+            GlobalUser::KeyAuthUser {
+                email,
+                api_key,
+            } => Credentials::UserAuthKey {
+                key: api_key,
+                email: email,
+            },
         }
     }
 }
