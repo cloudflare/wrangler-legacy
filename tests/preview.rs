@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
 
-pub mod utils; 
+pub mod utils;
 
 use assert_cmd::prelude::*;
 
