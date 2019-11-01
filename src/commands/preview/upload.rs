@@ -78,7 +78,7 @@ pub fn upload(
                 "You haven't run `wrangler config`. Running preview without authentication",
             );
             message::help(
-                "Run `wrangler config` or set $CF_EMAIL and $CF_API_KEY/$CF_API_TOKEN to configure your user.",
+                "Run `wrangler config` or set either of $CF_API_TOKEN or ($CF_EMAIL, $CF_API_KEY) to configure your user.",
             );
 
             if sites_preview {
