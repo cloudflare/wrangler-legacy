@@ -9,6 +9,7 @@ use crate::terminal::emoji;
 use config::{Config, Environment, File};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
 pub enum GlobalUser {
     KeyAuthUser { email: String, api_key: String },
     TokenAuthUser { api_token: String },
