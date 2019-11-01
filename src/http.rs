@@ -38,16 +38,16 @@ pub fn client(feature: Option<&str>) -> Client {
 
 pub fn auth_client(feature: Option<&str>, user: &GlobalUser) -> Client {
     let mut headers = headers(feature);
-    let auth_headers = add_auth_headers(&mut headers, user);
+    add_auth_headers(&mut headers, user);
 
     builder()
-        .default_headers(auth_headers.to_owned())
+        .default_headers(headers.to_owned())
         .redirect(RedirectPolicy::none())
         .build()
         .expect("could not create authenticated http client")
 }
 
-fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) -> &'a HeaderMap {
+fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) {
     match &user.api_token {
         Some(token) => headers.insert(
             "Authorization",
@@ -68,5 +68,4 @@ fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) -> &'a He
             None
         }
     };
-    headers
 }
