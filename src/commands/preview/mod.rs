@@ -34,7 +34,7 @@ pub fn preview(
     body: Option<String>,
     livereload: bool,
     verbose: bool,
-    browser: bool,
+    headless: bool,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
 
@@ -54,7 +54,7 @@ pub fn preview(
 
         info!("Opened websocket server on port {}", ws_port);
 
-        if browser {
+        if !headless {
             open_browser(&format!(
             "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}{4}",
             &session.to_string(), ws_port, script_id, https_str, preview_host,
@@ -73,7 +73,7 @@ pub fn preview(
             verbose,
         )?;
     } else {
-        if browser {
+        if !headless {
             open_browser(&format!(
                 "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
                 script_id, https_str, preview_host
