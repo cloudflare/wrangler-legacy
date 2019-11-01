@@ -244,7 +244,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("template")
-                        .help("a link to a github template! defaults to cloudflare/worker-template")
+                        .help("a link to a github template! defaults to https://github.com/cloudflare/worker-template")
                         .index(2),
                 )
                 .arg(
