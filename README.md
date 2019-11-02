@@ -109,15 +109,18 @@ $ wrangler publish
 
   Additionally, you can configure different [environments](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments).
 
+  You can also use environment variables to handle authentication when you publish a Worker.
 
     ```bash
     # e.g.
+    CF_API_TOKEN=superlongtoken wrangler publish
+    # where
+    # $CF_API_TOKEN -> your Cloudflare API token
+
     CF_API_KEY=superlongapikey CF_EMAIL=testuser@example.com wrangler publish
     # where
     # $CF_API_KEY -> your Cloudflare API key
     # $CF_EMAIL -> your Cloudflare account email
-    CF_API_TOKEN=superlongtoken wrangler publish
-    # $CF_API_TOKEN -> your Cloudflare API token
     ```
 
 ### 🗂 `kv`
