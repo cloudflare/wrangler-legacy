@@ -15,17 +15,6 @@ pub enum GlobalUser {
     KeyAuthUser { email: String, api_key: String },
 }
 
-// #[derive(Clone, Debug, Deserialize, Serialize)]
-// pub struct KeyAuthUser {
-//     pub email: String,
-//     pub api_key: String,
-// }
-
-// #[derive(Clone, Debug, Deserialize, Serialize)]
-// pub struct TokenAuthUser {
-//     pub api_token: String,
-// }
-
 impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
         get_global_config()
