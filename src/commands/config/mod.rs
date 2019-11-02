@@ -48,7 +48,7 @@ pub fn global_config(api_key: bool) -> Result<(), failure::Error> {
     let toml = toml::to_string(&user)?;
     // let toml = match user {
     //     GlobalUser::KeyAuthUser(k) => toml::to_string(k),
-    //     GlobalUser::TokenAuthUser(t) => toml::to_string(t), 
+    //     GlobalUser::TokenAuthUser(t) => toml::to_string(t),
     // };
 
     let config_dir = get_global_config_dir().expect("could not find global config directory");

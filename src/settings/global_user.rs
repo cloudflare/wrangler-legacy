@@ -11,8 +11,8 @@ use config::{Config, Environment, File};
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum GlobalUser {
-    KeyAuthUser { email: String, api_key: String },
     TokenAuthUser { api_token: String },
+    KeyAuthUser { email: String, api_key: String },
 }
 
 // #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -35,13 +35,10 @@ impl GlobalUser {
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
         match user {
-            GlobalUser::TokenAuthUser {
-                api_token,
-            } => Credentials::UserAuthToken { token: api_token },
-            GlobalUser::KeyAuthUser {
-                email,
-                api_key,
-            } => Credentials::UserAuthKey {
+            GlobalUser::TokenAuthUser { api_token } => {
+                Credentials::UserAuthToken { token: api_token }
+            }
+            GlobalUser::KeyAuthUser { email, api_key } => Credentials::UserAuthKey {
                 key: api_key,
                 email: email,
             },
