@@ -14,7 +14,7 @@
     "type": "git",
     "url": "git+https://github.com/cloudflare/wrangler.git"
   },
-  "author": "sven@cloudflare.com",
+  "author": "wrangler@cloudflare.com",
   "license": "MIT OR Apache-2.0",
   "bugs": {
     "url": "https://github.com/cloudflare/wrangler/issues"
