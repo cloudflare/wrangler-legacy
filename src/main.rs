@@ -15,6 +15,7 @@ use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
 use wrangler::settings;
+use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::target::TargetType;
 use wrangler::terminal::emoji;
 use wrangler::terminal::message;
@@ -369,7 +370,13 @@ fn run() -> Result<(), failure::Error> {
                 .about(&*format!(
                     "{} Setup wrangler with your Cloudflare account",
                     emoji::SLEUTH
-                )),
+                ))
+                .arg(
+                    Arg::with_name("api-key")
+                        .help("use an email and global API key for authentication. This is not recommended; use API tokens (the default) if possible.")
+                        .long("api-key")
+                        .takes_value(false),
+                ),
         )
         .subcommand(
             SubCommand::with_name("subdomain")
@@ -391,15 +398,42 @@ fn run() -> Result<(), failure::Error> {
 
     let config_path = Path::new("./wrangler.toml");
 
-    if let Some(_matches) = matches.subcommand_matches("config") {
-        println!("Enter email: ");
-        let mut email: String = read!("{}\n");
-        email.truncate(email.trim_end().len());
-        println!("Enter api key: ");
-        let mut api_key: String = read!("{}\n");
-        api_key.truncate(api_key.trim_end().len());
+    if let Some(matches) = matches.subcommand_matches("config") {
+        let api_key = matches.is_present("api-key");
 
-        commands::global_config(email, api_key)?;
+        let mut user = GlobalUser {
+            email: None,
+            api_key: None,
+            api_token: None,
+        };
+
+        if !api_key {
+            // Default: use API token.
+            message::info("Looking to use a Global API Key and email instead? Run \"wrangler config --api-key\". (Not Recommended)");
+            println!("Enter API token: ");
+            let mut api_token_str: String = read!("{}\n");
+            api_token_str.truncate(api_token_str.trim_end().len());
+            if !api_token_str.is_empty() {
+                user.api_token = Some(api_token_str);
+            }
+        } else {
+            message::warn("We don't recommend using your Global API Key! Please consider using an API Token instead. https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys");
+            println!("Enter email: ");
+            let mut email_str: String = read!("{}\n");
+            email_str.truncate(email_str.trim_end().len());
+            if !email_str.is_empty() {
+                user.email = Some(email_str);
+            }
+
+            println!("Enter global API key: ");
+            let mut api_key_str: String = read!("{}\n");
+            api_key_str.truncate(api_key_str.trim_end().len());
+            if !api_key_str.is_empty() {
+                user.api_key = Some(api_key_str);
+            }
+        }
+
+        commands::global_config(&user)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
         let name = matches.value_of("name").unwrap_or("worker");
         let site = matches.is_present("site");
@@ -478,7 +512,7 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        commands::whoami(&user);
+        commands::whoami(&user)?;
     } else if let Some(matches) = matches.subcommand_matches("publish") {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

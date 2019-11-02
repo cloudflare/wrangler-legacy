@@ -17,10 +17,8 @@ pub fn set_file_mode(file: &PathBuf) {
         .expect("could not set permissions on file");
 }
 
-pub fn global_config(email: String, api_key: String) -> Result<(), failure::Error> {
-    let s = GlobalUser { email, api_key };
-
-    let toml = toml::to_string(&s)?;
+pub fn global_config(user: &GlobalUser) -> Result<(), failure::Error> {
+    let toml = toml::to_string(&user)?;
 
     let config_dir = get_global_config_dir().expect("could not find global config directory");
     fs::create_dir_all(&config_dir)?;
