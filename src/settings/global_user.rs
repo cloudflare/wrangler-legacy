@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::terminal::emoji;
 use config::{Config, Environment, File};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum GlobalUser {
     TokenAuthUser { api_token: String },
@@ -86,4 +86,29 @@ pub fn get_global_config_dir() -> Result<PathBuf, failure::Error> {
     let global_config_dir = home_dir.join("config");
     info!("Using global config dir: {:?}", global_config_dir);
     Ok(global_config_dir)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn it_can_prioritize_token_input() {
+        // Set all CF_API_TOKEN, CF_EMAIL, and CF_API_KEY.
+        // This test evaluates whether the GlobalUser returned is
+        // a GlobalUser::TokenAuthUser (expected behavior; token
+        // should be prioritized over email + global API key pair.)
+        env::set_var("CF_API_TOKEN", "foo");
+        env::set_var("CF_EMAIL", "test@cloudflare.com");
+        env::set_var("CF_API_KEY", "bar");
+
+        let user = get_global_config().unwrap();
+        assert_eq!(
+            user,
+            GlobalUser::TokenAuthUser {
+                api_token: "foo".to_string()
+            }
+        );
+    }
 }
