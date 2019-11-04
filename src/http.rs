@@ -38,12 +38,34 @@ pub fn client(feature: Option<&str>) -> Client {
 
 pub fn auth_client(feature: Option<&str>, user: &GlobalUser) -> Client {
     let mut headers = headers(feature);
-    headers.insert("X-Auth-Key", HeaderValue::from_str(&user.api_key).unwrap());
-    headers.insert("X-Auth-Email", HeaderValue::from_str(&user.email).unwrap());
+    add_auth_headers(&mut headers, user);
 
     builder()
-        .default_headers(headers)
+        .default_headers(headers.to_owned())
         .redirect(RedirectPolicy::none())
         .build()
         .expect("could not create authenticated http client")
+}
+
+fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) {
+    match &user.api_token {
+        Some(token) => headers.insert(
+            "Authorization",
+            HeaderValue::from_str(&format!("Bearer {}", &token)).unwrap(),
+        ),
+        None => {
+            // fallback to email + API key auth option
+            match &user.email {
+                Some(email) => {
+                    headers.insert("X-Auth-Email", HeaderValue::from_str(&email).unwrap())
+                }
+                None => None,
+            };
+            match &user.api_key {
+                Some(key) => headers.insert("X-Auth-Key", HeaderValue::from_str(&key).unwrap()),
+                None => None,
+            };
+            None
+        }
+    };
 }
