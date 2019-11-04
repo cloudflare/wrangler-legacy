@@ -27,7 +27,7 @@ impl From<GlobalUser> for Credentials {
             GlobalUser::TokenAuth { api_token } => Credentials::UserAuthToken { token: api_token },
             GlobalUser::GlobalKeyAuth { email, api_key } => Credentials::UserAuthKey {
                 key: api_key,
-                email: email,
+                email,
             },
         }
     }

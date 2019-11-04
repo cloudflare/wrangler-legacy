@@ -402,15 +402,13 @@ fn run() -> Result<(), failure::Error> {
         // If api-key flag isn't present, use the default auth option (API token)
         let default = !matches.is_present("api-key");
 
-        let mut user: GlobalUser;
-
-        if default {
+        let user: GlobalUser = if default {
             // Default: use API token.
             message::info("Looking to use a Global API Key and email instead? Run \"wrangler config --api-key\". (Not Recommended)");
             println!("Enter API token: ");
             let mut api_token: String = read!("{}\n");
             api_token.truncate(api_token.trim_end().len());
-            user = GlobalUser::TokenAuth { api_token };
+            GlobalUser::TokenAuth { api_token }
         } else {
             message::warn("We don't recommend using your Global API Key! Please consider using an API Token instead. https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys");
             println!("Enter email: ");
@@ -421,11 +419,8 @@ fn run() -> Result<(), failure::Error> {
             let mut api_key: String = read!("{}\n");
             api_key.truncate(api_key.trim_end().len());
 
-            user = GlobalUser::GlobalKeyAuth {
-                email,
-                api_key: api_key,
-            };
-        }
+            GlobalUser::GlobalKeyAuth { email, api_key }
+        };
 
         commands::global_config(&user)?;
     } else if let Some(matches) = matches.subcommand_matches("generate") {
