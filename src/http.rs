@@ -49,13 +49,13 @@ pub fn auth_client(feature: Option<&str>, user: &GlobalUser) -> Client {
 
 fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) {
     match user {
-        GlobalUser::TokenAuthUser { api_token } => {
+        GlobalUser::TokenAuth { api_token } => {
             headers.insert(
                 "Authorization",
                 HeaderValue::from_str(&format!("Bearer {}", &api_token)).unwrap(),
             );
         }
-        GlobalUser::KeyAuthUser { email, api_key } => {
+        GlobalUser::GlobalKeyAuth { email, api_key } => {
             headers.insert("X-Auth-Email", HeaderValue::from_str(&email).unwrap());
             headers.insert("X-Auth-Key", HeaderValue::from_str(&api_key).unwrap());
         }

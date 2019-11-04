@@ -11,8 +11,8 @@ use config::{Config, Environment, File};
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum GlobalUser {
-    TokenAuthUser { api_token: String },
-    KeyAuthUser { email: String, api_key: String },
+    TokenAuth { api_token: String },
+    GlobalKeyAuth { email: String, api_key: String },
 }
 
 impl GlobalUser {
@@ -24,10 +24,8 @@ impl GlobalUser {
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
         match user {
-            GlobalUser::TokenAuthUser { api_token } => {
-                Credentials::UserAuthToken { token: api_token }
-            }
-            GlobalUser::KeyAuthUser { email, api_key } => Credentials::UserAuthKey {
+            GlobalUser::TokenAuth { api_token } => Credentials::UserAuthToken { token: api_token },
+            GlobalUser::GlobalKeyAuth { email, api_key } => Credentials::UserAuthKey {
                 key: api_key,
                 email: email,
             },
@@ -97,7 +95,7 @@ mod tests {
     fn it_can_prioritize_token_input() {
         // Set all CF_API_TOKEN, CF_EMAIL, and CF_API_KEY.
         // This test evaluates whether the GlobalUser returned is
-        // a GlobalUser::TokenAuthUser (expected behavior; token
+        // a GlobalUser::TokenAuth (expected behavior; token
         // should be prioritized over email + global API key pair.)
         env::set_var("CF_API_TOKEN", "foo");
         env::set_var("CF_EMAIL", "test@cloudflare.com");
@@ -106,7 +104,7 @@ mod tests {
         let user = get_global_config().unwrap();
         assert_eq!(
             user,
-            GlobalUser::TokenAuthUser {
+            GlobalUser::TokenAuth {
                 api_token: "foo".to_string()
             }
         );

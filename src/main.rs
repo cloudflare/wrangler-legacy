@@ -399,32 +399,31 @@ fn run() -> Result<(), failure::Error> {
     let config_path = Path::new("./wrangler.toml");
 
     if let Some(matches) = matches.subcommand_matches("config") {
-        let api_key = matches.is_present("api-key");
+        // If api-key flag isn't present, use the default auth option (API token)
+        let default = !matches.is_present("api-key");
 
         let mut user: GlobalUser;
 
-        if !api_key {
+        if default {
             // Default: use API token.
             message::info("Looking to use a Global API Key and email instead? Run \"wrangler config --api-key\". (Not Recommended)");
             println!("Enter API token: ");
-            let mut api_token_str: String = read!("{}\n");
-            api_token_str.truncate(api_token_str.trim_end().len());
-            user = GlobalUser::TokenAuthUser {
-                api_token: api_token_str,
-            };
+            let mut api_token: String = read!("{}\n");
+            api_token.truncate(api_token.trim_end().len());
+            user = GlobalUser::TokenAuth { api_token };
         } else {
             message::warn("We don't recommend using your Global API Key! Please consider using an API Token instead. https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys");
             println!("Enter email: ");
-            let mut email_str: String = read!("{}\n");
-            email_str.truncate(email_str.trim_end().len());
+            let mut email: String = read!("{}\n");
+            email.truncate(email.trim_end().len());
 
             println!("Enter global API key: ");
-            let mut api_key_str: String = read!("{}\n");
-            api_key_str.truncate(api_key_str.trim_end().len());
+            let mut api_key: String = read!("{}\n");
+            api_key.truncate(api_key.trim_end().len());
 
-            user = GlobalUser::KeyAuthUser {
-                email: email_str,
-                api_key: api_key_str,
+            user = GlobalUser::GlobalKeyAuth {
+                email,
+                api_key: api_key,
             };
         }
 
