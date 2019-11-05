@@ -3,9 +3,9 @@ use crate::terminal::{emoji, message};
 
 pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
     // If using email + API key for auth, simply prints out email from config file.
-    let email: String = match &user.email {
-        Some(email) => email.to_string(),
-        None => failure::bail!(
+    let email: String = match user {
+        GlobalUser::GlobalKeyAuth { email, .. } => email.to_string(),
+        GlobalUser::TokenAuth { .. } => failure::bail!(
             "At the moment, Wrangler cannot get user information for users using API tokens"
         ),
     };

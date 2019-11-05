@@ -122,7 +122,9 @@ fn write_wranglerjs_output(
 ) -> Result<(), failure::Error> {
     if output.has_errors() {
         message::user_error(output.get_errors().as_str());
-        failure::bail!("Webpack returned an error");
+        failure::bail!(
+            "webpack returned an error. You may be able to resolve this issue by running npm install."
+        );
     }
 
     bundle.write(output)?;
