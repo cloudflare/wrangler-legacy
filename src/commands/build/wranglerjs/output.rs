@@ -6,7 +6,7 @@ use serde::Deserialize;
 use std::io::prelude::*;
 
 // This structure represents the communication between {wranglerjs} and
-// {wrangler}. It is send back after {wranglerjs} completion.
+// {wrangler}. It is sent back after {wranglerjs} completion.
 // FIXME(sven): make this private
 #[derive(Deserialize, Debug)]
 pub struct WranglerjsOutput {
@@ -28,7 +28,7 @@ impl WranglerjsOutput {
     fn project_size_bytes(&self) -> u64 {
         let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
 
-        //approximation of how projects are gzipped
+        // approximation of how projects are gzipped
         e.write_all(&self.script.as_bytes())
             .expect("could not write script buffer");
 
@@ -42,7 +42,7 @@ impl WranglerjsOutput {
 
     fn project_size_message(compressed_size: u64) -> String {
         const MAX_PROJECT_SIZE: u64 = 1 << 20; // 1 MiB
-        const WARN_THRESHOLD: u64 = MAX_PROJECT_SIZE - 81_920; //Warn when less than 80 KiB left to grow, ~92% usage
+        const WARN_THRESHOLD: u64 = MAX_PROJECT_SIZE - 81_920; // Warn when less than 80 KiB left to grow, ~92% usage
         const MAX_BEFORE_WARN: u64 = WARN_THRESHOLD - 1;
 
         let bytes_left = MAX_PROJECT_SIZE.checked_sub(compressed_size);

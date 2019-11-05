@@ -564,7 +564,7 @@ fn run() -> Result<(), failure::Error> {
                     }
                     None => delete_matches
                         .value_of("namespace-id")
-                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
+                        .unwrap() // clap configs ensure that if "binding" isn't present, "namespace-id" must be.
                         .to_string(),
                 };
                 commands::kv::namespace::delete(&target, &user, &namespace_id)?;

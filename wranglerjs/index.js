@@ -34,7 +34,7 @@ function filterByExtension(ext) {
   }
 
   // Check if the config is a function and await it either way in
-  // case the result is a promise
+  // case the result is a Promise
   config = await (typeof config === "function" ? config({}) : config);
 
   if (Array.isArray(config)) {

@@ -2,7 +2,6 @@ const axios = require("axios");
 const os = require("os");
 const { join, resolve } = require("path");
 const { mkdirSync, existsSync } = require("fs");
-// while recent versions of Node can do that natively, wait until we can use it.
 const rimraf = require("rimraf");
 const tar = require("tar");
 const { get } = axios;

@@ -57,7 +57,7 @@ pub fn build(
         }
         TargetType::Webpack => {
             log::info!("Webpack project detected. Publishing...");
-            // FIXME(sven): shouldn't new
+            // TODO: (sven) shouldn't new
             let build_dir = target.build_dir()?;
             let bundle = wranglerjs::Bundle::new(&build_dir);
 
