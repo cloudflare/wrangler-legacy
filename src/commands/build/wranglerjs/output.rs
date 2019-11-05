@@ -7,7 +7,7 @@ use std::io::prelude::*;
 
 // This structure represents the communication between {wranglerjs} and
 // {wrangler}. It is sent back after {wranglerjs} completion.
-// FIXME(sven): make this private
+// TODO: (sven) make this private
 #[derive(Deserialize, Debug)]
 pub struct WranglerjsOutput {
     pub wasm: Option<String>,
