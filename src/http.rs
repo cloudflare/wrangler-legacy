@@ -99,8 +99,7 @@ pub fn format_error(e: ApiFailure, err_type: ErrorCodeDetail) -> String {
             print_status_code_context(status);
             let mut complete_err = "".to_string();
             for error in api_errors.errors {
-                let error_msg =
-                    format!("{} Error {}: {}\n", emoji::WARN, error.code, error.message);
+                let error_msg = format!("{} Code {}: {}\n", emoji::WARN, error.code, error.message);
 
                 let suggestion = match err_type {
                     ErrorCodeDetail::WorkersKV => kv_help(error.code),
