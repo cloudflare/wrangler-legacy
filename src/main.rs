@@ -310,6 +310,12 @@ fn run() -> Result<(), failure::Error> {
                     emoji::MICROSCOPE
                 ))
                 .arg(
+                    Arg::with_name("headless")
+                        .help("Don't open the browser on preview")
+                        .long("headless")
+                        .takes_value(false)
+                )
+                .arg(
                     Arg::with_name("method")
                         .help("Type of request to preview your worker with (get, post)")
                         .index(1),
@@ -495,8 +501,9 @@ fn run() -> Result<(), failure::Error> {
 
         let watch = matches.is_present("watch");
         let verbose = matches.is_present("verbose");
+        let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, body, watch, verbose)?;
+        commands::preview(target, user, method, body, watch, verbose, headless)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
