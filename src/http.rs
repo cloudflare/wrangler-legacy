@@ -94,8 +94,7 @@ pub fn format_error(e: ApiFailure, err_helper: Option<&dyn Fn(u16) -> &'static s
             print_status_code_context(status);
             let mut complete_err = "".to_string();
             for error in api_errors.errors {
-                let error_msg =
-                    format!("{} Error {}: {}\n", emoji::WARN, error.code, error.message);
+                let error_msg = format!("{} Code {}: {}\n", emoji::WARN, error.code, error.message);
 
                 if let Some(annotate_help) = err_helper {
                     let suggestion_text = annotate_help(error.code);
