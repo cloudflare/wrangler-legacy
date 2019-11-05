@@ -1,8 +1,6 @@
 use fs_extra::dir::{copy, CopyOptions};
 use std::env;
 use std::fs;
-use std::fs::File;
-use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
@@ -52,17 +50,4 @@ pub fn create_temporary_copy(fixture: &str) {
     let mut options = CopyOptions::new();
     options.overwrite = true;
     copy(src, dest, &options).unwrap();
-}
-
-// TODO: remove once https://github.com/cloudflare/wrangler/pull/489 is merged
-pub fn webpack_config(fixture: &str, config: &str) {
-    let file_path = fixture_path(fixture).join("webpack.config.js");
-    let mut file = File::create(file_path).unwrap();
-    let content = format!(
-        r#"
-                 module.exports = {};
-             "#,
-        config
-    );
-    file.write_all(content.as_bytes()).unwrap();
 }

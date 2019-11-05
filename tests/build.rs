@@ -38,7 +38,8 @@ fn it_builds_with_webpack_single_js() {
     let fixture = "webpack_simple_js";
     utils::create_temporary_copy(fixture);
     single_env_settings! {fixture, r#"
-        type = "Webpack"
+        type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build(fixture);
@@ -52,7 +53,8 @@ fn it_builds_with_webpack_function_config_js() {
     utils::create_temporary_copy(fixture);
 
     single_env_settings! {fixture, r#"
-        type = "Webpack"
+        type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build(fixture);
@@ -66,7 +68,8 @@ fn it_builds_with_webpack_promise_config_js() {
     utils::create_temporary_copy(fixture);
 
     single_env_settings! {fixture, r#"
-        type = "Webpack"
+        type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build(fixture);
@@ -80,7 +83,8 @@ fn it_builds_with_webpack_function_promise_config_js() {
     utils::create_temporary_copy(fixture);
 
     single_env_settings! {fixture, r#"
-        type = "Webpack"
+        type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build(fixture);
@@ -94,7 +98,7 @@ fn it_builds_with_webpack_single_js_use_package_main() {
     utils::create_temporary_copy(fixture);
 
     single_env_settings! {fixture, r#"
-        type = "Webpack"
+        type = "webpack"
     "#};
 
     build(fixture);
@@ -108,7 +112,7 @@ fn it_builds_with_webpack_specify_configs() {
     utils::create_temporary_copy(fixture);
 
     single_env_settings! {fixture, r#"
-        type = "Webpack"
+        type = "webpack"
         webpack_config = "webpack.worker.js"
     "#};
 
@@ -123,7 +127,7 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
     utils::create_temporary_copy(fixture);
 
     single_env_settings! {fixture, r#"
-        type = "Webpack"
+        type = "webpack"
     "#};
 
     build_fails_with(
@@ -139,21 +143,8 @@ fn it_fails_with_multiple_webpack_configs() {
     utils::create_temporary_copy(fixture);
 
     single_env_settings! {fixture, r#"
-        type = "Webpack"
-    "#};
-
-    build_fails_with(fixture, "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field");
-    utils::cleanup(fixture);
-}
-
-#[test]
-fn it_fails_with_multiple_specify_webpack_configs() {
-    let fixture = "webpack_multiple_specify_config";
-    utils::create_temporary_copy(fixture);
-
-    single_env_settings! {fixture, r#"
-        type = "Webpack"
-        webpack_config = "webpack.worker.js"
+        type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build_fails_with(fixture, "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field");
@@ -166,7 +157,8 @@ fn it_builds_with_webpack_wast() {
     utils::create_temporary_copy(fixture);
 
     single_env_settings! {fixture, r#"
-        type = "Webpack"
+        type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build(fixture);
@@ -183,15 +175,9 @@ fn it_fails_with_webpack_target_node() {
     let fixture = "webpack_target_node";
     utils::create_temporary_copy(fixture);
 
-    utils::webpack_config(
-        fixture,
-        r#"{
-          entry: "./index.js",
-          target: "node",
-        }"#,
-    );
     single_env_settings! {fixture, r#"
         type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build_fails_with(
@@ -206,15 +192,9 @@ fn it_fails_with_webpack_target_web() {
     let fixture = "webpack_target_web";
     utils::create_temporary_copy(fixture);
 
-    utils::webpack_config(
-        fixture,
-        r#"{
-          entry: "./index.js",
-          target: "web",
-        }"#,
-    );
     single_env_settings! {fixture, r#"
         type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build_fails_with(
@@ -229,15 +209,9 @@ fn it_builds_with_webpack_target_webworker() {
     let fixture = "webpack_target_webworker";
     utils::create_temporary_copy(fixture);
 
-    utils::webpack_config(
-        fixture,
-        r#"{
-          entry: "./index.js",
-          target: "webworker",
-        }"#,
-    );
     single_env_settings! {fixture, r#"
         type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
 
     build(fixture);

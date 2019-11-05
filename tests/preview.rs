@@ -50,6 +50,7 @@ fn it_can_preview_webpack_project() {
     utils::create_temporary_copy(fixture);
     settings! {fixture, r#"
         type = "webpack"
+        webpack_config = "webpack.config.js"
     "#};
     preview(fixture);
     utils::cleanup(fixture);
