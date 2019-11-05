@@ -3,12 +3,13 @@ extern crate lazy_static;
 
 pub mod fixture;
 
+use std::env;
 use std::process::Command;
 use std::str;
 use std::sync::Mutex;
 
 use assert_cmd::prelude::*;
-use fixture::Fixture;
+use fixture::{rust, Fixture};
 
 lazy_static! {
     static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
@@ -246,7 +247,7 @@ fn it_builds_with_webpack_wast() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js", "module.wasm"]);
+    build_creates_assets(fixture, vec!["script.js"]);
 }
 
 #[test]
@@ -330,6 +331,70 @@ fn it_builds_with_webpack_target_webworker() {
     );
 
     build_creates_assets(fixture, vec!["script.js"]);
+}
+
+#[test]
+fn it_builds_with_webpack_wasm_pack() {
+    let fixture = Fixture::new("webpack_wasm_pack");
+
+    fixture.create_dir("crate");
+    fixture.create_file("crate/Cargo.toml", &rust::get_cargo_toml());
+
+    fixture.create_dir("crate/src");
+    fixture.create_file("crate/src/lib.rs", &rust::get_lib());
+    fixture.create_file("crate/src/utils.rs", &rust::get_utils());
+
+    fixture.create_wrangler_toml(
+        r#"
+        type = "webpack"
+        webpack_config = "webpack.config.js"
+    "#,
+    );
+
+    fixture.create_file(
+        "webpack.config.js",
+        r#"
+        const path = require("path");
+        const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
+        
+        module.exports = {
+            "entry": "./index.js",
+            "target": "webworker",
+            plugins: [
+                new WasmPackPlugin({
+                    crateDirectory: path.resolve(__dirname, "crate"),
+                }),
+            ]
+        }
+    "#,
+    );
+
+    fixture.create_file(
+        "package.json",
+        r#"
+        {
+            "name": "webpack_wasm_pack",
+            "main": "./index.js",
+            "dependencies": {
+            "@wasm-tool/wasm-pack-plugin": "^1.0.1"
+            }
+        }
+    "#,
+    );
+
+    fixture.create_file(
+        "index.js",
+        r#"
+        import("./crate/pkg/index.js").then(module => {
+            module.greet();
+        });
+        "#,
+    );
+
+    // make sure wrangler overrides WASM_PACK_PATH
+    env::set_var("WASM_PACK_PATH", "invalid_wasm_pack_path");
+
+    build_creates_assets(fixture, vec!["script.js", "module.wasm"]);
 }
 
 fn build_creates_assets(fixture: Fixture, script_names: Vec<&str>) {
