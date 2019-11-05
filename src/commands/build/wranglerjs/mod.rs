@@ -32,7 +32,7 @@ use std::time::Duration;
 // Run the underlying {wranglerjs} executable.
 
 // In Rust we create a virtual file, pass it to {wranglerjs}, run the
- // executable and wait for completion. The file will receive a serialized
+// executable and wait for completion. The file will receive a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
 pub fn run_build(target: &Target) -> Result<(), failure::Error> {
