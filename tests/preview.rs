@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate lazy_static;
 
-pub mod utils;
+pub mod fixture;
 
 use std::env;
 use std::process::Command;
 use std::sync::Mutex;
 
 use assert_cmd::prelude::*;
-use utils::Fixture;
+use fixture::Fixture;
 
 lazy_static! {
     static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
