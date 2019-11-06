@@ -3,28 +3,39 @@ extern crate lazy_static;
 
 pub mod utils;
 
-use assert_cmd::prelude::*;
-
 use std::process::Command;
 use std::str;
 use std::sync::Mutex;
+
+use assert_cmd::prelude::*;
+use utils::Fixture;
 
 lazy_static! {
     static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
 }
 
 #[test]
+fn it_builds_webpack() {
+    let fixture = Fixture::new("webpack");
+    fixture.scaffold_webpack();
+    fixture.create_wrangler_toml(
+        r#"
+        type = "webpack"
+    "#,
+    );
+    build_creates_assets(fixture, vec!["script.js"]);
+}
+
+#[test]
 fn it_builds_with_webpack_single_js() {
-    let fixture = "webpack_simple_js";
-    utils::create_temporary_copy(fixture);
-    utils::create_fixture_file(
-        fixture,
+    let fixture = Fixture::new("webpack_simple_js");
+    fixture.create_file(
         "index.js",
         r#"
         addEventListener('fetch', event => {
             event.respondWith(handleRequest(event.request))
         })
-        
+
         /**
         * Fetch and log a request
         * @param {Request} request
@@ -34,142 +45,110 @@ fn it_builds_with_webpack_single_js() {
         }
     "#,
     );
-    utils::create_default_package_json(fixture);
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_default_package_json();
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
     "#,
     );
 
-    build(fixture);
-    assert!(utils::fixture_out_path(fixture).join("script.js").exists());
-    utils::cleanup(fixture);
+    build_creates_assets(fixture, vec!["script.js"]);
 }
 
 #[test]
 fn it_builds_with_webpack_function_config_js() {
-    let fixture = "webpack_function_config_js";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_function_config_js");
+    fixture.scaffold_webpack();
 
-    utils::create_fixture_file(
-        fixture,
+    fixture.create_file(
         "webpack.config.js",
         r#"
         module.exports = () => ({ entry: "./index.js" });
     "#,
     );
 
-    utils::create_empty_js(fixture);
-    utils::create_empty_package_json(fixture);
-
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
     );
 
-    build(fixture);
-    assert!(utils::fixture_out_path(fixture).join("script.js").exists());
-    utils::cleanup(fixture);
+    build_creates_assets(fixture, vec!["script.js"]);
 }
 
 #[test]
 fn it_builds_with_webpack_promise_config_js() {
-    let fixture = "webpack_promise_config_js";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_promise_config_js");
+    fixture.scaffold_webpack();
 
-    utils::create_empty_js(fixture);
-    utils::create_empty_package_json(fixture);
-
-    utils::create_fixture_file(
-        fixture,
+    fixture.create_file(
         "webpack.config.js",
         r#"
         module.exports = Promise.resolve({ entry: "./index.js" });
     "#,
     );
 
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
     );
 
-    build(fixture);
-    assert!(utils::fixture_out_path(fixture).join("script.js").exists());
-    utils::cleanup(fixture);
+    build_creates_assets(fixture, vec!["script.js"]);
 }
 
 #[test]
 fn it_builds_with_webpack_function_promise_config_js() {
-    let fixture = "webpack_function_promise_config_js";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_function_promise_config_js");
+    fixture.scaffold_webpack();
 
-    utils::create_fixture_file(
-        fixture,
+    fixture.create_file(
         "webpack.config.js",
         r#"
         module.exports = Promise.resolve({ entry: "./index.js" });
     "#,
     );
 
-    utils::create_empty_js(fixture);
-    utils::create_empty_package_json(fixture);
-
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
     );
 
-    build(fixture);
-    assert!(utils::fixture_out_path(fixture).join("script.js").exists());
-    utils::cleanup(fixture);
+    build_creates_assets(fixture, vec!["script.js"]);
 }
 
 #[test]
 fn it_builds_with_webpack_specify_config() {
-    let fixture = "webpack_specify_config";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_specify_config");
+    fixture.scaffold_webpack();
 
-    utils::create_empty_js(fixture);
-    utils::create_empty_package_json(fixture);
-
-    utils::create_fixture_file(
-        fixture,
+    fixture.create_file(
         "webpack.worker.js",
         r#"
         module.exports = { entry: "./index.js" };
     "#,
     );
 
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.worker.js"
     "#,
     );
 
-    build(fixture);
-    assert!(utils::fixture_out_path(fixture).join("script.js").exists());
-    utils::cleanup(fixture);
+    build_creates_assets(fixture, vec!["script.js"]);
 }
 
 #[test]
 fn it_builds_with_webpack_single_js_missing_package_main() {
-    let fixture = "webpack_single_js_missing_package_main";
-    utils::create_temporary_copy(fixture);
-    utils::create_empty_js(fixture);
-    utils::create_fixture_file(
-        fixture,
+    let fixture = Fixture::new("webpack_single_js_missing_package_main");
+    fixture.create_empty_js();
+
+    fixture.create_file(
         "package.json",
         r#"
         {
@@ -177,27 +156,26 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
         }
     "#,
     );
-    utils::create_wrangler_toml(
-        fixture,
+
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
     "#,
     );
 
     build_fails_with(
-        fixture,
+        &fixture,
         "The `main` key in your `package.json` file is required",
     );
-    utils::cleanup(fixture);
+    fixture.cleanup();
 }
 
 #[test]
 fn it_fails_with_multiple_webpack_configs() {
-    let fixture = "webpack_multiple_config";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_multiple_config");
+    fixture.scaffold_webpack();
 
-    utils::create_fixture_file(
-        fixture,
+    fixture.create_file(
         "webpack.config.js",
         r#"
         module.exports = [
@@ -207,53 +185,76 @@ fn it_fails_with_multiple_webpack_configs() {
     "#,
     );
 
-    utils::create_empty_js(fixture);
-    utils::create_empty_package_json(fixture);
-
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
     );
 
-    build_fails_with(fixture, "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field");
-    utils::cleanup(fixture);
+    build_fails_with(&fixture, "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field");
+    fixture.cleanup();
 }
 
 #[test]
 fn it_builds_with_webpack_wast() {
-    let fixture = "webpack_wast";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_wast");
+    fixture.create_file(
+        "package.json",
+        r#"
+        {
+            "dependencies": {
+                "wast-loader": "^1.8.5"
+            }
+        }
+    "#,
+    );
 
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_file(
+        "index.js",
+        r#"
+        (async function() {
+            await import("./module.wast");
+        })()
+    "#,
+    );
+
+    fixture.create_file(
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            entry: "./index.js",
+            module: {
+                rules: [
+                    {
+                        test: /\.wast$/,
+                        loader: "wast-loader",
+                        type: "webassembly/experimental"
+                    }
+                ]
+            },
+        }
+    "#,
+    );
+
+    fixture.create_file("module.wast", "(module)");
+
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
     );
 
-    build(fixture);
-    assert!(utils::fixture_out_path(fixture).join("script.js").exists());
-    assert!(utils::fixture_out_path(fixture)
-        .join("module.wasm")
-        .exists());
-
-    utils::cleanup(fixture);
+    build_creates_assets(fixture, vec!["script.js", "module.wasm"]);
 }
 
 #[test]
 fn it_fails_with_webpack_target_node() {
-    let fixture = "webpack_target_node";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_target_node");
+    fixture.scaffold_webpack();
 
-    utils::create_empty_js(fixture);
-    utils::create_empty_package_json(fixture);
-
-    utils::create_fixture_file(
-        fixture,
+    fixture.create_file(
         "webpack.config.js",
         r#"
         module.exports = {
@@ -263,8 +264,7 @@ fn it_fails_with_webpack_target_node() {
     "#,
     );
 
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
@@ -272,22 +272,18 @@ fn it_fails_with_webpack_target_node() {
     );
 
     build_fails_with(
-        fixture,
+        &fixture,
         "Building a Cloudflare Worker with target \"node\" is not supported",
     );
-    utils::cleanup(fixture);
+    fixture.cleanup();
 }
 
 #[test]
 fn it_fails_with_webpack_target_web() {
-    let fixture = "webpack_target_web";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_target_web");
+    fixture.scaffold_webpack();
 
-    utils::create_empty_js(fixture);
-    utils::create_empty_package_json(fixture);
-
-    utils::create_fixture_file(
-        fixture,
+    fixture.create_file(
         "webpack.config.js",
         r#"
         module.exports = {
@@ -297,8 +293,7 @@ fn it_fails_with_webpack_target_web() {
     "#,
     );
 
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
@@ -306,22 +301,18 @@ fn it_fails_with_webpack_target_web() {
     );
 
     build_fails_with(
-        fixture,
+        &fixture,
         "Building a Cloudflare Worker with target \"web\" is not supported",
     );
-    utils::cleanup(fixture);
+    fixture.cleanup();
 }
 
 #[test]
 fn it_builds_with_webpack_target_webworker() {
-    let fixture = "webpack_target_webworker";
-    utils::create_temporary_copy(fixture);
+    let fixture = Fixture::new("webpack_target_webworker");
+    fixture.scaffold_webpack();
 
-    utils::create_empty_js(fixture);
-    utils::create_empty_package_json(fixture);
-
-    utils::create_fixture_file(
-        fixture,
+    fixture.create_file(
         "webpack.config.js",
         r#"
         module.exports = {
@@ -331,33 +322,35 @@ fn it_builds_with_webpack_target_webworker() {
     "#,
     );
 
-    utils::create_wrangler_toml(
-        fixture,
+    fixture.create_wrangler_toml(
         r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
     );
 
-    build(fixture);
-    utils::cleanup(fixture);
+    build_creates_assets(fixture, vec!["script.js"]);
 }
 
-fn build(fixture: &str) {
+fn build_creates_assets(fixture: Fixture, script_names: Vec<&str>) {
     // Lock to avoid having concurrent builds
     let _g = BUILD_LOCK.lock().unwrap();
 
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    build.current_dir(utils::fixture_path(fixture));
+    build.current_dir(fixture.get_path());
     build.arg("build").assert().success();
+    for script_name in script_names {
+        assert!(fixture.get_output_path().join(script_name).exists());
+    }
+    fixture.cleanup();
 }
 
-fn build_fails_with(fixture: &str, expected_message: &str) {
+fn build_fails_with(fixture: &Fixture, expected_message: &str) {
     // Lock to avoid having concurrent builds
     let _g = BUILD_LOCK.lock().unwrap();
 
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    build.current_dir(utils::fixture_path(fixture));
+    build.current_dir(fixture.get_path());
     build.arg("build");
 
     let output = build.output().expect("failed to execute process");
