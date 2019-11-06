@@ -17,7 +17,41 @@ pub enum GlobalUser {
 
 impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
-        get_global_config()
+        let mut s = Config::new();
+
+        let config_path = get_global_config_dir()
+            .expect("could not find global config directory")
+            .join("default.toml");
+        let config_str = config_path
+            .to_str()
+            .expect("global config path should be a string");
+
+        // Skip reading global config if non existent
+        // because envs might be provided
+        if config_path.exists() {
+            info!(
+                "Config path exists. Reading from config file, {}",
+                config_str
+            );
+            s.merge(File::with_name(config_str))?;
+        }
+
+        // Eg.. `CF_API_KEY=farts` would set the `account_auth_key` key
+        // envs are: CF_EMAIL, CF_API_KEY and CF_API_TOKEN
+        s.merge(Environment::with_prefix("CF"))?;
+
+        let global_user: Result<GlobalUser, config::ConfigError> = s.try_into();
+        match global_user {
+            Ok(s) => Ok(s),
+            Err(e) => {
+                let msg = format!(
+                    "{} Your global config has an error, run `wrangler config`: {}",
+                    emoji::WARN,
+                    e
+                );
+                failure::bail!(msg)
+            }
+        }
     }
 }
 
@@ -29,44 +63,6 @@ impl From<GlobalUser> for Credentials {
                 key: api_key,
                 email,
             },
-        }
-    }
-}
-
-fn get_global_config() -> Result<GlobalUser, failure::Error> {
-    let mut s = Config::new();
-
-    let config_path = get_global_config_dir()
-        .expect("could not find global config directory")
-        .join("default.toml");
-    let config_str = config_path
-        .to_str()
-        .expect("global config path should be a string");
-
-    // Skip reading global config if non existent
-    // because envs might be provided
-    if config_path.exists() {
-        info!(
-            "Config path exists. Reading from config file, {}",
-            config_str
-        );
-        s.merge(File::with_name(config_str))?;
-    }
-
-    // Eg.. `CF_API_KEY=farts` would set the `account_auth_key` key
-    // envs are: CF_EMAIL, CF_API_KEY and CF_API_TOKEN
-    s.merge(Environment::with_prefix("CF"))?;
-
-    let global_user: Result<GlobalUser, config::ConfigError> = s.try_into();
-    match global_user {
-        Ok(s) => Ok(s),
-        Err(e) => {
-            let msg = format!(
-                "{} Your global config has an error, run `wrangler config`: {}",
-                emoji::WARN,
-                e
-            );
-            failure::bail!(msg)
         }
     }
 }
@@ -101,7 +97,7 @@ mod tests {
         env::set_var("CF_EMAIL", "test@cloudflare.com");
         env::set_var("CF_API_KEY", "bar");
 
-        let user = get_global_config().unwrap();
+        let user = GlobalUser::new().unwrap();
         assert_eq!(
             user,
             GlobalUser::TokenAuth {
