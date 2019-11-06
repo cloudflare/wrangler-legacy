@@ -5,6 +5,7 @@ pub mod utils;
 
 use assert_cmd::prelude::*;
 
+use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
@@ -50,7 +51,6 @@ fn it_can_preview_webpack_project() {
     utils::create_temporary_copy(fixture);
     settings! {fixture, r#"
         type = "webpack"
-        webpack_config = "webpack.config.js"
     "#};
     preview(fixture);
     utils::cleanup(fixture);
@@ -70,7 +70,7 @@ fn it_can_preview_rust_project() {
 fn preview(fixture: &str) {
     // Lock to avoid having concurrent builds
     let _g = BUILD_LOCK.lock().unwrap();
-
+    env::remove_var("CF_ACCOUNT_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(utils::fixture_path(fixture));
     preview.arg("preview").arg("--headless").assert().success();
