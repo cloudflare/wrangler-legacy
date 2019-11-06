@@ -1,7 +1,10 @@
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
+
+use crate::commands::generate::run_generate;
 
 const SITE_ENTRY_POINT: &str = "workers-site";
 
@@ -32,6 +35,22 @@ impl Site {
                 .to_owned()
                 .unwrap_or_else(|| PathBuf::from(SITE_ENTRY_POINT)),
         ))
+    }
+
+    pub fn scaffold_worker(&self) -> Result<(), failure::Error> {
+        let entry_point = &self.entry_point()?;
+        let template = "https://github.com/cloudflare/worker-sites-init";
+
+        if !entry_point.exists() {
+            log::info!("Generating a new workers site project");
+            run_generate(entry_point.file_name().unwrap().to_str().unwrap(), template)?;
+
+            // This step is to prevent having a git repo within a git repo after
+            // generating the scaffold into an existing project.
+            fs::remove_dir_all(&entry_point.join(".git"))?;
+        }
+
+        Ok(())
     }
 }
 

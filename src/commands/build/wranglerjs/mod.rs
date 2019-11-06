@@ -1,33 +1,32 @@
 mod bundle;
 pub mod output;
 
-use crate::commands::build::watch::wait_for_changes;
-use crate::commands::build::watch::COOLDOWN_PERIOD;
-use crate::commands::generate::run_generate;
-
-use crate::commands::publish::package::Package;
-use crate::install;
-use crate::util;
 pub use bundle::Bundle;
-use fs2::FileExt;
-use log::info;
-use output::WranglerjsOutput;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-
-use crate::settings::target::Target;
-use crate::terminal::message;
-
-use notify::{self, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
+
+use fs2::FileExt;
+use log::info;
+use notify::{self, RecursiveMode, Watcher};
+use output::WranglerjsOutput;
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+
+use crate::commands::build::watch::wait_for_changes;
+use crate::commands::build::watch::COOLDOWN_PERIOD;
+use crate::commands::publish::package::Package;
+use crate::install;
+use crate::settings::target::Target;
+use crate::terminal::message;
+use crate::util;
 
 // Run the underlying {wranglerjs} executable.
 
@@ -146,8 +145,8 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     let build_dir = target.build_dir()?;
 
-    if target.site.is_some() {
-        scaffold_site_worker(&target)?;
+    if let Some(site) = &target.site {
+        site.scaffold_worker()?;
     }
 
     run_npm_install(&build_dir).expect("could not run `npm install`");
@@ -226,22 +225,6 @@ fn build_with_default_webpack(
         .to_string();
     command.arg("--no-webpack-config=1");
     command.arg(format!("--use-entry={}", package_main));
-    Ok(())
-}
-
-pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
-    let build_dir = target.build_dir()?;
-    let template = "https://github.com/cloudflare/worker-sites-init";
-
-    if !Path::new(&build_dir).exists() {
-        // TODO: use site.entry_point instead of build_dir explicitly.
-        run_generate(build_dir.file_name().unwrap().to_str().unwrap(), template)?;
-
-        // This step is to prevent having a git repo within a git repo after
-        // generating the scaffold into an existing project.
-        fs::remove_dir_all(&build_dir.join(".git"))?;
-    }
-
     Ok(())
 }
 
