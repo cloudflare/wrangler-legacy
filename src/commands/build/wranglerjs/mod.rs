@@ -43,8 +43,8 @@ pub fn run_build(target: &Target) -> Result<(), failure::Error> {
     let status = command.status()?;
 
     if status.success() {
-        let output = fs::read_to_string(temp_file).expect("could not retrieve output");
-
+        let output = fs::read_to_string(&temp_file).expect("could not retrieve output");
+        fs::remove_file(temp_file)?;
         let wranglerjs_output: WranglerjsOutput =
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
