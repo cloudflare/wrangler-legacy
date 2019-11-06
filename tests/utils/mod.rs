@@ -61,3 +61,35 @@ pub fn create_fixture_file(fixture: &str, name: &str, content: &str) {
     let content = String::from(content);
     file.write_all(content.as_bytes()).unwrap();
 }
+
+pub fn create_empty_package_json(fixture: &str) {
+    create_fixture_file(fixture, "package.json", "{}");
+}
+
+pub fn create_default_package_json(fixture: &str) {
+    create_fixture_file(
+        fixture,
+        "package.json",
+        r#"
+        {
+            "main": "index.js"
+        }
+    "#,
+    );
+}
+
+pub fn create_empty_js(fixture: &str) {
+    create_fixture_file(fixture, "index.js", "// js")
+}
+
+pub fn create_wrangler_toml(fixture: &str, extra_fields: &str) {
+    let content = &format!(
+        r#"
+            name = "test"
+            workers_dev = true
+            {}
+        "#,
+        extra_fields
+    );
+    create_fixture_file(fixture, "wrangler.toml", content);
+}
