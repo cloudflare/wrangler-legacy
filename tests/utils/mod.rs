@@ -1,6 +1,8 @@
 use fs_extra::dir::{copy, CopyOptions};
 use std::env;
 use std::fs;
+use std::fs::File;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
@@ -50,4 +52,12 @@ pub fn create_temporary_copy(fixture: &str) {
     let mut options = CopyOptions::new();
     options.overwrite = true;
     copy(src, dest, &options).unwrap();
+}
+
+pub fn create_fixture_file(fixture: &str, name: &str, content: &str) {
+    let file_path = fixture_path(fixture).join(name);
+    println!("{:?}", file_path);
+    let mut file = File::create(file_path).unwrap();
+    let content = String::from(content);
+    file.write_all(content.as_bytes()).unwrap();
 }

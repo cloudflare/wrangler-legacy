@@ -39,7 +39,6 @@ fn it_builds_with_webpack_single_js() {
     utils::create_temporary_copy(fixture);
     single_env_settings! {fixture, r#"
         type = "webpack"
-        webpack_config = "webpack.config.js"
     "#};
 
     build(fixture);
@@ -67,6 +66,14 @@ fn it_builds_with_webpack_promise_config_js() {
     let fixture = "webpack_promise_config_js";
     utils::create_temporary_copy(fixture);
 
+    utils::create_fixture_file(
+        fixture,
+        "webpack.config.js",
+        r#"
+        module.exports = Promise.resolve({ entry: "./index.js" });
+    "#,
+    );
+
     single_env_settings! {fixture, r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
@@ -81,6 +88,14 @@ fn it_builds_with_webpack_promise_config_js() {
 fn it_builds_with_webpack_function_promise_config_js() {
     let fixture = "webpack_function_promise_config_js";
     utils::create_temporary_copy(fixture);
+
+    utils::create_fixture_file(
+        fixture,
+        "webpack.config.js",
+        r#"
+        module.exports = Promise.resolve({ entry: "./index.js" });
+    "#,
+    );
 
     single_env_settings! {fixture, r#"
         type = "webpack"
@@ -110,6 +125,14 @@ fn it_builds_with_webpack_single_js_use_package_main() {
 fn it_builds_with_webpack_specify_configs() {
     let fixture = "webpack_specify_config";
     utils::create_temporary_copy(fixture);
+
+    utils::create_fixture_file(
+        fixture,
+        "webpack.worker.js",
+        r#"
+        module.exports = { entry: "./index.js" };
+    "#,
+    );
 
     single_env_settings! {fixture, r#"
         type = "webpack"
@@ -141,6 +164,17 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
 fn it_fails_with_multiple_webpack_configs() {
     let fixture = "webpack_multiple_config";
     utils::create_temporary_copy(fixture);
+
+    utils::create_fixture_file(
+        fixture,
+        "webpack.config.js",
+        r#"
+        module.exports = [
+            { entry: "./a.js" },
+            { entry: "./b.js" }
+        ]
+    "#,
+    );
 
     single_env_settings! {fixture, r#"
         type = "webpack"
@@ -175,6 +209,17 @@ fn it_fails_with_webpack_target_node() {
     let fixture = "webpack_target_node";
     utils::create_temporary_copy(fixture);
 
+    utils::create_fixture_file(
+        fixture,
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            "entry": "./index.js",
+            "target": "node"
+        }
+    "#,
+    );
+
     single_env_settings! {fixture, r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
@@ -192,6 +237,17 @@ fn it_fails_with_webpack_target_web() {
     let fixture = "webpack_target_web";
     utils::create_temporary_copy(fixture);
 
+    utils::create_fixture_file(
+        fixture,
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            "entry": "./index.js",
+            "target": "web"
+        }
+    "#,
+    );
+
     single_env_settings! {fixture, r#"
         type = "webpack"
         webpack_config = "webpack.config.js"
@@ -208,6 +264,17 @@ fn it_fails_with_webpack_target_web() {
 fn it_builds_with_webpack_target_webworker() {
     let fixture = "webpack_target_webworker";
     utils::create_temporary_copy(fixture);
+
+    utils::create_fixture_file(
+        fixture,
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            "entry": "./index.js",
+            "target": "webworker"
+        }
+    "#,
+    );
 
     single_env_settings! {fixture, r#"
         type = "webpack"
