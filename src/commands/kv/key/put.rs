@@ -1,4 +1,4 @@
-// todo(gabbi): This file should use cloudflare-rs instead of our http::auth_client
+// TODO: (gabbi) This file should use cloudflare-rs instead of our http::auth_client
 // when https://github.com/cloudflare/cloudflare-rs/issues/26 is handled (this is
 // because the SET key request body is not json--it is the raw value).
 

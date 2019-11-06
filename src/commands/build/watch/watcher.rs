@@ -8,7 +8,7 @@ use failure::{format_err, Error};
 use crate::terminal::message;
 use log::info;
 
-/// Add cooldown for all types of events to watching logic
+// Add cooldown for all types of events to watching logic
 pub fn wait_for_changes(
     rx: &Receiver<DebouncedEvent>,
     cooldown: Duration,

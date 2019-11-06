@@ -40,9 +40,6 @@ impl Target {
         let current_dir = env::current_dir()?;
         // if `site` is configured, we want to isolate worker code
         // and build artifacts away from static site application code.
-        // if the user has configured `site.entry-point`, use that
-        // as the build directory. Otherwise use the default const
-        // SITE_BUILD_DIR
         match &self.site {
             Some(site_config) => site_config.build_dir(current_dir),
             None => Ok(current_dir),

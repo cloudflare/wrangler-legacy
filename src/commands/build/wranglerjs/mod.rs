@@ -30,9 +30,9 @@ use std::thread;
 use std::time::Duration;
 
 // Run the underlying {wranglerjs} executable.
-//
-// In Rust we create a virtual file, pass the pass to {wranglerjs}, run the
-// executable and wait for completion. The file will receive the a serialized
+
+// In Rust we create a virtual file, pass it to {wranglerjs}, run the
+// executable and wait for completion. The file will receive a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
 pub fn run_build(target: &Target) -> Result<(), failure::Error> {
@@ -62,7 +62,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
 
     info!("Running {:?} in watch mode", command);
 
-    //Turbofish the result of the closure so we can use ?
+    // Turbofish the result of the closure so we can use ?
     thread::spawn::<_, Result<(), failure::Error>>(move || {
         let _command_guard = util::GuardedCommand::spawn(command);
 
@@ -93,8 +93,8 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                     if is_first {
                         is_first = false;
                         message::info("Ignoring stale first change");
-                        //skip the first change event
-                        //so we don't do a refresh immediately
+                        // skip the first change event
+                        // so we don't do a refresh immediately
                         continue;
                     }
 
@@ -157,7 +157,8 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     let wranglerjs_path = install().expect("could not install wranglerjs");
     command.arg(wranglerjs_path);
 
-    //put path to our wasm_pack as env variable so wasm-pack-plugin can utilize it
+    // export WASM_PACK_PATH for use by wasm-pack-plugin
+    // https://github.com/wasm-tool/wasm-pack-plugin/blob/caca20df84782223f002735a8a2e99b2291f957c/plugin.js#L13
     let wasm_pack_path = install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
@@ -230,7 +231,6 @@ fn build_with_default_webpack(
 
 pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
     let build_dir = target.build_dir()?;
-    // TODO: this is a placeholder template. Replace with The Real Thing on launch.
     let template = "https://github.com/cloudflare/worker-sites-init";
 
     if !Path::new(&build_dir).exists() {
@@ -268,7 +268,7 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
         info!("skipping npm install because node_modules exists");
     }
 
-    // TODO(sven): figure out why the file doesn't exits in some cases?
+    // TODO: (sven) figure out why the file doesn't exist in some cases
     if flock_path.exists() {
         fs::remove_file(&flock_path)?;
     }

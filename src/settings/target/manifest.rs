@@ -122,7 +122,7 @@ impl Manifest {
     }
 
     pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
-        // Site projects are always Webpack for now; don't let toml override this.
+        // Site projects are always webpack for now; don't let toml override this.
         let target_type = match self.site {
             Some(_) => TargetType::Webpack,
             None => self.target_type.clone(),

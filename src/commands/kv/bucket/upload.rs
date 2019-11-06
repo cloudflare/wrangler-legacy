@@ -172,7 +172,7 @@ mod tests {
             // Ensure the expected key and value was returned in the filtered pair list
             // Awkward field-by-field comparison below courtesy of not yet implementing
             // PartialEq for KeyValuePair in cloudflare-rs :)
-            // todo(gabbi): Implement PartialEq for KeyValuePair in cloudflare-rs.
+            // TODO: (gabbi) Implement PartialEq for KeyValuePair in cloudflare-rs.
             assert!(pair.key == actual[idx].key);
             assert!(pair.value == actual[idx].value);
             idx += 1;
