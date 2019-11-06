@@ -409,8 +409,9 @@ fn run() -> Result<(), failure::Error> {
         let default = !matches.is_present("api-key");
 
         let user: GlobalUser = if default {
-            // Default: use API token.
-            message::info("Looking to use a Global API Key and email instead? Run \"wrangler config --api-key\". (Not Recommended)");
+            // API Tokens are the default
+            message::info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens and create it using the \"Edit Cloudflare Workers\" template");
+            message::info("If you are trying to use your Global API Key instead of an API Token (Not Recommended), run \"wrangler config --api-key\".");
             println!("Enter API token: ");
             let mut api_token: String = read!("{}\n");
             api_token.truncate(api_token.trim_end().len());
