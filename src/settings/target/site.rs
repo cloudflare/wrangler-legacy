@@ -10,7 +10,7 @@ const SITE_ENTRY_POINT: &str = "workers-site";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Site {
-    pub bucket: String,
+    pub bucket: PathBuf,
     #[serde(rename = "entry-point")]
     entry_point: Option<PathBuf>,
     pub include: Option<Vec<String>>,
@@ -20,7 +20,7 @@ pub struct Site {
 impl Site {
     pub fn new(bucket: &str) -> Site {
         let mut site = Site::default();
-        site.bucket = String::from(bucket);
+        site.bucket = PathBuf::from(bucket);
 
         site
     }
@@ -57,7 +57,7 @@ impl Site {
 impl Default for Site {
     fn default() -> Site {
         Site {
-            bucket: String::new(),
+            bucket: PathBuf::new(),
             entry_point: Some(PathBuf::from(SITE_ENTRY_POINT)),
             include: None,
             exclude: None,

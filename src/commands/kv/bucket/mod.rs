@@ -279,7 +279,7 @@ mod tests {
     #[test]
     fn it_can_ignore_node_modules() {
         let mut site = Site::default();
-        site.bucket = "fake".to_string();
+        site.bucket = PathBuf::from("fake");
         let target = make_target(site);
 
         let test_dir = "test1";
@@ -306,7 +306,7 @@ mod tests {
     #[test]
     fn it_can_ignore_hidden() {
         let mut site = Site::default();
-        site.bucket = "fake".to_string();
+        site.bucket = PathBuf::from("fake");
         let target = make_target(site);
 
         let test_dir = "test2";
@@ -333,7 +333,7 @@ mod tests {
     #[test]
     fn it_can_allow_unfiltered_files() {
         let mut site = Site::default();
-        site.bucket = "fake".to_string();
+        site.bucket = PathBuf::from("fake");
         let target = make_target(site);
 
         let test_dir = "test3";
@@ -360,7 +360,7 @@ mod tests {
     #[test]
     fn it_can_filter_by_include() {
         let mut site = Site::default();
-        site.bucket = "fake".to_string();
+        site.bucket = PathBuf::from("fake");
         site.include = Some(vec!["this_isnt_here.txt".to_string()]);
         let target = make_target(site);
 
@@ -388,7 +388,7 @@ mod tests {
     #[test]
     fn it_can_filter_by_exclude() {
         let mut site = Site::default();
-        site.bucket = "fake".to_string();
+        site.bucket = PathBuf::from("fake");
         site.exclude = Some(vec!["ignore_me.txt".to_string()]);
         let target = make_target(site);
 
@@ -416,7 +416,7 @@ mod tests {
     #[test]
     fn it_can_prioritize_include_over_exclude() {
         let mut site = Site::default();
-        site.bucket = "fake".to_string();
+        site.bucket = PathBuf::from("fake");
         site.include = Some(vec!["notice_me.txt".to_string()]);
         site.exclude = Some(vec!["notice_me.txt".to_string()]);
         let target = make_target(site);
