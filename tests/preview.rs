@@ -72,5 +72,5 @@ fn preview(fixture: &str) {
 
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(utils::fixture_path(fixture));
-    preview.arg("preview").assert().success();
+    preview.arg("preview").arg("--headless").assert().success();
 }
