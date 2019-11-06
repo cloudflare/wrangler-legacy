@@ -467,7 +467,7 @@ fn run() -> Result<(), failure::Error> {
         let name = matches.value_of("name");
         let site = matches.is_present("site");
         let target_type = if site {
-            // Workers Sites projects are always Webpack for now
+            // Workers Sites projects are always webpack for now
             Some(TargetType::Webpack)
         } else {
             match matches.value_of("type") {
