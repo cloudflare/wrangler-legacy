@@ -14,7 +14,6 @@ use std::thread;
 use std::time::Duration;
 
 use fs2::FileExt;
-use log::info;
 use notify::{self, RecursiveMode, Watcher};
 use output::WranglerjsOutput;
 use rand::distributions::Alphanumeric;
@@ -37,7 +36,7 @@ use crate::util;
 pub fn run_build(target: &Target) -> Result<(), failure::Error> {
     let (mut command, temp_file, bundle) = setup_build(target)?;
 
-    info!("Running {:?}", command);
+    log::info!("Running {:?}", command);
 
     let status = command.status()?;
 
@@ -59,7 +58,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
 
     let is_site = target.site.clone();
 
-    info!("Running {:?} in watch mode", command);
+    log::info!("Running {:?} in watch mode", command);
 
     // Turbofish the result of the closure so we can use ?
     thread::spawn::<_, Result<(), failure::Error>>(move || {
@@ -69,13 +68,13 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
         let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
 
         watcher.watch(&temp_file, RecursiveMode::Recursive)?;
-        info!("watching temp file {:?}", &temp_file);
+        log::info!("watching temp file {:?}", &temp_file);
 
         if let Some(site) = is_site {
             let bucket = site.bucket;
             if Path::new(&bucket).exists() {
                 watcher.watch(&bucket, RecursiveMode::Recursive)?;
-                info!("watching static sites asset file {:?}", &bucket);
+                log::info!("watching static sites asset file {:?}", &bucket);
             } else {
                 failure::bail!(
                     "Attempting to watch static assets bucket \"{}\" which doesn't exist",
@@ -240,7 +239,7 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
         let mut command = build_npm_command();
         command.current_dir(dir.clone());
         command.arg("install");
-        info!("Running {:?} in directory {:?}", command, dir);
+        log::info!("Running {:?} in directory {:?}", command, dir);
 
         let status = command.status()?;
 
@@ -248,7 +247,7 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
             failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
         }
     } else {
-        info!("skipping npm install because node_modules exists");
+        log::info!("skipping npm install because node_modules exists");
     }
 
     // TODO: (sven) figure out why the file doesn't exist in some cases
@@ -298,13 +297,13 @@ fn install() -> Result<PathBuf, failure::Error> {
     let wranglerjs_path = if install::target::DEBUG {
         let source_path = get_source_dir();
         let wranglerjs_path = source_path.join("wranglerjs");
-        info!("wranglerjs at: {:?}", wranglerjs_path);
+        log::info!("wranglerjs at: {:?}", wranglerjs_path);
         wranglerjs_path
     } else {
         let tool_name = "wranglerjs";
         let version = env!("CARGO_PKG_VERSION");
         let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", version)?;
-        info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
+        log::info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
         wranglerjs_path.path()
     };
 
