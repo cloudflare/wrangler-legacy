@@ -27,15 +27,14 @@ pub fn init(
             &config_path,
             Some(site.clone()),
         )?;
-        message::success("Succesfully created a `wrangler.toml`");
 
         site.scaffold_worker()?;
         message::success("Succesfully scaffolded workers site");
     } else {
         Manifest::generate(name.to_string(), Some(target_type), &config_path, None)?;
-        message::success("Succesfully created a `wrangler.toml`");
     }
 
+    message::success("Succesfully created a `wrangler.toml`");
     Ok(())
 }
 
