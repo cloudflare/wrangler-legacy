@@ -176,29 +176,28 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
-    let webpack_config_path = if let Some(webpack_config) = &target.webpack_config {
-        // require webpack_config in wrangler.toml to use it in sites
-        Some(PathBuf::from(&webpack_config))
-    } else if target.site.is_none() {
-        let config_path = PathBuf::from("webpack.config.js".to_string());
-        // backwards compatibility, deprecated in 1.6.0
-        // if webpack.config.js exists and is not specified in wrangler.toml, use it and warn
-        if bundle.has_webpack_config(&config_path) {
-            message::warn("In Wrangler v1.6.0, you will need to include a webpack_config field in your wrangler.toml to build with a custom webpack configuration.");
-            Some(config_path)
-        } else {
-            // if webpack.config.js does not exist, don't warn, use our default
+    let custom_webpack_config_path = match &target.webpack_config {
+        Some(webpack_config) => match &target.site {
+            None => Some(PathBuf::from(&webpack_config)),
+            Some(_) => {
+                message::warn("Workers Sites does not support custom webpack configuration files");
+                None
+            }
+        },
+        None => {
+            if target.site.is_none() {
+                let config_path = PathBuf::from("webpack.config.js".to_string());
+                if config_path.exists() {
+                    message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your wrangler.toml:\nwebpack_config = \"webpack.config.js\"");
+                }
+            }
             None
         }
-    } else {
-        // don't use `webpack.config.js` if this project is a site
-        None
     };
 
-    // if {webpack.config.js} is not present, we infer the entry based on the
-    // {package.json} file and pass it to {wranglerjs}.
-    // https://github.com/cloudflare/wrangler/issues/98
-    if let Some(webpack_config_path) = webpack_config_path {
+    // if webpack_config is not configured in the manifest
+    // we infer the entry based on {package.json} and pass it to {wranglerjs}
+    if let Some(webpack_config_path) = custom_webpack_config_path {
         build_with_custom_webpack(&mut command, &webpack_config_path);
     } else {
         build_with_default_webpack(&mut command, &build_dir)?;
