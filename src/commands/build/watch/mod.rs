@@ -3,10 +3,11 @@ use ignore::overrides::OverrideBuilder;
 use ignore::WalkBuilder;
 pub use watcher::wait_for_changes;
 
+use crate::commands;
 use crate::commands::build::{command, wranglerjs};
+use crate::install::install;
 use crate::settings::target::{Target, TargetType};
 use crate::terminal::message;
-use crate::{commands, install};
 
 use notify::{self, RecursiveMode, Watcher};
 use std::sync::mpsc;
@@ -52,7 +53,7 @@ pub fn watch_and_build(
         }
         TargetType::Rust => {
             let tool_name = "wasm-pack";
-            let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
+            let binary_path = install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
             thread::spawn(move || {

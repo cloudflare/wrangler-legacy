@@ -7,6 +7,7 @@ use crate::commands::generate::run_generate;
 
 use crate::commands::publish::package::Package;
 use crate::install;
+use crate::install::{install, install_artifact};
 use crate::util;
 pub use bundle::Bundle;
 use fs2::FileExt;
@@ -162,7 +163,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         // https://github.com/wasm-tool/wasm-pack-plugin/blob/caca20df84782223f002735a8a2e99b2291f957c/plugin.js#L13
         let tool_name = "wasm-pack";
         let author = "rustwasm";
-        let wasm_pack_path = install::install(tool_name, author)?.binary(tool_name)?;
+        let wasm_pack_path = install(tool_name, author)?.binary(tool_name)?;
         command.env("WASM_PACK_PATH", wasm_pack_path);
     }
 
@@ -324,7 +325,7 @@ fn install_wranglerjs() -> Result<PathBuf, failure::Error> {
         let tool_name = "wranglerjs";
         let author = "cloudflare";
         let version = env!("CARGO_PKG_VERSION");
-        let wranglerjs_path = install::install_artifact(tool_name, author, version)?;
+        let wranglerjs_path = install_artifact(tool_name, author, version)?;
         info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
         wranglerjs_path.path()
     };

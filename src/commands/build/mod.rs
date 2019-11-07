@@ -3,9 +3,10 @@ pub mod wranglerjs;
 mod watch;
 pub use watch::watch_and_build;
 
+use crate::commands;
+use crate::install::install;
 use crate::settings::target::{Target, TargetType};
 use crate::terminal::message;
-use crate::{commands, install};
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -18,7 +19,7 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
         }
         TargetType::Rust => {
             let tool_name = "wasm-pack";
-            let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
+            let binary_path = install(tool_name, "rustwasm")?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
             let command = command(&args, &binary_path);

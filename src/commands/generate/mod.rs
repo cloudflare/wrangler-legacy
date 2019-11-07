@@ -1,9 +1,10 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::commands;
 use crate::commands::validate_worker_name;
+use crate::install::install;
 use crate::settings::target::{Manifest, Site, TargetType};
-use crate::{commands, install};
 
 pub fn generate(
     name: &str,
@@ -28,7 +29,7 @@ pub fn generate(
 
 pub fn run_generate(name: &str, template: &str) -> Result<(), failure::Error> {
     let tool_name = "cargo-generate";
-    let binary_path = install::install(tool_name, "ashleygwilliams")?.binary(tool_name)?;
+    let binary_path = install(tool_name, "ashleygwilliams")?.binary(tool_name)?;
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
 
