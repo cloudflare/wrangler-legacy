@@ -37,12 +37,14 @@ impl Target {
     }
 
     pub fn build_dir(&self) -> Result<PathBuf, std::io::Error> {
-        let current_dir = env::current_dir()?;
         // if `site` is configured, we want to isolate worker code
         // and build artifacts away from static site application code.
         match &self.site {
-            Some(site_config) => site_config.build_dir(current_dir),
-            None => Ok(current_dir),
+            Some(site_config) => site_config.entry_point(),
+            None => {
+                let current_dir = env::current_dir()?;
+                Ok(current_dir)
+            }
         }
     }
 }

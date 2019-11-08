@@ -278,12 +278,9 @@ mod tests {
 
     #[test]
     fn it_can_ignore_node_modules() {
-        let target = make_target(Site {
-            bucket: "fake".to_string(),
-            entry_point: None,
-            include: None,
-            exclude: None,
-        });
+        let mut site = Site::default();
+        site.bucket = PathBuf::from("fake");
+        let target = make_target(site);
 
         let test_dir = "test1";
         // If test dir already exists, delete it.
@@ -308,12 +305,9 @@ mod tests {
 
     #[test]
     fn it_can_ignore_hidden() {
-        let target = make_target(Site {
-            bucket: "fake".to_string(),
-            entry_point: None,
-            include: None,
-            exclude: None,
-        });
+        let mut site = Site::default();
+        site.bucket = PathBuf::from("fake");
+        let target = make_target(site);
 
         let test_dir = "test2";
         // If test dir already exists, delete it.
@@ -338,12 +332,9 @@ mod tests {
 
     #[test]
     fn it_can_allow_unfiltered_files() {
-        let target = make_target(Site {
-            bucket: "fake".to_string(),
-            entry_point: None,
-            include: None,
-            exclude: None,
-        });
+        let mut site = Site::default();
+        site.bucket = PathBuf::from("fake");
+        let target = make_target(site);
 
         let test_dir = "test3";
         // If test dir already exists, delete it.
@@ -368,12 +359,10 @@ mod tests {
 
     #[test]
     fn it_can_filter_by_include() {
-        let target = make_target(Site {
-            bucket: "fake".to_string(),
-            entry_point: None,
-            include: Some(vec!["this_isnt_here.txt".to_string()]),
-            exclude: None,
-        });
+        let mut site = Site::default();
+        site.bucket = PathBuf::from("fake");
+        site.include = Some(vec!["this_isnt_here.txt".to_string()]);
+        let target = make_target(site);
 
         let test_dir = "test4";
         // If test dir already exists, delete it.
@@ -398,12 +387,10 @@ mod tests {
 
     #[test]
     fn it_can_filter_by_exclude() {
-        let target = make_target(Site {
-            bucket: "fake".to_string(),
-            entry_point: None,
-            include: None,
-            exclude: Some(vec!["ignore_me.txt".to_string()]),
-        });
+        let mut site = Site::default();
+        site.bucket = PathBuf::from("fake");
+        site.exclude = Some(vec!["ignore_me.txt".to_string()]);
+        let target = make_target(site);
 
         let test_dir = "test5";
         // If test dir already exists, delete it.
@@ -428,12 +415,11 @@ mod tests {
 
     #[test]
     fn it_can_prioritize_include_over_exclude() {
-        let target = make_target(Site {
-            bucket: "fake".to_string(),
-            entry_point: None,
-            include: Some(vec!["notice_me.txt".to_string()]),
-            exclude: Some(vec!["notice_me.txt".to_string()]),
-        });
+        let mut site = Site::default();
+        site.bucket = PathBuf::from("fake");
+        site.include = Some(vec!["notice_me.txt".to_string()]);
+        site.exclude = Some(vec!["notice_me.txt".to_string()]);
+        let target = make_target(site);
 
         let test_dir = "test6";
         // If test dir already exists, delete it.
