@@ -39,7 +39,8 @@ fn it_can_preview_js_project() {
         type = "javascript"
     "#,
     );
-    preview(fixture);
+    preview_succeeds(&fixture);
+    fixture.cleanup()
 }
 
 #[test]
@@ -51,7 +52,8 @@ fn it_can_preview_webpack_project() {
         type = "webpack"
     "#,
     );
-    preview(fixture);
+    preview_succeeds(&fixture);
+    fixture.cleanup()
 }
 
 #[test]
@@ -177,15 +179,15 @@ fn it_can_preview_rust_project() {
         type = "rust"
     "#,
     );
-    preview(fixture);
+    preview_succeeds(&fixture);
+    fixture.cleanup()
 }
 
-fn preview(fixture: Fixture) {
+fn preview_succeeds(fixture: &Fixture) {
     // Lock to avoid having concurrent builds
     let _g = BUILD_LOCK.lock().unwrap();
     env::remove_var("CF_ACCOUNT_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture.get_path());
     preview.arg("preview").arg("--headless").assert().success();
-    fixture.cleanup()
 }
