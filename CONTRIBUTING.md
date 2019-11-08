@@ -18,11 +18,11 @@ Within 3 days, any incoming issue should be triaged. Triage involves:
 
 ### Labelling
 
-- label all issues coming from non-team members with User Report
-- labelling the category of the issue: Feature, External Bug, Bug, Maintenance, Docs
-- optionally labelling a secondary category: Webpack, Routes, Workers Runtime, Refactor
-- labelling the status of the issue: Need More Info, Needs Repro, Needs Design, PR Welcome
-- optionally labelling other calls to action: Help Wanted, Question
+- label all issues coming from non-team members with `user report`
+- labelling the category of the issue: `feature`, `external bug`, `bug`, `maintenance`, `docs`, `refactor`, `release`
+- labelling the status of the issue: `needs design`, `needs docs`, `needs more info`, `needs repro`, `needs template`, `PR attached`, `PR welcome`, `waiting on response`
+- optionally labelling a subject: `cargo install`, `kv`, `routes`, `site`, `webpack`, `workers runtime`
+- optionally labelling other calls to action: `help wanted`, `question`, `good first issue`
 
 ### Assignment
 
@@ -36,7 +36,7 @@ our plans for the milestones and releases.
 
 ### Labelling
 
-- labelling the priority of the issue: Critical, Nice to Have, Low Priority
+- labelling the priority of the issue: `critical`, `nice to have`, `low priority`
 - labelling the status of the issue: Needs Design, PR Welcome
 
 ### Assignment and Milestones
@@ -51,12 +51,12 @@ should be triaged immediately upon open by the PR author.
 
 ### Labelling
 
-- All work-in-progress PRs should be labelled Work In Progress and the title should be
+- All work-in-progress PRs should be labelled `work in progress` and the title should be
     annotated [WIP] for easy scanning. No WIP PRs will be reviewed until the annotations
     are removed.
-- All PRs that need to be reviewed should be labelled Needs Review until they have 
+- All PRs that need to be reviewed should be labelled `needs review` until they have 
     received all required reviews.
-- All PRs should be labelled with a changelog label: BREAKING, Feature, Bug, Maintenance, Docs
+- All PRs should be labelled with a changelog label: `BREAKING`, `feature`, `fix`, `maintenance`, `docs`
 
 ### Merging
 

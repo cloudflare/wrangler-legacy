@@ -54,15 +54,10 @@ pub fn create_temporary_copy(fixture: &str) {
     copy(src, dest, &options).unwrap();
 }
 
-// TODO: remove once https://github.com/cloudflare/wrangler/pull/489 is merged
-pub fn webpack_config(fixture: &str, config: &str) {
-    let file_path = fixture_path(fixture).join("webpack.config.js");
+pub fn create_fixture_file(fixture: &str, name: &str, content: &str) {
+    let file_path = fixture_path(fixture).join(name);
+    println!("{:?}", file_path);
     let mut file = File::create(file_path).unwrap();
-    let content = format!(
-        r#"
-                 module.exports = {};
-             "#,
-        config
-    );
+    let content = String::from(content);
     file.write_all(content.as_bytes()).unwrap();
 }

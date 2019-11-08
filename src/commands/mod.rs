@@ -22,7 +22,7 @@ pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
 pub use whoami::whoami;
 
-/// Run the given command and return its stdout.
+// Run the given command and return its stdout.
 pub fn run(mut command: Command, command_name: &str) -> Result<(), failure::Error> {
     log::info!("Running {:?}", command);
 

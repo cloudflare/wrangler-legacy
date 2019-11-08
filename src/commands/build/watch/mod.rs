@@ -20,8 +20,8 @@ const RUST_PATH: &str = "./";
 // Paths to ignore live watching in Rust Workers
 const RUST_IGNORE: &'static [&str] = &["pkg", "target", "worker/generated"];
 
-/// watch a project for changes and re-build it when necessary,
-/// outputting a build event to tx.
+// watch a project for changes and re-build it when necessary,
+// outputting a build event to tx.
 pub fn watch_and_build(
     target: &Target,
     tx: Option<mpsc::Sender<()>>,

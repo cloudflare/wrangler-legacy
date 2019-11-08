@@ -310,6 +310,12 @@ fn run() -> Result<(), failure::Error> {
                     emoji::MICROSCOPE
                 ))
                 .arg(
+                    Arg::with_name("headless")
+                        .help("Don't open the browser on preview")
+                        .long("headless")
+                        .takes_value(false)
+                )
+                .arg(
                     Arg::with_name("method")
                         .help("Type of request to preview your worker with (get, post)")
                         .index(1),
@@ -403,8 +409,9 @@ fn run() -> Result<(), failure::Error> {
         let default = !matches.is_present("api-key");
 
         let user: GlobalUser = if default {
-            // Default: use API token.
-            message::info("Looking to use a Global API Key and email instead? Run \"wrangler config --api-key\". (Not Recommended)");
+            // API Tokens are the default
+            message::info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens and create it using the \"Edit Cloudflare Workers\" template");
+            message::info("If you are trying to use your Global API Key instead of an API Token (Not Recommended), run \"wrangler config --api-key\".");
             println!("Enter API token: ");
             let mut api_token: String = read!("{}\n");
             api_token.truncate(api_token.trim_end().len());
@@ -460,7 +467,7 @@ fn run() -> Result<(), failure::Error> {
         let name = matches.value_of("name");
         let site = matches.is_present("site");
         let target_type = if site {
-            // Workers Sites projects are always Webpack for now
+            // Workers Sites projects are always webpack for now
             Some(TargetType::Webpack)
         } else {
             match matches.value_of("type") {
@@ -495,8 +502,9 @@ fn run() -> Result<(), failure::Error> {
 
         let watch = matches.is_present("watch");
         let verbose = matches.is_present("verbose");
+        let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, body, watch, verbose)?;
+        commands::preview(target, user, method, body, watch, verbose, headless)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -556,7 +564,7 @@ fn run() -> Result<(), failure::Error> {
                     }
                     None => delete_matches
                         .value_of("namespace-id")
-                        .unwrap() // clap configs ensure that if "binding" isn't present,"namespace-id" must be.
+                        .unwrap() // clap configs ensure that if "binding" isn't present, "namespace-id" must be.
                         .to_string(),
                 };
                 commands::kv::namespace::delete(&target, &user, &namespace_id)?;

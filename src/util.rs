@@ -1,9 +1,9 @@
 use std::process::{Child, Command};
 
-/// wrapper around spawning child processes such that they
-/// have the same behavior as spawned threads i.e. a spawned
-/// child process using GuardedChild has the same lifetime as
-/// the main thread.
+// wrapper around spawning child processes such that they
+// have the same behavior as spawned threads i.e. a spawned
+// child process using GuardedChild has the same lifetime as
+// the main thread.
 pub struct GuardedCommand(Child);
 
 impl GuardedCommand {

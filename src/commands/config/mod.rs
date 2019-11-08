@@ -7,8 +7,7 @@ use std::path::PathBuf;
 
 use crate::settings::global_user::{get_global_config_dir, GlobalUser};
 
-// set the permissions on the dir, we want to avoid that other user reads to
-// file
+// set the permissions on the dir, we want to avoid other user reads of the file
 #[cfg(not(target_os = "windows"))]
 pub fn set_file_mode(file: &PathBuf) {
     File::open(&file)
