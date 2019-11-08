@@ -36,7 +36,31 @@ fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
 }
 
 fn format_error(e: ApiFailure) -> String {
-    http::format_error(e, ErrorCodeDetail::WorkersKV)
+    http::format_error(e, Some(&kv_help))
+}
+
+// kv_help() provides more detailed explanations of Workers KV API error codes.
+// See https://api.cloudflare.com/#workers-kv-namespace-errors for details.
+fn kv_help(error_code: u16) -> &'static str {
+    match error_code {
+        7003 | 7000 => {
+            "Your wrangler.toml is likely missing the field \"account_id\", which is required to write to Workers KV."
+        }
+        // namespace errors
+        10010 | 10011 | 10012 | 10013 | 10014 | 10018 => {
+            "Run `wrangler kv:namespace list` to see your existing namespaces with IDs"
+        }
+        10009 => "Run `wrangler kv:key list` to see your existing keys", // key errors
+        // TODO: link to more info
+        // limit errors
+        10022 | 10024 | 10030 => "See documentation",
+        // TODO: link to tool for this?
+        // legacy namespace errors
+        10021 | 10035 | 10038 => "Consider moving this namespace",
+        // cloudflare account errors
+        10017 | 10026 => "Workers KV is a paid feature, please upgrade your account (https://www.cloudflare.com/products/workers-kv/)",
+        _ => "",
+    }
 }
 
 pub fn validate_target(target: &Target) -> Result<(), failure::Error> {

@@ -93,7 +93,9 @@ pub enum ErrorCodeDetail {
 }
 
 // Format errors from the cloudflare-rs cli for printing.
-pub fn format_error(e: ApiFailure, err_type: ErrorCodeDetail) -> String {
+// Optionally takes an argument for providing a function that maps error code numbers to
+// helpful additional information about why someone is getting an error message and how to fix it.
+pub fn format_error(e: ApiFailure, err_helper: Option<&dyn Fn(u16) -> &'static str>) -> String {
     match e {
         ApiFailure::Error(status, api_errors) => {
             print_status_code_context(status);
@@ -102,9 +104,10 @@ pub fn format_error(e: ApiFailure, err_type: ErrorCodeDetail) -> String {
                 let error_msg =
                     format!("{} Error {}: {}\n", emoji::WARN, error.code, error.message);
 
-                let suggestion = match err_type {
-                    ErrorCodeDetail::WorkersKV => kv_help(error.code),
-                    _ => "",
+                let suggestion = if let Some(annotate_help) = err_helper {
+                    annotate_help(error.code)
+                } else {
+                    ""
                 };
                 if !suggestion.is_empty() {
                     let help_msg = format!("{} {}\n", emoji::SLEUTH, suggestion);
@@ -130,29 +133,5 @@ fn print_status_code_context(status_code: StatusCode) {
         StatusCode::GATEWAY_TIMEOUT =>
             message::warn("Returned status code 504, Gateway Timeout. Please try again in a few seconds"),
         _ => (),
-    }
-}
-
-// kv_help() provides more detailed explanations of Workers KV API error codes.
-// See https://api.cloudflare.com/#workers-kv-namespace-errors for details.
-fn kv_help(error_code: u16) -> &'static str {
-    match error_code {
-        7003 | 7000 => {
-            "Your wrangler.toml is likely missing the field \"account_id\", which is required to write to Workers KV."
-        }
-        // namespace errors
-        10010 | 10011 | 10012 | 10013 | 10014 | 10018 => {
-            "Run `wrangler kv:namespace list` to see your existing namespaces with IDs"
-        }
-        10009 => "Run `wrangler kv:key list` to see your existing keys", // key errors
-        // TODO: link to more info
-        // limit errors
-        10022 | 10024 | 10030 => "See documentation",
-        // TODO: link to tool for this?
-        // legacy namespace errors
-        10021 | 10035 | 10038 => "Consider moving this namespace",
-        // cloudflare account errors
-        10017 | 10026 => "Workers KV is a paid feature, please upgrade your account (https://www.cloudflare.com/products/workers-kv/)",
-        _ => "",
     }
 }
