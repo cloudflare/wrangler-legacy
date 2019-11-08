@@ -98,12 +98,12 @@ pub fn format_error(e: ApiFailure, err_helper: Option<&dyn Fn(u16) -> &'static s
                     format!("{} Error {}: {}\n", emoji::WARN, error.code, error.message);
 
                 let suggestion = if let Some(annotate_help) = err_helper {
-                    annotate_help(error.code)
+                    Some(annotate_help(error.code))
                 } else {
-                    ""
+                    None
                 };
-                if !suggestion.is_empty() {
-                    let help_msg = format!("{} {}\n", emoji::SLEUTH, suggestion);
+                if let Some(suggestion_text) = suggestion {
+                    let help_msg = format!("{} {}\n", emoji::SLEUTH, suggestion_text);
                     complete_err.push_str(&format!("{}{}", error_msg, help_msg));
                 } else {
                     complete_err.push_str(&error_msg)
