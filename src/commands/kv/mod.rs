@@ -10,7 +10,6 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 
 use crate::http;
-use crate::http::ErrorCodeDetail;
 
 pub mod bucket;
 pub mod bulk;

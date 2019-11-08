@@ -85,13 +85,6 @@ pub fn api_client(
     )
 }
 
-// This enum allows callers of format_error() to specify a help_*() function for adding additional
-// detail to error messages, if desired.
-pub enum ErrorCodeDetail {
-    None,
-    WorkersKV,
-}
-
 // Format errors from the cloudflare-rs cli for printing.
 // Optionally takes an argument for providing a function that maps error code numbers to
 // helpful additional information about why someone is getting an error message and how to fix it.
