@@ -56,8 +56,8 @@ pub fn build(
             build_form(&assets)
         }
         TargetType::Webpack => {
-            log::info!("Webpack project detected. Publishing...");
-            // FIXME(sven): shouldn't new
+            log::info!("webpack project detected. Publishing...");
+            // TODO: https://github.com/cloudflare/wrangler/issues/850
             let build_dir = target.build_dir()?;
             let bundle = wranglerjs::Bundle::new(&build_dir);
 

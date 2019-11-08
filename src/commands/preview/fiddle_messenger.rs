@@ -35,23 +35,23 @@ impl Handler for FiddleMessageServer {
 
         const SAFE_ADDRS: &[&str] = &["127.0.0.1", "localhost", "::1"];
 
-        //origin() returns Result<Option<&str>>
+        // origin() returns Result<Option<&str>>
         let origin = handshake
             .request
             .origin()?
             .unwrap_or("unknown")
             .trim_end_matches(|c: char| c == '/' || c == ':' || c.is_numeric());
 
-        //remote_addr returns Result<Option<String>>
+        // remote_addr returns Result<Option<String>>
         let incoming_addr = handshake.remote_addr()?;
         let incoming_addr = incoming_addr.as_ref().map_or("unknown", String::as_str);
 
-        //only allow connections from cloudflareworkers.com
+        // only allow connections from cloudflareworkers.com
         let origin_is_safe = SAFE_ORIGINS
             .iter()
             .any(|safe_origin| &origin == safe_origin);
 
-        //only allow incoming websocket connections from localhost/current machine.
+        // only allow incoming websocket connections from localhost/current machine.
         let addr_is_safe = SAFE_ADDRS
             .iter()
             .any(|safe_addr| &incoming_addr == safe_addr);

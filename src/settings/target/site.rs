@@ -21,6 +21,9 @@ impl Site {
         site
     }
 
+    // if the user has configured `site.entry-point`, use that
+    // as the build directory. Otherwise use the default const
+    // SITE_ENTRY_POINT
     pub fn build_dir(&self, current_dir: PathBuf) -> Result<PathBuf, std::io::Error> {
         Ok(current_dir.join(
             self.entry_point

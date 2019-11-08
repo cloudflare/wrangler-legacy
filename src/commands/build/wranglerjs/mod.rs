@@ -30,9 +30,9 @@ use std::thread;
 use std::time::Duration;
 
 // Run the underlying {wranglerjs} executable.
-//
-// In Rust we create a virtual file, pass the pass to {wranglerjs}, run the
-// executable and wait for completion. The file will receive the a serialized
+
+// In Rust we create a virtual file, pass it to {wranglerjs}, run the
+// executable and wait for completion. The file will receive a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
 pub fn run_build(target: &Target) -> Result<(), failure::Error> {
@@ -43,8 +43,8 @@ pub fn run_build(target: &Target) -> Result<(), failure::Error> {
     let status = command.status()?;
 
     if status.success() {
-        let output = fs::read_to_string(temp_file).expect("could not retrieve output");
-
+        let output = fs::read_to_string(&temp_file).expect("could not retrieve output");
+        fs::remove_file(temp_file)?;
         let wranglerjs_output: WranglerjsOutput =
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
@@ -62,7 +62,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
 
     info!("Running {:?} in watch mode", command);
 
-    //Turbofish the result of the closure so we can use ?
+    // Turbofish the result of the closure so we can use ?
     thread::spawn::<_, Result<(), failure::Error>>(move || {
         let _command_guard = util::GuardedCommand::spawn(command);
 
@@ -93,8 +93,8 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                     if is_first {
                         is_first = false;
                         message::info("Ignoring stale first change");
-                        //skip the first change event
-                        //so we don't do a refresh immediately
+                        // skip the first change event
+                        // so we don't do a refresh immediately
                         continue;
                     }
 
@@ -157,7 +157,8 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     let wranglerjs_path = install().expect("could not install wranglerjs");
     command.arg(wranglerjs_path);
 
-    //put path to our wasm_pack as env variable so wasm-pack-plugin can utilize it
+    // export WASM_PACK_PATH for use by wasm-pack-plugin
+    // https://github.com/wasm-tool/wasm-pack-plugin/blob/caca20df84782223f002735a8a2e99b2291f957c/plugin.js#L13
     let wasm_pack_path = install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
@@ -175,29 +176,28 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
-    let webpack_config_path = if let Some(webpack_config) = &target.webpack_config {
-        // require webpack_config in wrangler.toml to use it in sites
-        Some(PathBuf::from(&webpack_config))
-    } else if target.site.is_none() {
-        let config_path = PathBuf::from("webpack.config.js".to_string());
-        // backwards compatibility, deprecated in 1.6.0
-        // if webpack.config.js exists and is not specified in wrangler.toml, use it and warn
-        if bundle.has_webpack_config(&config_path) {
-            message::warn("In Wrangler v1.6.0, you will need to include a webpack_config field in your wrangler.toml to build with a custom webpack configuration.");
-            Some(config_path)
-        } else {
-            // if webpack.config.js does not exist, don't warn, use our default
+    let custom_webpack_config_path = match &target.webpack_config {
+        Some(webpack_config) => match &target.site {
+            None => Some(PathBuf::from(&webpack_config)),
+            Some(_) => {
+                message::warn("Workers Sites does not support custom webpack configuration files");
+                None
+            }
+        },
+        None => {
+            if target.site.is_none() {
+                let config_path = PathBuf::from("webpack.config.js".to_string());
+                if config_path.exists() {
+                    message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your wrangler.toml:\nwebpack_config = \"webpack.config.js\"");
+                }
+            }
             None
         }
-    } else {
-        // don't use `webpack.config.js` if this project is a site
-        None
     };
 
-    // if {webpack.config.js} is not present, we infer the entry based on the
-    // {package.json} file and pass it to {wranglerjs}.
-    // https://github.com/cloudflare/wrangler/issues/98
-    if let Some(webpack_config_path) = webpack_config_path {
+    // if webpack_config is not configured in the manifest
+    // we infer the entry based on {package.json} and pass it to {wranglerjs}
+    if let Some(webpack_config_path) = custom_webpack_config_path {
         build_with_custom_webpack(&mut command, &webpack_config_path);
     } else {
         build_with_default_webpack(&mut command, &build_dir)?;
@@ -230,7 +230,6 @@ fn build_with_default_webpack(
 
 pub fn scaffold_site_worker(target: &Target) -> Result<(), failure::Error> {
     let build_dir = target.build_dir()?;
-    // TODO: this is a placeholder template. Replace with The Real Thing on launch.
     let template = "https://github.com/cloudflare/worker-sites-init";
 
     if !Path::new(&build_dir).exists() {
@@ -268,7 +267,7 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
         info!("skipping npm install because node_modules exists");
     }
 
-    // TODO(sven): figure out why the file doesn't exits in some cases?
+    // TODO: (sven) figure out why the file doesn't exist in some cases
     if flock_path.exists() {
         fs::remove_file(&flock_path)?;
     }

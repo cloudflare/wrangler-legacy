@@ -34,6 +34,7 @@ pub fn preview(
     body: Option<String>,
     livereload: bool,
     verbose: bool,
+    headless: bool,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
 
@@ -47,18 +48,21 @@ pub fn preview(
     let https_str = if https { "https://" } else { "http://" };
 
     if livereload {
-        let server = WebSocket::new(|out| FiddleMessageServer { out })?.bind("127.0.0.1:0")?; //explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
+        // explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
+        let server = WebSocket::new(|out| FiddleMessageServer { out })?.bind("127.0.0.1:0")?;
 
         let ws_port = server.local_addr()?.port();
 
         info!("Opened websocket server on port {}", ws_port);
 
-        open_browser(&format!(
+        if !headless {
+            open_browser(&format!(
             "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}{4}",
             &session.to_string(), ws_port, script_id, https_str, preview_host,
         ))?;
+        }
 
-        //don't do initial GET + POST with livereload as the expected behavior is unclear.
+        // don't do initial GET + POST with livereload as the expected behavior is unclear.
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
@@ -70,10 +74,12 @@ pub fn preview(
             verbose,
         )?;
     } else {
-        open_browser(&format!(
-            "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
-            script_id, https_str, preview_host
-        ))?;
+        if !headless {
+            open_browser(&format!(
+                "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
+                script_id, https_str, preview_host
+            ))?;
+        }
 
         let cookie = format!(
             "__ew_fiddle_preview={}{}{}{}",
