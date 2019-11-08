@@ -12,4 +12,12 @@ const opts = {
   cwd: process.cwd(),
   stdio: "inherit"
 };
-process.exit(spawnSync(bin, args, opts).status);
+
+const result = spawnSync(bin, args, opts);
+
+if (result.error) {
+  console.error(result.error);
+  process.exit(1);
+}
+
+process.exit(result.status);
