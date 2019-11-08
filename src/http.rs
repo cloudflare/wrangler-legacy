@@ -15,7 +15,7 @@ use crate::terminal::emoji;
 use crate::terminal::message;
 
 ////---------------------------OLD API CLIENT CODE---------------------------////
-// todo: remove this and replace it entirely with cloudflare-rs
+// TODO: remove this and replace it entirely with cloudflare-rs
 fn headers(feature: Option<&str>) -> HeaderMap {
     let version = if install::target::DEBUG {
         "dev"
