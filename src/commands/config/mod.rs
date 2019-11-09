@@ -6,7 +6,6 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 use crate::http;
-use crate::http::ErrorCodeDetail;
 use crate::settings::global_user::{get_global_config_dir, GlobalUser};
 
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
@@ -23,7 +22,7 @@ pub fn set_file_mode(file: &PathBuf) {
 }
 
 pub fn global_config(user: &GlobalUser) -> Result<(), failure::Error> {
-    message::info("Verifying that provided credentials are valid...");
+    message::info("alidating credentials...");
     validate_credentials(user)?;
 
     let toml = toml::to_string(&user)?;
@@ -58,16 +57,16 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
                     if success.result.status == "active" {
                         Ok(())
                     } else {
-                        failure::bail!("Auth check failed. Your token has status \"{}\", not \"active\".")
+                        failure::bail!("Authentication check failed. Your token has status \"{}\", not \"active\".\nTry rolling your token on the Cloudflare dashboard.")
                     }
                 },
-                Err(e) => failure::bail!("Auth check failed. Please make sure your API token is correct. \n{}", http::format_error(e, ErrorCodeDetail::None))
+                Err(e) => failure::bail!("Authentication check failed. Please make sure your API token is correct.\n{}", http::format_error(e, None))
             }
         }
         GlobalUser::GlobalKeyAuth { .. } => {
             match client.request(&GetUserDetails {}) {
                 Ok(_) => Ok(()),
-                Err(e) => failure::bail!("Auth check failed. Please make sure your email and global API key pair are correct. \n{}", http::format_error(e, ErrorCodeDetail::None)),
+                Err(e) => failure::bail!("Auth check failed. Please make sure your email and global API key pair are correct.\n{}", http::format_error(e, None)),
             }
         }
     }
