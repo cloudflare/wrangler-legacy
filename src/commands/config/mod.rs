@@ -6,13 +6,22 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 use crate::http;
+<<<<<<< HEAD
+=======
+use crate::http::ErrorCodeDetail;
+>>>>>>> 39bda9673469d668ead3067cc2f20c96574722d4
 use crate::settings::global_user::{get_global_config_dir, GlobalUser};
 
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
 
+<<<<<<< HEAD
 // set the permissions on the dir, we want to avoid that other user reads to file
+=======
+// set the permissions on the dir, we want to avoid that other user reads to
+// file
+>>>>>>> 39bda9673469d668ead3067cc2f20c96574722d4
 #[cfg(not(target_os = "windows"))]
 pub fn set_file_mode(file: &PathBuf) {
     File::open(&file)
@@ -22,7 +31,11 @@ pub fn set_file_mode(file: &PathBuf) {
 }
 
 pub fn global_config(user: &GlobalUser) -> Result<(), failure::Error> {
+<<<<<<< HEAD
     message::info("alidating credentials...");
+=======
+    message::info("Verifying that provided credentials are valid...");
+>>>>>>> 39bda9673469d668ead3067cc2f20c96574722d4
     validate_credentials(user)?;
 
     let toml = toml::to_string(&user)?;
@@ -66,7 +79,7 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
         GlobalUser::GlobalKeyAuth { .. } => {
             match client.request(&GetUserDetails {}) {
                 Ok(_) => Ok(()),
-                Err(e) => failure::bail!("Auth check failed. Please make sure your email and global API key pair are correct.\n{}", http::format_error(e, None)),
+                Err(e) => failure::bail!("Authentication check failed. Please make sure your email and global API key pair are correct.\n{}", http::format_error(e, None)),
             }
         }
     }
