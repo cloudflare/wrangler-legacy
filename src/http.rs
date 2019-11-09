@@ -104,7 +104,7 @@ pub fn format_error(e: ApiFailure, err_helper: Option<&dyn Fn(u16) -> &'static s
                     complete_err.push_str(&error_msg)
                 }
             }
-            complete_err
+            complete_err.trim_end().to_string() // Trimming strings in place for String is apparently not a thing...
         }
         ApiFailure::Invalid(reqwest_err) => format!("{} Error: {}", emoji::WARN, reqwest_err),
     }
