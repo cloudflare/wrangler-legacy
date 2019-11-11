@@ -68,7 +68,7 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
         GlobalUser::GlobalKeyAuth { .. } => {
             match client.request(&GetUserDetails {}) {
                 Ok(_) => Ok(()),
-                Err(e) => failure::bail!("Authentication check failed. Please make sure your email and global API key pair are correct.\n{}", http::format_error(e, None)),
+                Err(e) => failure::bail!("Authentication check failed. Please make sure your email and global API key pair are correct. (https://developers.cloudflare.com/workers/quickstart/#global-api-key)\n{}", http::format_error(e, None)),
             }
         }
     }
