@@ -5,7 +5,8 @@
   "main": "binary.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "node -e 'require(\"./binary.js\").install()'"
+    "postinstall": "node -e 'require(\"./binary.js\").install()'",
+    "preuninstall": "node -e 'require(\"./binary.js\").uninstall()'"
   },
   "bin": {
     "wrangler": "./run-wrangler.js"
@@ -41,5 +42,6 @@
     "router",
     "http",
     "cli"
-  ]
+  ],
+  "dependencies": {}
 }

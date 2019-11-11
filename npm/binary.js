@@ -37,7 +37,13 @@ const install = () => {
   binary.install();
 };
 
+const uninstall = () => {
+  const binary = getBinary();
+  binary.uninstall();
+}
+
 module.exports = {
   install,
-  run
+  run,
+  uninstall
 };
