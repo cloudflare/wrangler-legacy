@@ -94,22 +94,17 @@ pub fn format_error(e: ApiFailure, err_helper: Option<&dyn Fn(u16) -> &'static s
             print_status_code_context(status);
             let mut complete_err = "".to_string();
             for error in api_errors.errors {
-                let error_msg =
-                    format!("{} Error {}: {}\n", emoji::WARN, error.code, error.message);
+                let error_msg = format!("{} Code {}: {}\n", emoji::WARN, error.code, error.message);
 
-                let suggestion = if let Some(annotate_help) = err_helper {
-                    Some(annotate_help(error.code))
-                } else {
-                    None
-                };
-                if let Some(suggestion_text) = suggestion {
+                if let Some(annotate_help) = err_helper {
+                    let suggestion_text = annotate_help(error.code);
                     let help_msg = format!("{} {}\n", emoji::SLEUTH, suggestion_text);
                     complete_err.push_str(&format!("{}{}", error_msg, help_msg));
                 } else {
                     complete_err.push_str(&error_msg)
                 }
             }
-            complete_err
+            complete_err.trim_end().to_string() // Trimming strings in place for String is apparently not a thing...
         }
         ApiFailure::Invalid(reqwest_err) => format!("{} Error: {}", emoji::WARN, reqwest_err),
     }

@@ -5,9 +5,14 @@ use std::fs::File;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
+use crate::http;
 use crate::settings::global_user::{get_global_config_dir, GlobalUser};
 
-// set the permissions on the dir, we want to avoid other user reads of the file
+use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
+use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::HttpApiClientConfig;
+
+// set the permissions on the dir, we want to avoid that other user reads to file
 #[cfg(not(target_os = "windows"))]
 pub fn set_file_mode(file: &PathBuf) {
     File::open(&file)
@@ -16,7 +21,12 @@ pub fn set_file_mode(file: &PathBuf) {
         .expect("could not set permissions on file");
 }
 
-pub fn global_config(user: &GlobalUser) -> Result<(), failure::Error> {
+pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Error> {
+    if verify {
+        message::info("Validating credentials...");
+        validate_credentials(user)?;
+    }
+
     let toml = toml::to_string(&user)?;
 
     let config_dir = get_global_config_dir().expect("could not find global config directory");
@@ -35,4 +45,31 @@ pub fn global_config(user: &GlobalUser) -> Result<(), failure::Error> {
     ));
 
     Ok(())
+}
+
+// validate_credentials() checks the /user/tokens/verify endpoint (for API token)
+// or /user endpoint (for global API key) to ensure provided credentials actually work.
+pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
+    let client = http::api_client(user, HttpApiClientConfig::default())?;
+
+    match user {
+        GlobalUser::TokenAuth { .. } => {
+            match client.request(&GetUserTokenStatus {}) {
+                Ok(success) => {
+                    if success.result.status == "active" {
+                        Ok(())
+                    } else {
+                        failure::bail!("Authentication check failed. Your token has status \"{}\", not \"active\".\nTry rolling your token on the Cloudflare dashboard.")
+                    }
+                },
+                Err(e) => failure::bail!("Authentication check failed. Please make sure your API token is correct.\n{}", http::format_error(e, None))
+            }
+        }
+        GlobalUser::GlobalKeyAuth { .. } => {
+            match client.request(&GetUserDetails {}) {
+                Ok(_) => Ok(()),
+                Err(e) => failure::bail!("Authentication check failed. Please make sure your email and global API key pair are correct. (https://developers.cloudflare.com/workers/quickstart/#global-api-key)\n{}", http::format_error(e, None)),
+            }
+        }
+    }
 }
