@@ -21,9 +21,11 @@ pub fn set_file_mode(file: &PathBuf) {
         .expect("could not set permissions on file");
 }
 
-pub fn global_config(user: &GlobalUser) -> Result<(), failure::Error> {
-    message::info("Validating credentials...");
-    validate_credentials(user)?;
+pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Error> {
+    if verify {
+        message::info("Validating credentials...");
+        validate_credentials(user)?;
+    }
 
     let toml = toml::to_string(&user)?;
 
