@@ -47,6 +47,8 @@ sha2 = "0.8.0"
 data-encoding = "2.1.2"
 ignore = "0.4.10"
 tempfile = "3.1.0"
+hyper = "0.12.35"
+pretty_env_logger = "0.3.1"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"
