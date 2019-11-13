@@ -17,11 +17,30 @@ pub enum GlobalUser {
 
 impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
+        if let Some(user) = Self::from_env() {
+            Ok(user)
+        } else {
+            let config_path = get_global_config_dir()
+                .expect("could not find global config directory")
+                .join("default.toml");
+
+            Self::from_file(config_path)
+        }
+    }
+
+    fn from_env() -> Option<Self> {
         let mut s = Config::new();
 
-        let config_path = get_global_config_dir()
-            .expect("could not find global config directory")
-            .join("default.toml");
+        // Eg.. `CF_API_KEY=farts` would set the `account_auth_key` key
+        // envs are: CF_EMAIL, CF_API_KEY and CF_API_TOKEN
+        s.merge(Environment::with_prefix("CF")).ok();
+
+        GlobalUser::from_config(s).ok()
+    }
+
+    fn from_file(config_path: PathBuf) -> Result<Self, failure::Error> {
+        let mut s = Config::new();
+
         let config_str = config_path
             .to_str()
             .expect("global config path should be a string");
@@ -36,13 +55,13 @@ impl GlobalUser {
             s.merge(File::with_name(config_str))?;
         }
 
-        // Eg.. `CF_API_KEY=farts` would set the `account_auth_key` key
-        // envs are: CF_EMAIL, CF_API_KEY and CF_API_TOKEN
-        s.merge(Environment::with_prefix("CF"))?;
+        GlobalUser::from_config(s)
+    }
 
-        let global_user: Result<GlobalUser, config::ConfigError> = s.try_into();
+    fn from_config(config: Config) -> Result<Self, failure::Error> {
+        let global_user: Result<GlobalUser, config::ConfigError> = config.try_into();
         match global_user {
-            Ok(s) => Ok(s),
+            Ok(user) => Ok(user),
             Err(e) => {
                 let msg = format!(
                     "{} Your global config has an error, run `wrangler config`: {}",
