@@ -13,7 +13,7 @@ fn it_generates_the_config_unix_eol() {
 #[test]
 fn it_generates_the_config_windows_eol() {
     generate_config_with("\r\n", false); // Test `wrangler config`
-    generate_config_with("\r\n", true); // Test `wrangler config`
+    generate_config_with("\r\n", true); // Test `wrangler config --api-key`
 }
 
 fn generate_config_with(eol: &str, use_api_key: bool) {
@@ -73,10 +73,13 @@ api_key = "apikeythisissecretandlong"
 
 fn config_with_wrangler_home(home_dir: &str, use_api_key: bool) -> Child {
     let mut wrangler = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    // Don't verify provided information in the `wrangler config` invocation below;
+    // this is distinct from the parsing functionality this I/O test focuses on
     if use_api_key {
         wrangler
             .arg("config")
             .arg("--api-key")
+            .arg("--no-verify")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .env("WRANGLER_HOME", home_dir)
@@ -85,6 +88,7 @@ fn config_with_wrangler_home(home_dir: &str, use_api_key: bool) -> Child {
     } else {
         wrangler
             .arg("config")
+            .arg("--no-verify")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .env("WRANGLER_HOME", home_dir)

@@ -3,7 +3,6 @@ extern crate lazy_static;
 
 pub mod fixture;
 
-use std::env;
 use std::process::Command;
 use std::str;
 use std::sync::Mutex;
@@ -247,7 +246,7 @@ fn it_builds_with_webpack_wast() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js"]);
+    build_creates_assets(fixture, vec!["script.js", "module.wasm"]);
 }
 
 #[test]

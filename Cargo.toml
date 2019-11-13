@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.5.0"
+version = "1.6.0-rc.0"
 authors = ["Ashley Williams <ashley666ashley@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -17,7 +17,7 @@ clap = "2.32.0"
 config = "0.9.2"
 console = "0.7.5"
 dirs = "1.0.5"
-cloudflare = "0.4.0"
+cloudflare = "0.4.1"
 env_logger = "0.6.1"
 failure = "0.1.5"
 log = "0.4.6"

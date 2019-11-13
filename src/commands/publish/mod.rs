@@ -5,9 +5,9 @@ pub mod upload_form;
 
 pub use package::Package;
 
-use crate::settings::target::KvNamespace;
 use route::Route;
 
+use std::env;
 use std::path::Path;
 
 use crate::commands;
@@ -17,8 +17,7 @@ use crate::commands::subdomain::Subdomain;
 use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-
-use crate::settings::target::{Site, Target};
+use crate::settings::target::{KvNamespace, Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(
@@ -37,6 +36,11 @@ pub fn publish(
     validate_worker_name(&target.name)?;
 
     if let Some(site_config) = target.site.clone() {
+        if let Some(route) = &target.route {
+            if !route.ends_with("*") {
+                message::warn(&format!("The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*", route));
+            }
+        }
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
@@ -158,7 +162,10 @@ pub fn upload_buckets(
     let mut asset_manifest = None;
     for namespace in &target.kv_namespaces() {
         if let Some(bucket) = &namespace.bucket {
-            if bucket.is_empty() {
+            // We don't want folks setting their bucket to the top level directory,
+            // which is where wrangler commands are always called from.
+            let current_dir = env::current_dir()?;
+            if bucket.as_os_str() == current_dir {
                 failure::bail!(
                     "{} You need to specify a bucket directory in your wrangler.toml",
                     emoji::WARN
