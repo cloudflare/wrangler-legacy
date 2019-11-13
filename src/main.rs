@@ -346,6 +346,20 @@ fn run() -> Result<(), failure::Error> {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("proxy")
+                .about(&*format!(
+                    "{} Create a proxy to preview your worker",
+                    emoji::UP // TODO: get new emoji
+                ))
+                .arg(
+                    Arg::with_name("port")
+                        .help("port to listen on")
+                        .short("p")
+                        .long("port")
+                        .takes_value(true)
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("publish")
                 .about(&*format!(
                     "{} Publish your worker to the orange cloud",
@@ -513,6 +527,10 @@ fn run() -> Result<(), failure::Error> {
         let headless = matches.is_present("headless");
 
         commands::preview(target, user, method, body, watch, verbose, headless)?;
+    } else if let Some(matches) = matches.subcommand_matches("proxy") {
+        log::info!("Starting proxy service");
+        let port = matches.value_of("port");
+        commands::proxy(port)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
