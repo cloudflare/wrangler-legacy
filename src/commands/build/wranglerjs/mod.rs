@@ -7,7 +7,7 @@ use crate::commands::generate::run_generate;
 
 use crate::commands::publish::package::Package;
 use crate::install;
-use crate::install::{install, install_artifact};
+use crate::install::install_artifact;
 use crate::util;
 pub use bundle::Bundle;
 use fs2::FileExt;
@@ -18,8 +18,6 @@ use rand::{thread_rng, Rng};
 use std::env;
 use std::fs;
 use std::fs::File;
-use std::io;
-use std::io::prelude::*;
 use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -196,17 +194,6 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     // if webpack_config is not configured in the manifest
     // we infer the entry based on {package.json} and pass it to {wranglerjs}
     if let Some(webpack_config_path) = custom_webpack_config_path {
-        let mut webpack_file = File::open(&webpack_config_path)?;
-        let mut webpack_buffer = String::new();
-        webpack_file.read_to_string(&mut webpack_buffer)?;
-        if webpack_buffer.contains("wasm-pack-plugin") {
-            // export WASM_PACK_PATH for use by wasm-pack-plugin
-            // https://github.com/wasm-tool/wasm-pack-plugin/blob/caca20df84782223f002735a8a2e99b2291f957c/plugin.js#L13
-            let tool_name = "wasm-pack";
-            let author = "rustwasm";
-            let wasm_pack_path = install(tool_name, author)?.binary(tool_name)?;
-            command.env("WASM_PACK_PATH", wasm_pack_path);
-        }
         build_with_custom_webpack(&mut command, &webpack_config_path);
     } else {
         build_with_default_webpack(&mut command, &build_dir)?;

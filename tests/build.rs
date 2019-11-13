@@ -391,9 +391,6 @@ fn it_builds_with_webpack_wasm_pack() {
         "#,
     );
 
-    // make sure wrangler overrides WASM_PACK_PATH
-    env::set_var("WASM_PACK_PATH", "invalid_wasm_pack_path");
-
     build_creates_assets(fixture, vec!["script.js", "module.wasm"]);
 }
 
