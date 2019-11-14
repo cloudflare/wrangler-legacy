@@ -2,6 +2,7 @@
 extern crate hyper;
 extern crate hyper_tls;
 extern crate pretty_env_logger;
+extern crate url;
 
 use chrono::prelude::*;
 
@@ -14,6 +15,8 @@ use hyper_tls::HttpsConnector;
 
 use uuid::Uuid;
 
+use url::Url;
+
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 
@@ -24,23 +27,38 @@ const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 pub fn proxy(
     mut target: Target,
     user: Option<GlobalUser>,
+    host: Option<&str>,
     port: Option<&str>,
 ) -> Result<(), failure::Error> {
     let port: u16 = match port {
         Some(port) => port.to_string().parse(),
         None => Ok(3000),
     }?;
-    let host = Some("example.com"); // TODO: make this an arg
-    let host = match host {
-        Some(host) => host,
-        None => "example.com",
+    let host: String = match host {
+        Some(host) => host.to_string(),
+        None => "https://example.com".to_string(),
     };
+    let parsed_url = match Url::parse(&host) {
+        Ok(host) => Ok(host),
+        Err(_) => Url::parse(&format!("https://{}", host)),
+    }?;
+    let scheme: &str = parsed_url.scheme();
+    if scheme != "http" && scheme != "https" {
+        failure::bail!("Your host must be either http or https")
+    }
+    let is_https = scheme == "https";
+    let host_str: Option<&str> = parsed_url.host_str();
+    let host: Result<String, failure::Error> = if let Some(host_str) = host_str {
+        Ok(host_str.to_string())
+    } else {
+        failure::bail!("Invalid host, accepted formats are http://example.com or example.com")
+    };
+    let host = host?;
     let listening_address = ([127, 0, 0, 1], port).into();
 
     let https = HttpsConnector::new(4).expect("TLS initialization failed");
     let client_main = Client::builder().build::<_, hyper::Body>(https);
 
-    let https = true;
     let session = Uuid::new_v4().to_simple();
     let verbose = true;
     let sites_preview = false;
@@ -51,6 +69,7 @@ pub fn proxy(
     let new_service = move || {
         let client = client_main.clone();
         let script_id = script_id.clone();
+        let host = host.clone();
         // This is the `Service` that will handle the connection.
         // `service_fn_ok` is a helper to convert a function that
         // returns a Response into a `Service`.
@@ -70,10 +89,7 @@ pub fn proxy(
             );
             let preview_id = HeaderValue::from_str(&format!(
                 "{}{}{}{}",
-                &script_id.clone(),
-                session,
-                https as u8,
-                host
+                &script_id, session, is_https as u8, host
             ));
 
             if let Ok(preview_id) = preview_id {
