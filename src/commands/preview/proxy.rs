@@ -20,6 +20,7 @@ use url::Url;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 
+use crate::commands;
 use crate::commands::preview::upload;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
@@ -30,6 +31,7 @@ pub fn proxy(
     host: Option<&str>,
     port: Option<&str>,
 ) -> Result<(), failure::Error> {
+    commands::build(&target)?;
     let port: u16 = match port {
         Some(port) => port.to_string().parse(),
         None => Ok(3000),
