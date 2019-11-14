@@ -27,21 +27,18 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
         validate_credentials(user)?;
     }
 
-    let toml = toml::to_string(&user)?;
-
     let config_dir = get_global_config_dir().expect("could not find global config directory");
     fs::create_dir_all(&config_dir)?;
 
-    let config_file = config_dir.join("default.toml");
-    fs::write(&config_file, &toml)?;
+    let config_path = user.to_file(&config_dir)?;
 
     // set permissions on the file
     #[cfg(not(target_os = "windows"))]
-    set_file_mode(&config_file);
+    set_file_mode(&config_path);
 
     message::success(&format!(
         "Successfully configured. You can find your configuration file at: {}",
-        &config_file.to_string_lossy()
+        &config_path.to_string_lossy()
     ));
 
     Ok(())

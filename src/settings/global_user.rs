@@ -1,4 +1,5 @@
 use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use cloudflare::framework::auth::Credentials;
@@ -6,6 +7,9 @@ use config;
 use serde::{Deserialize, Serialize};
 
 use crate::terminal::emoji;
+
+const DEFAULT_CONFIG_FILE_NAME: &str = "default.toml";
+
 const CF_API_TOKEN: &str = "CF_API_TOKEN";
 const CF_API_KEY: &str = "CF_API_KEY";
 const CF_EMAIL: &str = "CF_EMAIL";
@@ -24,7 +28,7 @@ impl GlobalUser {
         } else {
             let config_path = get_global_config_dir()
                 .expect("could not find global config directory")
-                .join("default.toml");
+                .join(DEFAULT_CONFIG_FILE_NAME);
 
             Self::from_file(config_path)
         }
@@ -58,6 +62,15 @@ impl GlobalUser {
         }
 
         GlobalUser::from_config(s)
+    }
+
+    pub fn to_file(&self, config_dir: &Path) -> Result<PathBuf, failure::Error> {
+        let toml = toml::to_string(self)?;
+        let config_path = config_dir.join(DEFAULT_CONFIG_FILE_NAME);
+
+        fs::write(&config_path, toml)?;
+
+        Ok(config_path)
     }
 
     fn from_config(config: config::Config) -> Result<Self, failure::Error> {
