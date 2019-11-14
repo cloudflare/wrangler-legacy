@@ -3,7 +3,7 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate pretty_env_logger;
 
-// use chrono::prelude::*;
+use chrono::prelude::*;
 
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::rt::{self, Future};
@@ -55,20 +55,14 @@ pub fn proxy(
         // `service_fn_ok` is a helper to convert a function that
         // returns a Response into a `Service`.
         service_fn(move |mut req| {
-            // let uri_path_and_query = req.uri().path_and_query().map(|x| x.as_str()).unwrap_or("");
-            // let uri_string = format!(
-            //     "https://rawhttp.cloudflareworkers.com{}",
-            //     uri_path_and_query
-            // );
+            let uri_path_and_query = req.uri().path_and_query().map(|x| x.as_str()).unwrap_or("");
+            let uri_string = format!("https://{}{}", PREVIEW_HOST, uri_path_and_query);
 
-            let uri = format!("https://{}", PREVIEW_HOST)
-                .parse::<hyper::Uri>()
-                .unwrap();
-            println!("{:#?}", uri);
-            // let method = req.method().to_string();
-            // let path = uri_path_and_query.to_string();
+            let uri = uri_string.parse::<hyper::Uri>().unwrap();
+            let method = req.method().to_string();
+            let path = uri_path_and_query.to_string();
 
-            // let now: DateTime<Local> = Local::now();
+            let now: DateTime<Local> = Local::now();
             *req.uri_mut() = uri;
             req.headers_mut().insert(
                 HeaderName::from_static("host"),
@@ -85,15 +79,14 @@ pub fn proxy(
             if let Ok(preview_id) = preview_id {
                 req.headers_mut()
                     .insert(HeaderName::from_static("cf-ew-preview"), preview_id);
-                // println!(
-                //     "[{}] \"{} {}{} {:?}\"",
-                //     now.format("%Y-%m-%d %H:%M:%S"),
-                //     method,
-                //     host,
-                //     path,
-                //     req.version()
-                // );
-                dbg!(&req);
+                println!(
+                    "[{}] \"{} {}{} {:?}\"",
+                    now.format("%Y-%m-%d %H:%M:%S"),
+                    method,
+                    host,
+                    path,
+                    req.version()
+                );
                 client.request(req)
             } else {
                 client.request(req)
