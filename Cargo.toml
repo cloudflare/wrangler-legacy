@@ -49,6 +49,7 @@ ignore = "0.4.10"
 tempfile = "3.1.0"
 hyper = "0.12.35"
 pretty_env_logger = "0.3.1"
+hyper-tls = "0.3.2"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"

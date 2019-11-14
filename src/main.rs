@@ -530,7 +530,11 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("proxy") {
         log::info!("Starting proxy service");
         let port = matches.value_of("port");
-        commands::proxy(port)?;
+        let manifest = settings::target::Manifest::new(config_path)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+        let user = settings::global_user::GlobalUser::new().ok();
+        commands::proxy(target, user, port)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
