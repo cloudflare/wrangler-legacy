@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::terminal::emoji;
 use config::{Config, Environment, File};
+const CF_API_TOKEN: &str = "CF_API_TOKEN";
+const CF_API_KEY: &str = "CF_API_KEY";
+const CF_EMAIL: &str = "CF_EMAIL";
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
@@ -111,9 +114,9 @@ mod tests {
         // This test evaluates whether the GlobalUser returned is
         // a GlobalUser::TokenAuth (expected behavior; token
         // should be prioritized over email + global API key pair.)
-        env::set_var("CF_API_TOKEN", "foo");
-        env::set_var("CF_EMAIL", "test@cloudflare.com");
-        env::set_var("CF_API_KEY", "bar");
+        env::set_var(CF_API_TOKEN, "foo");
+        env::set_var(CF_EMAIL, "test@cloudflare.com");
+        env::set_var(CF_API_KEY, "bar");
 
         let user = GlobalUser::new().unwrap();
         assert_eq!(
