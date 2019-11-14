@@ -2,7 +2,6 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use cloudflare::framework::auth::Credentials;
-use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::terminal::emoji;
@@ -48,7 +47,7 @@ impl GlobalUser {
         // Skip reading global config if non existent
         // because envs might be provided
         if config_path.exists() {
-            info!(
+            log::info!(
                 "Config path exists. Reading from config file, {}",
                 config_str
             );
@@ -88,16 +87,16 @@ impl From<GlobalUser> for Credentials {
 
 pub fn get_global_config_dir() -> Result<PathBuf, failure::Error> {
     let home_dir = if let Ok(value) = env::var("WRANGLER_HOME") {
-        info!("Using WRANGLER_HOME: {}", value);
+        log::info!("Using WRANGLER_HOME: {}", value);
         Path::new(&value).to_path_buf()
     } else {
-        info!("No WRANGLER_HOME detected");
+        log::info!("No WRANGLER_HOME detected");
         dirs::home_dir()
             .expect("oops no home dir")
             .join(".wrangler")
     };
     let global_config_dir = home_dir.join("config");
-    info!("Using global config dir: {:?}", global_config_dir);
+    log::info!("Using global config dir: {:?}", global_config_dir);
     Ok(global_config_dir)
 }
 
