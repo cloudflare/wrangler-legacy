@@ -353,7 +353,7 @@ fn run() -> Result<(), failure::Error> {
                 ))
                 .arg(
                     Arg::with_name("port")
-                        .help("port to listen on")
+                        .help("port to listen on. defaults to 8000")
                         .short("p")
                         .long("port")
                         .takes_value(true)
@@ -363,6 +363,13 @@ fn run() -> Result<(), failure::Error> {
                         .help("domain to test behind your worker. defaults to example.com")
                         .short("h")
                         .long("host")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("ip")
+                        .help("ip to listsen on. defaults to localhost")
+                        .short("i")
+                        .long("ip")
                         .takes_value(true)
                 ),
         )
@@ -538,11 +545,12 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Starting proxy service");
         let port = matches.value_of("port");
         let host = matches.value_of("host");
+        let ip = matches.value_of("ip");
         let manifest = settings::target::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
-        commands::proxy(target, user, host, port)?;
+        commands::proxy(target, user, host, port, ip)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
