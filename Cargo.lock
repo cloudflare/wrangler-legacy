@@ -2386,6 +2386,7 @@ dependencies = [
  "atty 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "binary-install 0.0.3-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cloudflare 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "config 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
