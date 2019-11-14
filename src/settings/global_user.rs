@@ -6,6 +6,7 @@ use cloudflare::framework::auth::Credentials;
 use config;
 use serde::{Deserialize, Serialize};
 
+use crate::settings::{Environment, QueryEnvironment};
 use crate::terminal::emoji;
 
 const DEFAULT_CONFIG_FILE_NAME: &str = "default.toml";
@@ -13,6 +14,8 @@ const DEFAULT_CONFIG_FILE_NAME: &str = "default.toml";
 const CF_API_TOKEN: &str = "CF_API_TOKEN";
 const CF_API_KEY: &str = "CF_API_KEY";
 const CF_EMAIL: &str = "CF_EMAIL";
+
+static ENV_VAR_WHITELIST: [&str; 3] = [CF_API_TOKEN, CF_API_KEY, CF_EMAIL];
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
@@ -23,25 +26,41 @@ pub enum GlobalUser {
 
 impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
-        if let Some(user) = Self::from_env() {
-            Ok(user)
-        } else {
-            let config_path = get_global_config_dir()
-                .expect("could not find global config directory")
-                .join(DEFAULT_CONFIG_FILE_NAME);
+        let environment = Environment::with_whitelist(ENV_VAR_WHITELIST.to_vec());
 
+        let config_path = get_global_config_dir()
+            .expect("could not find global config directory")
+            .join(DEFAULT_CONFIG_FILE_NAME);
+
+        GlobalUser::build(environment, config_path)
+    }
+
+    fn build<T: 'static + QueryEnvironment>(
+        environment: T,
+        config_path: PathBuf,
+    ) -> Result<Self, failure::Error>
+    where
+        T: config::Source + Send + Sync,
+    {
+        if let Some(user) = Self::from_env(environment) {
+            user
+        } else {
             Self::from_file(config_path)
         }
     }
 
-    fn from_env() -> Option<Self> {
+    // TODO: This fn should return None if the environment has none of the
+    // relevant variables
+    fn from_env<T: 'static + QueryEnvironment>(
+        environment: T,
+    ) -> Option<Result<Self, failure::Error>>
+    where
+        T: config::Source + Send + Sync,
+    {
         let mut s = config::Config::new();
+        s.merge(environment).ok();
 
-        // Eg.. `CF_API_KEY=farts` would set the `account_auth_key` key
-        // envs are: CF_EMAIL, CF_API_KEY and CF_API_TOKEN
-        s.merge(config::Environment::with_prefix("CF")).ok();
-
-        GlobalUser::from_config(s).ok()
+        Some(GlobalUser::from_config(s))
     }
 
     fn from_file(config_path: PathBuf) -> Result<Self, failure::Error> {
@@ -119,7 +138,10 @@ pub fn get_global_config_dir() -> Result<PathBuf, failure::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env;
+    use std::fs::File;
+    use tempfile::tempdir;
+
+    use crate::settings::environment::MockEnvironment;
 
     #[test]
     fn it_can_prioritize_token_input() {
@@ -127,16 +149,56 @@ mod tests {
         // This test evaluates whether the GlobalUser returned is
         // a GlobalUser::TokenAuth (expected behavior; token
         // should be prioritized over email + global API key pair.)
-        env::set_var(CF_API_TOKEN, "foo");
-        env::set_var(CF_EMAIL, "test@cloudflare.com");
-        env::set_var(CF_API_KEY, "bar");
+        let mut mock_env = MockEnvironment::default();
+        mock_env.set(CF_API_TOKEN, "foo");
+        mock_env.set(CF_EMAIL, "test@cloudflare.com");
+        mock_env.set(CF_API_KEY, "bar");
 
-        let user = GlobalUser::new().unwrap();
+        let config_dir = test_config_dir(None).unwrap();
+
+        let user = GlobalUser::build(mock_env, config_dir).unwrap();
         assert_eq!(
             user,
             GlobalUser::TokenAuth {
                 api_token: "foo".to_string()
             }
         );
+    }
+
+    #[test]
+    fn it_can_prioritize_env_vars() {
+        let api_token = "thisisanapitoken";
+        let api_key = "reallylongglobalyapikey";
+        let email = "user@example.com";
+
+        let file_user = GlobalUser::TokenAuth {
+            api_token: api_token.to_string(),
+        };
+        let env_user = GlobalUser::GlobalKeyAuth {
+            api_key: api_key.to_string(),
+            email: email.to_string(),
+        };
+
+        let mut mock_env = MockEnvironment::default();
+        mock_env.set(CF_EMAIL, email);
+        mock_env.set(CF_API_KEY, api_key);
+
+        let tmp_config_dir = test_config_dir(Some(file_user)).unwrap();
+
+        let new_user = GlobalUser::build(mock_env, tmp_config_dir).unwrap();
+
+        assert_eq!(new_user, env_user);
+    }
+
+    fn test_config_dir(user: Option<GlobalUser>) -> Result<PathBuf, failure::Error> {
+        let tmp_dir = tempdir().unwrap();
+        let tmp_config_path = tmp_dir.path();
+        if let Some(user_config) = user {
+            user_config.to_file(&tmp_config_path)?;
+        } else {
+            File::create(&tmp_config_path.join(DEFAULT_CONFIG_FILE_NAME))?;
+        }
+
+        Ok(tmp_config_path.to_path_buf())
     }
 }
