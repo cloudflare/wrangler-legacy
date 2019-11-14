@@ -1,16 +1,16 @@
-use crate::terminal::message;
 use std::fs;
 use std::fs::File;
 #[cfg(not(target_os = "windows"))]
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
-use crate::http;
-use crate::settings::global_user::{get_global_config_dir, GlobalUser};
-
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
+
+use crate::http;
+use crate::settings::global_user::{get_global_config_dir, GlobalUser};
+use crate::terminal::message;
 
 // set the permissions on the dir, we want to avoid that other user reads to file
 #[cfg(not(target_os = "windows"))]

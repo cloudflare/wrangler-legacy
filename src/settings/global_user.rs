@@ -2,10 +2,10 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use cloudflare::framework::auth::Credentials;
+use config;
 use serde::{Deserialize, Serialize};
 
 use crate::terminal::emoji;
-use config::{Config, Environment, File};
 const CF_API_TOKEN: &str = "CF_API_TOKEN";
 const CF_API_KEY: &str = "CF_API_KEY";
 const CF_EMAIL: &str = "CF_EMAIL";
@@ -31,17 +31,17 @@ impl GlobalUser {
     }
 
     fn from_env() -> Option<Self> {
-        let mut s = Config::new();
+        let mut s = config::Config::new();
 
         // Eg.. `CF_API_KEY=farts` would set the `account_auth_key` key
         // envs are: CF_EMAIL, CF_API_KEY and CF_API_TOKEN
-        s.merge(Environment::with_prefix("CF")).ok();
+        s.merge(config::Environment::with_prefix("CF")).ok();
 
         GlobalUser::from_config(s).ok()
     }
 
     fn from_file(config_path: PathBuf) -> Result<Self, failure::Error> {
-        let mut s = Config::new();
+        let mut s = config::Config::new();
 
         let config_str = config_path
             .to_str()
@@ -54,13 +54,13 @@ impl GlobalUser {
                 "Config path exists. Reading from config file, {}",
                 config_str
             );
-            s.merge(File::with_name(config_str))?;
+            s.merge(config::File::with_name(config_str))?;
         }
 
         GlobalUser::from_config(s)
     }
 
-    fn from_config(config: Config) -> Result<Self, failure::Error> {
+    fn from_config(config: config::Config) -> Result<Self, failure::Error> {
         let global_user: Result<GlobalUser, config::ConfigError> = config.try_into();
         match global_user {
             Ok(user) => Ok(user),
