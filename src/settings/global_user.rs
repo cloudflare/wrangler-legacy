@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
 use cloudflare::framework::auth::Credentials;
@@ -217,6 +218,23 @@ mod tests {
     }
 
     #[test]
+    fn it_fails_if_global_auth_incomplete_in_file() {
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .open(&config_dir.as_path())
+            .unwrap();
+        let email_config = "email = \"thisisanemail\"";
+        file.write_all(email_config.as_bytes()).unwrap();
+
+        let file_user = GlobalUser::from_file(config_dir);
+
+        assert!(file_user.is_err());
+    }
+
+    #[test]
     fn it_fails_if_global_auth_incomplete_in_env() {
         let mut mock_env = MockEnvironment::default();
 
@@ -227,10 +245,7 @@ mod tests {
 
         let new_user = GlobalUser::build(mock_env, config_dir);
 
-        match new_user {
-            Ok(_) => assert!(false),
-            Err(_) => assert!(true),
-        }
+        assert!(new_user.is_err());
     }
 
     fn test_config_dir(
