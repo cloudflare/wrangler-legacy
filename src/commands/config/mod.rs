@@ -1,4 +1,3 @@
-use std::fs;
 use std::fs::File;
 #[cfg(not(target_os = "windows"))]
 use std::os::unix::fs::PermissionsExt;
@@ -9,7 +8,7 @@ use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http;
-use crate::settings::global_user::{get_global_config_dir, GlobalUser};
+use crate::settings::global_user::{default_config_file, GlobalUser};
 use crate::terminal::message;
 
 // set the permissions on the dir, we want to avoid that other user reads to file
@@ -27,18 +26,16 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
         validate_credentials(user)?;
     }
 
-    let config_dir = get_global_config_dir().expect("could not find global config directory");
-    fs::create_dir_all(&config_dir)?;
-
-    let config_path = user.to_file(&config_dir)?;
+    let config_file = default_config_file().expect("could not find global config directory");
+    user.to_file(&config_file)?;
 
     // set permissions on the file
     #[cfg(not(target_os = "windows"))]
-    set_file_mode(&config_path);
+    set_file_mode(&config_file);
 
     message::success(&format!(
         "Successfully configured. You can find your configuration file at: {}",
-        &config_path.to_string_lossy()
+        &config_file.to_string_lossy()
     ));
 
     Ok(())

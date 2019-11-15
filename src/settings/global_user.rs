@@ -28,9 +28,7 @@ impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
         let environment = Environment::with_whitelist(ENV_VAR_WHITELIST.to_vec());
 
-        let config_path = get_global_config_dir()
-            .expect("could not find global config directory")
-            .join(DEFAULT_CONFIG_FILE_NAME);
+        let config_path = default_config_file().expect("could not find global config directory");
 
         GlobalUser::build(environment, config_path)
     }
@@ -89,12 +87,13 @@ impl GlobalUser {
         GlobalUser::from_config(s)
     }
 
-    pub fn to_file(&self, config_path: &Path) -> Result<PathBuf, failure::Error> {
+    pub fn to_file(&self, config_path: &Path) -> Result<(), failure::Error> {
         let toml = toml::to_string(self)?;
 
+        fs::create_dir_all(&config_path.parent().unwrap())?;
         fs::write(&config_path, toml)?;
 
-        Ok(config_path.to_path_buf())
+        Ok(())
     }
 
     fn from_config(config: config::Config) -> Result<Self, failure::Error> {
@@ -126,7 +125,7 @@ impl From<GlobalUser> for Credentials {
     }
 }
 
-pub fn get_global_config_dir() -> Result<PathBuf, failure::Error> {
+pub fn default_config_file() -> Result<PathBuf, failure::Error> {
     let home_dir = if let Ok(value) = env::var("WRANGLER_HOME") {
         log::info!("Using WRANGLER_HOME: {}", value);
         Path::new(&value).to_path_buf()
@@ -136,9 +135,9 @@ pub fn get_global_config_dir() -> Result<PathBuf, failure::Error> {
             .expect("oops no home dir")
             .join(".wrangler")
     };
-    let global_config_dir = home_dir.join("config");
-    log::info!("Using global config dir: {:?}", global_config_dir);
-    Ok(global_config_dir)
+    let global_config_file = home_dir.join("config").join(DEFAULT_CONFIG_FILE_NAME);
+    log::info!("Using global config file: {:?}", global_config_file);
+    Ok(global_config_file)
 }
 
 #[cfg(test)]
@@ -242,6 +241,6 @@ mod tests {
             File::create(&tmp_config_path)?;
         }
 
-        Ok(tmp_config_path)
+        Ok(tmp_config_path.to_path_buf())
     }
 }
