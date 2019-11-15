@@ -5,6 +5,8 @@ use config::{Source, Value};
 
 pub trait QueryEnvironment {
     fn get_var(&self, var: &'static str) -> Result<String, std::env::VarError>;
+
+    fn empty(&self) -> Result<bool, failure::Error>;
 }
 
 #[derive(Clone, Debug)]
@@ -21,6 +23,12 @@ impl Environment {
 impl QueryEnvironment for Environment {
     fn get_var(&self, var: &'static str) -> Result<String, std::env::VarError> {
         env::var(var)
+    }
+
+    fn empty(&self) -> Result<bool, failure::Error> {
+        let env = self.collect()?;
+
+        Ok(env.is_empty())
     }
 }
 
@@ -70,6 +78,10 @@ impl QueryEnvironment for MockEnvironment {
     #[allow(unused_variables)]
     fn get_var(&self, var: &'static str) -> Result<String, std::env::VarError> {
         Ok("Some Mocked Result".to_string()) // Returns a mocked response
+    }
+
+    fn empty(&self) -> Result<bool, failure::Error> {
+        Ok(self.vars.is_empty())
     }
 }
 

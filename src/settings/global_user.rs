@@ -57,10 +57,14 @@ impl GlobalUser {
     where
         T: config::Source + Send + Sync,
     {
-        let mut s = config::Config::new();
-        s.merge(environment).ok();
+        if environment.empty().unwrap() {
+            None
+        } else {
+            let mut s = config::Config::new();
+            s.merge(environment).ok();
 
-        Some(GlobalUser::from_config(s))
+            Some(GlobalUser::from_config(s))
+        }
     }
 
     fn from_file(config_path: PathBuf) -> Result<Self, failure::Error> {
@@ -78,29 +82,31 @@ impl GlobalUser {
                 config_str
             );
             s.merge(config::File::with_name(config_str))?;
+        } else {
+            panic!("config path does not exist {}", config_str);
         }
 
         GlobalUser::from_config(s)
     }
 
-    pub fn to_file(&self, config_dir: &Path) -> Result<PathBuf, failure::Error> {
+    pub fn to_file(&self, config_path: &Path) -> Result<PathBuf, failure::Error> {
         let toml = toml::to_string(self)?;
-        let config_path = config_dir.join(DEFAULT_CONFIG_FILE_NAME);
 
         fs::write(&config_path, toml)?;
 
-        Ok(config_path)
+        Ok(config_path.to_path_buf())
     }
 
     fn from_config(config: config::Config) -> Result<Self, failure::Error> {
-        let global_user: Result<GlobalUser, config::ConfigError> = config.try_into();
+        let global_user: Result<GlobalUser, config::ConfigError> = config.clone().try_into();
         match global_user {
             Ok(user) => Ok(user),
             Err(e) => {
                 let msg = format!(
-                    "{} Your global config has an error, run `wrangler config`: {}",
+                    "{} Your global config has an error, run `wrangler config`: {}\n{:?}",
                     emoji::WARN,
-                    e
+                    e,
+                    config
                 );
                 failure::bail!(msg)
             }
@@ -154,7 +160,8 @@ mod tests {
         mock_env.set(CF_EMAIL, "test@cloudflare.com");
         mock_env.set(CF_API_KEY, "bar");
 
-        let config_dir = test_config_dir(None).unwrap();
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
 
         let user = GlobalUser::build(mock_env, config_dir).unwrap();
         assert_eq!(
@@ -183,22 +190,58 @@ mod tests {
         mock_env.set(CF_EMAIL, email);
         mock_env.set(CF_API_KEY, api_key);
 
-        let tmp_config_dir = test_config_dir(Some(file_user)).unwrap();
+        let tmp_dir = tempdir().unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(file_user)).unwrap();
 
-        let new_user = GlobalUser::build(mock_env, tmp_config_dir).unwrap();
+        let new_user = GlobalUser::build(mock_env, tmp_config_path).unwrap();
 
         assert_eq!(new_user, env_user);
     }
 
-    fn test_config_dir(user: Option<GlobalUser>) -> Result<PathBuf, failure::Error> {
+    #[test]
+    fn it_falls_through_to_config_with_no_env_vars() {
+        let mock_env = MockEnvironment::default();
+
+        let user = GlobalUser::TokenAuth {
+            api_token: "thisisanapitoken".to_string(),
+        };
+
         let tmp_dir = tempdir().unwrap();
-        let tmp_config_path = tmp_dir.path();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+
+        let new_user = GlobalUser::build(mock_env, tmp_config_path).unwrap();
+
+        assert_eq!(new_user, user);
+    }
+
+    #[test]
+    fn it_fails_if_global_auth_incomplete_in_env() {
+        let mut mock_env = MockEnvironment::default();
+
+        mock_env.set(CF_API_KEY, "apikey");
+
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
+
+        let new_user = GlobalUser::build(mock_env, config_dir);
+
+        match new_user {
+            Ok(_) => assert!(false),
+            Err(_) => assert!(true),
+        }
+    }
+
+    fn test_config_dir(
+        tmp_dir: &tempfile::TempDir,
+        user: Option<GlobalUser>,
+    ) -> Result<PathBuf, failure::Error> {
+        let tmp_config_path = tmp_dir.path().join(DEFAULT_CONFIG_FILE_NAME);
         if let Some(user_config) = user {
             user_config.to_file(&tmp_config_path)?;
         } else {
-            File::create(&tmp_config_path.join(DEFAULT_CONFIG_FILE_NAME))?;
+            File::create(&tmp_config_path)?;
         }
 
-        Ok(tmp_config_path.to_path_buf())
+        Ok(tmp_config_path)
     }
 }
