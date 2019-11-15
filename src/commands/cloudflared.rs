@@ -3,7 +3,6 @@ use crate::commands;
 
 pub fn run_cloudflared() -> Result<(), failure::Error> {
     let tool_name = "cloudflared";
-    println!("going toinstall");
     let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
 
     let args = [];

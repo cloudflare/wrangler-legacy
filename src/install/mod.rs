@@ -160,6 +160,8 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
 }
 
 fn get_latest_version(tool_name: &str) -> Result<String, failure::Error> {
+    // TODO(gabbi): return the latest version pulled from github api, not via Krate.
+    // TODO(argo tunnel team): make cloudflared binary available on github.
     Ok(Krate::new(tool_name)?.max_version)
 }
 
