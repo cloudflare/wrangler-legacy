@@ -18,7 +18,7 @@ pub use generate::generate;
 pub use init::init;
 pub use preview::{preview, HTTPMethod};
 pub use publish::publish;
-pub use cloudflared::run_cloudflared;
+pub use cloudflared::run_cloudflared_start_server;
 use regex::Regex;
 pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;

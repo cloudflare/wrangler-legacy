@@ -686,7 +686,7 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(_) = matches.subcommand_matches("cloudflared") {
-        commands::run_cloudflared()?;
+        commands::run_cloudflared_start_server()?;
     }
     Ok(())
 }
