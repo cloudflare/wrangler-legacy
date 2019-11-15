@@ -104,13 +104,12 @@ impl GlobalUser {
         let global_user: Result<GlobalUser, config::ConfigError> = config.clone().try_into();
         match global_user {
             Ok(user) => Ok(user),
-            Err(e) => {
+            Err(_) => {
                 let msg = format!(
-                    "{} Your global config has an error, run `wrangler config`: {}\n{:?}",
+                    "{} Your authentication details are improperly configured, please run `wrangler config`",
                     emoji::WARN,
-                    e,
-                    config
                 );
+                log::info!("{:?}", config);
                 failure::bail!(msg)
             }
         }
