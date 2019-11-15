@@ -81,7 +81,7 @@ impl GlobalUser {
             );
             s.merge(config::File::with_name(config_str))?;
         } else {
-            panic!("config path does not exist {}", config_str);
+            failure::bail!("config path does not exist {}", config_str);
         }
 
         GlobalUser::from_config(s)
