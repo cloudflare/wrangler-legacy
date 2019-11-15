@@ -23,6 +23,7 @@ pub fn run_cloudflared_start_server() -> Result<(), failure::Error> {
     start_echo_http_server();
 
     // Likely want to get rid of these printouts.
+    // Can we also wait for cloudflared to exit?
     message::working("Starting up an Argo Tunnel");
     commands::run(command, &command_name)?;
 
@@ -65,32 +66,6 @@ fn echo(req: Request<Body>) -> impl Future<Item = Response<Body>, Error = hyper:
             future::Either::B(resp)
         }
     }
-    // let mut response = Response::new(Body::empty());
-
-    // match (req.method(), req.uri().path()) {
-    //     // (&Method::GET, "/") => {
-    //     //     *response.body_mut() = Body::from("Try POSTing data to /echo");
-    //     // },
-    //     (&Method::POST, "/echo") => {
-    //         // let body = req.into_body();
-    //         let entire_body = req.into_body().concat2();
-    //         let resp = entire_body.map(|body| {
-    //             let body = Body::from(format!("Read {} bytes", body.len()));
-    //             println!("{:?}", body);
-    //             Response::new(body)
-    //         });
-    //         future::Either::A(resp);
-    //         // *response.body_mut() = Body::from("Success")
-    //     },
-    //     _ => {
-    //         // *response.status_mut() = StatusCode::NOT_FOUND;
-    //         let body = Body::from("Can only POST to /");
-    //         let resp = future::ok(Response::new(body));
-    //         future::Either::B(resp)
-    //     },
-    // };
-
-    // Box::new(future::ok(response))
 }
 
 // TODO(gabbi): let's not clumsily copy this from commands/build/mod.rs
