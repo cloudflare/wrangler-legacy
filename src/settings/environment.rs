@@ -107,3 +107,33 @@ impl Source for MockEnvironment {
         Ok(m)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_gets_from_the_environment() {
+        env::set_var("CF_API_KEY", "waylongapikey");
+        env::set_var("CF_EMAIL", "user@example.com");
+        env::set_var("CF_IRRELEVANT", "irrelevant");
+
+        let environment = Environment::with_whitelist(vec!["CF_API_KEY", "CF_EMAIL"]);
+
+        let mut expected_env_vars: HashMap<String, Value> = HashMap::new();
+
+        // we expect that our environment variables will be stripped of the
+        // `CF_` prefix, and that they will be downcased; consistent with the
+        // behavior of `config::Environment::with_prefix("CF")`
+        expected_env_vars.insert(
+            "api_key".to_string(),
+            Value::new(Some(&"env".to_string()), "waylongapikey"),
+        );
+        expected_env_vars.insert(
+            "email".to_string(),
+            Value::new(Some(&"env".to_string()), "user@example.com"),
+        );
+
+        assert_eq!(environment.collect().unwrap(), expected_env_vars);
+    }
+}
