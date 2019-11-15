@@ -47,15 +47,16 @@ impl GlobalUser {
         }
     }
 
-    // TODO: This fn should return None if the environment has none of the
-    // relevant variables
     fn from_env<T: 'static + QueryEnvironment>(
         environment: T,
     ) -> Option<Result<Self, failure::Error>>
     where
         T: config::Source + Send + Sync,
     {
-        if environment.empty().unwrap() {
+        // if there's some problem with gathering the environment,
+        // or if there are no relevant environment variables set,
+        // fall back to config file.
+        if environment.empty().unwrap_or(true) {
             None
         } else {
             let mut s = config::Config::new();
@@ -81,7 +82,10 @@ impl GlobalUser {
             );
             s.merge(config::File::with_name(config_str))?;
         } else {
-            failure::bail!("config path does not exist {}", config_str);
+            failure::bail!(
+                "config path does not exist {}. Try running `wrangler config`",
+                config_str
+            );
         }
 
         GlobalUser::from_config(s)
@@ -136,7 +140,7 @@ pub fn default_config_file() -> Result<PathBuf, failure::Error> {
             .join(".wrangler")
     };
     let global_config_file = home_dir.join("config").join(DEFAULT_CONFIG_FILE_NAME);
-    log::info!("Using global config file: {:?}", global_config_file);
+    log::info!("Using global config file: {}", global_config_file.display());
     Ok(global_config_file)
 }
 
@@ -174,7 +178,7 @@ mod tests {
     #[test]
     fn it_can_prioritize_env_vars() {
         let api_token = "thisisanapitoken";
-        let api_key = "reallylongglobalyapikey";
+        let api_key = "reallylongglobalapikey";
         let email = "user@example.com";
 
         let file_user = GlobalUser::TokenAuth {
