@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 
-use config::{Source, Value};
+use config::{ConfigError, Source, Value};
 
 pub trait QueryEnvironment {
     fn get_var(&self, var: &'static str) -> Result<String, std::env::VarError>;
@@ -39,11 +39,11 @@ impl QueryEnvironment for Environment {
 // we pull in only whitelisted values, and rather than taking a custom
 // prefix, we assume a prefix of `CF_`.
 impl Source for Environment {
-    fn clone_into_box(&self) -> Box<Source + Send + Sync> {
+    fn clone_into_box(&self) -> Box<dyn Source + Send + Sync> {
         Box::new((*self).clone())
     }
 
-    fn collect(&self) -> Result<HashMap<String, Value>, config::ConfigError> {
+    fn collect(&self) -> Result<HashMap<String, Value>, ConfigError> {
         let mut m = HashMap::new();
         let uri: String = "env".into();
 
@@ -85,14 +85,14 @@ impl QueryEnvironment for MockEnvironment {
     }
 }
 
-// config::Source trait implementation for use with Config::merge
+// config::Source trait implementation for use with config::Config.merge
 // until config crate removal is complete.
-impl config::Source for MockEnvironment {
-    fn clone_into_box(&self) -> Box<config::Source + Send + Sync> {
+impl Source for MockEnvironment {
+    fn clone_into_box(&self) -> Box<dyn Source + Send + Sync> {
         Box::new((*self).clone())
     }
 
-    fn collect(&self) -> Result<HashMap<String, config::Value>, config::ConfigError> {
+    fn collect(&self) -> Result<HashMap<String, Value>, ConfigError> {
         let mut m = HashMap::new();
         let uri: String = "env".into();
 
@@ -101,7 +101,7 @@ impl config::Source for MockEnvironment {
             let prefix_pattern = "CF_";
             let key = &key[prefix_pattern.len()..];
 
-            m.insert(key.to_lowercase(), config::Value::new(Some(&uri), *value));
+            m.insert(key.to_lowercase(), Value::new(Some(&uri), *value));
         }
 
         Ok(m)
