@@ -26,7 +26,7 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
         validate_credentials(user)?;
     }
 
-    let config_file = default_config_file().expect("could not find global config directory");
+    let config_file = default_config_file()?;
     user.to_file(&config_file)?;
 
     // set permissions on the file
