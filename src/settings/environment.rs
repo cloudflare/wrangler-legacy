@@ -3,6 +3,8 @@ use std::env;
 
 use config::{ConfigError, Source, Value};
 
+const PREFIX_PATTERN: &str = "CF_";
+
 pub trait QueryEnvironment {
     fn get_var(&self, var: &'static str) -> Result<String, std::env::VarError>;
 
@@ -50,8 +52,11 @@ impl Source for Environment {
         for key in &self.whitelist {
             if let Some(value) = env::var(key).ok() {
                 // remove the `CF` prefix before adding to collection
-                let prefix_pattern = "CF_";
-                let key = &key[prefix_pattern.len()..];
+                let key = if key.starts_with(PREFIX_PATTERN) {
+                    &key[PREFIX_PATTERN.len()..]
+                } else {
+                    key
+                };
 
                 m.insert(key.to_lowercase(), Value::new(Some(&uri), value));
             }

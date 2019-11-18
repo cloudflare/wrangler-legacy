@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
 use cloudflare::framework::auth::Credentials;
@@ -28,8 +29,7 @@ impl GlobalUser {
     pub fn new() -> Result<Self, failure::Error> {
         let environment = Environment::with_whitelist(ENV_VAR_WHITELIST.to_vec());
 
-        let config_path = default_config_file().expect("could not find global config directory");
-
+        let config_path = get_global_config_path()?;
         GlobalUser::build(environment, config_path)
     }
 
@@ -104,13 +104,12 @@ impl GlobalUser {
         let global_user: Result<GlobalUser, config::ConfigError> = config.clone().try_into();
         match global_user {
             Ok(user) => Ok(user),
-            Err(e) => {
+            Err(_) => {
                 let msg = format!(
-                    "{} Your global config has an error, run `wrangler config`: {}\n{:?}",
+                    "{} Your authentication details are improperly configured.\nPlease run `wrangler config` or visit\nhttps://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables\nfor info on configuring with environment variables",
                     emoji::WARN,
-                    e,
-                    config
                 );
+                log::info!("{:?}", config);
                 failure::bail!(msg)
             }
         }
@@ -129,14 +128,14 @@ impl From<GlobalUser> for Credentials {
     }
 }
 
-pub fn default_config_file() -> Result<PathBuf, failure::Error> {
+pub fn get_global_config_path() -> Result<PathBuf, failure::Error> {
     let home_dir = if let Ok(value) = env::var("WRANGLER_HOME") {
-        log::info!("Using WRANGLER_HOME: {}", value);
+        log::info!("Using $WRANGLER_HOME: {}", value);
         Path::new(&value).to_path_buf()
     } else {
-        log::info!("No WRANGLER_HOME detected");
+        log::info!("No $WRANGLER_HOME detected, using $HOME");
         dirs::home_dir()
-            .expect("oops no home dir")
+            .expect("Could not find home directory")
             .join(".wrangler")
     };
     let global_config_file = home_dir.join("config").join(DEFAULT_CONFIG_FILE_NAME);
@@ -218,6 +217,23 @@ mod tests {
     }
 
     #[test]
+    fn it_fails_if_global_auth_incomplete_in_file() {
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .open(&config_dir.as_path())
+            .unwrap();
+        let email_config = "email = \"thisisanemail\"";
+        file.write_all(email_config.as_bytes()).unwrap();
+
+        let file_user = GlobalUser::from_file(config_dir);
+
+        assert!(file_user.is_err());
+    }
+
+    #[test]
     fn it_fails_if_global_auth_incomplete_in_env() {
         let mut mock_env = MockEnvironment::default();
 
@@ -228,10 +244,18 @@ mod tests {
 
         let new_user = GlobalUser::build(mock_env, config_dir);
 
-        match new_user {
-            Ok(_) => assert!(false),
-            Err(_) => assert!(true),
-        }
+        assert!(new_user.is_err());
+    }
+
+    #[test]
+    fn it_succeeds_with_no_config() {
+        let mut mock_env = MockEnvironment::default();
+        mock_env.set(CF_API_KEY, "apikey");
+        mock_env.set(CF_EMAIL, "email");
+        let dummy_path = Path::new("./definitely-does-not-exist.txt").to_path_buf();
+        let new_user = GlobalUser::build(mock_env, dummy_path);
+
+        assert!(new_user.is_ok());
     }
 
     fn test_config_dir(
