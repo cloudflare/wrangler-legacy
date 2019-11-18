@@ -1,21 +1,16 @@
-#![deny(warnings)]
-extern crate hyper;
-extern crate hyper_tls;
-extern crate pretty_env_logger;
-extern crate url;
-
 use std::net::{SocketAddr, ToSocketAddrs};
 
-use chrono::prelude::*;
-
-use hyper::header::{HeaderName, HeaderValue};
-use hyper::rt::{self, Future};
-use hyper::service::service_fn;
-use hyper::{Client, Server};
+use hyper::client::{HttpConnector, ResponseFuture};
+use hyper::error::Error;
+use hyper::header::{HeaderValue, InvalidHeaderValue};
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Client, Request, Response, Server};
 
 use hyper_tls::HttpsConnector;
 
 use failure::format_err;
+
+use futures_util::TryStreamExt;
 
 use uuid::Uuid;
 
@@ -28,13 +23,13 @@ use crate::commands::preview::upload;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
-struct Proxy {
+struct ProxyConfig {
     host: String,
     listening_address: SocketAddr,
     is_https: bool,
 }
 
-impl Proxy {
+impl ProxyConfig {
     pub fn new(
         host: Option<&str>,
         ip: Option<&str>,
@@ -80,7 +75,7 @@ impl Proxy {
             )),
         }?;
 
-        let proxy = Proxy {
+        let proxy = ProxyConfig {
             listening_address,
             host,
             is_https,
@@ -89,90 +84,103 @@ impl Proxy {
         Ok(proxy)
     }
 
-    pub fn start(
-        &self,
-        mut target: Target,
-        user: Option<GlobalUser>,
-    ) -> Result<(), failure::Error> {
-        let https = HttpsConnector::new(4).expect("TLS initialization failed");
-        let client_main = Client::builder().build::<_, hyper::Body>(https);
-
-        let session = Uuid::new_v4().to_simple();
-        let verbose = true;
-        let sites_preview = false;
-        let script_id: String = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
-        let host = self.host.clone();
-        let is_https = self.is_https.clone();
-        let listening_address_str = self
-            .listening_address
+    fn get_listening_address_as_str(&self) -> String {
+        self.listening_address
             .to_string()
-            .replace("[::1]", "localhost");
-
-        // new_service is run for each connection, creating a 'service'
-        // to handle requests for that specific connection.
-        let new_service = move || {
-            let client = client_main.clone();
-            let script_id = script_id.clone();
-            let host = host.clone();
-            // This is the `Service` that will handle the connection.
-            // `service_fn_ok` is a helper to convert a function that
-            // returns a Response into a `Service`.
-            service_fn(move |mut req| {
-                let uri_path_and_query =
-                    req.uri().path_and_query().map(|x| x.as_str()).unwrap_or("");
-                let uri_string = format!("https://{}{}", PREVIEW_HOST, uri_path_and_query);
-
-                let uri = uri_string.parse::<hyper::Uri>().unwrap();
-                let method = req.method().to_string();
-                let path = uri_path_and_query.to_string();
-
-                let now: DateTime<Local> = Local::now();
-                *req.uri_mut() = uri;
-                req.headers_mut().insert(
-                    HeaderName::from_static("host"),
-                    HeaderValue::from_static(PREVIEW_HOST),
-                );
-                let preview_id = HeaderValue::from_str(&format!(
-                    "{}{}{}{}",
-                    &script_id, session, is_https as u8, host
-                ));
-
-                if let Ok(preview_id) = preview_id {
-                    req.headers_mut()
-                        .insert(HeaderName::from_static("cf-ew-preview"), preview_id);
-                    println!(
-                        "[{}] \"{} {}{} {:?}\"",
-                        now.format("%Y-%m-%d %H:%M:%S"),
-                        method,
-                        host,
-                        path,
-                        req.version()
-                    );
-                    client.request(req)
-                } else {
-                    client.request(req)
-                }
-            })
-        };
-
-        let server = Server::bind(&self.listening_address)
-            .serve(new_service)
-            .map_err(|e| eprintln!("server error: {}", e));
-
-        println!("Listening on http://{}", listening_address_str);
-
-        rt::run(server);
-        Ok(())
+            .replace("[::1]", "localhost")
     }
 }
 
-pub fn proxy(
+pub async fn proxy(
     target: Target,
     user: Option<GlobalUser>,
     host: Option<&str>,
     port: Option<&str>,
     ip: Option<&str>,
 ) -> Result<(), failure::Error> {
-    let proxy = Proxy::new(host, ip, port)?;
-    proxy.start(target, user)
+    let proxy_config = ProxyConfig::new(host, ip, port)?;
+    let https = HttpsConnector::new().expect("TLS initialization failed");
+    let client = Client::builder().build::<_, hyper::Body>(https);
+
+    let preview_id = get_preview_id(target, user, &proxy_config)?;
+    let make_service = make_service_fn(move |_| {
+        let client = client.clone();
+        let preview_id = preview_id.to_owned();
+        async move {
+            Ok::<_, Error>(service_fn(move |req| {
+                preview_request(req, client.to_owned(), preview_id.to_owned())
+            }))
+        }
+    });
+    
+    let server = Server::bind(&proxy_config.listening_address).serve(make_service);
+    
+    let listening_address_str = proxy_config.get_listening_address_as_str();
+    println!("Listening on http://{}", listening_address_str);
+    if let Err(e) = server.await {
+        eprintln!("server error: {}", e);
+    }
+    Ok(())
+}
+
+fn preview_request(
+    req: Request<Body>,
+    client: Client<HttpsConnector<HttpConnector>>,
+    preview_id: String,
+) -> ResponseFuture {
+    let (mut parts, body) = req.into_parts();
+    let mut req = Request::from_parts(parts, body);
+
+    // let uri_path_and_query =
+    //     req.uri().path_and_query().map(|x| x.as_str()).unwrap_or("");
+    // let uri_string = format!("https://{}{}", PREVIEW_HOST, uri_path_and_query);
+
+    // let uri = uri_string.parse::<hyper::Uri>().unwrap();
+    // let method = req.method().to_string();
+    // let path = uri_path_and_query.to_string();
+
+    // let now: DateTime<Local> = Local::now();
+    // *req.uri_mut() = uri;
+    // let headers = req.headers_mut();
+    // headers.insert(
+    //     HeaderName::from_static("host"),
+    //     HeaderValue::from_static(PREVIEW_HOST),
+    // );
+    // println!("{:?}", headers);
+    // let preview_id = HeaderValue::from_str(&format!(
+    //     "{}{}{}{}",
+    //     &script_id, session, is_https as u8, host
+    // ));
+
+    // if let Ok(preview_id) = preview_id {
+    //     req.headers_mut()
+    //         .insert(HeaderName::from_static("cf-ew-preview"), preview_id);
+    //     println!(
+    //         "[{}] \"{} {}{} {:?}\"",
+    //         now.format("%Y-%m-%d %H:%M:%S"),
+    //         method,
+    //         host,
+    //         path,
+    //         req.version()
+    //     );
+    //     client.request(req)
+    // }
+    // })
+
+    client.request(req)
+}
+
+fn get_preview_id(
+    mut target: Target,
+    user: Option<GlobalUser>,
+    proxy_config: &ProxyConfig,
+) -> Result<String, failure::Error> {
+    let session = Uuid::new_v4().to_simple();
+    let verbose = true;
+    let sites_preview = false;
+    let script_id: String = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
+    Ok(format!(
+        "{}{}{}{}",
+        &script_id, session, proxy_config.is_https as u8, proxy_config.host
+    ))
 }

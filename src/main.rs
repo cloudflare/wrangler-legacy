@@ -11,6 +11,8 @@ use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
 use exitfailure::ExitFailure;
 
+use futures_executor::block_on;
+
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
@@ -550,7 +552,7 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
-        commands::proxy(target, user, host, port, ip)?;
+        block_on(commands::proxy(target, user, host, port, ip))?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
