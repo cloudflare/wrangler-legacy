@@ -417,7 +417,7 @@ fn run() -> Result<(), failure::Error> {
         let user: GlobalUser = if default {
             // API Tokens are the default
             message::big_info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens\n\tand create it using the \"Edit Cloudflare Workers\" template");
-            message::big_info("If you are trying to use your Global API Key instead of an API Token (Not Recommended),\n\trun \"wrangler config --api-key\".\n");
+            message::big_info("If you are trying to use your Global API Key instead of an API Token\n\t(Not Recommended), run \"wrangler config --api-key\".\n");
             println!("Enter API token: ");
             let mut api_token: String = read!("{}\n");
             api_token.truncate(api_token.trim_end().len());
