@@ -1,12 +1,12 @@
 use std::net::{SocketAddr, ToSocketAddrs};
 
-use hyper::client::{HttpConnector, ResponseFuture};
-use hyper::error::Error;
-use hyper::header::{HeaderValue, InvalidHeaderValue};
-use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Client, Request, Response, Server};
+use hyper2::client::{HttpConnector, ResponseFuture};
+use hyper2::error::Error;
+use hyper2::header::{HeaderValue, InvalidHeaderValue};
+use hyper2::service::{make_service_fn, service_fn};
+use hyper2::{Body, Client, Request, Response, Server};
 
-use hyper_tls::HttpsConnector;
+use hyper_tls2::HttpsConnector;
 
 use failure::format_err;
 
@@ -100,7 +100,7 @@ pub async fn proxy(
 ) -> Result<(), failure::Error> {
     let proxy_config = ProxyConfig::new(host, ip, port)?;
     let https = HttpsConnector::new().expect("TLS initialization failed");
-    let client = Client::builder().build::<_, hyper::Body>(https);
+    let client = Client::builder().build::<_, Body>(https);
 
     let preview_id = get_preview_id(target, user, &proxy_config)?;
     let make_service = make_service_fn(move |_| {
@@ -112,9 +112,9 @@ pub async fn proxy(
             }))
         }
     });
-    
+
     let server = Server::bind(&proxy_config.listening_address).serve(make_service);
-    
+
     let listening_address_str = proxy_config.get_listening_address_as_str();
     println!("Listening on http://{}", listening_address_str);
     if let Err(e) = server.await {

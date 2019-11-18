@@ -46,9 +46,9 @@ regex = "1"
 sha2 = "0.8.0"
 data-encoding = "2.1.2"
 ignore = "0.4.10"
-hyper = "0.13.0-alpha.4"
+hyper2 = {package = "hyper", version = "0.13.0-alpha.4"}
 pretty_env_logger = "0.3.1"
-hyper-tls = "0.4.0-alpha.4"
+hyper-tls2 = {package = "hyper-tls", version = "0.4.0-alpha.4"}
 chrono = "0.4.9"
 futures-util = "0.3.1"
 futures-executor = "0.3.1"
