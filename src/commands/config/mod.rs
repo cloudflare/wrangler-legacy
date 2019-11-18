@@ -8,7 +8,7 @@ use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http;
-use crate::settings::global_user::{default_config_file, GlobalUser};
+use crate::settings::global_user::{get_global_config_path, GlobalUser};
 use crate::terminal::message;
 
 // set the permissions on the dir, we want to avoid that other user reads to file
@@ -26,7 +26,7 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
         validate_credentials(user)?;
     }
 
-    let config_file = default_config_file()?;
+    let config_file = get_global_config_path()?;
     user.to_file(&config_file)?;
 
     // set permissions on the file
