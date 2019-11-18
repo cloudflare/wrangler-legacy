@@ -51,7 +51,7 @@ pretty_env_logger = "0.3.1"
 hyper-tls2 = {package = "hyper-tls", version = "0.4.0-alpha.4"}
 chrono = "0.4.9"
 futures-util = "0.3.1"
-futures-executor = "0.3.1"
+tokio = "0.2.0-alpha.6"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"

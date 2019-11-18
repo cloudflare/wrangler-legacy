@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate text_io;
+extern crate tokio;
 
 use std::env;
 use std::path::Path;
@@ -11,7 +12,7 @@ use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
 use exitfailure::ExitFailure;
 
-use futures_executor::block_on;
+use tokio::runtime::Runtime;
 
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
@@ -552,7 +553,9 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
-        block_on(commands::proxy(target, user, host, port, ip))?;
+        let rt = Runtime::new().unwrap();
+        rt.block_on(commands::proxy(target, user, host, port, ip))?;
+        rt.shutdown_now();
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

@@ -130,6 +130,8 @@ fn preview_request(
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
     let mut req = Request::from_parts(parts, body);
+    println!("got request");
+    println!("{:#?}", req);
 
     // let uri_path_and_query =
     //     req.uri().path_and_query().map(|x| x.as_str()).unwrap_or("");
