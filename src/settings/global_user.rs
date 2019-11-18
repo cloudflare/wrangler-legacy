@@ -106,7 +106,7 @@ impl GlobalUser {
             Ok(user) => Ok(user),
             Err(_) => {
                 let msg = format!(
-                    "{} Your authentication details are improperly configured, please run `wrangler config`",
+                    "{} Your authentication details are improperly configured, please run `wrangler config` or set $CF_API_TOKEN",
                     emoji::WARN,
                 );
                 log::info!("{:?}", config);
