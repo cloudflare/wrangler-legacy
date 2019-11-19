@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use chrono::prelude::*;
 
 use hyper2::client::{HttpConnector, ResponseFuture};
-use hyper2::header::{HeaderValue, HeaderName};
+use hyper2::header::{HeaderValue, HeaderName, HeaderMap};
 use hyper2::service::{make_service_fn, service_fn};
 use hyper2::{Body, Client, Request, Uri, Server};
 
@@ -150,7 +151,18 @@ fn preview_request(
     let method = parts.method.to_string();
     let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
+
+    let mut headers: HeaderMap = HeaderMap::new();
     
+    for header in &parts.headers {
+        let (name, value) = header;
+        let forward_header = format!("cf-ew-raw-{}", name);
+        // TODO: remove unwrap
+        let header_name = HeaderName::from_bytes(forward_header.as_bytes()).unwrap();
+        headers.insert(header_name, value.clone());
+    }
+    parts.headers = headers;
+
     // TODO: remove unwrap
     parts.uri = get_preview_url(&path).unwrap();
     parts.headers.insert(
@@ -161,9 +173,9 @@ fn preview_request(
     // TODO: remove unwrap
     parts.headers
         .insert(HeaderName::from_static("cf-ew-preview"), HeaderValue::from_str(preview_id).unwrap());
+
     
     let req = Request::from_parts(parts, body);
-
 
     println!(
         "[{}] \"{} {}{} {:?}\"",
