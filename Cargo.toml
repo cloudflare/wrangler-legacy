@@ -47,10 +47,10 @@ sha2 = "0.8.0"
 data-encoding = "2.1.2"
 ignore = "0.4.10"
 tempfile = "3.1.0"
-hyper = "0.12.35"
-pretty_env_logger = "0.3.1"
-hyper-tls = "0.3.2"
+hyper2 = {package = "hyper", version = "0.13.0-alpha.4"}
+hyper-tls2 = {package = "hyper-tls", version = "0.4.0-alpha.4"}
 chrono = "0.4.9"
+tokio = "0.2.0-alpha.6"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"
