@@ -1,16 +1,15 @@
 use std::net::{SocketAddr, ToSocketAddrs};
 
+use chrono::prelude::*;
+
 use hyper2::client::{HttpConnector, ResponseFuture};
-use hyper2::error::Error;
-use hyper2::header::{HeaderValue, InvalidHeaderValue};
+use hyper2::header::{HeaderValue, HeaderName};
 use hyper2::service::{make_service_fn, service_fn};
-use hyper2::{Body, Client, Request, Response, Server};
+use hyper2::{Body, Client, Request, Uri, Server};
 
 use hyper_tls2::HttpsConnector;
 
 use failure::format_err;
-
-use futures_util::TryStreamExt;
 
 use uuid::Uuid;
 
@@ -23,6 +22,7 @@ use crate::commands::preview::upload;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
+#[derive(Clone)]
 struct ProxyConfig {
     host: String,
     listening_address: SocketAddr,
@@ -103,19 +103,21 @@ pub async fn proxy(
     let client = Client::builder().build::<_, Body>(https);
 
     let preview_id = get_preview_id(target, user, &proxy_config)?;
+    let listening_address = &proxy_config.listening_address.clone();
+    let listening_address_str = proxy_config.get_listening_address_as_str();
+    
     let make_service = make_service_fn(move |_| {
         let client = client.clone();
         let preview_id = preview_id.to_owned();
+        let proxy_config = proxy_config.clone();
         async move {
-            Ok::<_, Error>(service_fn(move |req| {
-                preview_request(req, client.to_owned(), preview_id.to_owned())
+            Ok::<_, failure::Error>(service_fn(move |req| {
+                preview_request(req, client.to_owned(), preview_id.to_owned(), proxy_config.clone())
             }))
         }
     });
 
-    let server = Server::bind(&proxy_config.listening_address).serve(make_service);
-
-    let listening_address_str = proxy_config.get_listening_address_as_str();
+    let server = Server::bind(listening_address).serve(make_service);
     println!("Listening on http://{}", listening_address_str);
     if let Err(e) = server.await {
         eprintln!("server error: {}", e);
@@ -123,52 +125,54 @@ pub async fn proxy(
     Ok(())
 }
 
+fn get_preview_url(
+    path_string: &str
+) -> Result<Uri, http::uri::InvalidUri> {
+    let uri_string = format!("https://{}{}", PREVIEW_HOST, path_string);
+    uri_string.parse()
+}
+
+fn get_path_as_str(
+    uri: Uri
+) -> String {
+    uri.path_and_query().map(|x| x.as_str()).unwrap_or("").to_string()
+}
+
 fn preview_request(
     req: Request<Body>,
     client: Client<HttpsConnector<HttpConnector>>,
     preview_id: String,
+    proxy_config: ProxyConfig
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
-    let mut req = Request::from_parts(parts, body);
-    println!("got request");
-    println!("{:#?}", req);
 
-    // let uri_path_and_query =
-    //     req.uri().path_and_query().map(|x| x.as_str()).unwrap_or("");
-    // let uri_string = format!("https://{}{}", PREVIEW_HOST, uri_path_and_query);
+    let path = get_path_as_str(parts.uri);
+    let method = parts.method.to_string();
+    let now: DateTime<Local> = Local::now();
+    let preview_id = &preview_id;
+    
+    // TODO: remove unwrap
+    parts.uri = get_preview_url(&path).unwrap();
+    parts.headers.insert(
+        HeaderName::from_static("host"),
+        HeaderValue::from_static(PREVIEW_HOST),
+    );
 
-    // let uri = uri_string.parse::<hyper::Uri>().unwrap();
-    // let method = req.method().to_string();
-    // let path = uri_path_and_query.to_string();
+    // TODO: remove unwrap
+    parts.headers
+        .insert(HeaderName::from_static("cf-ew-preview"), HeaderValue::from_str(preview_id).unwrap());
+    
+    let req = Request::from_parts(parts, body);
 
-    // let now: DateTime<Local> = Local::now();
-    // *req.uri_mut() = uri;
-    // let headers = req.headers_mut();
-    // headers.insert(
-    //     HeaderName::from_static("host"),
-    //     HeaderValue::from_static(PREVIEW_HOST),
-    // );
-    // println!("{:?}", headers);
-    // let preview_id = HeaderValue::from_str(&format!(
-    //     "{}{}{}{}",
-    //     &script_id, session, is_https as u8, host
-    // ));
 
-    // if let Ok(preview_id) = preview_id {
-    //     req.headers_mut()
-    //         .insert(HeaderName::from_static("cf-ew-preview"), preview_id);
-    //     println!(
-    //         "[{}] \"{} {}{} {:?}\"",
-    //         now.format("%Y-%m-%d %H:%M:%S"),
-    //         method,
-    //         host,
-    //         path,
-    //         req.version()
-    //     );
-    //     client.request(req)
-    // }
-    // })
-
+    println!(
+        "[{}] \"{} {}{} {:?}\"",
+        now.format("%Y-%m-%d %H:%M:%S"),
+        method,
+        proxy_config.host,
+        path,
+        req.version()
+    );
     client.request(req)
 }
 
