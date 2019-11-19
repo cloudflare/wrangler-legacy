@@ -10,6 +10,11 @@ pub fn info(msg: &str) {
     message(&msg);
 }
 
+pub fn big_info(msg: &str) {
+    let msg = format!("\n\t{} {}", emoji::INFO, msg);
+    message(&msg);
+}
+
 pub fn warn(msg: &str) {
     let msg = format!("{} {}", emoji::WARN, msg);
     message(&msg);

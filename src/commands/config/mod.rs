@@ -1,16 +1,15 @@
-use crate::terminal::message;
-use std::fs;
 use std::fs::File;
 #[cfg(not(target_os = "windows"))]
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
-use crate::http;
-use crate::settings::global_user::{get_global_config_dir, GlobalUser};
-
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
+
+use crate::http;
+use crate::settings::global_user::{get_global_config_path, GlobalUser};
+use crate::terminal::message;
 
 // set the permissions on the dir, we want to avoid that other user reads to file
 #[cfg(not(target_os = "windows"))]
@@ -27,13 +26,8 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
         validate_credentials(user)?;
     }
 
-    let toml = toml::to_string(&user)?;
-
-    let config_dir = get_global_config_dir().expect("could not find global config directory");
-    fs::create_dir_all(&config_dir)?;
-
-    let config_file = config_dir.join("default.toml");
-    fs::write(&config_file, &toml)?;
+    let config_file = get_global_config_path()?;
+    user.to_file(&config_file)?;
 
     // set permissions on the file
     #[cfg(not(target_os = "windows"))]
