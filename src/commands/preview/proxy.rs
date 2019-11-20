@@ -19,6 +19,7 @@ use url::Url;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 
+use crate::commands;
 use crate::commands::preview::upload;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
@@ -86,6 +87,7 @@ pub async fn proxy(
     port: Option<&str>,
     ip: Option<&str>,
 ) -> Result<(), failure::Error> {
+    commands::build(&target)?;
     let proxy_config = ProxyConfig::new(host, ip, port)?;
     let https = HttpsConnector::new().expect("TLS initialization failed");
     let client = Client::builder().build::<_, Body>(https);
