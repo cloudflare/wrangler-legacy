@@ -1,17 +1,21 @@
-use std::collections::HashMap;
 use std::net::{SocketAddr, ToSocketAddrs};
+use std::str;
 
 use chrono::prelude::*;
 
 use hyper2::client::{HttpConnector, ResponseFuture};
-use hyper2::header::{HeaderMap, HeaderName, HeaderValue};
+use hyper2::header::{HeaderMap, HeaderName, HeaderValue, UPGRADE};
 use hyper2::service::{make_service_fn, service_fn};
-use hyper2::{Body, Client, Request, Response, Server, Uri};
+use hyper2::upgrade::Upgraded;
+use hyper2::{Body, Client, Request, Response, Server, StatusCode, Uri};
 
 use hyper_tls2::HttpsConnector;
 
 use failure::format_err;
 
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+use uuid::adapter::Simple;
 use uuid::Uuid;
 
 use url::Url;
@@ -82,6 +86,52 @@ impl ServerConfig {
     }
 }
 
+async fn client_upgraded_io(mut upgraded: Upgraded) -> Result<(), failure::Error> {
+    // We've gotten an upgraded connection that we can read
+    // and write directly on. Let's start out 'foobar' protocol.
+    upgraded.write_all(b"foo=bar").await?;
+    println!("client[foobar] sent");
+
+    let mut vec = Vec::new();
+    upgraded.read_to_end(&mut vec).await?;
+    println!("client[foobar] recv: {:?}", str::from_utf8(&vec));
+
+    Ok(())
+}
+
+async fn client_upgrade_request(session_id: String) -> Result<(), failure::Error> {
+    let req = Request::builder()
+        .uri(format!(
+            "https://rawhttp.cloudflareworkers.com/inspect/{}",
+            session_id
+        ))
+        .header(UPGRADE, "websocket")
+        .body(Body::empty())
+        .unwrap();
+
+    println!("{:#?}", req);
+
+    let https = HttpsConnector::new().expect("TLS initialization failed");
+    let res = Client::builder()
+        .build::<_, Body>(https)
+        .request(req)
+        .await?;
+    if res.status() != StatusCode::SWITCHING_PROTOCOLS {
+        panic!("Our server didn't upgrade: {}", res.status());
+    }
+
+    match res.into_body().on_upgrade().await {
+        Ok(upgraded) => {
+            if let Err(e) = client_upgraded_io(upgraded).await {
+                eprintln!("client foobar io error: {}", e)
+            };
+        }
+        Err(e) => eprintln!("upgrade error: {}", e),
+    }
+
+    Ok(())
+}
+
 pub async fn dev_server(
     target: Target,
     user: Option<GlobalUser>,
@@ -94,7 +144,8 @@ pub async fn dev_server(
     let https = HttpsConnector::new().expect("TLS initialization failed");
     let client = Client::builder().build::<_, Body>(https);
 
-    let preview_id = get_preview_id(target, user, &server_config)?;
+    let session_id = get_session_id();
+    let preview_id = get_preview_id(target, user, &server_config, session_id)?;
     let listening_address = server_config.listening_address.clone();
     let listening_address_string = server_config.listening_address_as_string();
 
@@ -135,14 +186,24 @@ pub async fn dev_server(
     });
 
     let server = Server::bind(&listening_address).serve(make_service);
+
     println!(
         "{} Listening on http://{}",
         emoji::EAR,
         listening_address_string
     );
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
+    hyper2::rt::spawn(async {
+        if let Err(e) = server.await {
+            eprintln!("server error: {}", e);
+        }
+    });
+
+    let request = client_upgrade_request(session_id.to_string());
+
+    if let Err(e) = request.await {
+        eprintln!("client error: {}", e);
     }
+
     Ok(())
 }
 
@@ -211,8 +272,8 @@ fn get_preview_id(
     mut target: Target,
     user: Option<GlobalUser>,
     server_config: &ServerConfig,
+    session: Simple,
 ) -> Result<String, failure::Error> {
-    let session = Uuid::new_v4().to_simple();
     let verbose = true;
     let sites_preview = false;
     let script_id: String = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
@@ -220,4 +281,8 @@ fn get_preview_id(
         "{}{}{}{}",
         &script_id, session, server_config.is_https as u8, server_config.host
     ))
+}
+
+fn get_session_id() -> Simple {
+    Uuid::new_v4().to_simple()
 }
