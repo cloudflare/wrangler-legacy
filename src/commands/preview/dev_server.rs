@@ -93,7 +93,7 @@ pub async fn dev_server(
     let client = Client::builder().build::<_, Body>(https);
 
     let preview_id = get_preview_id(target, user, &server_config)?;
-    let listening_address = &server_config.listening_address.clone();
+    let listening_address = server_config.listening_address.clone();
     let listening_address_string = server_config.listening_address_as_string();
 
     let make_service = make_service_fn(move |_| {
@@ -112,7 +112,7 @@ pub async fn dev_server(
         }
     });
 
-    let server = Server::bind(listening_address).serve(make_service);
+    let server = Server::bind(&listening_address).serve(make_service);
     println!(
         "{} Listening on http://{}",
         emoji::EAR,
