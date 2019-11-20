@@ -6,8 +6,8 @@ use fiddle_messenger::*;
 mod http_method;
 pub use http_method::HTTPMethod;
 
-mod proxy;
-pub use proxy::proxy;
+mod dev_server;
+pub use dev_server::dev_server;
 
 mod upload;
 use upload::upload;
