@@ -16,23 +16,25 @@ use uuid::Uuid;
 
 use url::Url;
 
+use crate::commands;
+use crate::commands::preview::upload;
+
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 
-use crate::commands;
-use crate::commands::preview::upload;
+use crate::terminal::emoji;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 const HEADER_PREFIX: &str = "cf-ew-raw-";
 
 #[derive(Clone)]
-struct ProxyConfig {
+struct ServerConfig {
     host: String,
     listening_address: SocketAddr,
     is_https: bool,
 }
 
-impl ProxyConfig {
+impl ServerConfig {
     pub fn new(
         host: Option<&str>,
         ip: Option<&str>,
@@ -66,7 +68,7 @@ impl ProxyConfig {
 
         let host = parsed_url.host_str().ok_or(format_err!("Invalid host, accepted formats are example.com, http://example.com, or https://example.com"))?.to_string();
 
-        Ok(ProxyConfig {
+        Ok(ServerConfig {
             listening_address,
             host,
             is_https,
@@ -80,7 +82,7 @@ impl ProxyConfig {
     }
 }
 
-pub async fn proxy(
+pub async fn dev_server(
     target: Target,
     user: Option<GlobalUser>,
     host: Option<&str>,
@@ -88,25 +90,25 @@ pub async fn proxy(
     ip: Option<&str>,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
-    let proxy_config = ProxyConfig::new(host, ip, port)?;
+    let server_config = ServerConfig::new(host, ip, port)?;
     let https = HttpsConnector::new().expect("TLS initialization failed");
     let client = Client::builder().build::<_, Body>(https);
 
-    let preview_id = get_preview_id(target, user, &proxy_config)?;
-    let listening_address = &proxy_config.listening_address.clone();
-    let listening_address_string = proxy_config.listening_address_as_string();
+    let preview_id = get_preview_id(target, user, &server_config)?;
+    let listening_address = server_config.listening_address.clone();
+    let listening_address_string = server_config.listening_address_as_string();
 
     let make_service = make_service_fn(move |_| {
         let client = client.clone();
         let preview_id = preview_id.to_owned();
-        let proxy_config = proxy_config.clone();
+        let server_config = server_config.clone();
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
                 let client = client.to_owned();
                 let preview_id = preview_id.to_owned();
-                let proxy_config = proxy_config.clone();
+                let server_config = server_config.clone();
                 async move {
-                    let resp = preview_request(req, client, preview_id, proxy_config).await?;
+                    let resp = preview_request(req, client, preview_id, server_config).await?;
 
                     let (mut parts, body) = resp.into_parts();
 
@@ -132,8 +134,12 @@ pub async fn proxy(
         }
     });
 
-    let server = Server::bind(listening_address).serve(make_service);
-    println!("Listening on http://{}", listening_address_string);
+    let server = Server::bind(&listening_address).serve(make_service);
+    println!(
+        "{} Listening on http://{}",
+        emoji::EAR,
+        listening_address_string
+    );
     if let Err(e) = server.await {
         eprintln!("server error: {}", e);
     }
@@ -155,7 +161,7 @@ fn preview_request(
     req: Request<Body>,
     client: Client<HttpsConnector<HttpConnector>>,
     preview_id: String,
-    proxy_config: ProxyConfig,
+    server_config: ServerConfig,
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
 
@@ -194,7 +200,7 @@ fn preview_request(
         "[{}] \"{} {}{} {:?}\"",
         now.format("%Y-%m-%d %H:%M:%S"),
         method,
-        proxy_config.host,
+        server_config.host,
         path,
         req.version()
     );
@@ -204,7 +210,7 @@ fn preview_request(
 fn get_preview_id(
     mut target: Target,
     user: Option<GlobalUser>,
-    proxy_config: &ProxyConfig,
+    server_config: &ServerConfig,
 ) -> Result<String, failure::Error> {
     let session = Uuid::new_v4().to_simple();
     let verbose = true;
@@ -212,6 +218,6 @@ fn get_preview_id(
     let script_id: String = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
     Ok(format!(
         "{}{}{}{}",
-        &script_id, session, proxy_config.is_https as u8, proxy_config.host
+        &script_id, session, server_config.is_https as u8, server_config.host
     ))
 }

@@ -15,7 +15,7 @@ pub use build::build;
 pub use build::watch_and_build;
 pub use generate::generate;
 pub use init::init;
-pub use preview::{preview, proxy, HTTPMethod};
+pub use preview::{dev_server, preview, HTTPMethod};
 pub use publish::publish;
 use regex::Regex;
 pub use subdomain::get_subdomain;
