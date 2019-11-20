@@ -349,10 +349,10 @@ fn run() -> Result<(), failure::Error> {
                 ),
         )
         .subcommand(
-            SubCommand::with_name("proxy")
+            SubCommand::with_name("dev")
                 .about(&*format!(
-                    "{} Create a proxy to preview your worker",
-                    emoji::UP // TODO: get new emoji
+                    "{} Start a local server for developing your worker",
+                    emoji::EAR
                 ))
                 .arg(
                     Arg::with_name("port")
@@ -544,8 +544,8 @@ fn run() -> Result<(), failure::Error> {
         let headless = matches.is_present("headless");
 
         commands::preview(target, user, method, body, watch, verbose, headless)?;
-    } else if let Some(matches) = matches.subcommand_matches("proxy") {
-        log::info!("Starting proxy service");
+    } else if let Some(matches) = matches.subcommand_matches("dev") {
+        log::info!("Starting dev server");
         let port = matches.value_of("port");
         let host = matches.value_of("host");
         let ip = matches.value_of("ip");
@@ -554,7 +554,7 @@ fn run() -> Result<(), failure::Error> {
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
         let rt = Runtime::new().unwrap();
-        rt.block_on(commands::proxy(target, user, host, port, ip))?;
+        rt.block_on(commands::dev_server(target, user, host, port, ip))?;
         rt.shutdown_now();
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
