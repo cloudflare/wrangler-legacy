@@ -39,7 +39,7 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
         parameters:
-          toolchain: nightly
+          toolchain: 'nightly'
       - template: ci/azure-install-node.yml
       - script: cargo test --locked
         displayName: "cargo test --locked"
