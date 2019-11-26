@@ -1,9 +1,16 @@
-use crate::http;
+use reqwest::header::CONTENT_TYPE;
+use serde::{Deserialize, Serialize};
+
+use cloudflare::endpoints::workers::{ListRoutes, WorkersRoute};
+use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::HttpApiClientConfig;
+
+use crate::http::api_client;
+use crate::http::auth_client;
+use crate::http::format_error;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::emoji;
-use reqwest::header::CONTENT_TYPE;
-use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 pub struct Route {
@@ -11,9 +18,13 @@ pub struct Route {
     pub pattern: String,
 }
 
-#[derive(Deserialize)]
-struct RoutesResponse {
-    result: Vec<Route>,
+impl From<&WorkersRoute> for Route {
+    fn from(api_route: &WorkersRoute) -> Route {
+        Route {
+            script: api_route.script.clone(),
+            pattern: api_route.pattern.clone(),
+        }
+    }
 }
 
 impl Route {
@@ -64,29 +75,20 @@ impl Route {
 }
 
 fn get_routes(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure::Error> {
-    let routes_addr = get_routes_addr(target)?;
+    let client = api_client(user, HttpApiClientConfig::default())?;
 
-    let client = http::auth_client(None, user);
+    let routes: Vec<Route> = match client.request(&ListRoutes {
+        zone_identifier: &target.zone_id.as_ref().unwrap(),
+    }) {
+        Ok(success) => success.result.iter().map(|r| Route::from(r)).collect(),
+        Err(e) => failure::bail!("{}", format_error(e, None)), // TODO: add suggestion fn
+    };
 
-    let mut res = client.get(&routes_addr).send()?;
-
-    if !res.status().is_success() {
-        let msg = format!(
-            "{} There was an error fetching your project's routes.\n Status Code: {}\n Msg: {}",
-            emoji::WARN,
-            res.status(),
-            res.text()?
-        );
-        failure::bail!(msg)
-    }
-
-    let routes_response: RoutesResponse = serde_json::from_str(&res.text()?)?;
-
-    Ok(routes_response.result)
+    Ok(routes)
 }
 
 fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failure::Error> {
-    let client = http::auth_client(None, user);
+    let client = auth_client(None, user);
     let body = serde_json::to_string(&route)?;
 
     let routes_addr = get_routes_addr(target)?;
