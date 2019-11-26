@@ -45,14 +45,19 @@ impl Route {
     }
 }
 
-pub fn publish(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failure::Error> {
-    if exists(user, target, route)? {
-        return Ok(());
+pub fn publish_route(
+    user: &GlobalUser,
+    target: &Target,
+    route: &Route,
+) -> Result<(), failure::Error> {
+    if route_exists(user, target, route)? {
+        Ok(())
+    } else {
+        create(user, target, route)
     }
-    create(user, target, route)
 }
 
-fn exists(user: &GlobalUser, target: &Target, route: &Route) -> Result<bool, failure::Error> {
+fn route_exists(user: &GlobalUser, target: &Target, route: &Route) -> Result<bool, failure::Error> {
     let routes = get_routes(user, target)?;
 
     for remote_route in routes {
@@ -87,7 +92,7 @@ fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failu
             script: route.script.clone(),
         },
     }) {
-        Ok(_success) => Ok(()),
+        Ok(_) => Ok(()),
         Err(e) => failure::bail!("{}", format_error(e, Some(&routes_error_help))),
     }
 }
