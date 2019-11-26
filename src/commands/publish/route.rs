@@ -5,8 +5,6 @@ use crate::terminal::emoji;
 use reqwest::header::CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
 
-use log::info;
-
 #[derive(Deserialize, Serialize)]
 pub struct Route {
     script: Option<String>,
@@ -28,7 +26,10 @@ impl Route {
         {
             failure::bail!("You must provide a zone_id in your wrangler.toml before publishing!");
         }
-        let msg_config_error = format!("{} Your project config has an error, check your `wrangler.toml`: `route` must be provided.", emoji::WARN);
+        let msg_config_error = format!(
+            "{} Your project config has an error, check your `wrangler.toml`: `route` must be provided.", 
+            emoji::WARN
+        );
         Ok(Route {
             script: Some(target.name.to_string()),
             pattern: target.route.clone().expect(&msg_config_error),
@@ -90,7 +91,7 @@ fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failu
 
     let routes_addr = get_routes_addr(target)?;
 
-    info!("Creating your route {:#?}", &route.pattern,);
+    log::info!("Creating your route {:#?}", &route.pattern,);
     let mut res = client
         .post(&routes_addr)
         .header(CONTENT_TYPE, "application/json")
