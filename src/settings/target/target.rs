@@ -3,7 +3,6 @@ use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
 
-use std::collections::HashMap;
 use std::env;
 
 use std::path::PathBuf;
@@ -19,7 +18,7 @@ pub struct Target {
     #[serde(rename = "type")]
     pub target_type: TargetType,
     pub route: Option<String>,
-    pub routes: Option<HashMap<String, String>>,
+    pub routes: Option<Vec<String>>,
     pub webpack_config: Option<String>,
     pub zone_id: Option<String>,
     pub site: Option<Site>,
