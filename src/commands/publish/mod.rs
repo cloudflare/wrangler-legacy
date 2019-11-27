@@ -16,7 +16,7 @@ use crate::commands::subdomain::Subdomain;
 use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::{KvNamespace, Route, Site, Target};
+use crate::settings::target::{KvNamespace, Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(
@@ -101,17 +101,15 @@ fn publish_script(
         .send()?;
 
     let res_status = res.status();
-    let res_text = res.text()?;
 
     if !res_status.is_success() {
+        let res_text = res.text()?;
         failure::bail!(error_msg(res_status, res_text))
     }
 
     let pattern = if target.route.is_some() {
-        let route = Route::new(&target)?;
-        publish_route(&user, &target, &route)?;
         log::info!("publishing to route");
-        route.pattern
+        publish_route(&user, &target)?
     } else {
         log::info!("publishing to subdomain");
         publish_to_subdomain(target, user)?

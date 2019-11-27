@@ -5,22 +5,19 @@ use cloudflare::framework::HttpApiClientConfig;
 use crate::http::{api_client, format_error};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::{Route, Target};
-use crate::terminal::message;
 
-pub fn publish_route(
-    user: &GlobalUser,
-    target: &Target,
-    route: &Route,
-) -> Result<(), failure::Error> {
-    if route_exists(user, target, route)? {
-        Ok(())
+pub fn publish_route(user: &GlobalUser, target: &Target) -> Result<String, failure::Error> {
+    let route = Route::new(&target)?;
+    if route_exists(user, target, &route)? {
+        Ok(route.pattern)
     } else {
-        create(user, target, route)
+        create(user, target, &route)?;
+        Ok(route.pattern)
     }
 }
 
 fn route_exists(user: &GlobalUser, target: &Target, route: &Route) -> Result<bool, failure::Error> {
-    let routes = get_routes(user, target)?;
+    let routes = fetch_all(user, target)?;
 
     for remote_route in routes {
         if remote_route == *route {
@@ -30,7 +27,7 @@ fn route_exists(user: &GlobalUser, target: &Target, route: &Route) -> Result<boo
     Ok(false)
 }
 
-fn get_routes(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure::Error> {
+fn fetch_all(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure::Error> {
     let client = api_client(user, HttpApiClientConfig::default())?;
 
     let routes: Vec<Route> = match client.request(&ListRoutes {
