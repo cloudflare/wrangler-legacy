@@ -1,7 +1,7 @@
 use super::kv_namespace::KvNamespace;
-
 use super::site::Site;
 use super::target_type::TargetType;
+use super::Route;
 
 use std::env;
 
@@ -45,5 +45,29 @@ impl Target {
                 Ok(current_dir)
             }
         }
+    }
+
+    pub fn routes(&self) -> Result<Vec<Route>, failure::Error> {
+        let mut routes = Vec::new();
+
+        if let Some(single_route) = &self.route {
+            if self.routes.is_some() {
+                failure::bail!("You can specify EITHER `route` or `routes` in your wrangler.toml");
+            }
+
+            routes.push(Route {
+                script: Some(self.name.to_owned()),
+                pattern: single_route.to_string(),
+            });
+        } else if let Some(multi_route) = &self.routes {
+            for pattern in multi_route {
+                routes.push(Route {
+                    script: Some(self.name.to_owned()),
+                    pattern: pattern.to_string(),
+                });
+            }
+        }
+
+        Ok(routes)
     }
 }
