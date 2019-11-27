@@ -454,7 +454,7 @@ fn run() -> Result<(), failure::Error> {
             api_token.truncate(api_token.trim_end().len());
             GlobalUser::TokenAuth { api_token }
         } else {
-            message::warn("We don't recommend using your Global API Key! Please consider using an API Token instead. https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys");
+            message::big_info("We don't recommend using your Global API Key! Please consider using an\n\tAPI Token instead.\n\thttps://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys\n");
             println!("Enter email: ");
             let mut email: String = read!("{}\n");
             email.truncate(email.trim_end().len());
