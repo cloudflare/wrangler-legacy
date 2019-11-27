@@ -1,21 +1,27 @@
-use crate::http;
+use serde::{Deserialize, Serialize};
+
+use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes, WorkersRoute};
+use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::HttpApiClientConfig;
+
+use crate::http::{api_client, format_error};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::target::Target;
 use crate::terminal::emoji;
-use reqwest::header::CONTENT_TYPE;
-use serde::{Deserialize, Serialize};
 
-use log::info;
-
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, PartialEq, Serialize)]
 pub struct Route {
     script: Option<String>,
     pub pattern: String,
 }
 
-#[derive(Deserialize)]
-struct RoutesResponse {
-    result: Vec<Route>,
+impl From<&WorkersRoute> for Route {
+    fn from(api_route: &WorkersRoute) -> Route {
+        Route {
+            script: api_route.script.clone(),
+            pattern: api_route.pattern.clone(),
+        }
+    }
 }
 
 impl Route {
@@ -28,103 +34,76 @@ impl Route {
         {
             failure::bail!("You must provide a zone_id in your wrangler.toml before publishing!");
         }
-        let msg_config_error = format!("{} Your project config has an error, check your `wrangler.toml`: `route` must be provided.", emoji::WARN);
+        let msg_config_error = format!(
+            "{} Your project config has an error, check your `wrangler.toml`: `route` must be provided.", 
+            emoji::WARN
+        );
         Ok(Route {
             script: Some(target.name.to_string()),
             pattern: target.route.clone().expect(&msg_config_error),
         })
     }
+}
 
-    pub fn publish(
-        user: &GlobalUser,
-        target: &Target,
-        route: &Route,
-    ) -> Result<(), failure::Error> {
-        if route.exists(user, target)? {
-            return Ok(());
-        }
+pub fn publish_route(
+    user: &GlobalUser,
+    target: &Target,
+    route: &Route,
+) -> Result<(), failure::Error> {
+    if route_exists(user, target, route)? {
+        Ok(())
+    } else {
         create(user, target, route)
     }
+}
 
-    pub fn exists(&self, user: &GlobalUser, target: &Target) -> Result<bool, failure::Error> {
-        let routes = get_routes(user, target)?;
+fn route_exists(user: &GlobalUser, target: &Target, route: &Route) -> Result<bool, failure::Error> {
+    let routes = get_routes(user, target)?;
 
-        for route in routes {
-            if route.matches(self) {
-                return Ok(true);
-            }
+    for remote_route in routes {
+        if remote_route == *route {
+            return Ok(true);
         }
-        Ok(false)
     }
-
-    pub fn matches(&self, route: &Route) -> bool {
-        self.pattern == route.pattern && self.script == route.script
-    }
+    Ok(false)
 }
 
 fn get_routes(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure::Error> {
-    let routes_addr = get_routes_addr(target)?;
+    let client = api_client(user, HttpApiClientConfig::default())?;
 
-    let client = http::auth_client(None, user);
+    let routes: Vec<Route> = match client.request(&ListRoutes {
+        zone_identifier: &target.zone_id.as_ref().unwrap(),
+    }) {
+        Ok(success) => success.result.iter().map(|r| Route::from(r)).collect(),
+        Err(e) => failure::bail!("{}", format_error(e, None)), // TODO: add suggestion fn
+    };
 
-    let mut res = client.get(&routes_addr).send()?;
-
-    if !res.status().is_success() {
-        let msg = format!(
-            "{} There was an error fetching your project's routes.\n Status Code: {}\n Msg: {}",
-            emoji::WARN,
-            res.status(),
-            res.text()?
-        );
-        failure::bail!(msg)
-    }
-
-    let routes_response: RoutesResponse = serde_json::from_str(&res.text()?)?;
-
-    Ok(routes_response.result)
+    Ok(routes)
 }
 
 fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failure::Error> {
-    let client = http::auth_client(None, user);
-    let body = serde_json::to_string(&route)?;
+    let client = api_client(user, HttpApiClientConfig::default())?;
 
-    let routes_addr = get_routes_addr(target)?;
-
-    info!("Creating your route {:#?}", &route.pattern,);
-    let mut res = client
-        .post(&routes_addr)
-        .header(CONTENT_TYPE, "application/json")
-        .body(body)
-        .send()?;
-
-    if !res.status().is_success() {
-        let msg;
-        if res.status().as_u16() == 10020 {
-            msg = format!(
-            "{} A worker with a different name was previously deployed to `{}`. If you would like to overwrite that worker, you will need to change `name` in your `wrangler.toml` to match the currently deployed worker, or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n",
-            emoji::WARN,
-            serde_json::to_string(&route)?
-            );
-        } else {
-            msg = format!(
-                "{} There was an error creating your route.\n Status Code: {}\n Msg: {}",
-                emoji::WARN,
-                res.status(),
-                res.text()?
-            );
-        }
-
-        failure::bail!(msg)
+    log::info!("Creating your route {:#?}", &route.pattern,);
+    match client.request(&CreateRoute {
+        zone_identifier: &target.zone_id.as_ref().unwrap(),
+        params: CreateRouteParams {
+            pattern: route.pattern.clone(),
+            script: route.script.clone(),
+        },
+    }) {
+        Ok(_) => Ok(()),
+        Err(e) => failure::bail!("{}", format_error(e, Some(&routes_error_help))),
     }
-    Ok(())
 }
 
-fn get_routes_addr(target: &Target) -> Result<String, failure::Error> {
-    if let Some(zone_id) = &target.zone_id {
-        return Ok(format!(
-            "https://api.cloudflare.com/client/v4/zones/{}/workers/routes",
-            zone_id
-        ));
+fn routes_error_help(error_code: u16) -> &'static str {
+    match error_code {
+        10020 => r#"
+            A worker with a different name was previously deployed to the specified route.
+            If you would like to overwrite that worker,
+            you will need to change `name` in your `wrangler.toml` to match the currently deployed worker,
+            or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n"#,
+        _ => "",
     }
-    failure::bail!("You much provide a zone_id in your wrangler.toml.")
 }

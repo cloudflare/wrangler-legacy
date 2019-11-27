@@ -1,6 +1,5 @@
 use std::env;
 use std::fs;
-use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
 use cloudflare::framework::auth::Credentials;
@@ -147,6 +146,7 @@ pub fn get_global_config_path() -> Result<PathBuf, failure::Error> {
 mod tests {
     use super::*;
     use std::fs::File;
+    use std::io::prelude::*;
     use tempfile::tempdir;
 
     use crate::settings::environment::MockEnvironment;

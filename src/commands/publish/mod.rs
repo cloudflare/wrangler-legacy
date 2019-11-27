@@ -4,8 +4,7 @@ mod route;
 pub mod upload_form;
 
 pub use package::Package;
-
-use route::Route;
+use route::{publish_route, Route};
 
 use std::env;
 use std::path::Path;
@@ -110,7 +109,7 @@ fn publish_script(
 
     let pattern = if target.route.is_some() {
         let route = Route::new(&target)?;
-        Route::publish(&user, &target, &route)?;
+        publish_route(&user, &target, &route)?;
         log::info!("publishing to route");
         route.pattern
     } else {
