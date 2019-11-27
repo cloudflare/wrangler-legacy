@@ -4,7 +4,7 @@ mod route;
 pub mod upload_form;
 
 pub use package::Package;
-use route::{publish_route, Route};
+use route::publish_route;
 
 use std::env;
 use std::path::Path;
@@ -16,7 +16,7 @@ use crate::commands::subdomain::Subdomain;
 use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::{KvNamespace, Site, Target};
+use crate::settings::target::{KvNamespace, Route, Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(
