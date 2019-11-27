@@ -10,17 +10,24 @@ pub struct Host {
 
 impl Host {
     pub fn new(host: &str) -> Result<Self, failure::Error> {
+        // try to create a url from host
         let url = match Url::parse(&host) {
             Ok(host) => Ok(host),
+            // if it doesn't work, it might be because there was no scheme
+            // default to https
             Err(_) => Url::parse(&format!("https://{}", host)),
         }?;
 
+        // validate scheme
         let scheme = url.scheme();
         if scheme != "http" && scheme != "https" {
             failure::bail!("Your host scheme must be either http or https")
         }
 
+        // validate host
         let host = url.host_str().ok_or(format_err!("Invalid host, accepted formats are example.com, http://example.com, or https://example.com"))?;
+
+        // recreate url without any trailing path
         let url = Url::parse(&format!("{}://{}", scheme, host))?;
         Ok(Host { url })
     }

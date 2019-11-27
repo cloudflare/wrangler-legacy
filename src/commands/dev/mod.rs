@@ -22,7 +22,6 @@ use crate::terminal::emoji;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
-
 pub async fn dev(
     target: Target,
     user: Option<GlobalUser>,
@@ -40,7 +39,7 @@ pub async fn dev(
     let preview_id = get_preview_id(target, user, &server_config)?;
     let listening_address = server_config.listening_address.clone();
 
-    // create a closure that hyper will use later to handle HTTP requests 
+    // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
         let client = client.clone();
         let preview_id = preview_id.to_owned();
@@ -58,11 +57,7 @@ pub async fn dev(
     });
 
     let server = Server::bind(&listening_address.address).serve(make_service);
-    println!(
-        "{} Listening on http://{}",
-        emoji::EAR,
-        listening_address
-    );
+    println!("{} Listening on http://{}", emoji::EAR, listening_address);
     if let Err(e) = server.await {
         eprintln!("server error: {}", e);
     }
@@ -130,6 +125,9 @@ fn get_preview_id(
     let script_id: String = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
     Ok(format!(
         "{}{}{}{}",
-        &script_id, session, server_config.host.is_https() as u8, server_config.host
+        &script_id,
+        session,
+        server_config.host.is_https() as u8,
+        server_config.host
     ))
 }
