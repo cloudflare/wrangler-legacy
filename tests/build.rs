@@ -23,7 +23,8 @@ fn it_builds_webpack() {
         type = "webpack"
     "#,
     );
-    build_creates_assets(fixture, vec!["script.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
+    fixture.cleanup();
 }
 
 #[test]
@@ -52,7 +53,8 @@ fn it_builds_with_webpack_single_js() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
+    fixture.cleanup();
 }
 
 #[test]
@@ -74,7 +76,8 @@ fn it_builds_with_webpack_function_config_js() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
+    fixture.cleanup();
 }
 
 #[test]
@@ -96,7 +99,8 @@ fn it_builds_with_webpack_promise_config_js() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
+    fixture.cleanup();
 }
 
 #[test]
@@ -118,7 +122,8 @@ fn it_builds_with_webpack_function_promise_config_js() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
+    fixture.cleanup()
 }
 
 #[test]
@@ -140,7 +145,8 @@ fn it_builds_with_webpack_specify_config() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
+    fixture.cleanup();
 }
 
 #[test]
@@ -246,7 +252,8 @@ fn it_builds_with_webpack_wast() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js", "module.wasm"]);
+    build_creates_assets(&fixture, vec!["script.js", "module.wasm"]);
+    fixture.cleanup();
 }
 
 #[test]
@@ -329,10 +336,11 @@ fn it_builds_with_webpack_target_webworker() {
     "#,
     );
 
-    build_creates_assets(fixture, vec!["script.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
+    fixture.cleanup()
 }
 
-fn build_creates_assets(fixture: Fixture, script_names: Vec<&str>) {
+fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) {
     // Lock to avoid having concurrent builds
     let _g = BUILD_LOCK.lock().unwrap();
 
@@ -342,7 +350,6 @@ fn build_creates_assets(fixture: Fixture, script_names: Vec<&str>) {
     for script_name in script_names {
         assert!(fixture.get_output_path().join(script_name).exists());
     }
-    fixture.cleanup();
 }
 
 fn build_fails_with(fixture: &Fixture, expected_message: &str) {

@@ -39,7 +39,7 @@ Once you have installed Wrangler, spinning up and deploying your first Worker is
 $ wrangler generate my-worker
 $ cd my-worker
 # update your wrangler.toml with your Cloudflare Account ID
-$ wrangler config 
+$ wrangler config
 $ wrangler publish
 ```
 
@@ -72,14 +72,12 @@ $ wrangler publish
   - `name`: defaults to the name of your working directory
   - `type`: defaults to ["webpack"](https://developers.cloudflare.com/workers/tooling/wrangler/webpack).
 
-
 ### 🦀⚙️ `build`
 
   Build your project. This command looks at your `wrangler.toml` file and runs the build steps associated
   with the `"type"` declared there.
 
   Additionally, you can configure different [environments](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments).
-
 
 ### 🔧 `config`
 
@@ -92,6 +90,7 @@ $ wrangler publish
   ```
 
   You can also provide your email and global API key (this is not recommended for security reasons):
+  
   ```bash
   wrangler config --api-key
   Enter email:
@@ -102,7 +101,6 @@ $ wrangler publish
 
   You can also [use environment variables](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/) to configure these values.
 
-
 ### ☁️ 🆙 `publish`
 
   Publish your Worker to Cloudflare. Several keys in your `wrangler.toml` determine whether you are publishing to a workers.dev subdomain or your own registered domain, proxied through Cloudflare.
@@ -111,17 +109,17 @@ $ wrangler publish
 
   You can also use environment variables to handle authentication when you publish a Worker.
 
-    ```bash
-    # e.g.
-    CF_API_TOKEN=superlongtoken wrangler publish
-    # where
-    # $CF_API_TOKEN -> your Cloudflare API token
+  ```bash
+  # e.g.
+  CF_API_TOKEN=superlongtoken wrangler publish
+  # where
+  # $CF_API_TOKEN -> your Cloudflare API token
 
-    CF_API_KEY=superlongapikey CF_EMAIL=testuser@example.com wrangler publish
-    # where
-    # $CF_API_KEY -> your Cloudflare API key
-    # $CF_EMAIL -> your Cloudflare account email
-    ```
+  CF_API_KEY=superlongapikey CF_EMAIL=testuser@example.com wrangler publish
+  # where
+  # $CF_API_KEY -> your Cloudflare API key
+  # $CF_EMAIL -> your Cloudflare account email
+  ```
 
 ### 🗂 `kv`
 
@@ -131,11 +129,11 @@ $ wrangler publish
 
 All information regarding wrangler or Cloudflare Workers is located in the [Cloudflare Workers Developer Docs](https://developers.cloudflare.com/workers/). This includes:
 
-* Using wrangler [commands](https://developers.cloudflare.com/workers/tooling/wrangler/commands) 
-* Wrangler [configuration](https://developers.cloudflare.com/workers/tooling/wrangler/configuration)
-* General documentation surrounding Workers development
-* All wrangler features such as Workers Sites and KV
+- Using wrangler [commands](https://developers.cloudflare.com/workers/tooling/wrangler/commands) 
+- Wrangler [configuration](https://developers.cloudflare.com/workers/tooling/wrangler/configuration)
+- General documentation surrounding Workers development
+- All wrangler features such as Workers Sites and KV
 
-#### ✨Workers Sites
+## ✨Workers Sites
 
 To learn about deploying static assets using `wrangler`, see the [Workers Sites Quickstart](https://developers.cloudflare.com/workers/sites/).
