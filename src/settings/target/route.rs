@@ -5,7 +5,7 @@ use cloudflare::endpoints::workers::WorkersRoute;
 use crate::settings::target::target::Target;
 use crate::terminal::emoji;
 
-#[derive(Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Route {
     pub script: Option<String>,
     pub pattern: String,
