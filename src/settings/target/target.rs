@@ -50,11 +50,14 @@ impl Target {
     pub fn routes(&self) -> Result<Vec<Route>, failure::Error> {
         let mut routes = Vec::new();
 
-        if let Some(single_route) = &self.route {
-            if self.routes.is_some() {
-                failure::bail!("You can specify EITHER `route` or `routes` in your wrangler.toml");
-            }
+        // we should assert that only one of the two keys is specified in the user's toml.
+        if self.route.is_some() && self.routes.is_some() {
+            failure::bail!("You can specify EITHER `route` or `routes` in your wrangler.toml");
+        }
 
+        // everything outside of this module should consider `target.routes()` to be a Vec;
+        // the fact that you can specify singular or plural is a detail of the wrangler.toml contract.
+        if let Some(single_route) = &self.route {
             routes.push(Route {
                 script: Some(self.name.to_owned()),
                 pattern: single_route.to_string(),
