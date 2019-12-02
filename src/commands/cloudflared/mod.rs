@@ -3,14 +3,14 @@ use crate::terminal::message;
 
 use std::path::PathBuf;
 use std::process::Command;
-use std::thread;
 use std::str;
+use std::thread;
 
 use futures::future;
 use futures::stream::Stream;
-use hyper::{Body, Request, Response, Server, Method, StatusCode};
 use hyper::rt::Future;
 use hyper::service::service_fn;
+use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
 pub fn run_cloudflared_start_server() -> Result<(), failure::Error> {
     let tool_name = PathBuf::from("cloudflared");

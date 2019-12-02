@@ -1,6 +1,7 @@
 use std::process::Command;
 
 pub mod build;
+pub mod cloudflared;
 pub mod config;
 pub mod generate;
 pub mod init;
@@ -9,16 +10,15 @@ pub mod preview;
 pub mod publish;
 pub mod subdomain;
 pub mod whoami;
-pub mod cloudflared;
 
 pub use self::config::global_config;
 pub use build::build;
 pub use build::watch_and_build;
+pub use cloudflared::run_cloudflared_start_server;
 pub use generate::generate;
 pub use init::init;
 pub use preview::{preview, HTTPMethod};
 pub use publish::publish;
-pub use cloudflared::run_cloudflared_start_server;
 use regex::Regex;
 pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
