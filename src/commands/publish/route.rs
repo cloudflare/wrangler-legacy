@@ -1,64 +1,23 @@
-use serde::{Deserialize, Serialize};
-
-use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes, WorkersRoute};
+use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http::{api_client, format_error};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
-use crate::terminal::emoji;
+use crate::settings::target::{Route, Target};
 
-#[derive(Deserialize, PartialEq, Serialize)]
-pub struct Route {
-    script: Option<String>,
-    pub pattern: String,
-}
-
-impl From<&WorkersRoute> for Route {
-    fn from(api_route: &WorkersRoute) -> Route {
-        Route {
-            script: api_route.script.clone(),
-            pattern: api_route.pattern.clone(),
-        }
-    }
-}
-
-impl Route {
-    pub fn new(target: &Target) -> Result<Route, failure::Error> {
-        if target
-            .route
-            .clone()
-            .expect("You must provide a zone_id in your wrangler.toml before publishing!")
-            .is_empty()
-        {
-            failure::bail!("You must provide a zone_id in your wrangler.toml before publishing!");
-        }
-        let msg_config_error = format!(
-            "{} Your project config has an error, check your `wrangler.toml`: `route` must be provided.", 
-            emoji::WARN
-        );
-        Ok(Route {
-            script: Some(target.name.to_string()),
-            pattern: target.route.clone().expect(&msg_config_error),
-        })
-    }
-}
-
-pub fn publish_route(
-    user: &GlobalUser,
-    target: &Target,
-    route: &Route,
-) -> Result<(), failure::Error> {
-    if route_exists(user, target, route)? {
-        Ok(())
+pub fn publish_route(user: &GlobalUser, target: &Target) -> Result<String, failure::Error> {
+    let route = Route::new(&target)?;
+    if route_exists(user, target, &route)? {
+        Ok(route.pattern)
     } else {
-        create(user, target, route)
+        create(user, target, &route)?;
+        Ok(route.pattern)
     }
 }
 
 fn route_exists(user: &GlobalUser, target: &Target, route: &Route) -> Result<bool, failure::Error> {
-    let routes = get_routes(user, target)?;
+    let routes = fetch_all(user, target)?;
 
     for remote_route in routes {
         if remote_route == *route {
@@ -68,7 +27,7 @@ fn route_exists(user: &GlobalUser, target: &Target, route: &Route) -> Result<boo
     Ok(false)
 }
 
-fn get_routes(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure::Error> {
+fn fetch_all(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure::Error> {
     let client = api_client(user, HttpApiClientConfig::default())?;
 
     let routes: Vec<Route> = match client.request(&ListRoutes {

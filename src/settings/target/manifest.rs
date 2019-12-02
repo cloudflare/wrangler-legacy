@@ -31,7 +31,7 @@ pub struct Manifest {
     pub workers_dev: Option<bool>,
     #[serde(default = "some_string")]
     pub route: Option<String>,
-    pub routes: Option<HashMap<String, String>>,
+    pub routes: Option<Vec<String>>,
     #[serde(default = "some_string")]
     pub zone_id: Option<String>,
     pub webpack_config: Option<String>,

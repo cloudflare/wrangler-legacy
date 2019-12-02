@@ -4,7 +4,7 @@ mod route;
 pub mod upload_form;
 
 pub use package::Package;
-use route::{publish_route, Route};
+use route::publish_route;
 
 use std::env;
 use std::path::Path;
@@ -101,17 +101,15 @@ fn publish_script(
         .send()?;
 
     let res_status = res.status();
-    let res_text = res.text()?;
 
     if !res_status.is_success() {
+        let res_text = res.text()?;
         failure::bail!(error_msg(res_status, res_text))
     }
 
     let pattern = if target.route.is_some() {
-        let route = Route::new(&target)?;
-        publish_route(&user, &target, &route)?;
         log::info!("publishing to route");
-        route.pattern
+        publish_route(&user, &target)?
     } else {
         log::info!("publishing to subdomain");
         publish_to_subdomain(target, user)?
