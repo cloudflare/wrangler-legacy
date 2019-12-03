@@ -1,10 +1,11 @@
+mod equinox;
+mod github;
 mod krate;
 pub mod target;
 
 use crate::terminal::emoji;
 
 use binary_install::{Cache, Download};
-use krate::Krate;
 use log::info;
 use which::which;
 
@@ -18,14 +19,43 @@ lazy_static! {
     static ref CACHE: Cache = get_wrangler_cache().expect("creating binary dependency cache");
 }
 
+enum DependencyEndpoint {
+    GitHub,
+    Equinox,
+}
+
+fn get_latest_version(
+    downloader: &DependencyEndpoint,
+    tool_name: &str,
+) -> Result<String, failure::Error> {
+    match downloader {
+        DependencyEndpoint::GitHub => github::get_latest_version(tool_name),
+        DependencyEndpoint::Equinox => equinox::get_latest_version(tool_name),
+    }
+}
+
+fn prebuilt_url(
+    downloader: &DependencyEndpoint,
+    tool_name: &str,
+    tool_owner: &str,
+    version: &str,
+) -> Option<String> {
+    match downloader {
+        DependencyEndpoint::GitHub => github::prebuilt_url(tool_name, tool_owner, version),
+        DependencyEndpoint::Equinox => equinox::prebuilt_url(tool_name, version),
+    }
+}
+
 pub fn install(tool_name: &str, owner: &str) -> Result<Download, failure::Error> {
-    if let Some(download) = tool_exists(tool_name)? {
+    let downloader = get_downloader(tool_name, owner)?;
+
+    if let Some(download) = tool_exists(&downloader, tool_name)? {
         return Ok(download);
     }
 
     let binaries = &[tool_name];
-    let latest_version = get_latest_version(tool_name)?;
-    let download = download_prebuilt(tool_name, owner, &latest_version, binaries);
+    let latest_version = get_latest_version(&downloader, tool_name)?;
+    let download = download_prebuilt(&downloader, tool_name, owner, &latest_version, binaries);
     match download {
         Ok(download) => Ok(download),
         Err(e) => {
@@ -39,11 +69,13 @@ pub fn install_artifact(
     owner: &str,
     version: &str,
 ) -> Result<Download, failure::Error> {
-    if let Some(download) = tool_exists(tool_name)? {
+    let downloader = get_downloader(tool_name, owner)?;
+
+    if let Some(download) = tool_exists(&downloader, tool_name)? {
         return Ok(download);
     }
 
-    let download = download_prebuilt(tool_name, owner, version, &[]);
+    let download = download_prebuilt(&downloader, tool_name, owner, version, &[]);
     match download {
         Ok(download) => Ok(download),
         Err(e) => {
@@ -52,11 +84,29 @@ pub fn install_artifact(
     }
 }
 
-fn tool_exists(tool_name: &str) -> Result<Option<Download>, failure::Error> {
+fn get_downloader(tool_name: &str, owner: &str) -> Result<DependencyEndpoint, failure::Error> {
+    let dependency_host: DependencyEndpoint = if github::DOWNLOADS.contains(&(tool_name, owner)) {
+        DependencyEndpoint::GitHub
+    } else if equinox::DOWNLOADS.contains(&(tool_name, owner)) {
+        DependencyEndpoint::Equinox
+    } else {
+        failure::bail!(
+            "The tool {}/{} is not an expected dependency of wrangler",
+            owner,
+            tool_name
+        );
+    };
+    Ok(dependency_host)
+}
+
+fn tool_exists(
+    downloader: &DependencyEndpoint,
+    tool_name: &str,
+) -> Result<Option<Download>, failure::Error> {
     if let Ok(path) = which(tool_name) {
         let no_parent_msg = format!("{} There is no path parent", emoji::WARN);
         log::debug!("found global {} binary at: {}", tool_name, path.display());
-        if !tool_needs_update(tool_name, &path)? {
+        if !tool_needs_update(downloader, tool_name, &path)? {
             return Ok(Some(Download::at(path.parent().expect(&no_parent_msg))));
         }
     }
@@ -64,7 +114,11 @@ fn tool_exists(tool_name: &str) -> Result<Option<Download>, failure::Error> {
     Ok(None)
 }
 
-fn tool_needs_update(tool_name: &str, path: &Path) -> Result<bool, failure::Error> {
+fn tool_needs_update(
+    downloader: &DependencyEndpoint,
+    tool_name: &str,
+    path: &Path,
+) -> Result<bool, failure::Error> {
     let no_version_msg = format!("failed to find version for {}", tool_name);
 
     let tool_version_output = Command::new(path.as_os_str())
@@ -83,8 +137,7 @@ fn tool_needs_update(tool_name: &str, path: &Path) -> Result<bool, failure::Erro
         None => return Ok(true),
         Some(v) => v,
     };
-    let latest_tool_version = get_latest_version(tool_name)?;
-    // todo(gabbi): If latest_tool_version is error, try getting latest version via a github api call.
+    let latest_tool_version = get_latest_version(downloader, tool_name)?;
     if installed_tool_version == latest_tool_version {
         log::debug!(
             "installed {} version {} is up to date",
@@ -103,12 +156,13 @@ fn tool_needs_update(tool_name: &str, path: &Path) -> Result<bool, failure::Erro
 }
 
 fn download_prebuilt(
+    downloader: &DependencyEndpoint,
     tool_name: &str,
     owner: &str,
     version: &str,
     binaries: &[&str],
 ) -> Result<Download, failure::Error> {
-    let url = match prebuilt_url(tool_name, owner, version) {
+    let url = match prebuilt_url(downloader, tool_name, owner, version) {
         Some(url) => url,
         None => failure::bail!(format!(
             "no prebuilt {} binaries are available for this platform",
@@ -132,37 +186,6 @@ fn download_prebuilt(
         }
         None => failure::bail!("{} is not installed!", tool_name),
     }
-}
-
-fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
-    if tool_name == "wranglerjs" {
-        Some(format!(
-            "https://workers.cloudflare.com/get-wranglerjs-binary/{0}/v{1}.tar.gz",
-            tool_name, version
-        ))
-    } else {
-        let target = if target::LINUX && target::x86_64 {
-            "x86_64-unknown-linux-musl"
-        } else if target::MACOS && target::x86_64 {
-            "x86_64-apple-darwin"
-        } else if target::WINDOWS && target::x86_64 {
-            "x86_64-pc-windows-msvc"
-        } else {
-            return None;
-        };
-
-        let url = format!(
-            "https://workers.cloudflare.com/get-binary/{0}/{1}/v{2}/{3}.tar.gz",
-            owner, tool_name, version, target
-        );
-        Some(url)
-    }
-}
-
-fn get_latest_version(tool_name: &str) -> Result<String, failure::Error> {
-    // TODO(gabbi): return the latest version pulled from github api, not via Krate.
-    // TODO(argo tunnel team): make cloudflared binary available on github.
-    Ok(Krate::new(tool_name)?.max_version)
 }
 
 fn get_wrangler_cache() -> Result<Cache, failure::Error> {

@@ -1,4 +1,5 @@
 use crate::commands;
+use crate::install;
 use crate::terminal::message;
 
 use std::path::PathBuf;
@@ -13,11 +14,11 @@ use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
 pub fn run_cloudflared_start_server() -> Result<(), failure::Error> {
-    let tool_name = PathBuf::from("cloudflared");
-    // let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
+    let tool_name = "cloudflared";
+    let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
     let args = ["tunnel"];
 
-    let command = command(&args, &tool_name);
+    let command = command(&args, &binary_path);
     let command_name = format!("{:?}", command);
 
     start_echo_http_server();
