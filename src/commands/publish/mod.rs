@@ -36,7 +36,9 @@ pub fn publish(
     // Build the script before uploading.
     commands::build(&target)?;
 
-    publish_script(&user, &target, asset_manifest)?;
+    upload_script(&user, &target, asset_manifest)?;
+
+    deploy(&user, &target)?;
 
     Ok(())
 }
@@ -65,7 +67,7 @@ pub fn bind_static_site_contents(
     Ok(())
 }
 
-fn publish_script(
+fn upload_script(
     user: &GlobalUser,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
@@ -95,6 +97,10 @@ fn publish_script(
         failure::bail!(error_msg(res_status, res_text))
     }
 
+    Ok(())
+}
+
+fn deploy(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     let routes = target.routes()?;
     log::info!("routes: {:#?}", &routes);
 
