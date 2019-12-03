@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
@@ -10,28 +12,17 @@ pub fn publish_routes(
     user: &GlobalUser,
     routes: Vec<Route>,
     zone_id: &String,
-) -> Result<Vec<Route>, failure::Error> {
-    // get existing routes
+) -> Result<Vec<RouteUploadResult>, failure::Error> {
+    // For the moment, we'll just make this call once and make all our decisions based on the response.
+    // There is a possibility of race conditions, but we just report back the results and allow the
+    // user to decide how to procede.
     let existing_routes = fetch_all(user, zone_id)?;
 
-    let mut deployed_routes = Vec::new();
+    let deployed_routes = routes
+        .iter()
+        .map(|route| deploy_route(user, zone_id, route, &existing_routes))
+        .collect();
 
-    for route in routes {
-        if existing_routes.contains(&route) {
-            deployed_routes.push(route);
-        } else {
-            match create(user, zone_id, &route) {
-                Ok(_) => deployed_routes.push(route),
-                Err(e) => failure::bail!(
-                    "An error occurred deploying to route {}: {}",
-                    route.pattern,
-                    e
-                ),
-            }
-        }
-    }
-
-    // TODO: include id info in Route objects
     Ok(deployed_routes)
 }
 
@@ -43,16 +34,14 @@ fn fetch_all(user: &GlobalUser, zone_identifier: &String) -> Result<Vec<Route>, 
         Err(e) => failure::bail!("{}", format_error(e, None)), // TODO: add suggestion fn
     };
 
-    // TODO: include id info in Route objects
     Ok(routes)
 }
 
-// TODO: merge id info into returned Route object
 fn create(
     user: &GlobalUser,
     zone_identifier: &String,
     route: &Route,
-) -> Result<(), failure::Error> {
+) -> Result<Route, failure::Error> {
     let client = api_client(user, HttpApiClientConfig::default())?;
 
     log::info!("Creating your route {:#?}", &route.pattern,);
@@ -63,11 +52,16 @@ fn create(
             script: route.script.clone(),
         },
     }) {
-        Ok(_) => Ok(()),
+        Ok(response) => Ok(Route {
+            id: Some(response.result.id),
+            pattern: route.pattern.clone(),
+            script: route.script.clone(),
+        }),
         Err(e) => failure::bail!("{}", format_error(e, Some(&routes_error_help))),
     }
 }
 
+// TODO: improve this error message to reference wrangler route commands
 fn routes_error_help(error_code: u16) -> &'static str {
     match error_code {
         10020 => r#"
@@ -76,5 +70,55 @@ fn routes_error_help(error_code: u16) -> &'static str {
             you will need to change `name` in your `wrangler.toml` to match the currently deployed worker,
             or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n"#,
         _ => "",
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub enum RouteUploadResult {
+    Same(Route),
+    Conflict(Route),
+    New(Route),
+    Error((Route, String)),
+}
+
+fn deploy_route(
+    user: &GlobalUser,
+    zone_id: &String,
+    route: &Route,
+    existing_routes: &Vec<Route>,
+) -> RouteUploadResult {
+    for existing_route in existing_routes {
+        if route.pattern == existing_route.pattern {
+            // if the route is already assigned, we don't need to call the api.
+            // if the script names match, it's a no-op.
+            if route.script == existing_route.script {
+                return RouteUploadResult::Same(Route {
+                    id: existing_route.id.clone(),
+                    script: existing_route.script.clone(),
+                    pattern: existing_route.pattern.clone(),
+                });
+            }
+            // if the script names do not match, we want to know which script is conflicting.
+            return RouteUploadResult::Conflict(Route {
+                id: existing_route.id.clone(),
+                script: existing_route.script.clone(),
+                pattern: existing_route.pattern.clone(),
+            });
+        }
+    }
+
+    // if none of the existing routes match this one, we should create a new route
+    match create(user, zone_id, &route) {
+        // we want to show the new route along with its id
+        Ok(created) => RouteUploadResult::New(created),
+        // if there is an error, we want to know which route triggered it
+        Err(e) => RouteUploadResult::Error((
+            Route {
+                id: None,
+                script: route.script.clone(),
+                pattern: route.pattern.clone(),
+            },
+            e.to_string(),
+        )),
     }
 }

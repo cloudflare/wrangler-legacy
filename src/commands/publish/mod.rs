@@ -16,7 +16,7 @@ use crate::commands::subdomain::Subdomain;
 use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::{KvNamespace, Route, Site, Target};
+use crate::settings::target::{KvNamespace, Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(
@@ -132,8 +132,8 @@ fn deploy(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
             let published_routes = publish_routes(&user, routes, zone_id)?;
 
             message::success(&format!(
-                "Successfully published your script to:\n{}",
-                format_routes(published_routes)
+                "Deployed to the following routes:\n{}",
+                serde_json::to_string(&published_routes)?
             ));
 
             Ok(())
@@ -143,13 +143,6 @@ fn deploy(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
             )
         }
     }
-}
-
-// TODO: provide a little more information: created, retained, conflicted, errored
-fn format_routes(routes: Vec<Route>) -> String {
-    let formatted_routes: Vec<String> = routes.iter().map(|r| r.pattern.clone()).collect();
-
-    formatted_routes.join("\n")
 }
 
 fn error_msg(status: reqwest::StatusCode, text: String) -> String {

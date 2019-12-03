@@ -59,12 +59,14 @@ impl Target {
         // the fact that you can specify singular or plural is a detail of the wrangler.toml contract.
         if let Some(single_route) = &self.route {
             routes.push(Route {
+                id: None,
                 script: Some(self.name.to_owned()),
                 pattern: single_route.to_string(),
             });
         } else if let Some(multi_route) = &self.routes {
             for pattern in multi_route {
                 routes.push(Route {
+                    id: None,
                     script: Some(self.name.to_owned()),
                     pattern: pattern.to_string(),
                 });
