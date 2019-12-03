@@ -8,7 +8,7 @@ use std::str;
 use std::sync::Mutex;
 
 use assert_cmd::prelude::*;
-use fixture::Fixture;
+use fixture::{Fixture, WranglerToml};
 
 lazy_static! {
     static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
@@ -18,12 +18,12 @@ lazy_static! {
 fn it_builds_webpack() {
     let fixture = Fixture::new("webpack");
     fixture.scaffold_webpack();
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-    "#,
-    );
+
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    fixture.create_wrangler_toml(wrangler_toml);
+
     build_creates_assets(&fixture, vec!["script.js"]);
     fixture.cleanup();
 }
@@ -48,12 +48,11 @@ fn it_builds_with_webpack_single_js() {
     "#,
     );
     fixture.create_default_package_json();
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-    "#,
-    );
+
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
     fixture.cleanup();
@@ -71,13 +70,11 @@ fn it_builds_with_webpack_function_config_js() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.config.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
     fixture.cleanup();
@@ -95,13 +92,11 @@ fn it_builds_with_webpack_promise_config_js() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.config.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
     fixture.cleanup();
@@ -119,13 +114,11 @@ fn it_builds_with_webpack_function_promise_config_js() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.config.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
     fixture.cleanup()
@@ -143,13 +136,11 @@ fn it_builds_with_webpack_specify_config() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.worker.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.worker.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
     fixture.cleanup();
@@ -169,12 +160,10 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_fails_with(
         &fixture,
@@ -198,13 +187,11 @@ fn it_fails_with_multiple_webpack_configs() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.config.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_fails_with(&fixture, "Multiple webpack configurations are not supported. You can specify a different path for your webpack configuration file in wrangler.toml with the `webpack_config` field");
     fixture.cleanup();
@@ -253,13 +240,11 @@ fn it_builds_with_webpack_wast() {
 
     fixture.create_file("module.wast", "(module)");
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.config.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js", "module.wasm"]);
     fixture.cleanup();
@@ -280,13 +265,11 @@ fn it_fails_with_webpack_target_node() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.config.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_fails_with(
         &fixture,
@@ -310,13 +293,11 @@ fn it_fails_with_webpack_target_web() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.config.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_fails_with(
         &fixture,
@@ -340,13 +321,11 @@ fn it_builds_with_webpack_target_webworker() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-        webpack_config = "webpack.config.js"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
     fixture.cleanup()

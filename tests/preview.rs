@@ -3,6 +3,8 @@ extern crate lazy_static;
 
 pub mod fixture;
 
+use fixture::WranglerToml;
+
 use std::env;
 use std::process::Command;
 use std::sync::Mutex;
@@ -34,12 +36,12 @@ fn it_can_preview_js_project() {
     "#,
     );
     fixture.create_default_package_json();
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "javascript"
-    "#,
-    );
+
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("javascript");
+    fixture.create_wrangler_toml(wrangler_toml);
+
     preview_succeeds(&fixture);
     fixture.cleanup()
 }
@@ -48,12 +50,12 @@ fn it_can_preview_js_project() {
 fn it_can_preview_webpack_project() {
     let fixture = Fixture::new("webpack_simple_js");
     fixture.scaffold_webpack();
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "webpack"
-    "#,
-    );
+
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("webpack");
+    fixture.create_wrangler_toml(wrangler_toml);
+
     preview_succeeds(&fixture);
     fixture.cleanup()
 }
@@ -176,12 +178,11 @@ fn it_can_preview_rust_project() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
-        r#"
-        workers_dev = true
-        type = "rust"
-    "#,
-    );
+    let mut wrangler_toml = WranglerToml::default();
+    wrangler_toml.workers_dev = Some(true);
+    wrangler_toml.target_type = Some("rust");
+    fixture.create_wrangler_toml(wrangler_toml);
+
     preview_succeeds(&fixture);
     fixture.cleanup()
 }
