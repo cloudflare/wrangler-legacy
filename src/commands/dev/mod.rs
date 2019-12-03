@@ -1,14 +1,24 @@
 mod server_config;
+mod socket;
 use server_config::ServerConfig;
+
+extern crate openssl;
+extern crate tokio;
+extern crate url;
+extern crate ws;
+
+use std::thread;
 
 use chrono::prelude::*;
 
 use hyper_alpha::client::{HttpConnector, ResponseFuture};
 use hyper_alpha::header::{HeaderMap, HeaderName, HeaderValue};
 use hyper_alpha::service::{make_service_fn, service_fn};
-use hyper_alpha::{Body, Client, Request, Response, Server, Uri};
+use hyper_alpha::{Body, Client as HyperClient, Request, Response, Server, Uri};
 
 use hyper_tls_alpha::HttpsConnector;
+
+use tokio::runtime::Runtime;
 
 use uuid::Uuid;
 
@@ -23,7 +33,7 @@ use crate::terminal::emoji;
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 const HEADER_PREFIX: &str = "cf-ew-raw-";
 
-pub async fn dev(
+pub fn dev(
     target: Target,
     user: Option<GlobalUser>,
     host: Option<&str>,
@@ -32,14 +42,23 @@ pub async fn dev(
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
     let server_config = ServerConfig::new(host, ip, port)?;
+    let session_id = get_session_id()?;
+    let preview_id = get_preview_id(target, user, &server_config, &session_id)?;
 
+    thread::spawn(move || socket::listen(session_id));
+
+    let rt = Runtime::new().unwrap();
+    rt.block_on(serve(server_config, preview_id))?;
+    rt.shutdown_now();
+
+    Ok(())
+}
+
+async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), failure::Error> {
     // set up https client to connect to the preview service
     let https = HttpsConnector::new().expect("TLS initialization failed");
-    let client = Client::builder().build::<_, Body>(https);
-
-    let preview_id = get_preview_id(target, user, &server_config)?;
+    let client = HyperClient::builder().build::<_, Body>(https);
     let listening_address = server_config.listening_address.clone();
-
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
         let client = client.clone();
@@ -98,7 +117,7 @@ fn get_path_as_str(uri: Uri) -> String {
 
 fn preview_request(
     req: Request<Body>,
-    client: Client<HttpsConnector<HttpConnector>>,
+    client: HyperClient<HttpsConnector<HttpConnector>>,
     preview_id: String,
     server_config: ServerConfig,
 ) -> ResponseFuture {
@@ -146,19 +165,23 @@ fn preview_request(
     client.request(req)
 }
 
+fn get_session_id() -> Result<String, failure::Error> {
+    Ok(Uuid::new_v4().to_simple().to_string())
+}
+
 fn get_preview_id(
     mut target: Target,
     user: Option<GlobalUser>,
     server_config: &ServerConfig,
+    session_id: &str,
 ) -> Result<String, failure::Error> {
-    let session = Uuid::new_v4().to_simple();
     let verbose = true;
     let sites_preview = false;
     let script_id: String = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
     Ok(format!(
         "{}{}{}{}",
         &script_id,
-        session,
+        session_id,
         server_config.host.is_https() as u8,
         server_config.host
     ))

@@ -21,7 +21,7 @@ cloudflare = "0.4.1"
 env_logger = "0.6.1"
 failure = "0.1.5"
 log = "0.4.6"
-openssl = { version = '0.10.11', optional = true }
+openssl = "0.10.26"
 reqwest = "0.9.18"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.39"
@@ -38,7 +38,6 @@ text_io = "0.1.7"
 exitfailure = "0.5.1"
 prettytable-rs = "0.8.0"
 notify = "4.0.12"
-ws = "0.9.0"
 url = "2.1.0"
 percent-encoding = "1.0.1"
 http = "0.1.1"
@@ -51,6 +50,10 @@ hyper-alpha = {package = "hyper", version = "0.13.0-alpha.4"}
 hyper-tls-alpha = {package = "hyper-tls", version = "0.4.0-alpha.4"}
 chrono = "0.4.9"
 tokio = "0.2.0-alpha.6"
+
+[dependencies.ws]
+version = "0.9.0"
+features = ["ssl"]
 
 [dev-dependencies]
 assert_cmd = "0.11.1"
