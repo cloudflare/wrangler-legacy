@@ -36,6 +36,7 @@ fn it_can_preview_js_project() {
     fixture.create_default_package_json();
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "javascript"
     "#,
     );
@@ -49,6 +50,7 @@ fn it_can_preview_webpack_project() {
     fixture.scaffold_webpack();
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
     "#,
     );
@@ -176,6 +178,7 @@ fn it_can_preview_rust_project() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "rust"
     "#,
     );

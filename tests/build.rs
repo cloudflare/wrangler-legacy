@@ -20,6 +20,7 @@ fn it_builds_webpack() {
     fixture.scaffold_webpack();
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
     "#,
     );
@@ -49,6 +50,7 @@ fn it_builds_with_webpack_single_js() {
     fixture.create_default_package_json();
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
     "#,
     );
@@ -71,6 +73,7 @@ fn it_builds_with_webpack_function_config_js() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
@@ -94,6 +97,7 @@ fn it_builds_with_webpack_promise_config_js() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
@@ -117,6 +121,7 @@ fn it_builds_with_webpack_function_promise_config_js() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
@@ -140,6 +145,7 @@ fn it_builds_with_webpack_specify_config() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.worker.js"
     "#,
@@ -165,6 +171,7 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
     "#,
     );
@@ -193,6 +200,7 @@ fn it_fails_with_multiple_webpack_configs() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
@@ -247,6 +255,7 @@ fn it_builds_with_webpack_wast() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
@@ -273,6 +282,7 @@ fn it_fails_with_webpack_target_node() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
@@ -302,6 +312,7 @@ fn it_fails_with_webpack_target_web() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,
@@ -331,6 +342,7 @@ fn it_builds_with_webpack_target_webworker() {
 
     fixture.create_wrangler_toml(
         r#"
+        workers_dev = true
         type = "webpack"
         webpack_config = "webpack.config.js"
     "#,

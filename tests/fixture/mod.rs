@@ -78,7 +78,6 @@ impl Fixture {
         let content = &format!(
             r#"
             name = "test"
-            workers_dev = true
             {}
         "#,
             content
