@@ -7,18 +7,13 @@ use fixture::WranglerToml;
 
 use std::env;
 use std::process::Command;
-use std::sync::Mutex;
 
 use assert_cmd::prelude::*;
 use fixture::Fixture;
 
-lazy_static! {
-    static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
-}
-
 #[test]
 fn it_can_preview_js_project() {
-    let fixture = Fixture::new("simple_js");
+    let fixture = Fixture::new();
     fixture.create_file(
         "index.js",
         r#"
@@ -41,24 +36,22 @@ fn it_can_preview_js_project() {
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);
-    fixture.cleanup()
 }
 
 #[test]
 fn it_can_preview_webpack_project() {
-    let fixture = Fixture::new("webpack_simple_js");
+    let fixture = Fixture::new();
     fixture.scaffold_webpack();
 
     let wrangler_toml = WranglerToml::webpack_no_config("test-preview-webpack");
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);
-    fixture.cleanup()
 }
 
 #[test]
 fn it_can_preview_rust_project() {
-    let fixture = Fixture::new("simple_rust");
+    let fixture = Fixture::new();
     fixture.create_dir("src");
     fixture.create_dir("worker");
 
@@ -178,12 +171,10 @@ fn it_can_preview_rust_project() {
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);
-    fixture.cleanup()
 }
 
 fn preview_succeeds(fixture: &Fixture) {
-    // Lock to avoid having concurrent builds
-    let _g = BUILD_LOCK.lock().unwrap();
+    let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture.get_path());
