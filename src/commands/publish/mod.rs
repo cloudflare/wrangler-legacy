@@ -4,7 +4,7 @@ mod route;
 pub mod upload_form;
 
 pub use package::Package;
-use route::publish_route;
+use route::publish_routes;
 
 use std::env;
 use std::path::Path;
@@ -24,22 +24,10 @@ pub fn publish(
     target: &mut Target,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let msg = match &target.route {
-        Some(route) => &route,
-        None => "workers_dev",
-    };
-
-    log::info!("{}", msg);
-
     validate_target_required_fields_present(target)?;
     validate_worker_name(&target.name)?;
 
     if let Some(site_config) = target.site.clone() {
-        if let Some(route) = &target.route {
-            if !route.ends_with("*") {
-                message::warn(&format!("The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*", route));
-            }
-        }
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
@@ -48,7 +36,9 @@ pub fn publish(
     // Build the script before uploading.
     commands::build(&target)?;
 
-    publish_script(&user, &target, asset_manifest)?;
+    upload_script(&user, &target, asset_manifest)?;
+
+    deploy(&user, &target)?;
 
     Ok(())
 }
@@ -77,7 +67,7 @@ pub fn bind_static_site_contents(
     Ok(())
 }
 
-fn publish_script(
+fn upload_script(
     user: &GlobalUser,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
@@ -107,21 +97,52 @@ fn publish_script(
         failure::bail!(error_msg(res_status, res_text))
     }
 
-    let pattern = if target.route.is_some() {
-        log::info!("publishing to route");
-        publish_route(&user, &target)?
-    } else {
-        log::info!("publishing to subdomain");
-        publish_to_subdomain(target, user)?
-    };
-
-    log::info!("{}", &pattern);
-    message::success(&format!(
-        "Successfully published your script to {}",
-        &pattern
-    ));
-
     Ok(())
+}
+
+fn deploy(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    let routes = target.routes()?;
+    log::info!("routes: {:#?}", &routes);
+
+    if routes.is_empty() {
+        // this is a zoneless deploy
+        log::info!("publishing to subdomain");
+        let deploy_address = publish_to_subdomain(target, user)?;
+
+        message::success(&format!(
+            "Successfully published your script to {}",
+            deploy_address
+        ));
+
+        Ok(())
+    } else {
+        // this is a zoned deploy
+        log::info!("publishing to zone");
+        // Most users of Workers Sites will be confused by our route patterns; this warning
+        // informs them of the best configuration for their project, but does not block them
+        // from deploying to a non-wildcard route.
+        if target.site.is_some() && routes.len() == 1 {
+            let route_pattern = &routes[0].pattern;
+            if !route_pattern.ends_with("*") {
+                message::warn(&format!("The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*", route_pattern));
+            }
+        }
+
+        if let Some(zone_id) = &target.zone_id {
+            let published_routes = publish_routes(&user, routes, zone_id)?;
+
+            message::success(&format!(
+                "Deployed to the following routes:\n{}",
+                serde_json::to_string(&published_routes)?
+            ));
+
+            Ok(())
+        } else {
+            failure::bail!(
+                "You must provide a zone_id in your wrangler.toml before publishing to a route!"
+            )
+        }
+    }
 }
 
 fn error_msg(status: reqwest::StatusCode, text: String) -> String {
@@ -130,25 +151,6 @@ fn error_msg(status: reqwest::StatusCode, text: String) -> String {
     } else {
         format!("Something went wrong! Status: {}, Details {}", status, text)
     }
-}
-
-#[test]
-fn fails_with_good_error_msg_on_verify_email_err() {
-    let status = reqwest::StatusCode::FORBIDDEN;
-    let text = r#"{
-  "result": null,
-  "success": false,
-  "errors": [
-    {
-      "code": 10034,
-      "message": "workers.api.error.email_verification_required"
-    }
-  ],
-  "messages": []
-}"#
-    .to_string();
-    let result = error_msg(status, text);
-    assert!(result.contains("https://dash.cloudflare.com"));
 }
 
 pub fn upload_buckets(
@@ -258,7 +260,7 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         None => {}
     }
 
-    let destination = if target.route.is_some() {
+    let destination = if let Some(route) = &target.route {
         // check required fields for publishing to a route
         if target
             .zone_id
@@ -268,7 +270,7 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         {
             missing_fields.push("zone_id")
         };
-        if target.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
+        if route.is_empty() {
             missing_fields.push("route")
         };
         // zoned deploy destination
@@ -296,4 +298,23 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
     };
 
     Ok(())
+}
+
+#[test]
+fn fails_with_good_error_msg_on_verify_email_err() {
+    let status = reqwest::StatusCode::FORBIDDEN;
+    let text = r#"{
+  "result": null,
+  "success": false,
+  "errors": [
+    {
+      "code": 10034,
+      "message": "workers.api.error.email_verification_required"
+    }
+  ],
+  "messages": []
+}"#
+    .to_string();
+    let result = error_msg(status, text);
+    assert!(result.contains("https://dash.cloudflare.com"));
 }
