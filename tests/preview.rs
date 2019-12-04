@@ -37,9 +37,7 @@ fn it_can_preview_js_project() {
     );
     fixture.create_default_package_json();
 
-    let mut wrangler_toml = WranglerToml::default();
-    wrangler_toml.workers_dev = Some(true);
-    wrangler_toml.target_type = Some("javascript");
+    let wrangler_toml = WranglerToml::javascript("test-preview-javascript");
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);
@@ -51,9 +49,7 @@ fn it_can_preview_webpack_project() {
     let fixture = Fixture::new("webpack_simple_js");
     fixture.scaffold_webpack();
 
-    let mut wrangler_toml = WranglerToml::default();
-    wrangler_toml.workers_dev = Some(true);
-    wrangler_toml.target_type = Some("webpack");
+    let wrangler_toml = WranglerToml::webpack_no_config("test-preview-webpack");
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);
@@ -178,9 +174,7 @@ fn it_can_preview_rust_project() {
     "#,
     );
 
-    let mut wrangler_toml = WranglerToml::default();
-    wrangler_toml.workers_dev = Some(true);
-    wrangler_toml.target_type = Some("rust");
+    let wrangler_toml = WranglerToml::rust("test-preview-rust");
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);
