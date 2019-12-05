@@ -46,12 +46,6 @@ impl Manifest {
     pub fn new(config_path: &Path) -> Result<Self, failure::Error> {
         let config = read_config(config_path)?;
 
-        // check for pre 1.1.0 KV namespace format
-        let kv_namespaces: Result<Vec<config::Value>, config::ConfigError> =
-            config.get("kv-namespaces");
-
-        validate_kv_namespaces_config(kv_namespaces)?;
-
         let manifest: Manifest = config.try_into()?;
 
         check_for_duplicate_names(&manifest)?;
@@ -404,34 +398,6 @@ fn read_config(config_path: &Path) -> Result<Config, failure::Error> {
     config.merge(config::Environment::with_prefix("CF"))?;
 
     Ok(config)
-}
-
-fn validate_kv_namespaces_config(
-    kv_namespaces: Result<Vec<config::Value>, config::ConfigError>,
-) -> Result<(), failure::Error> {
-    if let Ok(values) = kv_namespaces {
-        let old_format = values.iter().any(|val| val.clone().into_str().is_ok());
-
-        if old_format {
-            message::warn("As of 1.1.0 the kv-namespaces format has been stabilized");
-            message::info("Please add a section like this in your `wrangler.toml` for each KV Namespace you wish to bind:");
-
-            let fmt_demo = r##"
-[[kv-namespaces]]
-binding = "BINDING_NAME"
-id = "0f2ac74b498b48028cb68387c421e279"
-
-# binding is the variable name you wish to bind the namespace to in your script.
-# id is the namespace_id assigned to your kv namespace upon creation. e.g. (per namespace)
-"##;
-
-            println!("{}", fmt_demo);
-
-            let msg = format!("{0} Your project config has an error {0}", emoji::WARN);
-            failure::bail!(msg)
-        }
-    }
-    Ok(())
 }
 
 fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> {
