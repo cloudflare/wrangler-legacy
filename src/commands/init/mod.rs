@@ -10,7 +10,20 @@ pub fn init(
     site_flag: bool,
 ) -> Result<(), failure::Error> {
     if Path::new("./wrangler.toml").exists() {
-        failure::bail!("A wrangler.toml file already exists! Please remove it before running this command again.");
+        if site_flag {
+            let msg = r#"A wrangler.toml file already exists!
+
+To add Workers Sites to your existing wrangler.toml, please add this section:
+
+[site]
+bucket = "" # this should point to the directory with static assets
+entry-point = "workers-site"
+
+"#;
+            failure::bail!(msg);
+        } else {
+            failure::bail!("A wrangler.toml file already exists! Please remove it before running this command again.");
+        }
     }
     let dirname = get_current_dirname()?;
     let name = name.unwrap_or_else(|| &dirname);
