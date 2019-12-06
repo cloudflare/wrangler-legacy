@@ -105,17 +105,24 @@ pub fn preview(
 
 fn open_browser(url: &str) -> Result<(), failure::Error> {
     let _output = if cfg!(target_os = "windows") {
+        println!("windows");
         let url_escaped = url.replace("&", "^&");
         let windows_cmd = format!("start {}", url_escaped);
         Command::new("cmd").args(&["/C", &windows_cmd]).output()?
+    } else if wsl::is_wsl() {
+        println!("wsl");
+        dbg!(url);
+        let windows_cmd = format!("start {}", url);
+        Command::new("/mnt/c/Windows/System/cmd.exe").args(&["/C", &windows_cmd]).output()?
     } else if cfg!(target_os = "linux") {
+        println!("linux");
         let linux_cmd = format!(r#"xdg-open "{}""#, url);
         Command::new("sh").arg("-c").arg(&linux_cmd).output()?
     } else {
         let mac_cmd = format!(r#"open "{}""#, url);
         Command::new("sh").arg("-c").arg(&mac_cmd).output()?
     };
-
+    
     Ok(())
 }
 
