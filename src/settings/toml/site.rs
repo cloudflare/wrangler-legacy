@@ -8,7 +8,7 @@ use crate::commands::generate::run_generate;
 
 const SITE_ENTRY_POINT: &str = "workers-site";
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Site {
     pub bucket: PathBuf,
