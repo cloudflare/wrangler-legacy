@@ -269,6 +269,6 @@ mod tests {
             File::create(&tmp_config_path)?;
         }
 
-        Ok(tmp_config_path.to_path_buf())
+        Ok(tmp_config_path)
     }
 }

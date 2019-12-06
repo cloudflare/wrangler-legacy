@@ -52,7 +52,7 @@ pub fn auth_client(feature: Option<&str>, user: &GlobalUser) -> Client {
     add_auth_headers(&mut headers, user);
 
     builder()
-        .default_headers(headers.to_owned())
+        .default_headers(headers)
         .redirect(RedirectPolicy::none())
         .build()
         .expect("could not create authenticated http client")
