@@ -122,7 +122,7 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
         let mac_cmd = format!(r#"open "{}""#, url);
         Command::new("sh").arg("-c").arg(&mac_cmd).output()?
     };
-    
+
     Ok(())
 }
 
