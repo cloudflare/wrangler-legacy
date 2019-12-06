@@ -67,10 +67,12 @@ impl Source for Environment {
 }
 
 #[derive(Clone, Debug, Default)]
+#[cfg(test)]
 pub struct MockEnvironment {
     vars: Vec<(&'static str, &'static str)>,
 }
 
+#[cfg(test)]
 impl MockEnvironment {
     pub fn set(&mut self, key: &'static str, value: &'static str) -> &Self {
         self.vars.push((key, value));
@@ -79,6 +81,7 @@ impl MockEnvironment {
     }
 }
 
+#[cfg(test)]
 impl QueryEnvironment for MockEnvironment {
     #[allow(unused_variables)]
     fn get_var(&self, var: &'static str) -> Result<String, std::env::VarError> {
@@ -92,6 +95,7 @@ impl QueryEnvironment for MockEnvironment {
 
 // config::Source trait implementation for use with config::Config.merge
 // until config crate removal is complete.
+#[cfg(test)]
 impl Source for MockEnvironment {
     fn clone_into_box(&self) -> Box<dyn Source + Send + Sync> {
         Box::new((*self).clone())
