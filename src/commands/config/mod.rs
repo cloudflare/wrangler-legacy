@@ -1,6 +1,8 @@
+#[cfg(not(target_os = "windows"))]
 use std::fs::File;
 #[cfg(not(target_os = "windows"))]
 use std::os::unix::fs::PermissionsExt;
+#[cfg(not(target_os = "windows"))]
 use std::path::PathBuf;
 
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
