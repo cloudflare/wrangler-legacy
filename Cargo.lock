@@ -2370,7 +2370,7 @@ dependencies = [
 
 [[package]]
 name = "wrangler"
-version = "1.6.0-rc.0"
+version = "1.6.0"
 dependencies = [
  "assert_cmd 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "atty 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2403,6 +2403,7 @@ dependencies = [
  "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "text_io 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",

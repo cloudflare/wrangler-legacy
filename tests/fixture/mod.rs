@@ -1,48 +1,43 @@
 pub mod rust;
+mod wrangler_toml;
+pub use wrangler_toml::{EnvConfig, KvConfig, SiteConfig, WranglerToml};
 
-use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
+use std::mem::ManuallyDrop;
 use std::path::PathBuf;
-use std::process::Command;
-use std::sync::Mutex;
+use std::sync::MutexGuard;
+use std::thread;
 
-lazy_static! {
-    static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
-}
+use tempfile::TempDir;
+use toml;
 
-const BUNDLE_OUT: &str = "./worker";
+const BUNDLE_OUT: &str = "worker";
 
 pub struct Fixture {
-    name: String,
+    // we wrap the fixture's tempdir in a `ManuallyDrop` so that if a test
+    // fails, its directory isn't deleted, and we have a chance to manually
+    // inspect its state and figure out what is going on.
+    dir: ManuallyDrop<TempDir>,
 }
 
 impl Fixture {
-    pub fn new(name: &str) -> Fixture {
-        let fixture = Fixture {
-            name: name.to_string(),
-        };
-
-        let dest = fixture.get_path();
-
-        if dest.exists() {
-            fixture.cleanup();
+    pub fn new() -> Fixture {
+        let dir = TempDir::new().unwrap();
+        eprintln!("Created fixture at {}", dir.path().display());
+        Fixture {
+            dir: ManuallyDrop::new(dir),
         }
+    }
 
-        fs::create_dir_all(dest.clone()).unwrap();
-        fixture
+    pub fn get_path(&self) -> PathBuf {
+        self.dir.path().to_path_buf()
     }
 
     pub fn scaffold_webpack(&self) {
         self.create_default_package_json();
         self.create_empty_js();
-    }
-
-    pub fn get_path(&self) -> PathBuf {
-        let mut dest = env::temp_dir();
-        dest.push(&self.name);
-        dest
     }
 
     pub fn get_output_path(&self) -> PathBuf {
@@ -58,7 +53,8 @@ impl Fixture {
 
     pub fn create_dir(&self, name: &str) {
         let dir_path = self.get_path().join(name);
-        fs::create_dir(dir_path).unwrap();
+        fs::remove_dir_all(&dir_path).ok();
+        fs::create_dir(&dir_path).unwrap();
     }
 
     pub fn create_empty_js(&self) {
@@ -76,30 +72,25 @@ impl Fixture {
         );
     }
 
-    pub fn create_wrangler_toml(&self, content: &str) {
-        let content = &format!(
-            r#"
-            name = "test"
-            workers_dev = true
-            {}
-        "#,
-            content
-        );
-        self.create_file("wrangler.toml", content);
+    pub fn create_wrangler_toml(&self, wrangler_toml: WranglerToml) {
+        self.create_file("wrangler.toml", &toml::to_string(&wrangler_toml).unwrap());
     }
 
-    pub fn cleanup(&self) {
-        let path = self.get_path();
-        assert!(path.exists(), format!("{:?} does not exist", path));
+    pub fn lock(&self) -> MutexGuard<'static, ()> {
+        use std::sync::Mutex;
 
-        // Workaround https://github.com/rust-lang/rust/issues/29497
-        if cfg!(target_os = "windows") {
-            let mut command = Command::new("cmd");
-            command.arg("rmdir");
-            command.arg("/s");
-            command.arg(&path);
-        } else {
-            fs::remove_dir_all(&path).unwrap();
+        lazy_static! {
+            static ref ONE_TEST_AT_A_TIME: Mutex<()> = Mutex::new(());
+        }
+
+        ONE_TEST_AT_A_TIME.lock().unwrap_or_else(|e| e.into_inner())
+    }
+}
+
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        if !thread::panicking() {
+            unsafe { ManuallyDrop::drop(&mut self.dir) }
         }
     }
 }

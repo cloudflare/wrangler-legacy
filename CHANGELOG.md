@@ -1,5 +1,198 @@
 # Changelog
 
+## 🎰 1.6.0
+
+- ### Features
+
+  - **_BREAKING CHANGE_: Require the `webpack_config` field in `wrangler.toml` to build with a custom configuration - [EverlastingBugstopper], [issue/296] [pull/847]**
+
+    Wrangler will no longer use a `webpack.config.js` at the root of your project to build your worker. If you would like to continue using a custom build configuration, you will need to specify the `webpack_config` field in your `wrangler.toml` like so:
+
+    ```toml
+    name = "my-worker"
+    workers_dev = true
+    account_id = "01234567890987654321234567890"
+    webpack_config = "webpack.config.js"
+    ```
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/847]: https://github.com/cloudflare/wrangler/pull/847
+    [issue/296]: https://github.com/cloudflare/wrangler/issues/296
+
+  - **API Token Support - [gabbifish]/[ashleymichal], [issue/354] [pull/471]/[pull/879]**
+
+    Wrangler can now be configured with API Tokens!
+
+    Don't worry, current configurations with an email address and a Global API Key will continue to work, but we highly recommend that you switch to API Tokens as they are a much more secure authentication method.
+
+    If you want to use API tokens, create an API token from the "Edit Cloudflare Workers" API token template [here](https://dash.cloudflare.com/profile/api-tokens), and copy/paste it in the `wrangler config` prompt. Alternatively, you can set the `CF_API_TOKEN` environment variable.
+
+    [gabbifish]: https://github.com/gabbifish
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/471]: https://github.com/cloudflare/wrangler/pull/471
+    [pull/879]: https://github.com/cloudflare/wrangler/pull/879
+    [issue/354]: https://github.com/cloudflare/wrangler/issues/354
+  
+  - **Add the ability to preview without opening the browser - [EverlastingBugstopper], [issue/256] [pull/816]**
+
+    `wrangler preview` can now be called with a `--headless` flag that will not open the browser.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/816]: https://github.com/cloudflare/wrangler/pull/816
+    [issue/256]: https://github.com/cloudflare/wrangler/issues/256
+
+  - **Check for valid credentials when running `wrangler config` - [gabbifish], [issue/439] [pull/842]**
+
+    Before this version of Wrangler, `wrangler config` would allow any input string to be passed for your user details. Now, Wrangler validates that the credentials will work with Cloudflare's API.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/842]: https://github.com/cloudflare/wrangler/pull/842
+    [issue/439]: https://github.com/cloudflare/wrangler/issues/439
+  
+  - **Add a warning when publishing a Workers Site to a route without a trailing asterisk - [EverlastingBugstopper], [issue/814] [pull/839]**
+
+    When publishing a Workers Site to your own domain, it's important that the Worker code runs on every path on your domain. This isn't particularly clear, so now when attempting to publish a Workers Site to a route without a trailing asterisk, Wrangler will print a warning message.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/839]: https://github.com/cloudflare/wrangler/pull/839
+    [issue/814]: https://github.com/cloudflare/wrangler/issues/814
+
+  - **Better error message for publishing to a duplicate route - [pradovic], [issue/519] [pull/813]**
+
+    When publishing to a route that is associated with another worker, Wrangler now prints a more actionable error message.
+
+    [pradovic]: https://github.com/pradovic
+    [pull/813]: https://github.com/cloudflare/wrangler/pull/813
+    [issue/519]: https://github.com/cloudflare/wrangler/issues/519
+
+  - **Better error message when webpack fails - [ashleymichal], [issue/428] [pull/837]**
+
+    Wrangler now recommends running `npm install` as a possible remedy for failed webpack builds.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/837]: https://github.com/cloudflare/wrangler/pull/837
+    [issue/428]: https://github.com/cloudflare/wrangler/issues/428
+
+- ### Fixes
+
+  - **Properly handle errors when running Wrangler as a global npm package - [jaredmcdonald], [issue/848] [pull/857]**
+
+    [jaredmcdonald]: https://github.com/jaredmcdonald
+    [pull/857]: https://github.com/cloudflare/wrangler/pull/857
+    [issue/848]: https://github.com/cloudflare/wrangler/issues/848
+
+  - **Clean up temporary build files - [EverlastingBugstopper], [pull/853]**
+
+    When building a script, Wrangler creates a temporary file. Old versions of Wrangler were quite messy about it, but now it cleans up after itself.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/853]: https://github.com/cloudflare/wrangler/pull/853
+
+  - **Fix the help text for `wrangler generate` - [EverlastingBugstopper], [pull/830]**
+
+    The default value for a template is now a complete and valid URL instead of a sample project name.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/830]: https://github.com/cloudflare/wrangler/pull/830
+
+  - **Remove --version on subcommands - [EverlastingBugstopper], [issue/791] [pull/829]**
+
+    Each subcommand in Wrangler used to take a `--version` argument which would print the name of the subcommand. For instance, `wrangler publish --version` would print `wrangler-publish`. This wasn't super helpful, so we've removed that functionality.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/829]: https://github.com/cloudflare/wrangler/pull/829
+    [issue/791]: https://github.com/cloudflare/wrangler/issues/791
+
+  - **Fix a broken link in the README - [victoriabernard92], [pull/838]**
+
+    [victoriabernard92]: https://github.com/victoriabernard92
+    [pull/838]: https://github.com/cloudflare/wrangler/pull/838
+
+- ### Maintenance
+
+  - **Create fixtures programatically - [EverlastingBugstopper], [pull/854]**
+
+    Wrangler's test suite relied on a large number of fixtures that it read in from the file system. Now, it writes the test fixtures itself and does not rely on reading fixtures from the file system.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/854]: https://github.com/cloudflare/wrangler/pull/854
+
+  - **Clean up Workers Sites logic - [ashleymichal], [issue/622] [issue/643] [pull/851]**
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/851]: https://github.com/cloudflare/wrangler/pull/851
+    [issue/622]: https://github.com/cloudflare/wrangler/issues/622
+    [issue/643]: https://github.com/cloudflare/wrangler/issues/643
+
+  - **Call cloudflare-rs from https.rs - [gabbifish], [pull/841]**
+
+    We've refactored some of our API client code in order to make way for some future improvements.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/841]: https://github.com/cloudflare/wrangler/pull/841
+
+  - **Audit code comments - [EverlastingBugstopper], [pull/846]**
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/846]: https://github.com/cloudflare/wrangler/pull/846
+
+  - **Update the author of the npm package - [EverlastingBugstopper], [pull/836]**
+
+    The author of the npm package is now [wrangler@cloudflare.com](mailto:wrangler@cloudflare.com)
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/836]: https://github.com/cloudflare/wrangler/pull/836
+
+  - **Remove unused code warnings when running tests - [pradovic], [issue/818] [pull/832]**
+
+    Due to the way the Rust compiler works, some of our test code appeared to be unused, even though it wasn't really. After making a couple of modules public, there are no more warnings.
+
+    [pradovic]: https://github.com/pradovic
+    [pull/832]: https://github.com/cloudflare/wrangler/pull/832
+    [issue/818]: https://github.com/cloudflare/wrangler/issues/818
+
+  - **Use the same binding name for Rust and webpack wasm modules - [ashleymichal], [pull/822]**
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/822]: https://github.com/cloudflare/wrangler/pull/822
+
+  - **Move the code for each subcommand to its own directory - [EverlastingBugstopper], [pull/831]**
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/831]: https://github.com/cloudflare/wrangler/pull/831
+
+  - **Refactor upload forms - [ashleymichal], [pull/826]**
+
+    We've separated some tangled logic regarding the form Wrangler POSTs to the Cloudflare v4 API.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/826]: https://github.com/cloudflare/wrangler/pull/826
+
+  - **Pull npm version from package.json - [EverlastingBugstopper], [issue/812] [pull/817]**
+
+    Wrangler's npm installer version now only needs updating in the package.json instead of both the package.json and the source code.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/817]: https://github.com/cloudflare/wrangler/pull/817
+    [issue/812]: https://github.com/cloudflare/wrangler/issues/812
+
+- ### Documentation
+
+  - **Move Wrangler docs from READMEs to the Cloudflare Workers documentation site - [victoriabernard92], [pull/823]**
+
+    Wrangler has outgrown the README as primary documentation paradigm, and we've moved its documentation to the [Cloudflare Workers documentation site](https://developers.cloudflare.com/workers/tooling/wrangler/).
+
+    [victoriabernard92]: https://github.com/victoriabernard92
+    [pull/823]: https://github.com/cloudflare/wrangler/pull/823
+  
+  - **Update the demo gif in the README - [EverlastingBugstopper], [issue/843] [pull/868]**
+
+    The demo gif at the top of the README now accurately reflects the behavior of the latest Wrangler release.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/868]: https://github.com/cloudflare/wrangler/pull/868
+    [issue/843]: https://github.com/cloudflare/wrangler/issues/843
+
 ## 👻 1.5.0
 
 - ### Features
