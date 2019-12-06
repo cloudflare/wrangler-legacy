@@ -52,6 +52,7 @@ impl Fixture {
 
     pub fn create_dir(&self, name: &str) {
         let dir_path = self.get_path().join(name);
+        fs::remove_dir_all(&dir_path).ok();
         fs::create_dir(dir_path).unwrap();
     }
 
