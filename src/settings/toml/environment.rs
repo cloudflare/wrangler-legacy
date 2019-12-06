@@ -3,7 +3,7 @@ use super::site::Site;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Environment {
     pub name: Option<String>,
     pub account_id: Option<String>,

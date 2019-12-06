@@ -1,6 +1,7 @@
 use super::*;
 
 use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[test]
@@ -74,6 +75,18 @@ fn it_builds_from_environments_config_with_kv() {
         }
         None => assert!(false),
     }
+}
+
+#[test]
+fn parses_same_from_config_path_as_string() {
+    let config_path = toml_fixture_path("environments.toml");
+    eprintln!("{:?}", &config_path);
+    let string_toml = fs::read_to_string(&config_path).unwrap();
+
+    let manifest_from_string = Manifest::new_from_string(string_toml).unwrap();
+    let manifest_from_config = Manifest::new(&config_path).unwrap();
+
+    assert_eq!(manifest_from_config, manifest_from_string);
 }
 
 fn base_fixture_path() -> PathBuf {

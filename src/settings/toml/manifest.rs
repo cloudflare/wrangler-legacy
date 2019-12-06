@@ -20,7 +20,7 @@ fn some_string() -> Option<String> {
     Some("".to_string())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Manifest {
     #[serde(default)]
     pub name: String,
@@ -51,6 +51,10 @@ impl Manifest {
         check_for_duplicate_names(&manifest)?;
 
         Ok(manifest)
+    }
+
+    pub fn new_from_string(serialized_toml: String) -> Result<Self, toml::de::Error> {
+        toml::from_str(&serialized_toml)
     }
 
     pub fn generate(
