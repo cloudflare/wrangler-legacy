@@ -52,7 +52,7 @@ impl Manifest {
             Ok(m) => m,
             Err(e) => {
                 if e.to_string().contains("unknown field `kv-namespaces`") {
-                    failure::bail!("kv-namespaces should not live under the [site] table; please move it above [site].")
+                    failure::bail!("kv-namespaces should not live under the [site] table in wrangler.toml; please move it above [site].")
                 } else {
                     failure::bail!(e)
                 }
