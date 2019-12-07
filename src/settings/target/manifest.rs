@@ -36,6 +36,8 @@ pub struct Manifest {
     pub zone_id: Option<String>,
     pub webpack_config: Option<String>,
     pub private: Option<bool>,
+    // TODO: maybe one day, serde toml support will allow us to serialize sites
+    // as a TOML inline table (this would prevent confusion with environments too!)
     pub site: Option<Site>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
@@ -46,7 +48,16 @@ impl Manifest {
     pub fn new(config_path: &Path) -> Result<Self, failure::Error> {
         let config = read_config(config_path)?;
 
-        let manifest: Manifest = config.try_into()?;
+        let manifest: Manifest = match config.try_into() {
+            Ok(m) => m,
+            Err(e) => {
+                if e.to_string().contains("unknown field `kv-namespaces`") {
+                    failure::bail!("kv-namespaces should not live under the [site] table; please move it above [site].")
+                } else {
+                    failure::bail!(e)
+                }
+            }
+        };
 
         check_for_duplicate_names(&manifest)?;
 
