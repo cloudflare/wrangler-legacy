@@ -1,4 +1,4 @@
-use super::messenger::Message;
+use super::events::DevtoolsEvent;
 
 use openssl::ssl::{SslConnector, SslMethod, SslStream, SslVerifyMode};
 
@@ -14,28 +14,22 @@ pub struct WsClient {
 impl Handler for WsClient {
     fn on_open(&mut self, _: Handshake) -> ws::Result<()> {
         let enable_profiler = WsMessage::text(
-            r#"
-      {
-        "id": 1,
-        "method": "Profiler.enable"
-      }
-    "#,
+            r#"{
+                "id": 1,
+                "method": "Profiler.enable"
+            }"#,
         );
         let enable_runtime = WsMessage::text(
-            r#"
-            {
-              "id": 2,
-              "method": "Runtime.enable"
-            }
-          "#,
+            r#"{
+                "id": 2,
+                "method": "Runtime.enable"
+            }"#,
         );
         let enable_debugger = WsMessage::text(
-            r#"
-            {
-              "id": 3,
-              "method": "Debugger.enable"
-            }
-          "#,
+            r#"{
+                "id": 3,
+                "method": "Debugger.enable"
+            }"#,
         );
         self.out.send(enable_profiler)?;
         self.out.send(enable_runtime)?;
@@ -43,24 +37,28 @@ impl Handler for WsClient {
     }
 
     fn on_message(&mut self, msg: WsMessage) -> ws::Result<()> {
-        let msg = msg.as_text()?;
-        let msg: Result<Message, _> = serde_json::from_str(msg);
+        let msg_text = msg.as_text()?;
+        // println!("{}", msg_text);
+        let msg = serde_json::from_str(msg_text);
+        log::info!("---\n{}", msg_text);
         match msg {
-            Ok(msg) => {
-                if msg.method == "Runtime.consoleAPICalled" {
-                    if msg.params.args.len() == 1 {
-                        let log_message = &msg.params.args[0];
-                        if log_message.data_type == "string" {
-                            println!("{}: {}", msg.params.message_type, log_message.value);
-                        } else {
-                            println!("got not string: {}", log_message.data_type);
-                        }
+            Ok(msg) => match msg {
+                DevtoolsEvent::ConsoleAPICalled(event) => {
+                    for message in &event.messages {
+                        // TODO: format log messages differently
+                        println!("{}", message);
                     }
                 }
-                Ok(())
+                DevtoolsEvent::ExceptionThrown(event) => {
+                    println!("{}", event);
+                }
+            },
+            Err(err) => {
+                log::info!("\n{}", err);
             }
-            Err(_) => Ok(()),
-        }
+        };
+        log::info!("\n---");
+        Ok(())
     }
 
     fn upgrade_ssl_client(&mut self, sock: TcpStream, _: &Url) -> ws::Result<SslStream<TcpStream>> {

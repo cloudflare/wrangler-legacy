@@ -1,5 +1,5 @@
 mod client;
-mod messenger;
+pub mod events;
 
 use client::WsClient;
 
