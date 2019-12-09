@@ -7,7 +7,7 @@ use std::path::Path;
 use crate::commands::kv;
 use crate::commands::kv::bucket::directory_keys_values;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::framework::apiclient::ApiClient;
@@ -167,15 +167,13 @@ mod tests {
 
     fn check_kv_pairs_equality(expected: Vec<KeyValuePair>, actual: Vec<KeyValuePair>) {
         assert!(expected.len() == actual.len());
-        let mut idx = 0;
-        for pair in expected {
+        for (idx, pair) in expected.into_iter().enumerate() {
             // Ensure the expected key and value was returned in the filtered pair list
             // Awkward field-by-field comparison below courtesy of not yet implementing
             // PartialEq for KeyValuePair in cloudflare-rs :)
             // TODO: (gabbi) Implement PartialEq for KeyValuePair in cloudflare-rs.
             assert!(pair.key == actual[idx].key);
             assert!(pair.value == actual[idx].value);
-            idx += 1;
         }
     }
 }
