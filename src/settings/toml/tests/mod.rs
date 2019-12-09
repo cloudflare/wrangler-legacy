@@ -82,7 +82,7 @@ fn base_fixture_path() -> PathBuf {
     Path::new(&current_dir)
         .join("src")
         .join("settings")
-        .join("target")
+        .join("toml")
         .join("tests")
         .join("tomls")
 }

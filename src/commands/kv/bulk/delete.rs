@@ -11,7 +11,7 @@ use cloudflare::framework::apiclient::ApiClient;
 use crate::commands::kv;
 use crate::commands::kv::bulk::MAX_PAIRS;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 
 pub fn delete(

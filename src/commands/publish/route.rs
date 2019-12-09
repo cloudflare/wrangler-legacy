@@ -6,7 +6,7 @@ use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http::{api_client, format_error};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Route;
+use crate::settings::toml::Route;
 
 pub fn publish_routes(
     user: &GlobalUser,

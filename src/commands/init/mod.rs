@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::commands::validate_worker_name;
-use crate::settings::target::{Manifest, Site, TargetType};
+use crate::settings::toml::{Manifest, Site, TargetType};
 use crate::terminal::message;
 
 pub fn init(

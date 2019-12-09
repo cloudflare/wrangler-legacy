@@ -16,7 +16,7 @@ use crate::commands::subdomain::Subdomain;
 use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::{KvNamespace, Site, Target};
+use crate::settings::toml::{KvNamespace, Site, Target};
 use crate::terminal::{emoji, message};
 
 pub fn publish(
@@ -28,6 +28,11 @@ pub fn publish(
     validate_worker_name(&target.name)?;
 
     if let Some(site_config) = target.site.clone() {
+        if let Some(route) = &target.route {
+            if !route.ends_with('*') {
+                message::warn(&format!("The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*", route));
+            }
+        }
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
