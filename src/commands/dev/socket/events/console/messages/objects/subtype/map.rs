@@ -23,23 +23,15 @@ pub struct MapPreview {
 
 impl fmt::Display for MapPreview {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let len = self.entries.len();
-        if len > 0 {
-            let last_index = len - 1;
-            for (index, entry) in &mut self.entries.iter().enumerate() {
-                if index == 0 {
-                    write!(f, "{{")?;
-                }
-                write!(f, "{}", entry)?;
-                if index < last_index {
-                    write!(f, ", ")?;
-                } else {
-                    write!(f, "}}")?;
-                }
+        write!(f, "{{")?;
+        let last_index = self.entries.len() - 1;
+        for (index, entry) in &mut self.entries.iter().enumerate() {
+            write!(f, "{}", entry)?;
+            if index < last_index {
+                write!(f, ", ")?;
             }
-        } else {
-            write!(f, "{{}}")?;
         }
+        write!(f, "}}")?;
         Ok(())
     }
 }
