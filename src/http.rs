@@ -5,7 +5,7 @@ use std::time::Duration;
 use crate::install;
 use crate::settings::global_user::GlobalUser;
 
-use http::status::StatusCode;
+use http_old::status::StatusCode;
 
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;

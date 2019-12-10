@@ -3,12 +3,13 @@ use server_config::ServerConfig;
 
 use chrono::prelude::*;
 
-use hyper_alpha::client::{HttpConnector, ResponseFuture};
-use hyper_alpha::header::{HeaderMap, HeaderName, HeaderValue};
-use hyper_alpha::service::{make_service_fn, service_fn};
-use hyper_alpha::{Body, Client, Request, Response, Server, Uri};
+use hyper::client::{HttpConnector, ResponseFuture};
+use hyper::header::{HeaderMap, HeaderName, HeaderValue};
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Client, Request, Response, Server, Uri};
+use hyper::http::uri::InvalidUri;
 
-use hyper_tls_alpha::HttpsConnector;
+use hyper_tls::HttpsConnector;
 
 use uuid::Uuid;
 
@@ -34,7 +35,7 @@ pub async fn dev(
     let server_config = ServerConfig::new(host, ip, port)?;
 
     // set up https client to connect to the preview service
-    let https = HttpsConnector::new().expect("TLS initialization failed");
+    let https = HttpsConnector::new();
     let client = Client::builder().build::<_, Body>(https);
 
     let preview_id = get_preview_id(target, user, &server_config)?;
@@ -85,7 +86,7 @@ pub async fn dev(
     Ok(())
 }
 
-fn get_preview_url(path_string: &str) -> Result<Uri, http::uri::InvalidUri> {
+fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
     format!("https://{}{}", PREVIEW_HOST, path_string).parse()
 }
 
