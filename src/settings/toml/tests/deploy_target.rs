@@ -8,7 +8,7 @@ use crate::settings::toml::Manifest;
 // TOP LEVEL TESTS
 #[test]
 fn it_can_get_a_top_level_zoneless_deploy_target() {
-    let test_toml = WranglerToml::webpack_no_config("zoneless");
+    let test_toml = WranglerToml::webpack_zoneless("zoneless", true);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 

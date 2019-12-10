@@ -74,6 +74,13 @@ impl WranglerToml<'_> {
         wrangler_toml
     }
 
+    pub fn webpack_zoneless(name: &str, is_workers_dev: bool) -> WranglerToml {
+        let mut wrangler_toml = WranglerToml::webpack(name);
+        wrangler_toml.workers_dev = Some(is_workers_dev);
+
+        wrangler_toml
+    }
+
     pub fn webpack_with_env<'a>(
         name: &'a str,
         env_name: &'a str,
@@ -87,24 +94,15 @@ impl WranglerToml<'_> {
         wrangler_toml
     }
 
-    pub fn webpack_no_config(name: &str) -> WranglerToml {
-        let mut wrangler_toml = WranglerToml::default();
-        wrangler_toml.name = Some(name);
-        wrangler_toml.workers_dev = Some(true);
-        wrangler_toml.target_type = Some("webpack");
-
-        wrangler_toml
-    }
-
     pub fn webpack_std_config(name: &str) -> WranglerToml {
-        let mut wrangler_toml = WranglerToml::webpack_no_config(name);
+        let mut wrangler_toml = WranglerToml::webpack_zoneless(name, true);
         wrangler_toml.webpack_config = Some("webpack.config.js");
 
         wrangler_toml
     }
 
     pub fn webpack_custom_config<'a>(name: &'a str, webpack_config: &'a str) -> WranglerToml<'a> {
-        let mut wrangler_toml = WranglerToml::webpack_no_config(name);
+        let mut wrangler_toml = WranglerToml::webpack_zoneless(name, true);
         wrangler_toml.webpack_config = Some(webpack_config);
 
         wrangler_toml
