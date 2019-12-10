@@ -43,8 +43,7 @@ fn it_errors_on_deploy_target_missing_name() {
 
 #[test]
 fn it_errors_on_zoneless_deploy_target_workers_dev_false() {
-    let mut test_toml = WranglerToml::webpack("zoneless_false");
-    test_toml.workers_dev = Some(false);
+    let test_toml = WranglerToml::webpack_zoneless("zoneless_false", false);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -59,9 +58,7 @@ fn it_can_get_a_single_route_zoned_deploy_target() {
     let pattern = "hostname.tld/*";
     let zone_id = "samplezoneid";
 
-    let mut test_toml = WranglerToml::webpack(script);
-    test_toml.route = Some(pattern);
-    test_toml.zone_id = Some(zone_id);
+    let test_toml = WranglerToml::webpack_zoned_single_route(script, zone_id, pattern);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -86,10 +83,8 @@ fn it_can_get_a_single_route_zoned_deploy_target_workers_dev_false() {
     let pattern = "hostname.tld/*";
     let zone_id = "samplezoneid";
 
-    let mut test_toml = WranglerToml::webpack(script);
+    let mut test_toml = WranglerToml::webpack_zoned_single_route(script, zone_id, pattern);
     test_toml.workers_dev = Some(false);
-    test_toml.route = Some(pattern);
-    test_toml.zone_id = Some(zone_id);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -109,14 +104,27 @@ fn it_can_get_a_single_route_zoned_deploy_target_workers_dev_false() {
 }
 
 #[test]
-fn it_errors_on_single_route_deploy_target_missing_zone_id() {
-    let script = "single_route_missing_zone_id";
+fn it_errors_on_single_route_deploy_target_empty_zone_id() {
+    let script = "single_route_empty_zone_id";
     let pattern = "hostname.tld/*";
     let zone_id = "";
 
-    let mut test_toml = WranglerToml::webpack(script);
-    test_toml.route = Some(pattern);
-    test_toml.zone_id = Some(zone_id);
+    let test_toml = WranglerToml::webpack_zoned_single_route(script, zone_id, pattern);
+    let toml_string = toml::to_string(&test_toml).unwrap();
+    let manifest = Manifest::new_from_string(toml_string).unwrap();
+
+    let environment = None;
+
+    assert!(manifest.deploy_target(environment).is_err());
+}
+
+#[test]
+fn it_errors_on_single_route_deploy_target_missing_zone_id() {
+    let script = "single_route_empty_zone_id";
+    let pattern = "hostname.tld/*";
+
+    let mut test_toml = WranglerToml::webpack_zoned_single_route(script, "", pattern);
+    test_toml.zone_id = None;
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -131,9 +139,22 @@ fn it_errors_on_single_route_deploy_target_empty_route() {
     let pattern = "";
     let zone_id = "samplezoneid";
 
-    let mut test_toml = WranglerToml::webpack(script);
-    test_toml.route = Some(pattern);
-    test_toml.zone_id = Some(zone_id);
+    let test_toml = WranglerToml::webpack_zoned_single_route(script, zone_id, pattern);
+    let toml_string = toml::to_string(&test_toml).unwrap();
+    let manifest = Manifest::new_from_string(toml_string).unwrap();
+
+    let environment = None;
+
+    assert!(manifest.deploy_target(environment).is_err());
+}
+
+#[test]
+fn it_errors_on_single_route_deploy_target_missing_route() {
+    let script = "single_route_missing_route";
+    let zone_id = "samplezoneid";
+
+    let mut test_toml = WranglerToml::webpack_zoned_single_route(script, zone_id, "");
+    test_toml.route = None;
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -206,14 +227,28 @@ fn it_can_get_a_multi_route_zoned_deploy_target_workers_dev_false() {
 }
 
 #[test]
+fn it_errors_on_multi_route_deploy_target_empty_zone_id() {
+    let script = "multi_route_empty_zone_id";
+    let patterns = ["hostname.tld/*", "blog.hostname.tld/*"];
+    let zone_id = "";
+
+    let test_toml = WranglerToml::webpack_zoned_multi_route(script, zone_id, patterns.to_vec());
+    let toml_string = toml::to_string(&test_toml).unwrap();
+    let manifest = Manifest::new_from_string(toml_string).unwrap();
+
+    let environment = None;
+
+    assert!(manifest.deploy_target(environment).is_err());
+}
+
+#[test]
 fn it_errors_on_multi_route_deploy_target_missing_zone_id() {
     let script = "multi_route_missing_zone_id";
     let patterns = ["hostname.tld/*", "blog.hostname.tld/*"];
     let zone_id = "";
 
-    let mut test_toml = WranglerToml::webpack(script);
-    test_toml.routes = Some(patterns.to_vec());
-    test_toml.zone_id = Some(zone_id);
+    let mut test_toml = WranglerToml::webpack_zoned_multi_route(script, zone_id, patterns.to_vec());
+    test_toml.zone_id = None;
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -228,9 +263,7 @@ fn it_errors_on_multi_route_deploy_target_empty_routes_list() {
     let patterns = [];
     let zone_id = "samplezoneid";
 
-    let mut test_toml = WranglerToml::webpack(script);
-    test_toml.routes = Some(patterns.to_vec());
-    test_toml.zone_id = Some(zone_id);
+    let test_toml = WranglerToml::webpack_zoned_multi_route(script, zone_id, patterns.to_vec());
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -245,9 +278,7 @@ fn it_errors_on_multi_route_deploy_target_empty_route() {
     let patterns = [""];
     let zone_id = "samplezoneid";
 
-    let mut test_toml = WranglerToml::webpack(script);
-    test_toml.routes = Some(patterns.to_vec());
-    test_toml.zone_id = Some(zone_id);
+    let test_toml = WranglerToml::webpack_zoned_multi_route(script, zone_id, patterns.to_vec());
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -263,10 +294,8 @@ fn it_errors_on_deploy_target_route_and_routes() {
     let patterns = ["blog.hostname.tld/*"];
     let zone_id = "samplezoneid";
 
-    let mut test_toml = WranglerToml::webpack(script);
-    test_toml.route = Some(pattern);
+    let mut test_toml = WranglerToml::webpack_zoned_single_route(script, zone_id, pattern);
     test_toml.routes = Some(patterns.to_vec());
-    test_toml.zone_id = Some(zone_id);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -281,10 +310,8 @@ fn it_errors_on_deploy_target_route_and_workers_dev_true() {
     let pattern = "hostname.tld/*";
     let zone_id = "samplezoneid";
 
-    let mut test_toml = WranglerToml::webpack(script);
+    let mut test_toml = WranglerToml::webpack_zoned_single_route(script, zone_id, pattern);
     test_toml.workers_dev = Some(true);
-    test_toml.route = Some(pattern);
-    test_toml.zone_id = Some(zone_id);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -299,10 +326,8 @@ fn it_errors_on_deploy_target_routes_and_workers_dev_true() {
     let patterns = ["blog.hostname.tld/*"];
     let zone_id = "samplezoneid";
 
-    let mut test_toml = WranglerToml::webpack(script);
+    let mut test_toml = WranglerToml::webpack_zoned_multi_route(script, zone_id, patterns.to_vec());
     test_toml.workers_dev = Some(true);
-    test_toml.routes = Some(patterns.to_vec());
-    test_toml.zone_id = Some(zone_id);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 

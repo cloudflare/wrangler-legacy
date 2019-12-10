@@ -84,6 +84,32 @@ impl WranglerToml<'_> {
         wrangler_toml
     }
 
+    pub fn webpack_zoned_single_route<'a>(
+        name: &'a str,
+        zone_id: &'a str,
+        route: &'a str,
+    ) -> WranglerToml<'a> {
+        let mut wrangler_toml = WranglerToml::webpack(name);
+        wrangler_toml.zone_id = Some(zone_id);
+        wrangler_toml.route = Some(route);
+
+        eprintln!("{:#?}", &wrangler_toml);
+        wrangler_toml
+    }
+
+    pub fn webpack_zoned_multi_route<'a>(
+        name: &'a str,
+        zone_id: &'a str,
+        routes: Vec<&'a str>,
+    ) -> WranglerToml<'a> {
+        let mut wrangler_toml = WranglerToml::webpack(name);
+        wrangler_toml.zone_id = Some(zone_id);
+        wrangler_toml.routes = Some(routes);
+
+        eprintln!("{:#?}", &wrangler_toml);
+        wrangler_toml
+    }
+
     pub fn webpack_with_env<'a>(
         name: &'a str,
         env_name: &'a str,
