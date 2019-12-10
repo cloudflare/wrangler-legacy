@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use cloudflare::endpoints::workers::WorkersRoute;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Route {
     pub id: Option<String>,
     pub script: Option<String>,

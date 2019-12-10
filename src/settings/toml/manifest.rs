@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use config::{Config, File};
 use serde::{Deserialize, Serialize};
 
+use crate::settings::toml::deploy_target::{DeployTarget, RouteConfig};
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::KvNamespace;
 use crate::settings::toml::site::Site;
@@ -136,6 +137,21 @@ impl Manifest {
         }
 
         self.name.clone()
+    }
+
+    fn route_config(&self) -> RouteConfig {
+        RouteConfig {
+            workers_dev: self.workers_dev,
+            route: self.route.clone(),
+            routes: self.routes.clone(),
+            zone_id: self.zone_id.clone(),
+        }
+    }
+
+    pub fn deploy_target(&self, env: Option<&str>) -> Result<DeployTarget, failure::Error> {
+        let script = self.worker_name(env);
+        let route_config = self.route_config();
+        DeployTarget::build(&script, &route_config)
     }
 
     pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
