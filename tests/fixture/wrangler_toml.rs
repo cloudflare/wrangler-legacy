@@ -38,6 +38,15 @@ pub struct EnvConfig<'a> {
     pub kv_namespaces: Option<Vec<KvConfig<'a>>>,
 }
 
+impl EnvConfig<'_> {
+    pub fn custom_script_name(name: &str) -> EnvConfig {
+        let mut env_config = EnvConfig::default();
+        env_config.name = Some(name);
+
+        env_config
+    }
+}
+
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct WranglerToml<'a> {
     pub name: Option<&'a str>,
@@ -57,6 +66,27 @@ pub struct WranglerToml<'a> {
 }
 
 impl WranglerToml<'_> {
+    pub fn webpack(name: &str) -> WranglerToml {
+        let mut wrangler_toml = WranglerToml::default();
+        wrangler_toml.name = Some(name);
+        wrangler_toml.target_type = Some("webpack");
+
+        wrangler_toml
+    }
+
+    pub fn webpack_with_env<'a>(
+        name: &'a str,
+        env_name: &'a str,
+        env_config: EnvConfig<'a>,
+    ) -> WranglerToml<'a> {
+        let mut wrangler_toml = WranglerToml::webpack(name);
+        let mut env = HashMap::new();
+        env.insert(env_name, env_config);
+        wrangler_toml.env = Some(env);
+
+        wrangler_toml
+    }
+
     pub fn webpack_no_config(name: &str) -> WranglerToml {
         let mut wrangler_toml = WranglerToml::default();
         wrangler_toml.name = Some(name);
