@@ -6,27 +6,32 @@ use crate::commands::dev::socket::events::console::LogMessage;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ArrayData {
     pub preview: ArrayPreview,
+    pub description: String,
 }
 
 impl fmt::Display for ArrayData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let last_index = self.preview.properties.len() - 1;
-        for (idx, property) in &mut self.preview.properties.iter().enumerate() {
-            if idx == 0 {
-                write!(f, "[")?;
-            }
-            write!(f, "{}", property)?;
-            if idx < last_index {
-                write!(f, ", ")?;
-            } else {
-                write!(f, "]")?;
-            }
-        }
-        Ok(())
+        write!(f, "{} {}", &self.description, &self.preview)
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ArrayPreview {
-    properties: Vec<LogMessage>,
+    pub properties: Vec<LogMessage>,
+}
+
+impl fmt::Display for ArrayPreview {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[")?;
+        let last_index = self.properties.len() - 1;
+        for (index, property) in &mut self.properties.iter().enumerate() {
+            if index == 0 {}
+            write!(f, "{}", property)?;
+            if index < last_index {
+                write!(f, ", ")?;
+            }
+        }
+        write!(f, "]")?;
+        Ok(())
+    }
 }

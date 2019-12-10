@@ -1,31 +1,34 @@
 mod array;
+mod description;
+mod map;
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
 use array::ArrayData;
+use description::Description;
+use map::MapData;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "subtype", rename_all = "lowercase")]
 pub enum Subtype {
     Array(ArrayData),
     Null,
-    Node,
-    RegExp,
-    Date,
-    Map,
-    Set,
-    WeakMap,
-    WeakSet,
+    RegExp(Description),
+    Date(Description),
+    Map(MapData),
+    Set(Description),
+    WeakMap(Description),
+    WeakSet(Description),
     #[serde(rename = "iterator")]
-    JsIterator,
-    Generator,
-    Error,
-    Proxy,
-    Promise,
-    TypedArray,
-    ArrayBuffer,
-    DataView,
+    JsIterator(Description),
+    Generator(Description),
+    Error(Description),
+    Proxy(Description),
+    Promise(Description),
+    TypedArray(Description),
+    ArrayBuffer(Description),
+    DataView(Description),
 }
 
 impl fmt::Display for Subtype {
@@ -33,7 +36,10 @@ impl fmt::Display for Subtype {
         match &self {
             Subtype::Array(array) => write!(f, "{}", array),
             Subtype::Null => write!(f, "null"),
-            _ => write!(f, "{:?}", &self),
+            Subtype::RegExp(reg_exp) => write!(f, "{}", reg_exp),
+            Subtype::Date(date) => write!(f, "{}", date),
+            Subtype::Map(map) => write!(f, "{}", map),
+            _ => write!(f, "unhandled type"),
         }
     }
 }

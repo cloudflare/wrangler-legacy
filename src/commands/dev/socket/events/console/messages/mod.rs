@@ -25,7 +25,7 @@ pub enum LogMessage {
     BigInt(BigIntData),
     Boolean(BooleanData),
     #[serde(rename = "string")]
-    StringVal(StringData),
+    StringJs(StringData),
     Symbol(SymbolData),
     Undefined,
     Function(FunctionData),
@@ -36,7 +36,7 @@ impl fmt::Display for LogMessage {
         match &self {
             LogMessage::Object(object) => write!(f, "{}", object),
             LogMessage::Boolean(boolean) => write!(f, "{}", boolean),
-            LogMessage::StringVal(string) => write!(f, "{}", string),
+            LogMessage::StringJs(string) => write!(f, "{}", string),
             LogMessage::Undefined => write!(f, "undefined"),
             LogMessage::Function(function) => write!(f, "{}", function),
             LogMessage::Number(number) => write!(f, "{}", number),
