@@ -553,9 +553,9 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
-        let rt = Runtime::new().unwrap();
-        rt.block_on(commands::dev(target, user, host, port, ip))?;
-        rt.shutdown_now();
+        Runtime::new()
+            .unwrap()
+            .block_on(commands::dev(target, user, host, port, ip))?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

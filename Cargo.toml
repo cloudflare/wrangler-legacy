@@ -41,16 +41,16 @@ notify = "4.0.12"
 ws = "0.9.0"
 url = "2.1.0"
 percent-encoding = "1.0.1"
-http = "0.1.1"
+http_old = {package = "http", version = "0.1.1"}
 regex = "1"
 sha2 = "0.8.0"
 data-encoding = "2.1.2"
 ignore = "0.4.10"
 tempfile = "3.1.0"
-hyper-alpha = {package = "hyper", version = "0.13.0-alpha.4"}
-hyper-tls-alpha = {package = "hyper-tls", version = "0.4.0-alpha.4"}
+hyper = "0.13.0"
+hyper-tls = "0.4.0"
 chrono = "0.4.9"
-tokio = "0.2.0-alpha.6"
+tokio = "0.2.0"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"
