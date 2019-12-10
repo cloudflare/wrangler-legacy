@@ -43,6 +43,7 @@ impl EnvConfig<'_> {
         let mut env_config = EnvConfig::default();
         env_config.name = Some(name);
 
+        eprintln!("{:#?}", &env_config);
         env_config
     }
 }
@@ -71,6 +72,7 @@ impl WranglerToml<'_> {
         wrangler_toml.name = Some(name);
         wrangler_toml.target_type = Some("webpack");
 
+        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -78,6 +80,7 @@ impl WranglerToml<'_> {
         let mut wrangler_toml = WranglerToml::webpack(name);
         wrangler_toml.workers_dev = Some(is_workers_dev);
 
+        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -91,6 +94,7 @@ impl WranglerToml<'_> {
         env.insert(env_name, env_config);
         wrangler_toml.env = Some(env);
 
+        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -98,6 +102,7 @@ impl WranglerToml<'_> {
         let mut wrangler_toml = WranglerToml::webpack_zoneless(name, true);
         wrangler_toml.webpack_config = Some("webpack.config.js");
 
+        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -105,6 +110,7 @@ impl WranglerToml<'_> {
         let mut wrangler_toml = WranglerToml::webpack_zoneless(name, true);
         wrangler_toml.webpack_config = Some(webpack_config);
 
+        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -114,6 +120,7 @@ impl WranglerToml<'_> {
         wrangler_toml.workers_dev = Some(true);
         wrangler_toml.target_type = Some("rust");
 
+        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -123,6 +130,7 @@ impl WranglerToml<'_> {
         wrangler_toml.workers_dev = Some(true);
         wrangler_toml.target_type = Some("javascript");
 
+        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 }
