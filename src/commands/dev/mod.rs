@@ -11,12 +11,13 @@ use std::thread;
 
 use chrono::prelude::*;
 
-use hyper_alpha::client::{HttpConnector, ResponseFuture};
-use hyper_alpha::header::{HeaderMap, HeaderName, HeaderValue};
-use hyper_alpha::service::{make_service_fn, service_fn};
-use hyper_alpha::{Body, Client as HyperClient, Request, Response, Server, Uri};
+use hyper::client::{HttpConnector, ResponseFuture};
+use hyper::header::{HeaderMap, HeaderName, HeaderValue};
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
+use hyper::http::uri::InvalidUri;
 
-use hyper_tls_alpha::HttpsConnector;
+use hyper_tls::HttpsConnector;
 
 use tokio::runtime::Runtime;
 
@@ -47,17 +48,17 @@ pub fn dev(
 
     thread::spawn(move || socket::listen(session_id));
 
-    let rt = Runtime::new().unwrap();
+    let mut rt = Runtime::new()?;
     rt.block_on(serve(server_config, preview_id))?;
-    rt.shutdown_now();
 
     Ok(())
 }
 
 async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), failure::Error> {
     // set up https client to connect to the preview service
-    let https = HttpsConnector::new().expect("TLS initialization failed");
+    let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
+
     let listening_address = server_config.listening_address.clone();
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
@@ -104,7 +105,7 @@ async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), fa
     Ok(())
 }
 
-fn get_preview_url(path_string: &str) -> Result<Uri, http::uri::InvalidUri> {
+fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
     format!("https://{}{}", PREVIEW_HOST, path_string).parse()
 }
 
