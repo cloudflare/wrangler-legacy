@@ -2,6 +2,8 @@
 #[cfg(test)]
 mod wrangler_toml;
 
+mod deploy_target;
+
 use super::*;
 
 use std::env;
