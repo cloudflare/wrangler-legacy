@@ -1,3 +1,4 @@
+mod deploy_target;
 mod environment;
 mod kv_namespace;
 mod manifest;
@@ -6,6 +7,7 @@ mod site;
 mod target;
 mod target_type;
 
+pub use deploy_target::DeployTarget;
 pub use environment::Environment;
 pub use kv_namespace::KvNamespace;
 pub use manifest::Manifest;
