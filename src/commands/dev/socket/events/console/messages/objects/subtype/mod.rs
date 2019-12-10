@@ -13,10 +13,9 @@ use map::MapData;
 #[serde(tag = "subtype", rename_all = "lowercase")]
 pub enum Subtype {
     Array(ArrayData),
-    Null,
+    Map(MapData),
     RegExp(Description),
     Date(Description),
-    Map(MapData),
     Set(Description),
     WeakMap(Description),
     WeakSet(Description),
@@ -29,6 +28,7 @@ pub enum Subtype {
     TypedArray(Description),
     ArrayBuffer(Description),
     DataView(Description),
+    Null,
 }
 
 impl fmt::Display for Subtype {
