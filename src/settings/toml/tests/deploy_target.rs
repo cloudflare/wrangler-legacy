@@ -31,6 +31,17 @@ fn it_errors_on_zoneless_deploy_target_missing_workers_dev() {
 }
 
 #[test]
+fn it_errors_on_deploy_target_missing_name() {
+    let test_toml = WranglerToml::webpack_zoneless("", true);
+    let toml_string = toml::to_string(&test_toml).unwrap();
+    let manifest = Manifest::new_from_string(toml_string).unwrap();
+
+    let environment = None;
+
+    assert!(manifest.deploy_target(environment).is_err());
+}
+
+#[test]
 fn it_errors_on_zoneless_deploy_target_workers_dev_false() {
     let mut test_toml = WranglerToml::webpack("zoneless_false");
     test_toml.workers_dev = Some(false);
