@@ -1,5 +1,4 @@
 mod client;
-mod messenger;
 
 use client::WsClient;
 
