@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use crate::commands::validate_worker_name;
-use crate::settings::target::{Manifest, Site, TargetType};
+use crate::settings::toml::{Manifest, Site, TargetType};
 use crate::{commands, install};
 
 pub fn generate(

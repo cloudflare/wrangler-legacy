@@ -2,7 +2,7 @@ use super::environment::Environment;
 use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -337,10 +337,8 @@ impl Manifest {
         if let Some(env) = &self.env {
             for (env_name, env) in env {
                 let mut current_env_fields: Vec<String> = Vec::new();
-                if let Some(_) = &env.account_id {
-                    if !account_id_env {
-                        current_env_fields.push("account_id".to_string());
-                    }
+                if env.account_id.is_some() && !account_id_env {
+                    current_env_fields.push("account_id".to_string());
                 }
                 if let Some(kv_namespaces) = &env.kv_namespaces {
                     for kv_namespace in kv_namespaces {
