@@ -13,9 +13,9 @@ use chrono::prelude::*;
 
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderMap, HeaderName, HeaderValue};
+use hyper::http::uri::InvalidUri;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
-use hyper::http::uri::InvalidUri;
 
 use hyper_tls::HttpsConnector;
 
