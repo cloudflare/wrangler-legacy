@@ -285,6 +285,52 @@ fn it_builds_with_webpack_target_webworker() {
     build_creates_assets(&fixture, vec!["script.js"]);
 }
 
+#[test]
+fn it_fails_with_webpack_devtool_none() {
+    let fixture = Fixture::new();
+    fixture.scaffold_webpack();
+
+    fixture.create_file(
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            "entry": "./index.js",
+            "devtool": "none"
+        }
+    "#,
+    );
+
+    let wrangler_toml = WranglerToml::webpack_std_config("test-build-fails-webpack-devtool-none");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    build_fails_with(
+        &fixture,
+        "Building a Cloudflare Worker with `devtool` \"none\" is not supported.",
+    );
+}
+
+#[test]
+fn it_builds_with_webpack_devtool_inline_source_map() {
+    let fixture = Fixture::new();
+    fixture.scaffold_webpack();
+
+    fixture.create_file(
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            "entry": "./index.js",
+            "devtool": "inline-source-map"
+        }
+    "#,
+    );
+
+    let wrangler_toml =
+        WranglerToml::webpack_std_config("test-build-webpack-devtool-inline-source-map");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    build_creates_assets(&fixture, vec!["script.js"]);
+}
+
 fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) {
     let _lock = fixture.lock();
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();

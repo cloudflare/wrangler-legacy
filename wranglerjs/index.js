@@ -54,6 +54,16 @@ function filterByExtension(ext) {
   }
   config.target = "webworker";
 
+  if (config.devtool !== undefined && config.devtool !== "inline-source-map") {
+    throw error(
+      "Building a Cloudflare Worker with `devtool` " +
+        JSON.stringify(config.devtool) +
+        " is not supported. Wrangler will set `inline-source-map` by default, please remove " +
+        "the `devtool` key in your webpack configuration."
+    );
+  }
+  config.devtool = "inline-source-map";
+
   const compiler = webpack(config);
   const fullConfig = compiler.options;
 
