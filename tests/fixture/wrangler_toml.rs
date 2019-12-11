@@ -46,6 +46,29 @@ impl EnvConfig<'_> {
         eprintln!("{:#?}", &env_config);
         env_config
     }
+
+    pub fn zoneless(is_workers_dev: bool) -> EnvConfig<'static> {
+        let mut env_config = EnvConfig::default();
+        env_config.workers_dev = Some(is_workers_dev);
+
+        env_config
+    }
+
+    pub fn zoned_single_route<'a>(zone_id: &'a str, route: &'a str) -> EnvConfig<'a> {
+        let mut env_config = EnvConfig::default();
+        env_config.zone_id = Some(zone_id);
+        env_config.route = Some(route);
+
+        env_config
+    }
+
+    pub fn zoned_multi_route<'a>(zone_id: &'a str, routes: Vec<&'a str>) -> EnvConfig<'a> {
+        let mut env_config = EnvConfig::default();
+        env_config.zone_id = Some(zone_id);
+        env_config.routes = Some(routes);
+
+        env_config
+    }
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -116,9 +139,48 @@ impl WranglerToml<'_> {
         env_config: EnvConfig<'a>,
     ) -> WranglerToml<'a> {
         let mut wrangler_toml = WranglerToml::webpack(name);
-        let mut env = HashMap::new();
-        env.insert(env_name, env_config);
-        wrangler_toml.env = Some(env);
+        wrangler_toml.env = Some(test_env(env_name, env_config));
+
+        eprintln!("{:#?}", &wrangler_toml);
+        wrangler_toml
+    }
+
+    pub fn webpack_zoneless_with_env<'a>(
+        name: &'a str,
+        is_workers_dev: bool,
+        env_name: &'a str,
+        env_config: EnvConfig<'a>,
+    ) -> WranglerToml<'a> {
+        let mut wrangler_toml = WranglerToml::webpack_zoneless(name, is_workers_dev);
+        wrangler_toml.env = Some(test_env(env_name, env_config));
+
+        eprintln!("{:#?}", &wrangler_toml);
+        wrangler_toml
+    }
+
+    pub fn webpack_zoned_single_route_with_env<'a>(
+        name: &'a str,
+        zone_id: &'a str,
+        route: &'a str,
+        env_name: &'a str,
+        env_config: EnvConfig<'a>,
+    ) -> WranglerToml<'a> {
+        let mut wrangler_toml = WranglerToml::webpack_zoned_single_route(name, zone_id, route);
+        wrangler_toml.env = Some(test_env(env_name, env_config));
+
+        eprintln!("{:#?}", &wrangler_toml);
+        wrangler_toml
+    }
+
+    pub fn webpack_zoned_multi_route_with_env<'a>(
+        name: &'a str,
+        zone_id: &'a str,
+        routes: Vec<&'a str>,
+        env_name: &'a str,
+        env_config: EnvConfig<'a>,
+    ) -> WranglerToml<'a> {
+        let mut wrangler_toml = WranglerToml::webpack_zoned_multi_route(name, zone_id, routes);
+        wrangler_toml.env = Some(test_env(env_name, env_config));
 
         eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
@@ -159,4 +221,11 @@ impl WranglerToml<'_> {
         eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
+}
+
+fn test_env<'a>(env_name: &'a str, env_config: EnvConfig<'a>) -> HashMap<&'a str, EnvConfig<'a>> {
+    let mut env = HashMap::new();
+    env.insert(env_name, env_config);
+
+    env
 }

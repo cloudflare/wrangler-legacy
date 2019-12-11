@@ -1,7 +1,8 @@
-use super::kv_namespace::KvNamespace;
-use super::site::Site;
-
 use serde::{Deserialize, Serialize};
+
+use crate::settings::toml::deploy_target::RouteConfig;
+use crate::settings::toml::kv_namespace::KvNamespace;
+use crate::settings::toml::site::Site;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Environment {
@@ -16,4 +17,15 @@ pub struct Environment {
     pub site: Option<Site>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
+}
+
+impl Environment {
+    pub fn route_config(&self) -> Result<RouteConfig, failure::Error> {
+        Ok(RouteConfig {
+            workers_dev: self.workers_dev,
+            route: self.route.clone(),
+            routes: self.routes.clone(),
+            zone_id: self.zone_id.clone(),
+        })
+    }
 }
