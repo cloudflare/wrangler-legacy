@@ -7,7 +7,7 @@ use super::filename_from_path;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
 
-use crate::settings::target::KvNamespace;
+use crate::settings::toml::KvNamespace;
 
 #[derive(Debug)]
 pub struct ProjectAssets {

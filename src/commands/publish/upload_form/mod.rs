@@ -11,7 +11,7 @@ use crate::commands::build::wranglerjs;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
-use crate::settings::target::{Target, TargetType};
+use crate::settings::toml::{Target, TargetType};
 
 use project_assets::ProjectAssets;
 use text_blob::TextBlob;

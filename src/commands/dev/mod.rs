@@ -17,7 +17,7 @@ use crate::commands;
 use crate::commands::preview::upload;
 
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 use crate::terminal::emoji;
 
