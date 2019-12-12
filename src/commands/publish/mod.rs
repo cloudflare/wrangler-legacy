@@ -13,26 +13,22 @@ use crate::commands;
 use crate::commands::kv;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::subdomain::Subdomain;
-use crate::commands::validate_worker_name;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{KvNamespace, Site, Target};
+use crate::settings::toml::{DeployTarget, KvNamespace, Site, Target, Zoneless};
 use crate::terminal::{emoji, message};
 
 pub fn publish(
     user: &GlobalUser,
     target: &mut Target,
+    deploy_target: DeployTarget,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
-    validate_worker_name(&target.name)?;
 
-    if let Some(site_config) = target.site.clone() {
-        if let Some(route) = &target.route {
-            if !route.ends_with('*') {
-                message::warn(&format!("The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*", route));
-            }
-        }
+    // TODO: write a separate function for publishing a site
+    if let Some(site_config) = &target.site.clone() {
+        warn_site_incompatible_route(&deploy_target);
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
@@ -43,9 +39,24 @@ pub fn publish(
 
     upload_script(&user, &target, asset_manifest)?;
 
-    deploy(&user, &target)?;
+    deploy(&user, &deploy_target)?;
 
     Ok(())
+}
+
+fn warn_site_incompatible_route(deploy_target: &DeployTarget) {
+    if let DeployTarget::Zoned(zoned) = &deploy_target {
+        if zoned.routes.len() == 1 {
+            let route = &zoned.routes[0];
+
+            if !route.pattern.ends_with('*') {
+                message::warn(&format!(
+                    "The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*",
+                    route.pattern)
+                );
+            }
+        }
+    }
 }
 
 // Updates given Target with kv_namespace binding for a static site assets KV namespace.
@@ -105,36 +116,25 @@ fn upload_script(
     Ok(())
 }
 
-fn deploy(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    let routes = target.routes()?;
-    log::info!("routes: {:#?}", &routes);
+fn deploy(user: &GlobalUser, deploy_target: &DeployTarget) -> Result<(), failure::Error> {
+    match deploy_target {
+        DeployTarget::Zoneless(zoneless_config) => {
+            // this is a zoneless deploy
+            log::info!("publishing to subdomain");
+            let deploy_address = publish_to_subdomain(user, zoneless_config)?;
 
-    if routes.is_empty() {
-        // this is a zoneless deploy
-        log::info!("publishing to subdomain");
-        let deploy_address = publish_to_subdomain(target, user)?;
+            message::success(&format!(
+                "Successfully published your script to {}",
+                deploy_address
+            ));
 
-        message::success(&format!(
-            "Successfully published your script to {}",
-            deploy_address
-        ));
-
-        Ok(())
-    } else {
-        // this is a zoned deploy
-        log::info!("publishing to zone");
-        // Most users of Workers Sites will be confused by our route patterns; this warning
-        // informs them of the best configuration for their project, but does not block them
-        // from deploying to a non-wildcard route.
-        if target.site.is_some() && routes.len() == 1 {
-            let route_pattern = &routes[0].pattern;
-            if !route_pattern.ends_with("*") {
-                message::warn(&format!("The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*", route_pattern));
-            }
+            Ok(())
         }
+        DeployTarget::Zoned(zoned_config) => {
+            // this is a zoned deploy
+            log::info!("publishing to zone");
 
-        if let Some(zone_id) = &target.zone_id {
-            let published_routes = publish_routes(&user, routes, zone_id)?;
+            let published_routes = publish_routes(&user, zoned_config)?;
 
             message::success(&format!(
                 "Deployed to the following routes:\n{}",
@@ -142,10 +142,6 @@ fn deploy(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
             ));
 
             Ok(())
-        } else {
-            failure::bail!(
-                "You must provide a zone_id in your wrangler.toml before publishing to a route!"
-            )
         }
     }
 }
@@ -210,9 +206,12 @@ fn build_subdomain_request() -> String {
     serde_json::json!({ "enabled": true }).to_string()
 }
 
-fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, failure::Error> {
+fn publish_to_subdomain(
+    user: &GlobalUser,
+    zoneless_config: &Zoneless,
+) -> Result<String, failure::Error> {
     log::info!("checking that subdomain is registered");
-    let subdomain = Subdomain::get(&target.account_id, user)?;
+    let subdomain = Subdomain::get(&zoneless_config.account_id, user)?;
     let subdomain = match subdomain {
         Some(subdomain) => subdomain,
         None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
@@ -220,7 +219,7 @@ fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, fa
 
     let sd_worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
-        target.account_id, target.name,
+        zoneless_config.account_id, zoneless_config.script,
     );
 
     let client = http::auth_client(None, user);
@@ -239,7 +238,11 @@ fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, fa
             res.text()?
         )
     }
-    Ok(format!("https://{}.{}.workers.dev", target.name, subdomain))
+
+    Ok(format!(
+        "https://{}.{}.workers.dev",
+        zoneless_config.script, subdomain
+    ))
 }
 
 fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
@@ -267,26 +270,6 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         None => {}
     }
 
-    let destination = if let Some(route) = &target.route {
-        // check required fields for publishing to a route
-        if target
-            .zone_id
-            .as_ref()
-            .unwrap_or(&"".to_string())
-            .is_empty()
-        {
-            missing_fields.push("zone_id")
-        };
-        if route.is_empty() {
-            missing_fields.push("route")
-        };
-        // zoned deploy destination
-        "a route"
-    } else {
-        // zoneless deploy destination
-        "your subdomain"
-    };
-
     let (field_pluralization, is_are) = match missing_fields.len() {
         n if n >= 2 => ("fields", "are"),
         1 => ("field", "is"),
@@ -295,12 +278,11 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "{} Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
+            "{} Your wrangler.toml is missing the {} {:?} which {} required to publish your worker!",
             emoji::WARN,
             field_pluralization,
             missing_fields,
             is_are,
-            destination
         );
     };
 

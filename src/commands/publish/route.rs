@@ -6,21 +6,21 @@ use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http::{api_client, format_error};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::Route;
+use crate::settings::toml::{Route, Zoned};
 
 pub fn publish_routes(
     user: &GlobalUser,
-    routes: Vec<Route>,
-    zone_id: &String,
+    zoned_config: &Zoned,
 ) -> Result<Vec<RouteUploadResult>, failure::Error> {
     // For the moment, we'll just make this call once and make all our decisions based on the response.
     // There is a possibility of race conditions, but we just report back the results and allow the
     // user to decide how to procede.
-    let existing_routes = fetch_all(user, zone_id)?;
+    let existing_routes = fetch_all(user, &zoned_config.zone_id)?;
 
-    let deployed_routes = routes
+    let deployed_routes = zoned_config
+        .routes
         .iter()
-        .map(|route| deploy_route(user, zone_id, route, &existing_routes))
+        .map(|route| deploy_route(user, &zoned_config.zone_id, route, &existing_routes))
         .collect();
 
     Ok(deployed_routes)
