@@ -19,7 +19,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{Walk, WalkBuilder};
 
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 
 pub const KEY_MAX_SIZE: usize = 512;
@@ -133,14 +133,11 @@ const NODE_MODULES: &str = "node_modules";
 
 fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
     // The directory provided should never be node_modules!
-    match directory.file_name() {
-        Some(name) => {
-            if name == NODE_MODULES {
-                failure::bail!("Your directory of files to upload cannot be named node_modules.");
-            }
+    if let Some(name) = directory.file_name() {
+        if name == NODE_MODULES {
+            failure::bail!("Your directory of files to upload cannot be named node_modules.");
         }
-        _ => (),
-    }
+    };
 
     let ignore = build_ignore(target, directory)?;
     Ok(WalkBuilder::new(directory).overrides(ignore).build())
@@ -260,7 +257,7 @@ mod tests {
     use std::fs;
     use std::path::{Path, PathBuf};
 
-    use crate::settings::target::{Site, Target, TargetType};
+    use crate::settings::toml::{Site, Target, TargetType};
 
     fn make_target(site: Site) -> Target {
         Target {

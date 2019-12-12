@@ -21,6 +21,12 @@ pub struct Fixture {
     dir: ManuallyDrop<TempDir>,
 }
 
+impl Default for Fixture {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Fixture {
     pub fn new() -> Fixture {
         let dir = TempDir::new().unwrap();
