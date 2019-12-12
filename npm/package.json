@@ -4,7 +4,6 @@
   "description": "Wrangle your Cloudflare Workers",
   "main": "binary.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "node -e 'require(\"./binary.js\").install()'",
     "preuninstall": "node -e 'require(\"./binary.js\").uninstall()'"
   },
@@ -43,5 +42,7 @@
     "http",
     "cli"
   ],
-  "dependencies": {}
+  "dependencies": {
+    "binary-install": "0.0.0"
+  }
 }
