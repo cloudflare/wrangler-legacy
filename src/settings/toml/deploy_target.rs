@@ -46,10 +46,7 @@ impl RouteConfig {
 }
 
 impl DeployTarget {
-    pub fn build(
-        script: &String,
-        route_config: &RouteConfig,
-    ) -> Result<DeployTarget, failure::Error> {
+    pub fn build(script: &str, route_config: &RouteConfig) -> Result<DeployTarget, failure::Error> {
         if route_config.is_zoneless() {
             Ok(DeployTarget::Zoneless)
         } else {
@@ -76,7 +73,7 @@ impl DeployTarget {
 
             if let Some(patterns) = &route_config.routes {
                 for pattern in patterns {
-                    zoned.add_route(&pattern, script);
+                    zoned.add_route(pattern, script);
                 }
             }
 
@@ -102,7 +99,7 @@ pub struct Zoned {
 }
 
 impl Zoned {
-    pub fn add_route(&mut self, pattern: &String, script: &String) -> &Self {
+    pub fn add_route(&mut self, pattern: &str, script: &str) -> &Self {
         // TODO: Write custom deserializer for route, which will make this fn unnecessary
         if !pattern.is_empty() {
             self.routes.push(Route {
