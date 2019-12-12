@@ -24,7 +24,8 @@ impl RouteConfig {
 
     pub fn routes_defined(&self) -> bool {
         if let Some(pattern) = &self.route {
-            !pattern.is_empty() || self.routes.is_some() // this is all so messy because of deserializer
+            // this is all so messy because of deserializer
+            !pattern.is_empty() || self.routes.is_some()
         } else {
             self.routes.is_some()
         }
@@ -67,7 +68,7 @@ impl RouteConfig {
 
 impl DeployTarget {
     pub fn build(
-        script: &String,
+        script_name: &String,
         route_config: &RouteConfig,
     ) -> Result<DeployTarget, failure::Error> {
         if route_config.is_zoneless() {
@@ -77,7 +78,7 @@ impl DeployTarget {
                 failure::bail!("field `account_id` is required to deploy to workers.dev");
             }
             let zoneless = Zoneless {
-                script: script.to_string(),
+                script_name: script_name.to_string(),
                 account_id: account_id.to_string(),
             };
 
@@ -101,12 +102,12 @@ impl DeployTarget {
             // TODO: these should be an if/else if block; write deserializer
             // for `route` key that turns `Some("")` into `None`
             if let Some(pattern) = &route_config.route {
-                zoned.add_route(&pattern, script);
+                zoned.add_route(&pattern, script_name);
             }
 
             if let Some(patterns) = &route_config.routes {
                 for pattern in patterns {
-                    zoned.add_route(&pattern, script);
+                    zoned.add_route(&pattern, script_name);
                 }
             }
 
@@ -128,7 +129,7 @@ pub enum DeployTarget {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Zoneless {
     pub account_id: String,
-    pub script: String,
+    pub script_name: String,
 }
 
 #[derive(Clone, Debug, PartialEq)]

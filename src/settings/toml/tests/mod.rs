@@ -10,7 +10,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use wrangler_toml::{EnvConfig, WranglerToml};
+use wrangler_toml::{EnvConfig, WranglerToml, TEST_ENV_NAME};
 
 #[test]
 fn it_builds_from_config() {
@@ -100,7 +100,6 @@ fn parses_same_from_config_path_as_string() {
 #[test]
 fn worker_name_function_generates_the_correct_name() {
     let top_level_name = "worker";
-    let env = "prod";
     let custom_env_name = "george";
 
     let no_name_no_env = WranglerToml::webpack(""); // should error
@@ -114,35 +113,37 @@ fn worker_name_function_generates_the_correct_name() {
 
     assert_eq!(manifest.worker_name(None), top_level_name);
 
-    let no_name_with_env = WranglerToml::webpack_with_env("", env, EnvConfig::default());
+    let no_name_with_env = WranglerToml::with_env("", EnvConfig::default());
     let manifest = Manifest::new_from_string(toml::to_string(&no_name_with_env).unwrap()).unwrap();
 
     // this function is not opinionated about valid names; that is evaluated in commands
-    assert_eq!(manifest.worker_name(Some(env)), format!("-{}", env));
+    assert_eq!(
+        manifest.worker_name(Some(TEST_ENV_NAME)),
+        format!("-{}", TEST_ENV_NAME)
+    );
 
-    let with_name_with_env =
-        WranglerToml::webpack_with_env(top_level_name, env, EnvConfig::default());
+    let with_name_with_env = WranglerToml::with_env(top_level_name, EnvConfig::default());
     let manifest =
         Manifest::new_from_string(toml::to_string(&with_name_with_env).unwrap()).unwrap();
 
     assert_eq!(
-        manifest.worker_name(Some(env)),
-        format!("{}-{}", top_level_name, env)
+        manifest.worker_name(Some(TEST_ENV_NAME)),
+        format!("{}-{}", top_level_name, TEST_ENV_NAME)
     );
 
     let env_config = EnvConfig::custom_script_name(custom_env_name);
-    let no_name_env_override = WranglerToml::webpack_with_env("", env, env_config);
+    let no_name_env_override = WranglerToml::with_env("", env_config);
     let manifest =
         Manifest::new_from_string(toml::to_string(&no_name_env_override).unwrap()).unwrap();
 
-    assert_eq!(manifest.worker_name(Some(env)), custom_env_name);
+    assert_eq!(manifest.worker_name(Some(TEST_ENV_NAME)), custom_env_name);
 
     let env_config = EnvConfig::custom_script_name(custom_env_name);
-    let with_name_env_override = WranglerToml::webpack_with_env(top_level_name, env, env_config);
+    let with_name_env_override = WranglerToml::with_env(top_level_name, env_config);
     let manifest =
         Manifest::new_from_string(toml::to_string(&with_name_env_override).unwrap()).unwrap();
 
-    assert_eq!(manifest.worker_name(Some(env)), custom_env_name);
+    assert_eq!(manifest.worker_name(Some(TEST_ENV_NAME)), custom_env_name);
 }
 
 fn base_fixture_path() -> PathBuf {
