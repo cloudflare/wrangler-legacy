@@ -50,7 +50,7 @@ impl Source for Environment {
         let uri: String = "env".into();
 
         for key in &self.whitelist {
-            if let Some(value) = env::var(key).ok() {
+            if let Ok(value) = env::var(key) {
                 // remove the `CF` prefix before adding to collection
                 let key = if key.starts_with(PREFIX_PATTERN) {
                     &key[PREFIX_PATTERN.len()..]

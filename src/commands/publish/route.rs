@@ -1,6 +1,6 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::emoji;
 use reqwest::header::CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
@@ -98,21 +98,20 @@ fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failu
         .send()?;
 
     if !res.status().is_success() {
-        let msg;
-        if res.status().as_u16() == 10020 {
-            msg = format!(
+        let msg = if res.status().as_u16() == 10020 {
+            format!(
             "{} A worker with a different name was previously deployed to `{}`. If you would like to overwrite that worker, you will need to change `name` in your `wrangler.toml` to match the currently deployed worker, or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n",
             emoji::WARN,
             serde_json::to_string(&route)?
-            );
+            )
         } else {
-            msg = format!(
+            format!(
                 "{} There was an error creating your route.\n Status Code: {}\n Msg: {}",
                 emoji::WARN,
                 res.status(),
                 res.text()?
-            );
-        }
+            )
+        };
 
         failure::bail!(msg)
     }

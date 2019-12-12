@@ -7,7 +7,7 @@ use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 use crate::http;
 
@@ -143,7 +143,7 @@ fn url_encode_key(key: &str) -> String {
 #[cfg(test)]
 mod tests {
     use crate::commands::kv;
-    use crate::settings::target::{KvNamespace, Target, TargetType};
+    use crate::settings::toml::{KvNamespace, Target, TargetType};
 
     #[test]
     fn it_can_detect_duplicate_bindings() {

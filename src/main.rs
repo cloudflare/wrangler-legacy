@@ -19,7 +19,7 @@ use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
-use wrangler::settings::target::TargetType;
+use wrangler::settings::toml::TargetType;
 use wrangler::terminal::emoji;
 use wrangler::terminal::message;
 
@@ -510,7 +510,7 @@ fn run() -> Result<(), failure::Error> {
             Some(TargetType::Webpack)
         } else {
             match matches.value_of("type") {
-                Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
+                Some(s) => Some(settings::toml::TargetType::from_str(&s.to_lowercase())?),
                 None => None,
             }
         };
@@ -518,13 +518,13 @@ fn run() -> Result<(), failure::Error> {
         commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
         log::info!("Getting project settings");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = &manifest.get_target(env)?;
         commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         log::info!("Getting project settings");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
 
@@ -549,7 +549,7 @@ fn run() -> Result<(), failure::Error> {
         let port = matches.value_of("port");
         let host = matches.value_of("host");
         let ip = matches.value_of("ip");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
@@ -572,7 +572,7 @@ fn run() -> Result<(), failure::Error> {
         }
 
         log::info!("Getting project settings");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
 
@@ -581,7 +581,7 @@ fn run() -> Result<(), failure::Error> {
         commands::publish(&user, &mut target, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
 
@@ -596,7 +596,7 @@ fn run() -> Result<(), failure::Error> {
             commands::subdomain::get_subdomain(&user, &target)?;
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
@@ -629,7 +629,7 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
         // Get environment and bindings
@@ -692,7 +692,7 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
         // Get environment and bindings
