@@ -63,9 +63,7 @@ pub async fn dev(
                         let name = name.as_str();
                         if name.starts_with(HEADER_PREFIX) {
                             let header_name = &name[HEADER_PREFIX.len()..];
-                            // TODO: remove unwrap
-                            let header_name =
-                                HeaderName::from_bytes(header_name.as_bytes()).unwrap();
+                            let header_name = HeaderName::from_bytes(header_name.as_bytes())?;
                             headers.insert(header_name, value.clone());
                         }
                     }
