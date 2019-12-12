@@ -23,10 +23,10 @@ impl RouteConfig {
 
     pub fn routes_defined(&self) -> bool {
         if let Some(pattern) = &self.route {
-                !pattern.is_empty() || self.routes.is_some() // this is all so messy because of deserializer
-            } else {
-                self.routes.is_some()
-            }
+            !pattern.is_empty() || self.routes.is_some() // this is all so messy because of deserializer
+        } else {
+            self.routes.is_some()
+        }
     }
 
     pub fn is_zoneless(&self) -> bool {
