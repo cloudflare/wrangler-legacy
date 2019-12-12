@@ -1,27 +1,13 @@
 use super::wrangler_toml::{EnvConfig, WranglerToml};
 
-use crate::settings::toml::deploy_target::Zoned;
 use crate::settings::toml::route::Route;
-use crate::settings::toml::DeployTarget;
 use crate::settings::toml::Manifest;
+use crate::settings::toml::{DeployTarget, Zoned, Zoneless};
 
 // TOP LEVEL TESTS
 #[test]
-fn it_can_get_a_top_level_zoneless_deploy_target() {
-    let test_toml = WranglerToml::webpack_zoneless("zoneless", true);
-    let toml_string = toml::to_string(&test_toml).unwrap();
-    let manifest = Manifest::new_from_string(toml_string).unwrap();
-
-    let environment = None;
-    let actual_deploy_target = manifest.deploy_target(environment).unwrap();
-    let expected_deploy_target = DeployTarget::Zoneless;
-
-    assert_eq!(actual_deploy_target, expected_deploy_target);
-}
-
-#[test]
-fn it_errors_on_zoneless_deploy_target_missing_workers_dev() {
-    let test_toml = WranglerToml::webpack("zoneless_missing");
+fn it_errors_on_empty_deploy_target() {
+    let test_toml = WranglerToml::webpack("empty");
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -31,8 +17,42 @@ fn it_errors_on_zoneless_deploy_target_missing_workers_dev() {
 }
 
 #[test]
+fn it_can_get_a_top_level_zoneless_deploy_target() {
+    let script = "zoneless";
+    let account_id = "account_id";
+    let test_toml = WranglerToml::webpack_zoneless("zoneless", account_id, true);
+    let toml_string = toml::to_string(&test_toml).unwrap();
+    let manifest = Manifest::new_from_string(toml_string).unwrap();
+
+    let environment = None;
+    let actual_deploy_target = manifest.deploy_target(environment).unwrap();
+    let expected_deploy_target = DeployTarget::Zoneless(Zoneless {
+        account_id: account_id.to_string(),
+        script: script.to_string(),
+    });
+
+    assert_eq!(actual_deploy_target, expected_deploy_target);
+}
+
+#[test]
 fn it_errors_on_deploy_target_missing_name() {
-    let test_toml = WranglerToml::webpack_zoneless("", true);
+    let script = "";
+    let account_id = "account_id";
+    let test_toml = WranglerToml::webpack_zoneless(script, account_id, true);
+    let toml_string = toml::to_string(&test_toml).unwrap();
+    let manifest = Manifest::new_from_string(toml_string).unwrap();
+
+    let environment = None;
+
+    assert!(manifest.deploy_target(environment).is_err());
+}
+
+#[test]
+fn it_errors_on_deploy_target_missing_account_id() {
+    let script = "zoneless_no_account_id";
+    let account_id = "account_id";
+    let mut test_toml = WranglerToml::webpack_zoneless(script, account_id, true);
+    test_toml.account_id = None;
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -43,7 +63,9 @@ fn it_errors_on_deploy_target_missing_name() {
 
 #[test]
 fn it_errors_on_zoneless_deploy_target_workers_dev_false() {
-    let test_toml = WranglerToml::webpack_zoneless("zoneless_false", false);
+    let script = "zoneless_false";
+    let account_id = "account_id";
+    let test_toml = WranglerToml::webpack_zoneless(script, account_id, false);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -368,10 +390,9 @@ fn when_top_level_empty_env_empty() {
 #[test]
 fn when_top_level_empty_zoneless_env() {
     let env_name = "test";
+    let account_id = "testaccountid";
 
-    // TODO: THIS TEST SHOULD PASS
-    // when env.workers_dev = false
-    let env_config = EnvConfig::zoneless(false);
+    let env_config = EnvConfig::zoneless_with_account_id(false, account_id);
 
     let script = "top_level_empty_env_empty";
     let test_toml = WranglerToml::webpack_with_env(script, env_name, env_config);
@@ -383,16 +404,21 @@ fn when_top_level_empty_zoneless_env() {
     assert!(actual_deploy_target.is_err());
 
     // when env.workers_dev = true
-    let env_config = EnvConfig::zoneless(true);
+    let env_config = EnvConfig::zoneless_with_account_id(true, account_id);
 
     let script = "top_level_empty_env_zoneless_true";
     let test_toml = WranglerToml::webpack_with_env(script, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
-    let actual_deploy_target = manifest.deploy_target(Some(env_name)).unwrap();
+    let environment = Some(env_name);
+    let actual_deploy_target = manifest.deploy_target(environment).unwrap();
+    let expected_deploy_target = DeployTarget::Zoneless(Zoneless {
+        script: manifest.worker_name(environment),
+        account_id: account_id.to_string(),
+    });
 
-    assert_eq!(actual_deploy_target, DeployTarget::Zoneless);
+    assert_eq!(actual_deploy_target, expected_deploy_target);
 }
 
 #[test]
@@ -541,28 +567,35 @@ fn when_top_level_empty_zoned_multi_route_env() {
 #[test]
 fn when_top_level_zoneless_env_empty() {
     let script = "top_level_zoneless_env_empty";
+    let account_id = "account_id";
     let env_name = "test";
     let env_config = EnvConfig::default();
 
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
-    let actual_deploy_target = manifest.deploy_target(Some(env_name)).unwrap();
+    let environment = Some(env_name);
+    let actual_deploy_target = manifest.deploy_target(environment).unwrap();
+    let expected_deploy_target = DeployTarget::Zoneless(Zoneless {
+        script: manifest.worker_name(environment),
+        account_id: account_id.to_string(),
+    });
 
-    assert_eq!(actual_deploy_target, DeployTarget::Zoneless);
+    assert_eq!(actual_deploy_target, expected_deploy_target);
 }
 
 #[test]
 fn when_top_level_zoneless_env_zoneless() {
     let env_name = "test";
+    let account_id = "account_id";
 
-    // TODO: SHOULD THIS TEST PASS?
-    // when env.workers_dev = false
     let env_config = EnvConfig::zoneless(false);
 
     let script = "top_level_zoneless_env_zoneless_false";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -574,18 +607,25 @@ fn when_top_level_zoneless_env_zoneless() {
     let env_config = EnvConfig::zoneless(true);
 
     let script = "top_level_zoneless_env_zoneless_true";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
-    let actual_deploy_target = manifest.deploy_target(Some(env_name)).unwrap();
+    let environment = Some(env_name);
+    let actual_deploy_target = manifest.deploy_target(environment).unwrap();
+    let expected_deploy_target = DeployTarget::Zoneless(Zoneless {
+        account_id: account_id.to_string(),
+        script: manifest.worker_name(environment),
+    });
 
-    assert_eq!(actual_deploy_target, DeployTarget::Zoneless);
+    assert_eq!(actual_deploy_target, expected_deploy_target);
 }
 
 #[test]
 fn when_top_level_zoneless_env_zoned_single_route() {
     let env_name = "test";
+    let account_id = "account_id";
     let zone_id = "samplezoneid";
 
     // when route is empty, error
@@ -593,7 +633,8 @@ fn when_top_level_zoneless_env_zoned_single_route() {
     let env_config = EnvConfig::zoned_single_route(zone_id, pattern);
 
     let script = "top_level_zoneless_env_zoned_single_route_empty";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -606,7 +647,8 @@ fn when_top_level_zoneless_env_zoned_single_route() {
     let env_config = EnvConfig::zoned_single_route("", pattern);
 
     let script = "top_level_zoneless_env_zoned_single_route_no_zone_id";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -619,7 +661,8 @@ fn when_top_level_zoneless_env_zoned_single_route() {
     let env_config = EnvConfig::zoned_single_route(zone_id, pattern);
 
     let script = "top_level_zoneless_env_zoned_single_route_no_zone_id";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -644,13 +687,15 @@ fn when_top_level_zoneless_env_zoned_single_route() {
 fn when_top_level_zoneless_env_zoned_multi_route() {
     let env_name = "test";
     let zone_id = "samplezoneid";
+    let account_id = "account_id";
 
     // when routes list is empty, error
     let patterns = [];
     let env_config = EnvConfig::zoned_multi_route(zone_id, patterns.to_vec());
 
     let script = "top_level_zoneless_env_zoned_multi_route_empty_list";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -663,7 +708,8 @@ fn when_top_level_zoneless_env_zoned_multi_route() {
     let env_config = EnvConfig::zoned_multi_route(zone_id, patterns.to_vec());
 
     let script = "top_level_zoneless_env_zoned_multi_route_empty";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -677,7 +723,8 @@ fn when_top_level_zoneless_env_zoned_multi_route() {
     env_config.route = Some("blog.hostname.tld/*");
 
     let script = "top_level_zoneless_env_zoned_multi_route_empty";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -690,7 +737,8 @@ fn when_top_level_zoneless_env_zoned_multi_route() {
     let env_config = EnvConfig::zoned_multi_route("", patterns.to_vec());
 
     let script = "top_level_zoneless_env_zoned_multi_route_no_zone_id";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -703,7 +751,8 @@ fn when_top_level_zoneless_env_zoned_multi_route() {
     let env_config = EnvConfig::zoned_multi_route(zone_id, patterns.to_vec());
 
     let script = "top_level_zoneless_env_zoned_multi_route_no_zone_id";
-    let test_toml = WranglerToml::webpack_zoneless_with_env(script, true, env_name, env_config);
+    let test_toml =
+        WranglerToml::webpack_zoneless_with_env(script, account_id, true, env_name, env_config);
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
@@ -765,10 +814,10 @@ fn when_top_level_zoned_env_zoneless() {
     let zone_id = "samplezoneid";
     let pattern = "hostname.tld/*";
     let env_name = "test";
+    let account_id = "account_id";
 
-    // TODO: SHOULD THIS TEST PASS?
     // when env.workers_dev = false
-    let env_config = EnvConfig::zoneless(false);
+    let env_config = EnvConfig::zoneless_with_account_id(false, account_id);
 
     let script = "top_level_zoned_env_zoneless_false";
     let test_toml = WranglerToml::webpack_zoned_single_route_with_env(
@@ -782,7 +831,7 @@ fn when_top_level_zoned_env_zoneless() {
     assert!(actual_deploy_target.is_err());
 
     // when env.workers_dev = true
-    let env_config = EnvConfig::zoneless(true);
+    let env_config = EnvConfig::zoneless_with_account_id(true, account_id);
 
     let script = "top_level_zoned_env_zoneless_true";
     let test_toml = WranglerToml::webpack_zoned_single_route_with_env(
@@ -791,9 +840,14 @@ fn when_top_level_zoned_env_zoneless() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::new_from_string(toml_string).unwrap();
 
-    let actual_deploy_target = manifest.deploy_target(Some(env_name)).unwrap();
+    let environment = Some(env_name);
+    let actual_deploy_target = manifest.deploy_target(environment).unwrap();
+    let expected_deploy_target = DeployTarget::Zoneless(Zoneless {
+        account_id: account_id.to_string(),
+        script: manifest.worker_name(environment),
+    });
 
-    assert_eq!(actual_deploy_target, DeployTarget::Zoneless);
+    assert_eq!(actual_deploy_target, expected_deploy_target);
 }
 
 #[test]

@@ -14,7 +14,7 @@ fn it_builds_webpack() {
     let fixture = Fixture::new();
     fixture.scaffold_webpack();
 
-    let wrangler_toml = WranglerToml::webpack_zoneless("test-build-webpack", true);
+    let wrangler_toml = WranglerToml::webpack_build("test-build-webpack");
     fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
@@ -41,7 +41,7 @@ fn it_builds_with_webpack_single_js() {
     );
     fixture.create_default_package_json();
 
-    let wrangler_toml = WranglerToml::webpack_zoneless("test-build-webpack-single-js", true);
+    let wrangler_toml = WranglerToml::webpack_build("test-build-webpack-single-js");
     fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
@@ -137,7 +137,7 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
     );
 
     let wrangler_toml =
-        WranglerToml::webpack_zoneless("test-build-webpack-single-js-missing-package-main", true);
+        WranglerToml::webpack_build("test-build-webpack-single-js-missing-package-main");
     fixture.create_wrangler_toml(wrangler_toml);
 
     build_fails_with(

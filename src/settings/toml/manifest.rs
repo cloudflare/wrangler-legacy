@@ -135,6 +135,7 @@ impl Manifest {
 
     fn route_config(&self) -> RouteConfig {
         RouteConfig {
+            account_id: Some(self.account_id.clone()),
             workers_dev: self.workers_dev,
             route: self.route.clone(),
             routes: self.routes.clone(),
@@ -152,12 +153,18 @@ impl Manifest {
                 failure::bail!("you must set workers_dev = true or a zoned deploy config.")
             }
             if env_route_config.is_zoneless() || env_route_config.is_zoned() {
-                if env_route_config.missing_zone_id() && env_route_config.routes_defined() {
+                if env_route_config.is_zoneless() && env_route_config.missing_account_id() {
                     // if there is an incomplete environment level deploy target,
-                    // it is not zoneless, and routes do not inherit,
-                    // so fill in the zone id and build from that
+                    // fill in the account id and build from that
+                    env_route_config.account_id = Some(self.account_id.clone());
+                }
+
+                if env_route_config.routes_defined() && env_route_config.missing_zone_id() {
+                    // if there is an incomplete environment level deploy target,
+                    // fill in the zone id and build from that
                     env_route_config.zone_id = self.zone_id.clone();
                 }
+
                 return DeployTarget::build(&script, &env_route_config);
             }
         }

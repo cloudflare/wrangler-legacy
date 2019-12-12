@@ -6,6 +6,7 @@ pub struct RouteConfig {
     pub route: Option<String>,
     pub routes: Option<Vec<String>>,
     pub zone_id: Option<String>,
+    pub account_id: Option<String>,
 }
 
 impl RouteConfig {
@@ -23,10 +24,10 @@ impl RouteConfig {
 
     pub fn routes_defined(&self) -> bool {
         if let Some(pattern) = &self.route {
-                !pattern.is_empty() || self.routes.is_some() // this is all so messy because of deserializer
-            } else {
-                self.routes.is_some()
-            }
+            !pattern.is_empty() || self.routes.is_some() // this is all so messy because of deserializer
+        } else {
+            self.routes.is_some()
+        }
     }
 
     pub fn is_zoneless(&self) -> bool {
@@ -41,6 +42,15 @@ impl RouteConfig {
     pub fn missing_zone_id(&self) -> bool {
         if let Some(zone_id) = &self.zone_id {
             zone_id.is_empty()
+        } else {
+            true
+        }
+    }
+
+    // account id is another weird one where `Some("")` is treated the same as `None`
+    pub fn missing_account_id(&self) -> bool {
+        if let Some(account_id) = &self.account_id {
+            account_id.is_empty()
         } else {
             true
         }
@@ -61,7 +71,17 @@ impl DeployTarget {
         route_config: &RouteConfig,
     ) -> Result<DeployTarget, failure::Error> {
         if route_config.is_zoneless() {
-            Ok(DeployTarget::Zoneless)
+            // account_id is required
+            let account_id = route_config.account_id.as_ref().unwrap();
+            if account_id.is_empty() {
+                failure::bail!("field `account_id` is required to deploy to workers.dev");
+            }
+            let zoneless = Zoneless {
+                script: script.to_string(),
+                account_id: account_id.to_string(),
+            };
+
+            Ok(DeployTarget::Zoneless(zoneless))
         } else {
             // zone_id is required
             let zone_id = route_config.zone_id.as_ref().unwrap();
@@ -101,8 +121,14 @@ impl DeployTarget {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DeployTarget {
-    Zoneless,
+    Zoneless(Zoneless),
     Zoned(Zoned),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Zoneless {
+    pub account_id: String,
+    pub script: String,
 }
 
 #[derive(Clone, Debug, PartialEq)]

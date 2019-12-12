@@ -43,7 +43,7 @@ fn it_can_preview_webpack_project() {
     let fixture = Fixture::new();
     fixture.scaffold_webpack();
 
-    let wrangler_toml = WranglerToml::webpack_zoneless("test-preview-webpack", true);
+    let wrangler_toml = WranglerToml::webpack_build("test-preview-webpack");
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);

@@ -43,13 +43,20 @@ impl EnvConfig<'_> {
         let mut env_config = EnvConfig::default();
         env_config.name = Some(name);
 
-        eprintln!("{:#?}", &env_config);
         env_config
     }
 
-    pub fn zoneless(is_workers_dev: bool) -> EnvConfig<'static> {
+    pub fn zoneless(workers_dev: bool) -> EnvConfig<'static> {
         let mut env_config = EnvConfig::default();
-        env_config.workers_dev = Some(is_workers_dev);
+        env_config.workers_dev = Some(workers_dev);
+
+        env_config
+    }
+
+    pub fn zoneless_with_account_id(workers_dev: bool, account_id: &str) -> EnvConfig {
+        let mut env_config = EnvConfig::default();
+        env_config.account_id = Some(account_id);
+        env_config.workers_dev = Some(workers_dev);
 
         env_config
     }
@@ -95,15 +102,27 @@ impl WranglerToml<'_> {
         wrangler_toml.name = Some(name);
         wrangler_toml.target_type = Some("webpack");
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
-    pub fn webpack_zoneless(name: &str, is_workers_dev: bool) -> WranglerToml {
+    pub fn webpack_build(name: &str) -> WranglerToml {
+        let mut wrangler_toml = WranglerToml::default();
+        wrangler_toml.name = Some(name);
+        wrangler_toml.target_type = Some("webpack");
+        wrangler_toml.workers_dev = Some(true);
+
+        wrangler_toml
+    }
+
+    pub fn webpack_zoneless<'a>(
+        name: &'a str,
+        account_id: &'a str,
+        is_workers_dev: bool,
+    ) -> WranglerToml<'a> {
         let mut wrangler_toml = WranglerToml::webpack(name);
         wrangler_toml.workers_dev = Some(is_workers_dev);
+        wrangler_toml.account_id = Some(account_id);
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -116,7 +135,6 @@ impl WranglerToml<'_> {
         wrangler_toml.zone_id = Some(zone_id);
         wrangler_toml.route = Some(route);
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -129,7 +147,6 @@ impl WranglerToml<'_> {
         wrangler_toml.zone_id = Some(zone_id);
         wrangler_toml.routes = Some(routes);
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -141,20 +158,19 @@ impl WranglerToml<'_> {
         let mut wrangler_toml = WranglerToml::webpack(name);
         wrangler_toml.env = Some(test_env(env_name, env_config));
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
     pub fn webpack_zoneless_with_env<'a>(
         name: &'a str,
+        account_id: &'a str,
         is_workers_dev: bool,
         env_name: &'a str,
         env_config: EnvConfig<'a>,
     ) -> WranglerToml<'a> {
-        let mut wrangler_toml = WranglerToml::webpack_zoneless(name, is_workers_dev);
+        let mut wrangler_toml = WranglerToml::webpack_zoneless(name, account_id, is_workers_dev);
         wrangler_toml.env = Some(test_env(env_name, env_config));
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -168,7 +184,6 @@ impl WranglerToml<'_> {
         let mut wrangler_toml = WranglerToml::webpack_zoned_single_route(name, zone_id, route);
         wrangler_toml.env = Some(test_env(env_name, env_config));
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -182,23 +197,20 @@ impl WranglerToml<'_> {
         let mut wrangler_toml = WranglerToml::webpack_zoned_multi_route(name, zone_id, routes);
         wrangler_toml.env = Some(test_env(env_name, env_config));
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
     pub fn webpack_std_config(name: &str) -> WranglerToml {
-        let mut wrangler_toml = WranglerToml::webpack_zoneless(name, true);
+        let mut wrangler_toml = WranglerToml::webpack_build(name);
         wrangler_toml.webpack_config = Some("webpack.config.js");
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
     pub fn webpack_custom_config<'a>(name: &'a str, webpack_config: &'a str) -> WranglerToml<'a> {
-        let mut wrangler_toml = WranglerToml::webpack_zoneless(name, true);
+        let mut wrangler_toml = WranglerToml::webpack_build(name);
         wrangler_toml.webpack_config = Some(webpack_config);
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -208,7 +220,6 @@ impl WranglerToml<'_> {
         wrangler_toml.workers_dev = Some(true);
         wrangler_toml.target_type = Some("rust");
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 
@@ -218,7 +229,6 @@ impl WranglerToml<'_> {
         wrangler_toml.workers_dev = Some(true);
         wrangler_toml.target_type = Some("javascript");
 
-        eprintln!("{:#?}", &wrangler_toml);
         wrangler_toml
     }
 }
