@@ -6,7 +6,8 @@ use chrono::prelude::*;
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderMap, HeaderName, HeaderValue};
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Client, Request, Server, Uri};
+use hyper::{Body, Client, Request, Response, Server, Uri};
+use hyper::http::response::Parts;
 use hyper::http::uri::InvalidUri;
 
 use hyper_tls::HttpsConnector;
@@ -22,6 +23,7 @@ use crate::settings::toml::Target;
 use crate::terminal::emoji;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
+const HEADER_PREFIX: &str = "cf-ew-raw-";
 
 pub async fn dev(
     target: Target,
@@ -47,12 +49,19 @@ pub async fn dev(
         let server_config = server_config.clone();
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
-                preview_request(
-                    req,
-                    client.to_owned(),
-                    preview_id.to_owned(),
-                    server_config.clone(),
-                )
+                let client = client.to_owned();
+                let preview_id = preview_id.to_owned();
+                let server_config = server_config.clone();
+                async move {
+                    let resp = preview_request(req, client, preview_id, server_config).await?;
+
+                    let (mut parts, body) = resp.into_parts();
+
+                    munge_response_headers(&mut parts)?;
+
+                    let resp = Response::from_parts(parts, body);
+                    Ok::<_, failure::Error>(resp)
+                }
             }))
         }
     });
@@ -62,6 +71,22 @@ pub async fn dev(
     if let Err(e) = server.await {
         eprintln!("server error: {}", e);
     }
+    Ok(())
+}
+
+fn munge_response_headers(parts: &mut Parts) -> Result<(), failure::Error> {
+    let mut headers = HeaderMap::new();
+
+    for header in &parts.headers {
+        let (name, value) = header;
+        let name = name.as_str();
+        if name.starts_with(HEADER_PREFIX) {
+            let header_name = &name[HEADER_PREFIX.len()..];
+            let header_name = HeaderName::from_bytes(header_name.as_bytes())?;
+            headers.insert(header_name, value.clone());
+        }
+    }
+    parts.headers = headers;
     Ok(())
 }
 
@@ -93,7 +118,7 @@ fn preview_request(
 
     for header in &parts.headers {
         let (name, value) = header;
-        let forward_header = format!("cf-ew-raw-{}", name);
+        let forward_header = format!("{}{}", HEADER_PREFIX, name);
         // TODO: remove unwrap
         let header_name = HeaderName::from_bytes(forward_header.as_bytes()).unwrap();
         headers.insert(header_name, value.clone());
