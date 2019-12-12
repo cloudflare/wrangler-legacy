@@ -38,13 +38,23 @@ impl Handler for WsClient {
 
     fn on_message(&mut self, msg: WsMessage) -> ws::Result<()> {
         let msg = msg.as_text()?;
-        let msg: Result<DevtoolsEvent, _> = serde_json::from_str(msg);
+        log::info!("{}", msg);
+        let msg: Result<DevtoolsEvent, serde_json::Error> = serde_json::from_str(msg);
         match msg {
             Ok(msg) => {
-                println!("{}", msg);
+                match msg {
+                    DevtoolsEvent::ConsoleAPICalled(event) => {
+                        println!("\nconsole.{} {}\n", event.log_type, event)
+                    }
+                    DevtoolsEvent::ExceptionThrown(event) => println!("\n{}\n", event),
+                }
                 Ok(())
             }
-            Err(_) => Ok(()),
+            Err(e) => {
+                // this event was not parsed as a DevtoolsEvent
+                log::info!("{}", e);
+                Ok(())
+            }
         }
     }
 
