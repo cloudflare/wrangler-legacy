@@ -1,9 +1,0 @@
-{
-  "changelog": {
-    "prefix": "changelog",
-    "body": [
-      "  - **${1:Summary} - [${2:Author}], [issue/${3:Issue #}] [pull/${4:PR #}]**\n\n    ${5:Detailed description}\n\n    [$2]: https://github.com/$2\n    [pull/$4]: https://github.com/cloudflare/wrangler/pull/$4\n    [issue/$3]: https://github.com/cloudflare/wrangler/issues/$3"
-    ],
-    "description": "changelog boilerplate"
-  }
-}
