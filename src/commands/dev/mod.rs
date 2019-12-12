@@ -13,6 +13,7 @@ use chrono::prelude::*;
 
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderMap, HeaderName, HeaderValue};
+use hyper::http::response::Parts;
 use hyper::http::uri::InvalidUri;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
@@ -27,7 +28,7 @@ use crate::commands;
 use crate::commands::preview::upload;
 
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 use crate::terminal::emoji;
 
@@ -75,20 +76,7 @@ async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), fa
 
                     let (mut parts, body) = resp.into_parts();
 
-                    let mut headers = HeaderMap::new();
-
-                    for header in &parts.headers {
-                        let (name, value) = header;
-                        let name = name.as_str();
-                        if name.starts_with(HEADER_PREFIX) {
-                            let header_name = &name[HEADER_PREFIX.len()..];
-                            // TODO: remove unwrap
-                            let header_name =
-                                HeaderName::from_bytes(header_name.as_bytes()).unwrap();
-                            headers.insert(header_name, value.clone());
-                        }
-                    }
-                    parts.headers = headers;
+                    munge_response_headers(&mut parts)?;
 
                     let resp = Response::from_parts(parts, body);
                     Ok::<_, failure::Error>(resp)
@@ -102,6 +90,22 @@ async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), fa
     if let Err(e) = server.await {
         eprintln!("server error: {}", e);
     }
+    Ok(())
+}
+
+fn munge_response_headers(parts: &mut Parts) -> Result<(), failure::Error> {
+    let mut headers = HeaderMap::new();
+
+    for header in &parts.headers {
+        let (name, value) = header;
+        let name = name.as_str();
+        if name.starts_with(HEADER_PREFIX) {
+            let header_name = &name[HEADER_PREFIX.len()..];
+            let header_name = HeaderName::from_bytes(header_name.as_bytes())?;
+            headers.insert(header_name, value.clone());
+        }
+    }
+    parts.headers = headers;
     Ok(())
 }
 

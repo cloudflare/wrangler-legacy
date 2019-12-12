@@ -23,7 +23,7 @@ use crate::commands::build::watch::wait_for_changes;
 use crate::commands::build::watch::COOLDOWN_PERIOD;
 use crate::commands::publish::package::Package;
 use crate::install;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 use crate::util;
 

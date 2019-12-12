@@ -3,7 +3,7 @@ extern crate serde_json;
 use crate::commands::kv;
 use crate::commands::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 // Note: this function only prints keys in json form, given that
 // the number of entries in each json blob is variable (so csv and tsv
