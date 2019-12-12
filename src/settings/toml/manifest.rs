@@ -2,7 +2,7 @@ use super::environment::Environment;
 use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -36,6 +36,8 @@ pub struct Manifest {
     pub zone_id: Option<String>,
     pub webpack_config: Option<String>,
     pub private: Option<bool>,
+    // TODO: maybe one day, serde toml support will allow us to serialize sites
+    // as a TOML inline table (this would prevent confusion with environments too!)
     pub site: Option<Site>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
@@ -46,13 +48,16 @@ impl Manifest {
     pub fn new(config_path: &Path) -> Result<Self, failure::Error> {
         let config = read_config(config_path)?;
 
-        // check for pre 1.1.0 KV namespace format
-        let kv_namespaces: Result<Vec<config::Value>, config::ConfigError> =
-            config.get("kv-namespaces");
-
-        validate_kv_namespaces_config(kv_namespaces)?;
-
-        let manifest: Manifest = config.try_into()?;
+        let manifest: Manifest = match config.try_into() {
+            Ok(m) => m,
+            Err(e) => {
+                if e.to_string().contains("unknown field `kv-namespaces`") {
+                    failure::bail!("kv-namespaces should not live under the [site] table in wrangler.toml; please move it above [site].")
+                } else {
+                    failure::bail!(e)
+                }
+            }
+        };
 
         check_for_duplicate_names(&manifest)?;
 
@@ -332,10 +337,8 @@ impl Manifest {
         if let Some(env) = &self.env {
             for (env_name, env) in env {
                 let mut current_env_fields: Vec<String> = Vec::new();
-                if let Some(_) = &env.account_id {
-                    if !account_id_env {
-                        current_env_fields.push("account_id".to_string());
-                    }
+                if env.account_id.is_some() && !account_id_env {
+                    current_env_fields.push("account_id".to_string());
                 }
                 if let Some(kv_namespaces) = &env.kv_namespaces {
                     for kv_namespace in kv_namespaces {
@@ -404,34 +407,6 @@ fn read_config(config_path: &Path) -> Result<Config, failure::Error> {
     config.merge(config::Environment::with_prefix("CF"))?;
 
     Ok(config)
-}
-
-fn validate_kv_namespaces_config(
-    kv_namespaces: Result<Vec<config::Value>, config::ConfigError>,
-) -> Result<(), failure::Error> {
-    if let Ok(values) = kv_namespaces {
-        let old_format = values.iter().any(|val| val.clone().into_str().is_ok());
-
-        if old_format {
-            message::warn("As of 1.1.0 the kv-namespaces format has been stabilized");
-            message::info("Please add a section like this in your `wrangler.toml` for each KV Namespace you wish to bind:");
-
-            let fmt_demo = r##"
-[[kv-namespaces]]
-binding = "BINDING_NAME"
-id = "0f2ac74b498b48028cb68387c421e279"
-
-# binding is the variable name you wish to bind the namespace to in your script.
-# id is the namespace_id assigned to your kv namespace upon creation. e.g. (per namespace)
-"##;
-
-            println!("{}", fmt_demo);
-
-            let msg = format!("{0} Your project config has an error {0}", emoji::WARN);
-            failure::bail!(msg)
-        }
-    }
-    Ok(())
 }
 
 fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> {

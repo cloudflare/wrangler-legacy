@@ -16,7 +16,7 @@ use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
-use wrangler::settings::target::TargetType;
+use wrangler::settings::toml::TargetType;
 use wrangler::terminal::emoji;
 use wrangler::terminal::message;
 
@@ -416,14 +416,14 @@ fn run() -> Result<(), failure::Error> {
 
         let user: GlobalUser = if default {
             // API Tokens are the default
-            message::info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens and create it using the \"Edit Cloudflare Workers\" template");
-            message::info("If you are trying to use your Global API Key instead of an API Token (Not Recommended), run \"wrangler config --api-key\".");
+            message::big_info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens\n\tand create it using the \"Edit Cloudflare Workers\" template");
+            message::big_info("If you are trying to use your Global API Key instead of an API Token\n\t(Not Recommended), run \"wrangler config --api-key\".\n");
             println!("Enter API token: ");
             let mut api_token: String = read!("{}\n");
             api_token.truncate(api_token.trim_end().len());
             GlobalUser::TokenAuth { api_token }
         } else {
-            message::warn("We don't recommend using your Global API Key! Please consider using an API Token instead. https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys");
+            message::big_info("We don't recommend using your Global API Key! Please consider using an\n\tAPI Token instead.\n\thttps://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys\n");
             println!("Enter email: ");
             let mut email: String = read!("{}\n");
             email.truncate(email.trim_end().len());
@@ -479,7 +479,7 @@ fn run() -> Result<(), failure::Error> {
             Some(TargetType::Webpack)
         } else {
             match matches.value_of("type") {
-                Some(s) => Some(settings::target::TargetType::from_str(&s.to_lowercase())?),
+                Some(s) => Some(settings::toml::TargetType::from_str(&s.to_lowercase())?),
                 None => None,
             }
         };
@@ -487,13 +487,13 @@ fn run() -> Result<(), failure::Error> {
         commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
         log::info!("Getting project settings");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = &manifest.get_target(env)?;
         commands::build(&target)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         log::info!("Getting project settings");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
 
@@ -529,7 +529,7 @@ fn run() -> Result<(), failure::Error> {
         }
 
         log::info!("Getting project settings");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
 
@@ -538,7 +538,7 @@ fn run() -> Result<(), failure::Error> {
         commands::publish(&user, &mut target, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
 
@@ -553,7 +553,7 @@ fn run() -> Result<(), failure::Error> {
             commands::subdomain::get_subdomain(&user, &target)?;
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
         match kv_matches.subcommand() {
@@ -586,7 +586,7 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
         // Get environment and bindings
@@ -649,7 +649,7 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
-        let manifest = settings::target::Manifest::new(config_path)?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
         // Get environment and bindings

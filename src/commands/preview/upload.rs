@@ -2,7 +2,7 @@ use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 use reqwest::Client;
 use serde::Deserialize;
@@ -77,8 +77,8 @@ pub fn upload(
             message::warn(
                 "You haven't run `wrangler config`. Running preview without authentication",
             );
-            message::help(
-                "Run `wrangler config` or set either $CF_API_TOKEN or ($CF_EMAIL, $CF_API_KEY) to configure your user.",
+            message::big_info(
+                "Please run `wrangler config` or visit https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables for info on configuring with environment variables",
             );
 
             if sites_preview {

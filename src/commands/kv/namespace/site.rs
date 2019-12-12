@@ -4,7 +4,7 @@ use cloudflare::framework::response::ApiFailure;
 
 use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 
 pub fn site(

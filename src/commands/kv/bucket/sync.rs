@@ -11,7 +11,7 @@ use crate::commands::kv::bucket::upload::upload_files;
 use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::commands::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 
 pub fn sync(

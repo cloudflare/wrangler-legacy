@@ -10,7 +10,7 @@ use crate::settings::global_user::GlobalUser;
 
 use serde_json::value::Value as JsonValue;
 
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 pub struct KeyList {
     keys_result: Option<Vec<Key>>,
