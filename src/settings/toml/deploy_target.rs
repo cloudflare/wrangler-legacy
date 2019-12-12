@@ -34,7 +34,7 @@ impl RouteConfig {
     }
 
     // zone id is another weird one where `Some("")` is treated the same as `None`
-    pub fn missing_zone_id(&self) -> bool {
+    pub fn is_missing_zone_id(&self) -> bool {
         let result = !self.workers_dev.unwrap_or_default()
             && (self.route.is_some() || self.routes.is_some());
         if let Some(zone_id) = &self.zone_id {
