@@ -12,6 +12,7 @@ use crate::terminal::message;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::framework::apiclient::ApiClient;
 use failure::format_err;
+use indicatif::ProgressBar;
 
 // The consts below are halved from the API's true capacity to help avoid
 // hammering it with large requests.
@@ -54,6 +55,9 @@ pub fn upload_files(
     let mut key_pair_bytes = 0;
     let mut key_value_batch: Vec<KeyValuePair> = Vec::new();
 
+    message::working("Uploading site files");
+    let pb = ProgressBar::new(pairs.len() as u64);
+
     while !(pairs.is_empty() && key_value_batch.is_empty()) {
         if pairs.is_empty() {
             // Last batch to upload
@@ -65,6 +69,7 @@ pub fn upload_files(
             || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
             {
                 upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
+                pb.inc(key_value_batch.len() as u64);
 
                 // If upload successful, reset counters
                 key_count = 0;
@@ -77,6 +82,7 @@ pub fn upload_files(
             key_value_batch.push(pair);
         }
     }
+    pb.finish_with_message("Done Uploading");
 
     Ok(asset_manifest)
 }
@@ -87,7 +93,6 @@ fn upload_batch(
     namespace_id: &str,
     key_value_batch: &mut Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {
-    message::info("Uploading...");
     // If partial upload fails (e.g. server error), return that error message
     match kv::bulk::put::call_api(client, target, namespace_id, &key_value_batch) {
         Ok(_) => {
