@@ -329,12 +329,13 @@ fn it_builds_with_webpack_wasm_pack() {
             "name": "webpack_wasm_pack",
             "main": "./index.js",
             "dependencies": {
-            "@wasm-tool/wasm-pack-plugin": "^1.1.0"
+                "@wasm-tool/wasm-pack-plugin": "EverlastingBugstopper/wasm-pack-plugin#1e3b7f8b00a5873b403a89b9aee21107f7c1afb1"
             }
         }
-    "#,
+        "#,
     );
 
+    // "@wasm-tool/wasm-pack-plugin": "^1.1.0"
     fixture.create_file(
         "index.js",
         r#"
