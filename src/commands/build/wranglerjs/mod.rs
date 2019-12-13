@@ -175,19 +175,11 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
     let custom_webpack_config_path = match &target.webpack_config {
-        Some(webpack_config) => match &target.site {
-            None => Some(PathBuf::from(&webpack_config)),
-            Some(_) => {
-                message::warn("Workers Sites does not support custom webpack configuration files");
-                None
-            }
-        },
+        Some(webpack_config) => Some(PathBuf::from(&webpack_config)),
         None => {
-            if target.site.is_none() {
-                let config_path = PathBuf::from("webpack.config.js".to_string());
-                if config_path.exists() {
-                    message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your wrangler.toml:\nwebpack_config = \"webpack.config.js\"");
-                }
+            let config_path = PathBuf::from("webpack.config.js".to_string());
+            if config_path.exists() {
+                message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your wrangler.toml:\nwebpack_config = \"webpack.config.js\"");
             }
             None
         }
