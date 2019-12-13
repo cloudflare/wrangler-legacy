@@ -297,8 +297,10 @@ fn it_builds_with_webpack_wasm_pack() {
     fixture.create_file("crate/src/lib.rs", &rust::get_lib());
     fixture.create_file("crate/src/utils.rs", &rust::get_utils());
 
-    let wrangler_toml =
-        WranglerToml::webpack_custom_config("test-wasm-pack-config", "webpack.config.js");
+    let fixture_name = "test-wasm-pack-config";
+    let webpack_config = "webpack.config.js";
+
+    let wrangler_toml = WranglerToml::webpack_custom_config(fixture_name, webpack_config);
 
     fixture.create_wrangler_toml(wrangler_toml);
 
