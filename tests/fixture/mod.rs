@@ -38,6 +38,15 @@ impl Fixture<'_> {
         }
     }
 
+    pub fn new_site() -> Fixture<'static> {
+        let mut fixture = Fixture::new();
+        fixture.output_path = "dist";
+
+        fixture.scaffold_site();
+
+        fixture
+    }
+
     pub fn get_path(&self) -> PathBuf {
         self.dir.path().to_path_buf()
     }
@@ -80,6 +89,23 @@ impl Fixture<'_> {
 
     pub fn create_wrangler_toml(&self, wrangler_toml: WranglerToml) {
         self.create_file("wrangler.toml", &toml::to_string(&wrangler_toml).unwrap());
+    }
+
+    pub fn scaffold_site(&self) {
+        self.create_dir("workers-site");
+        self.create_file(
+            "workers-site/package.json",
+            r#"
+            {
+              "private": true,
+              "main": "index.js",
+              "dependencies": {
+                "@cloudflare/kv-asset-handler": "^0.0.5"
+              }
+            }
+        "#,
+        );
+        self.create_file("workers-site/index.js", "");
     }
 
     pub fn lock(&self) -> MutexGuard<'static, ()> {

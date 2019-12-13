@@ -97,4 +97,13 @@ impl WranglerToml<'_> {
 
         wrangler_toml
     }
+
+    pub fn site(name: &str) -> WranglerToml {
+        let mut wrangler_toml = WranglerToml::webpack_build(name);
+        let mut site = SiteConfig::default();
+        site.bucket = Some("./public");
+        wrangler_toml.site = Some(site);
+
+        wrangler_toml
+    }
 }

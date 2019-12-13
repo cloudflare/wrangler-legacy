@@ -21,6 +21,16 @@ fn it_builds_webpack() {
 }
 
 #[test]
+fn it_builds_webpack_site() {
+    let fixture = Fixture::new_site();
+
+    let wrangler_toml = WranglerToml::site("test-build-site");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    build_creates_assets(&fixture, vec!["main.js"]);
+}
+
+#[test]
 fn it_builds_with_webpack_single_js() {
     let fixture = Fixture::new();
     fixture.create_file(
