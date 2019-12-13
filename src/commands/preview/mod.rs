@@ -137,8 +137,6 @@ fn post(
             .send(),
         None => client.post(PREVIEW_ADDRESS).header("Cookie", cookie).send(),
     };
-    let msg = format!("POST {}", PREVIEW_ADDRESS);
-    message::preview(&msg);
     Ok(res?.text()?)
 }
 
