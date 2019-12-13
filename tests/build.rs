@@ -329,7 +329,7 @@ fn it_builds_with_webpack_wasm_pack() {
             "name": "webpack_wasm_pack",
             "main": "./index.js",
             "dependencies": {
-                "@wasm-tool/wasm-pack-plugin": "EverlastingBugstopper/wasm-pack-plugin#1e3b7f8b00a5873b403a89b9aee21107f7c1afb1"
+                "@wasm-tool/wasm-pack-plugin": "EverlastingBugstopper/wasm-pack-plugin#fb59e697e185cc60f778c0298ad2df7adc3b82ef"
             }
         }
         "#,
@@ -345,7 +345,7 @@ fn it_builds_with_webpack_wasm_pack() {
         "#,
     );
 
-    build_creates_assets(&fixture, vec!["script.js", "module.wasm"]);
+    build_creates_assets(&fixture, vec!["scripts.js", "module.wasm"]);
 }
 
 fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) {
