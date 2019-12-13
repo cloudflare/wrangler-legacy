@@ -31,6 +31,24 @@ fn it_builds_webpack_site() {
 }
 
 #[test]
+fn it_builds_webpack_site_with_custom_webpack() {
+    let fixture = Fixture::new_site();
+
+    fixture.create_file(
+        "workers-site/webpack.worker.js",
+        r#"
+        module.exports = { context: __dirname, entry: "./index.js" };
+    "#,
+    );
+
+    let mut wrangler_toml = WranglerToml::site("test-build-site-specify-config");
+    wrangler_toml.webpack_config = Some("workers-site/webpack.worker.js");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    build_creates_assets(&fixture, vec!["main.js"]);
+}
+
+#[test]
 fn it_builds_with_webpack_single_js() {
     let fixture = Fixture::new();
     fixture.create_file(
