@@ -31,7 +31,7 @@ pub fn preview(
     mut target: Target,
     user: Option<GlobalUser>,
     method: HTTPMethod,
-    body: Option<String>,
+    body: Option<Vec<u8>>,
     livereload: bool,
     verbose: bool,
     headless: bool,
@@ -127,7 +127,7 @@ fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Erro
 fn post(
     cookie: String,
     client: &reqwest::Client,
-    body: Option<String>,
+    body: Option<Vec<u8>>,
 ) -> Result<String, failure::Error> {
     let res = match body {
         Some(s) => client

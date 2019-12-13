@@ -504,18 +504,18 @@ fn run() -> Result<(), failure::Error> {
 
         let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
-        let body = match matches.value_of("body") {
+        let body: Option<Vec<u8>> = match matches.value_of("body") {
             Some(s) => {
                 // If body starts with @, this is assumed to correspond to a path.
                 // Try to read the path contents and use that as body instead.
                 if s.starts_with("@") {
                     let filename = Path::new(s.trim_start_matches("@"));
-                    match fs::read_to_string(filename) {
+                    match fs::read(filename) {
                         Ok(file_contents) => Some(file_contents),
                         Err(e) => failure::bail!("POST value started with @ so wrangler tried to open file \"{}\". Encountered error \"{}\"", filename.display(), e)
                     }
                 } else {
-                    Some(s.to_string())
+                    Some(s.to_string().into_bytes())
                 }
             }
             None => None,
