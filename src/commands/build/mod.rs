@@ -5,7 +5,8 @@ pub use watch::watch_and_build;
 
 use crate::commands;
 use crate::install::install;
-use crate::settings::target::{Target, TargetType};
+use crate::settings::toml::{Target, TargetType};
+
 use crate::terminal::message;
 
 use std::path::PathBuf;

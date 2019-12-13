@@ -1,6 +1,6 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::{emoji, message};
 
 use serde::{Deserialize, Serialize};

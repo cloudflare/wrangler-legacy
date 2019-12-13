@@ -8,7 +8,7 @@ use cloudflare::framework::response::{ApiFailure, ApiSuccess};
 
 use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 const MAX_NAMESPACES_PER_PAGE: u32 = 100;
 const PAGE_NUMBER: u32 = 1;

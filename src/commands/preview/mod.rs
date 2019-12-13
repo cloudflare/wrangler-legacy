@@ -17,7 +17,7 @@ use log::info;
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 
 use std::sync::mpsc::channel;

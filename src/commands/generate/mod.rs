@@ -4,7 +4,7 @@ use std::process::Command;
 use crate::commands;
 use crate::commands::validate_worker_name;
 use crate::install::install;
-use crate::settings::target::{Manifest, Site, TargetType};
+use crate::settings::toml::{Manifest, Site, TargetType};
 
 pub fn generate(
     name: &str,
