@@ -328,7 +328,7 @@ fn it_builds_with_webpack_wasm_pack() {
         {
             "name": "webpack_wasm_pack",
             "main": "./index.js",
-            "dependencies": 
+            "dependencies": {
                 "@wasm-tool/wasm-pack-plugin": "^1.1.0"
             }
         }
