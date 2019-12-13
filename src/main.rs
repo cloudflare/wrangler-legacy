@@ -509,7 +509,8 @@ fn run() -> Result<(), failure::Error> {
                 // If body starts with @, this is assumed to correspond to a path.
                 // Try to read the path contents and use that as body instead.
                 if s.starts_with("@") {
-                    let filename = Path::new(s.trim_start_matches("@"));
+                    // If starts with "@" to signify file, remove first "@".
+                    let filename = Path::new(&s[1..]);
                     match fs::read(filename) {
                         Ok(file_contents) => Some(file_contents),
                         Err(e) => failure::bail!("POST value started with @ so wrangler tried to open file \"{}\". Encountered error \"{}\"", filename.display(), e)
