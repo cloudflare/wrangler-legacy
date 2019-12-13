@@ -57,7 +57,7 @@ pub struct WranglerToml<'a> {
 }
 
 impl WranglerToml<'_> {
-    pub fn webpack_no_config(name: &str) -> WranglerToml {
+    pub fn webpack_build(name: &str) -> WranglerToml {
         let mut wrangler_toml = WranglerToml::default();
         wrangler_toml.name = Some(name);
         wrangler_toml.workers_dev = Some(true);
@@ -67,14 +67,14 @@ impl WranglerToml<'_> {
     }
 
     pub fn webpack_std_config(name: &str) -> WranglerToml {
-        let mut wrangler_toml = WranglerToml::webpack_no_config(name);
+        let mut wrangler_toml = WranglerToml::webpack_build(name);
         wrangler_toml.webpack_config = Some("webpack.config.js");
 
         wrangler_toml
     }
 
     pub fn webpack_custom_config<'a>(name: &'a str, webpack_config: &'a str) -> WranglerToml<'a> {
-        let mut wrangler_toml = WranglerToml::webpack_no_config(name);
+        let mut wrangler_toml = WranglerToml::webpack_build(name);
         wrangler_toml.webpack_config = Some(webpack_config);
 
         wrangler_toml
