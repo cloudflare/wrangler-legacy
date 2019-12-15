@@ -1,9 +1,14 @@
 use super::cli_prelude::*;
 
+/// Defines the `init` sub-command entry point.
 pub fn sub_command() -> App {
-    // TODO: bring back the emoji::INBOX.
+    #[cfg(target_os = "macos")]
+    const ABOUT: &str = "📥  Create a wrangler.toml for an existing project";
+    #[cfg(not(target_os = "macos"))]
+    const ABOUT: &str = "Create a wrangler.toml for an existing project";
+
     SubCommand::with_name("init")
-        .about("Create a wrangler.toml for an existing project")
+        .about(ABOUT)
         .arg(
             Arg::with_name("name")
                 .help("the name of your worker! defaults to 'worker'")

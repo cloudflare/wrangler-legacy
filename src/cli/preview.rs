@@ -1,9 +1,14 @@
 use super::cli_prelude::*;
 
+/// Defines the `preview` sub-command entry point.
 pub fn sub_command() -> App {
-    // TODO: bring back emoji::MICROSCOP.
+    #[cfg(target_os = "macos")]
+    const ABOUT: &str = "🔬  Preview your code temporarily on cloudflareworkers.com";
+    #[cfg(not(target_os = "macos"))]
+    const ABOUT: &str = "Preview your code temporarily on cloudflareworkers.com";
+
     SubCommand::with_name("preview")
-        .about("Preview your code temporarily on cloudflareworkers.com")
+        .about(ABOUT)
         .arg(
             Arg::with_name("headless")
                 .help("Don't open the browser on preview")

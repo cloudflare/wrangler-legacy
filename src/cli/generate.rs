@@ -1,8 +1,14 @@
 use super::cli_prelude::*;
 
+/// Defines the `generate` sub-command entry point.
 pub fn sub_command() -> App {
+    #[cfg(target_os = "macos")]
+    const ABOUT: &str = "👯  Generate a new worker project";
+    #[cfg(not(target_os = "macos"))]
+    const ABOUT: &str = "Generate a new worker project";
+
     SubCommand::with_name("generate")
-        .about("Generate a new worker project")
+        .about(ABOUT)
         .arg(
             Arg::with_name("name")
                 .help("the name of your worker! defaults to 'worker'")

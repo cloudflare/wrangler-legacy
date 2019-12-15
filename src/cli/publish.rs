@@ -1,9 +1,14 @@
 use super::cli_prelude::*;
 
+/// Defines the `publish` sub-command entry point.
 pub fn sub_command() -> App {
-    // TODO: bring back emoji::UP.
+    #[cfg(target_os = "macos")]
+    const ABOUT: &str = "🆙  Publish your worker to the orange cloud";
+    #[cfg(not(target_os = "macos"))]
+    const ABOUT: &str = "Publish your worker to the orange cloud";
+
     SubCommand::with_name("publish")
-        .about("Publish your worker to the orange cloud")
+        .about(ABOUT)
         .arg(
             Arg::with_name("env")
                 .help("environments to publish to")

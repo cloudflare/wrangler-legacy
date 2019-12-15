@@ -37,11 +37,14 @@ fn main() -> Result<(), ExitFailure> {
     Ok(run(cli::app())?)
 }
 
+// Run the cli application.
 fn run(app: App) -> Result<(), failure::Error> {
     let matches = app.get_matches();
 
     let config_path = Path::new("./wrangler.toml");
 
+    // Match on the given sub-command and delegate
+    // to the appropriate handler.
     match matches.subcommand() {
         ("config", Some(matches)) => {
             config(&matches)?;
