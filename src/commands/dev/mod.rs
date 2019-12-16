@@ -45,14 +45,14 @@ pub async fn dev(
 
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
-        let client = client.clone();
+        let client = client.to_owned();
         let preview_id = preview_id.to_owned();
-        let server_config = server_config.clone();
+        let server_config = server_config.to_owned();
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
                 let client = client.to_owned();
                 let preview_id = preview_id.to_owned();
-                let server_config = server_config.clone();
+                let server_config = server_config.to_owned();
                 async move {
                     let resp = preview_request(req, client, preview_id, server_config).await?;
 
