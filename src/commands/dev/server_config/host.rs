@@ -25,7 +25,7 @@ impl Host {
         }
 
         // validate host
-        let host = url.host_str().ok_or(format_err!("Invalid host, accepted formats are example.com, http://example.com, or https://example.com"))?;
+        let host = url.host_str().ok_or_else(|| format_err!("Invalid host, accepted formats are example.com, http://example.com, or https://example.com"))?;
 
         // recreate url without any trailing path
         let url = Url::parse(&format!("{}://{}", scheme, host))?;
