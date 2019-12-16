@@ -354,7 +354,7 @@ fn run() -> Result<(), failure::Error> {
                 ))
                 .arg(
                     Arg::with_name("port")
-                        .help("port to listen on. defaults to 8000")
+                        .help("port to listen on. defaults to 8787")
                         .short("p")
                         .long("port")
                         .takes_value(true)
