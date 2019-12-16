@@ -1,13 +1,16 @@
 mod server_config;
 use server_config::ServerConfig;
+mod headers;
+use headers::{prepend_request_headers_prefix, strip_response_headers_prefix};
 
 use chrono::prelude::*;
 
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
+
 use hyper::http::uri::InvalidUri;
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Client, Request, Server, Uri};
+use hyper::{Body, Client, Request, Response, Server, Uri};
 
 use hyper_tls::HttpsConnector;
 
@@ -42,17 +45,24 @@ pub async fn dev(
 
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
-        let client = client.clone();
+        let client = client.to_owned();
         let preview_id = preview_id.to_owned();
-        let server_config = server_config.clone();
+        let server_config = server_config.to_owned();
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
-                preview_request(
-                    req,
-                    client.to_owned(),
-                    preview_id.to_owned(),
-                    server_config.clone(),
-                )
+                let client = client.to_owned();
+                let preview_id = preview_id.to_owned();
+                let server_config = server_config.to_owned();
+                async move {
+                    let resp = preview_request(req, client, preview_id, server_config).await?;
+
+                    let (mut parts, body) = resp.into_parts();
+
+                    strip_response_headers_prefix(&mut parts)?;
+
+                    let resp = Response::from_parts(parts, body);
+                    Ok::<_, failure::Error>(resp)
+                }
             }))
         }
     });
@@ -69,7 +79,7 @@ fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
     format!("https://{}{}", PREVIEW_HOST, path_string).parse()
 }
 
-fn get_path_as_str(uri: Uri) -> String {
+fn get_path_as_str(uri: &Uri) -> String {
     uri.path_and_query()
         .map(|x| x.as_str())
         .unwrap_or("")
@@ -84,12 +94,13 @@ fn preview_request(
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
 
-    let path = get_path_as_str(parts.uri);
+    let path = get_path_as_str(&parts.uri);
     let method = parts.method.to_string();
     let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
 
-    parts.uri = get_preview_url(&path).expect("Could not get preview url");
+    prepend_request_headers_prefix(&mut parts);
+
     parts.headers.insert(
         HeaderName::from_static("host"),
         HeaderValue::from_static(PREVIEW_HOST),
@@ -99,6 +110,8 @@ fn preview_request(
         HeaderName::from_static("cf-ew-preview"),
         HeaderValue::from_str(preview_id).expect("Could not create header for preview id"),
     );
+
+    parts.uri = get_preview_url(&path).expect("Could not get preview url");
 
     let req = Request::from_parts(parts, body);
 
