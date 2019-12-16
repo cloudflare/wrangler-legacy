@@ -1,4 +1,5 @@
 use chrome_devtools::events::DevtoolsEvent;
+use console::style;
 
 use openssl::ssl::{SslConnector, SslMethod, SslStream, SslVerifyMode};
 
@@ -43,10 +44,14 @@ impl Handler for WsClient {
         match msg {
             Ok(msg) => {
                 match msg {
-                    DevtoolsEvent::ConsoleAPICalled(event) => {
-                        println!("\nconsole.{} {}\n", event.log_type, event)
+                    DevtoolsEvent::ConsoleAPICalled(event) => match event.log_type.as_str() {
+                        "log" => println!("{}", style(event).blue()),
+                        "error" => eprintln!("{}", style(event).red()),
+                        _ => println!("unknown console event: {}", event),
+                    },
+                    DevtoolsEvent::ExceptionThrown(event) => {
+                        eprintln!("{}", style(event).bold().red())
                     }
-                    DevtoolsEvent::ExceptionThrown(event) => println!("\n{}\n", event),
                 }
                 Ok(())
             }
