@@ -47,42 +47,44 @@ pub fn upload_files(
 
     pairs = filter_files(pairs, ignore);
 
-    let client = kv::api_client(user)?;
-    // Iterate over all key-value pairs and create batches of uploads, each of which are
-    // maximum 10K key-value pairs in size OR maximum ~50MB in size. Upload each batch
-    // as it is created.
-    let mut key_count = 0;
-    let mut key_pair_bytes = 0;
-    let mut key_value_batch: Vec<KeyValuePair> = Vec::new();
+    if pairs.len() > 0 {
+        let client = kv::api_client(user)?;
+        // Iterate over all key-value pairs and create batches of uploads, each of which are
+        // maximum 10K key-value pairs in size OR maximum ~50MB in size. Upload each batch
+        // as it is created.
+        let mut key_count = 0;
+        let mut key_pair_bytes = 0;
+        let mut key_value_batch: Vec<KeyValuePair> = Vec::new();
 
-    message::working("Uploading site files");
-    let pb = ProgressBar::new(pairs.len() as u64);
+        message::working("Uploading site files");
+        let pb = ProgressBar::new(pairs.len() as u64);
 
-    while !(pairs.is_empty() && key_value_batch.is_empty()) {
-        if pairs.is_empty() {
-            // Last batch to upload
-            upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
-        } else {
-            let pair = pairs.pop().unwrap();
-            if key_count + 1 > PAIRS_MAX_COUNT
-            // Keep upload size small to keep KV bulk API happy
-            || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
-            {
+        while !(pairs.is_empty() && key_value_batch.is_empty()) {
+            if pairs.is_empty() {
+                // Last batch to upload
                 upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
-                pb.inc(key_value_batch.len() as u64);
+            } else {
+                let pair = pairs.pop().unwrap();
+                if key_count + 1 > PAIRS_MAX_COUNT
+                // Keep upload size small to keep KV bulk API happy
+                || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
+                {
+                    upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
+                    pb.inc(key_value_batch.len() as u64);
 
-                // If upload successful, reset counters
-                key_count = 0;
-                key_pair_bytes = 0;
+                    // If upload successful, reset counters
+                    key_count = 0;
+                    key_pair_bytes = 0;
+                }
+
+                // Add the popped key-value pair to the running batch of key-value pair uploads
+                key_count += 1;
+                key_pair_bytes = key_pair_bytes + pair.key.len() + pair.value.len();
+                key_value_batch.push(pair);
             }
-
-            // Add the popped key-value pair to the running batch of key-value pair uploads
-            key_count += 1;
-            key_pair_bytes = key_pair_bytes + pair.key.len() + pair.value.len();
-            key_value_batch.push(pair);
         }
+        pb.finish_with_message("Done Uploading");
     }
-    pb.finish_with_message("Done Uploading");
 
     Ok(asset_manifest)
 }
