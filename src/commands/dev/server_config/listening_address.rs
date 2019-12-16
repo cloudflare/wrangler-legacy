@@ -18,13 +18,13 @@ impl ListeningAddress {
         Ok(ListeningAddress { address })
     }
 
-    fn as_str(&self) -> String {
+    pub fn to_string(&self) -> String {
         self.address.to_string().replace("[::1]", "localhost")
     }
 }
 
 impl fmt::Display for ListeningAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.as_str())
+        write!(f, "{}", self.to_string())
     }
 }

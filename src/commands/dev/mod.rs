@@ -99,7 +99,7 @@ fn preview_request(
     let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
 
-    prepend_request_headers_prefix(&mut parts);
+    prepend_request_headers_prefix(&mut parts, &server_config);
 
     parts.headers.insert(
         HeaderName::from_static("host"),
@@ -129,7 +129,7 @@ fn preview_request(
 fn get_preview_id(
     mut target: Target,
     user: Option<GlobalUser>,
-    server_config: &ServerConfig,
+    server_config: &ServerConfig
 ) -> Result<String, failure::Error> {
     let session = Uuid::new_v4().to_simple();
     let verbose = true;
