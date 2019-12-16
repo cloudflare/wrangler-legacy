@@ -138,24 +138,22 @@ fn preview_request(
     for header in &parts.headers {
         let (name, value) = header;
         let forward_header = format!("{}{}", HEADER_PREFIX, name);
-        // TODO: remove unwrap
-        let header_name = HeaderName::from_bytes(forward_header.as_bytes()).unwrap();
+        let header_name = HeaderName::from_bytes(forward_header.as_bytes()).expect(&format!("Could not create header name for {}", name));
         headers.insert(header_name, value.clone());
     }
     parts.headers = headers;
 
-    // TODO: remove unwrap
-    parts.uri = get_preview_url(&path).unwrap();
     parts.headers.insert(
         HeaderName::from_static("host"),
         HeaderValue::from_static(PREVIEW_HOST),
     );
 
-    // TODO: remove unwrap
     parts.headers.insert(
         HeaderName::from_static("cf-ew-preview"),
-        HeaderValue::from_str(preview_id).unwrap(),
+        HeaderValue::from_str(preview_id).expect("Could not create header for preview id"),
     );
+
+    parts.uri = get_preview_url(&path).expect("Could not get preview url");
 
     let req = Request::from_parts(parts, body);
 
