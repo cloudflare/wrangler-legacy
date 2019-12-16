@@ -5,9 +5,9 @@ use chrono::prelude::*;
 
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
+use hyper::http::uri::InvalidUri;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client, Request, Server, Uri};
-use hyper::http::uri::InvalidUri;
 
 use hyper_tls::HttpsConnector;
 
@@ -89,17 +89,15 @@ fn preview_request(
     let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
 
-    // TODO: remove unwrap
-    parts.uri = get_preview_url(&path).unwrap();
+    parts.uri = get_preview_url(&path).expect("Could not get preview url");
     parts.headers.insert(
         HeaderName::from_static("host"),
         HeaderValue::from_static(PREVIEW_HOST),
     );
 
-    // TODO: remove unwrap
     parts.headers.insert(
         HeaderName::from_static("cf-ew-preview"),
-        HeaderValue::from_str(preview_id).unwrap(),
+        HeaderValue::from_str(preview_id).expect("Could not create header for preview id"),
     );
 
     let req = Request::from_parts(parts, body);
