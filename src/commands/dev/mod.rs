@@ -1,6 +1,8 @@
 mod server_config;
 mod socket;
 use server_config::ServerConfig;
+mod headers;
+use headers::{prepend_request_headers_prefix, strip_response_headers_prefix};
 
 extern crate openssl;
 extern crate tokio;
@@ -12,8 +14,8 @@ use std::thread;
 use chrono::prelude::*;
 
 use hyper::client::{HttpConnector, ResponseFuture};
-use hyper::header::{HeaderMap, HeaderName, HeaderValue};
-use hyper::http::response::Parts;
+use hyper::header::{HeaderName, HeaderValue};
+
 use hyper::http::uri::InvalidUri;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
@@ -33,7 +35,6 @@ use crate::settings::toml::Target;
 use crate::terminal::emoji;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
-const HEADER_PREFIX: &str = "cf-ew-raw-";
 
 pub fn dev(
     target: Target,
@@ -63,20 +64,20 @@ async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), fa
     let listening_address = server_config.listening_address.clone();
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
-        let client = client.clone();
+        let client = client.to_owned();
         let preview_id = preview_id.to_owned();
-        let server_config = server_config.clone();
+        let server_config = server_config.to_owned();
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
                 let client = client.to_owned();
                 let preview_id = preview_id.to_owned();
-                let server_config = server_config.clone();
+                let server_config = server_config.to_owned();
                 async move {
                     let resp = preview_request(req, client, preview_id, server_config).await?;
 
                     let (mut parts, body) = resp.into_parts();
 
-                    munge_response_headers(&mut parts)?;
+                    strip_response_headers_prefix(&mut parts)?;
 
                     let resp = Response::from_parts(parts, body);
                     Ok::<_, failure::Error>(resp)
@@ -93,27 +94,11 @@ async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), fa
     Ok(())
 }
 
-fn munge_response_headers(parts: &mut Parts) -> Result<(), failure::Error> {
-    let mut headers = HeaderMap::new();
-
-    for header in &parts.headers {
-        let (name, value) = header;
-        let name = name.as_str();
-        if name.starts_with(HEADER_PREFIX) {
-            let header_name = &name[HEADER_PREFIX.len()..];
-            let header_name = HeaderName::from_bytes(header_name.as_bytes())?;
-            headers.insert(header_name, value.clone());
-        }
-    }
-    parts.headers = headers;
-    Ok(())
-}
-
 fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
     format!("https://{}{}", PREVIEW_HOST, path_string).parse()
 }
 
-fn get_path_as_str(uri: Uri) -> String {
+fn get_path_as_str(uri: &Uri) -> String {
     uri.path_and_query()
         .map(|x| x.as_str())
         .unwrap_or("")
@@ -128,21 +113,12 @@ fn preview_request(
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
 
-    let path = get_path_as_str(parts.uri);
+    let path = get_path_as_str(&parts.uri);
     let method = parts.method.to_string();
     let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
 
-    let mut headers: HeaderMap = HeaderMap::new();
-
-    for header in &parts.headers {
-        let (name, value) = header;
-        let forward_header = format!("{}{}", HEADER_PREFIX, name);
-        let header_name = HeaderName::from_bytes(forward_header.as_bytes())
-            .expect(&format!("Could not create header name for {}", name));
-        headers.insert(header_name, value.clone());
-    }
-    parts.headers = headers;
+    prepend_request_headers_prefix(&mut parts);
 
     parts.headers.insert(
         HeaderName::from_static("host"),
