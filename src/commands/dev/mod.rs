@@ -119,7 +119,7 @@ fn preview_request(
     for header in &parts.headers {
         let (name, value) = header;
         let forward_header = format!("{}{}", HEADER_PREFIX, name);
-        let header_name = HeaderName::from_bytes(forward_header.as_bytes()).unwrap();
+        let header_name = HeaderName::from_bytes(forward_header.as_bytes()).expect(&format!("Could not create header name for {}", name));
         headers.insert(header_name, value.clone());
     }
     parts.headers = headers;
