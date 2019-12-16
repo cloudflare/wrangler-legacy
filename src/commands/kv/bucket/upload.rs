@@ -57,7 +57,11 @@ pub fn upload_files(
         let mut key_value_batch: Vec<KeyValuePair> = Vec::new();
 
         message::working("Uploading site files");
-        let pb = ProgressBar::new(pairs.len() as u64);
+        let pb = if pairs.len() > PAIRS_MAX_COUNT {
+            Some(ProgressBar::new(pairs.len() as u64))
+        } else {
+            None
+        };
 
         while !(pairs.is_empty() && key_value_batch.is_empty()) {
             if pairs.is_empty() {
@@ -70,7 +74,11 @@ pub fn upload_files(
                 || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
                 {
                     upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
-                    pb.inc(key_value_batch.len() as u64);
+                    match &pb {
+                        // Need to unwrap via match to elegantly handle borrowing of pb.
+                        Some(p) => p.inc(key_value_batch.len() as u64),
+                        None => (),
+                    }
 
                     // If upload successful, reset counters
                     key_count = 0;
@@ -83,7 +91,10 @@ pub fn upload_files(
                 key_value_batch.push(pair);
             }
         }
-        pb.finish_with_message("Done Uploading");
+        if pb.is_some() {
+            // OK to call unwrap here because we have alrady checked that pb is Some.
+            pb.unwrap().finish_with_message("Done Uploading");
+        }
     }
 
     Ok(asset_manifest)
