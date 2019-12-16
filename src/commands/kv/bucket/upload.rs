@@ -74,10 +74,8 @@ pub fn upload_files(
                 || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
                 {
                     upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
-                    match &pb {
-                        // Need to unwrap via match to elegantly handle borrowing of pb.
-                        Some(p) => p.inc(key_value_batch.len() as u64),
-                        None => (),
+                    if let Some(p) = &pb {
+                        p.inc(key_value_batch.len() as u64);
                     }
 
                     // If upload successful, reset counters
@@ -91,9 +89,8 @@ pub fn upload_files(
                 key_value_batch.push(pair);
             }
         }
-        if pb.is_some() {
-            // OK to call unwrap here because we have alrady checked that pb is Some.
-            pb.unwrap().finish_with_message("Done Uploading");
+        if let Some(p) = pb {
+            p.finish_with_message("Done Uploading");
         }
     }
 
