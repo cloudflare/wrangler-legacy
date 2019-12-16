@@ -27,7 +27,7 @@ fn it_builds_webpack_site() {
     let wrangler_toml = WranglerToml::site("test-build-site");
     fixture.create_wrangler_toml(wrangler_toml);
 
-    build_creates_assets(&fixture, vec!["main.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn it_builds_webpack_site_with_custom_webpack() {
     fixture.create_file(
         "workers-site/webpack.worker.js",
         r#"
-        module.exports = { context: __dirname, entry: "./index.js" };
+        module.exports = { entry: "./workers-site/index.js" };
     "#,
     );
 
@@ -45,7 +45,7 @@ fn it_builds_webpack_site_with_custom_webpack() {
     wrangler_toml.webpack_config = Some("workers-site/webpack.worker.js");
     fixture.create_wrangler_toml(wrangler_toml);
 
-    build_creates_assets(&fixture, vec!["main.js"]);
+    build_creates_assets(&fixture, vec!["script.js"]);
 }
 
 #[test]

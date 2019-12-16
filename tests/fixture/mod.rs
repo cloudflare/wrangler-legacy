@@ -40,7 +40,7 @@ impl Fixture<'_> {
 
     pub fn new_site() -> Fixture<'static> {
         let mut fixture = Fixture::new();
-        fixture.output_path = "dist";
+        fixture.output_path = "workers-site/worker";
 
         fixture.scaffold_site();
 
