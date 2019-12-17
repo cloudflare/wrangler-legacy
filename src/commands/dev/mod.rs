@@ -74,7 +74,6 @@ async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), fa
                     let (mut parts, body) = resp.into_parts();
 
                     destructure_response(&mut parts)?;
-                    println!(" {}", parts.status.as_str());
                     let resp = Response::from_parts(parts, body);
                     Ok::<_, failure::Error>(resp)
                 }
@@ -130,7 +129,7 @@ fn preview_request(
 
     let req = Request::from_parts(parts, body);
 
-    print!(
+    println!(
         "[{}] \"{} {}{} {:?}\"",
         now.format("%Y-%m-%d %H:%M:%S"),
         method,
