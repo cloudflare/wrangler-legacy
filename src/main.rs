@@ -12,8 +12,6 @@ use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
 use exitfailure::ExitFailure;
 
-use tokio::runtime::Runtime;
-
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
@@ -553,9 +551,7 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
-        Runtime::new()
-            .unwrap()
-            .block_on(commands::dev(target, user, host, port, ip))?;
+        commands::dev::dev(target, user, host, port, ip)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
