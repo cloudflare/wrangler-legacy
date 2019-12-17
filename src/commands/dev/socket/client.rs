@@ -1,7 +1,7 @@
 use chrome_devtools::events::DevtoolsEvent;
 use console::style;
 
-use openssl::ssl::{SslConnector, SslMethod, SslStream, SslVerifyMode};
+use native_tls::{TlsConnector, TlsStream};
 
 use ws::util::TcpStream;
 use ws::{Handler, Handshake, Message as WsMessage, Sender};
@@ -64,22 +64,21 @@ impl Handler for WsClient {
         }
     }
 
-    fn upgrade_ssl_client(&mut self, sock: TcpStream, _: &Url) -> ws::Result<SslStream<TcpStream>> {
-        let mut builder = SslConnector::builder(SslMethod::tls()).map_err(|e| {
+    fn upgrade_ssl_client(&mut self, sock: TcpStream, _: &Url) -> ws::Result<TlsStream<TcpStream>> {
+        let mut builder = TlsConnector::builder();
+
+        let connector = builder.use_sni(false).build().map_err(|e| {
+            ws::Error::new(
+                ws::ErrorKind::Internal,
+                format!("Failed to build SSL connector: {}", e),
+            )
+        })?;
+
+        connector.connect("", sock).map_err(|e| {
             ws::Error::new(
                 ws::ErrorKind::Internal,
                 format!("Failed to upgrade client to SSL: {}", e),
             )
-        })?;
-        builder.set_verify(SslVerifyMode::empty());
-
-        let connector = builder.build();
-        connector
-            .configure()
-            .unwrap()
-            .use_server_name_indication(false)
-            .verify_hostname(false)
-            .connect("", sock)
-            .map_err(From::from)
+        })
     }
 }
