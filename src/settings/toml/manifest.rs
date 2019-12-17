@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use config::{Config, File};
 use serde::{Deserialize, Serialize};
 
+use crate::commands::validate_worker_name;
 use crate::settings::toml::deploy_target::{DeployTarget, RouteConfig};
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::KvNamespace;
@@ -150,6 +151,7 @@ impl Manifest {
 
     pub fn deploy_target(&self, env: Option<&str>) -> Result<DeployTarget, failure::Error> {
         let script = self.worker_name(env);
+        validate_worker_name(&script)?;
         let route_config = self.route_config();
         DeployTarget::build(&script, &route_config)
     }
