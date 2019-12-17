@@ -1,9 +1,3 @@
-use super::environment::Environment;
-use super::kv_namespace::KvNamespace;
-use super::site::Site;
-use super::target_type::TargetType;
-use crate::settings::toml::Target;
-
 use std::collections::{HashMap, HashSet};
 use std::env;
 
@@ -13,6 +7,11 @@ use std::path::{Path, PathBuf};
 use config::{Config, File};
 use serde::{Deserialize, Serialize};
 
+use crate::settings::toml::environment::Environment;
+use crate::settings::toml::kv_namespace::KvNamespace;
+use crate::settings::toml::site::Site;
+use crate::settings::toml::target_type::TargetType;
+use crate::settings::toml::Target;
 use crate::terminal::emoji;
 use crate::terminal::message;
 
@@ -126,6 +125,19 @@ impl Manifest {
         Ok(template_config)
     }
 
+    pub fn worker_name(&self, env_arg: Option<&str>) -> String {
+        if let Some(environment) = self.get_environment(env_arg).unwrap_or_default() {
+            if let Some(name) = &environment.name {
+                return name.clone();
+            }
+            if let Some(env) = env_arg {
+                return format!("{}-{}", self.name, env);
+            }
+        }
+
+        self.name.clone()
+    }
+
     pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
         // Site projects are always webpack for now; don't let toml override this.
         let target_type = match self.site {
@@ -151,14 +163,7 @@ impl Manifest {
 
         target.route = self.negotiate_zoneless(environment)?;
         if let Some(environment) = environment {
-            target.name = if let Some(name) = &environment.name {
-                name.clone()
-            } else {
-                match environment_name {
-                    Some(environment_name) => format!("{}-{}", self.name, environment_name),
-                    None => failure::bail!("You must specify `name` in your wrangler.toml"),
-                }
-            };
+            target.name = self.worker_name(environment_name);
             if let Some(account_id) = &environment.account_id {
                 target.account_id = account_id.clone();
             }
