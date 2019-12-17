@@ -26,11 +26,11 @@ pub fn publish_routes(
     Ok(deployed_routes)
 }
 
-fn fetch_all(user: &GlobalUser, zone_identifier: &String) -> Result<Vec<Route>, failure::Error> {
+fn fetch_all(user: &GlobalUser, zone_identifier: &str) -> Result<Vec<Route>, failure::Error> {
     let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     let routes: Vec<Route> = match client.request(&ListRoutes { zone_identifier }) {
-        Ok(success) => success.result.iter().map(|r| Route::from(r)).collect(),
+        Ok(success) => success.result.iter().map(Route::from).collect(),
         Err(e) => failure::bail!("{}", format_error(e, None)), // TODO: add suggestion fn
     };
 
@@ -39,7 +39,7 @@ fn fetch_all(user: &GlobalUser, zone_identifier: &String) -> Result<Vec<Route>, 
 
 fn create(
     user: &GlobalUser,
-    zone_identifier: &String,
+    zone_identifier: &str,
     route: &Route,
 ) -> Result<Route, failure::Error> {
     let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
@@ -85,9 +85,9 @@ pub enum RouteUploadResult {
 
 fn deploy_route(
     user: &GlobalUser,
-    zone_id: &String,
+    zone_id: &str,
     route: &Route,
-    existing_routes: &Vec<Route>,
+    existing_routes: &[Route],
 ) -> RouteUploadResult {
     for existing_route in existing_routes {
         if route.pattern == existing_route.pattern {
