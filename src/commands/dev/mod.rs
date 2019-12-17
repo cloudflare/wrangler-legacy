@@ -4,11 +4,6 @@ use server_config::ServerConfig;
 mod headers;
 use headers::{prepend_request_headers_prefix, strip_response_headers_prefix};
 
-extern crate openssl;
-extern crate tokio;
-extern crate url;
-extern crate ws;
-
 use std::thread;
 
 use chrono::prelude::*;
