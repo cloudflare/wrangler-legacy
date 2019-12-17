@@ -126,11 +126,11 @@ fn write_wranglerjs_output(
         message::user_error(output.get_errors().as_str());
         if custom_webpack {
             failure::bail!(
-            "Webpack returned an error. Try configuring `entry` in your webpack config relative to the current working directory, or setting `context = __dirname` in your webpack config."
+            "webpack returned an error. Try configuring `entry` in your webpack config relative to the current working directory, or setting `context = __dirname` in your webpack config."
         );
         } else {
             failure::bail!(
-            "Webpack returned an error. You may be able to resolve this issue by running npm install."
+            "webpack returned an error. You may be able to resolve this issue by running npm install."
         );
         }
     }
