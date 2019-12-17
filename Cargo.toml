@@ -21,7 +21,6 @@ cloudflare = "0.4.1"
 env_logger = "0.6.1"
 failure = "0.1.5"
 log = "0.4.6"
-openssl = "0.10.26"
 reqwest = "0.9.18"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.39"
@@ -53,9 +52,19 @@ tokio = "0.2.0"
 # chrome-devtools-rs = { path = "../chrome-devtools-rs" }
 chrome-devtools-rs = { git = "https://github.com/everlastingbugstopper/chrome-devtools-rs", rev = "b7a0e9f" }
 
-[dependencies.ws]
+[target.'cfg(not(windows))'.dependencies.openssl]
+version = "0.10.26"
+
+[target.'cfg(windows)'.dependencies.openssl]
+version = "0.10.26"
+optional = true
+
+[target.'cfg(not(windows))'.dependencies.ws]
 version = "0.9.0"
 features = ["ssl"]
+
+[target.'cfg(windows)'.dependencies.ws]
+version = "0.9.0"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"
