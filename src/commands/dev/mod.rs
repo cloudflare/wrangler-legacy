@@ -17,7 +17,7 @@ use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
 
 use hyper_tls::HttpsConnector;
 
-use tokio::runtime::Runtime;
+use tokio::runtime::{Runtime as TokioRuntime};
 
 use uuid::Uuid;
 
@@ -45,7 +45,7 @@ pub fn dev(
 
     thread::spawn(move || socket::listen(session_id));
 
-    let mut rt = Runtime::new()?;
+    let mut rt = TokioRuntime::new()?;
     rt.block_on(serve(server_config, preview_id))?;
 
     Ok(())
