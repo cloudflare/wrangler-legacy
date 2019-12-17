@@ -45,8 +45,8 @@ pub fn dev(
 
     thread::spawn(move || socket::listen(session_id));
 
-    let mut rt = TokioRuntime::new()?;
-    rt.block_on(serve(server_config, preview_id))?;
+    let mut runtime = TokioRuntime::new()?;
+    runtime.block_on(serve(server_config, preview_id))?;
 
     Ok(())
 }
