@@ -132,7 +132,7 @@ fn deploy(user: &GlobalUser, deploy_target: &DeployTarget) -> Result<(), failure
         }
         DeployTarget::Zoned(zoned_config) => {
             // this is a zoned deploy
-            log::info!("publishing to zone");
+            log::info!("publishing to zone {}", zoned_config.zone_id);
 
             let published_routes = publish_routes(&user, zoned_config)?;
 

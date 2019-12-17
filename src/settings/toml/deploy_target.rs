@@ -10,34 +10,32 @@ pub struct RouteConfig {
 }
 
 impl RouteConfig {
-    fn has_conflicting_targets(&self) -> bool {
+    pub fn has_conflicting_targets(&self) -> bool {
         if self.workers_dev.unwrap_or_default() {
-            self.routes_defined()
+            self.has_routes_defined()
+        } else if let Some(route) = &self.route {
+            !route.is_empty() && self.routes.is_some()
         } else {
-            if let Some(pattern) = &self.route {
-                !pattern.is_empty() && self.routes.is_some()
-            } else {
-                false
-            }
+            false
         }
     }
 
-    pub fn routes_defined(&self) -> bool {
+    pub fn has_routes_defined(&self) -> bool {
         if self.routes.is_some() {
             true
-        } else if let Some(pattern) = &self.route {
-            !pattern.is_empty()
+        } else if let Some(route) = &self.route {
+            !route.is_empty()
         } else {
             false
         }
     }
 
     pub fn is_zoneless(&self) -> bool {
-        self.workers_dev.unwrap_or_default() && !self.has_conflicting_targets()
+        self.workers_dev.unwrap_or_default()
     }
 
     pub fn is_zoned(&self) -> bool {
-        self.routes_defined() || !self.is_missing_zone_id()
+        self.has_routes_defined() || !self.is_missing_zone_id()
     }
 
     // zone id is another weird one where `Some("")` is treated the same as `None`
@@ -60,7 +58,7 @@ impl RouteConfig {
 
     pub fn workers_dev_false_by_itself(&self) -> bool {
         if let Some(workers_dev) = self.workers_dev {
-            !workers_dev && !self.routes_defined()
+            !workers_dev && !self.has_routes_defined()
         } else {
             false
         }
@@ -74,7 +72,10 @@ impl DeployTarget {
     ) -> Result<DeployTarget, failure::Error> {
         if route_config.is_zoneless() {
             // account_id is required
-            let account_id = route_config.account_id.as_ref().unwrap();
+            let account_id = route_config
+                .account_id
+                .as_ref()
+                .expect("account_id is required for a zoneless deploy");
             if account_id.is_empty() {
                 failure::bail!("field `account_id` is required to deploy to workers.dev");
             }
@@ -102,13 +103,13 @@ impl DeployTarget {
 
             // TODO: these should be an if/else if block; write deserializer
             // for `route` key that turns `Some("")` into `None`
-            if let Some(pattern) = &route_config.route {
-                zoned.add_route(&pattern, script_name);
+            if let Some(route) = &route_config.route {
+                zoned.add_route(&route, script_name);
             }
 
             if let Some(patterns) = &route_config.routes {
-                for pattern in patterns {
-                    zoned.add_route(pattern, script_name);
+                for route in patterns {
+                    zoned.add_route(route, script_name);
                 }
             }
 
@@ -140,13 +141,13 @@ pub struct Zoned {
 }
 
 impl Zoned {
-    pub fn add_route(&mut self, pattern: &str, script: &str) -> &Self {
+    pub fn add_route(&mut self, route: &str, script: &str) -> &Self {
         // TODO: Write custom deserializer for route, which will make this fn unnecessary
-        if !pattern.is_empty() {
+        if !route.is_empty() {
             self.routes.push(Route {
                 id: None,
                 script: Some(script.to_string()),
-                pattern: pattern.to_string(),
+                pattern: route.to_string(),
             })
         }
 

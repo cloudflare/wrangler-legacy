@@ -156,7 +156,9 @@ impl Manifest {
         if let Some(environment) = self.get_environment(env)? {
             // if there is a complete environment level deploy target, return that
             let mut env_route_config = environment.route_config()?;
-            if env_route_config.workers_dev_false_by_itself() {
+            if env_route_config.workers_dev_false_by_itself()
+                || env_route_config.has_conflicting_targets()
+            {
                 failure::bail!(
                     "you must set workers_dev = true or provide a zone_id and route/routes."
                 )
@@ -168,7 +170,7 @@ impl Manifest {
                     env_route_config.account_id = Some(self.account_id.clone());
                 }
 
-                if env_route_config.is_missing_zone_id() && env_route_config.routes_defined() {
+                if env_route_config.is_missing_zone_id() && env_route_config.has_routes_defined() {
                     // if there is an incomplete environment level deploy target,
                     // fill in the zone id and build from that
                     env_route_config.zone_id = self.zone_id.clone();
