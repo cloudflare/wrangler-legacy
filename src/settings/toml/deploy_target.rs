@@ -11,11 +11,7 @@ pub struct RouteConfig {
 impl RouteConfig {
     fn has_conflicting_targets(&self) -> bool {
         if self.workers_dev.unwrap_or_default() {
-            if let Some(pattern) = &self.route {
-                !pattern.is_empty() || self.routes.is_some() // this is all so messy because of deserializer
-            } else {
-                self.routes.is_some()
-            }
+            self.routes_defined()
         } else {
             if let Some(pattern) = &self.route {
                 !pattern.is_empty() && self.routes.is_some()
@@ -39,18 +35,24 @@ impl RouteConfig {
         self.workers_dev.unwrap_or_default() && !self.has_conflicting_targets()
     }
 
-    pub fn is_complete_zoned(&self) -> bool {
-        (self.route.is_some() || self.routes.is_some()) && self.zone_id.is_some()
+    pub fn is_zoned(&self) -> bool {
+        self.routes_defined() || !self.is_missing_zone_id()
     }
 
     // zone id is another weird one where `Some("")` is treated the same as `None`
     pub fn is_missing_zone_id(&self) -> bool {
-        let result = !self.workers_dev.unwrap_or_default()
-            && (self.route.is_some() || self.routes.is_some());
         if let Some(zone_id) = &self.zone_id {
-            result && zone_id.is_empty()
+            zone_id.is_empty()
         } else {
-            result
+            true
+        }
+    }
+
+    pub fn workers_dev_false_by_itself(&self) -> bool {
+        if let Some(workers_dev) = self.workers_dev {
+            !workers_dev && !self.routes_defined()
+        } else {
+            false
         }
     }
 }

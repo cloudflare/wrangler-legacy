@@ -152,7 +152,29 @@ impl Manifest {
     pub fn deploy_target(&self, env: Option<&str>) -> Result<DeployTarget, failure::Error> {
         let script = self.worker_name(env);
         validate_worker_name(&script)?;
+        if let Some(environment) = self.get_environment(env)? {
+            // if there is a complete environment level deploy target, return that
+            let mut env_route_config = environment.route_config()?;
+            if env_route_config.workers_dev_false_by_itself() {
+                failure::bail!("you must set workers_dev = true or a zoned deploy config.")
+            }
+            if env_route_config.is_zoneless() || env_route_config.is_zoned() {
+                if env_route_config.is_missing_zone_id() && env_route_config.routes_defined() {
+                    // if there is an incomplete environment level deploy target,
+                    // it is not zoneless, and routes do not inherit,
+                    // so fill in the zone id and build from that
+                    env_route_config.zone_id = self.zone_id.clone();
+                }
+                return DeployTarget::build(&script, &env_route_config);
+            }
+        }
+        // if there is no environment level deploy target, return the top level deploy target
         let route_config = self.route_config();
+
+        if route_config.workers_dev_false_by_itself() {
+            failure::bail!("you must set workers_dev = true or a zoned deploy config.")
+        }
+
         DeployTarget::build(&script, &route_config)
     }
 
