@@ -57,7 +57,8 @@ impl Handler for WsClient {
             }
             Err(e) => {
                 // this event was not parsed as a DevtoolsEvent
-                log::info!("{}", e);
+                // TODO: change this to a warn after chrome-devtools-rs is parsing all messages
+                log::info!("this event was not parsed as a DevtoolsEvent:\n{}", e);
                 Ok(())
             }
         }
