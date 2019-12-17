@@ -157,7 +157,9 @@ impl Manifest {
             // if there is a complete environment level deploy target, return that
             let mut env_route_config = environment.route_config()?;
             if env_route_config.workers_dev_false_by_itself() {
-                failure::bail!("you must set workers_dev = true or a zoned deploy config.")
+                failure::bail!(
+                    "you must set workers_dev = true or provide a zone_id and route/routes."
+                )
             }
             if env_route_config.is_zoneless() || env_route_config.is_zoned() {
                 if env_route_config.is_zoneless() && env_route_config.is_missing_account_id() {
@@ -179,7 +181,7 @@ impl Manifest {
         let route_config = self.route_config();
 
         if route_config.workers_dev_false_by_itself() {
-            failure::bail!("you must set workers_dev = true or a zoned deploy config.")
+            failure::bail!("you must set workers_dev = true or provide a zone_id and route/routes.")
         }
 
         DeployTarget::build(&script, &route_config)
