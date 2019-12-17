@@ -14,26 +14,37 @@ use toml;
 
 const BUNDLE_OUT: &str = "worker";
 
-pub struct Fixture {
+pub struct Fixture<'a> {
     // we wrap the fixture's tempdir in a `ManuallyDrop` so that if a test
     // fails, its directory isn't deleted, and we have a chance to manually
     // inspect its state and figure out what is going on.
     dir: ManuallyDrop<TempDir>,
+    output_path: &'a str,
 }
 
-impl Default for Fixture {
+impl Default for Fixture<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Fixture {
-    pub fn new() -> Fixture {
+impl Fixture<'_> {
+    pub fn new() -> Fixture<'static> {
         let dir = TempDir::new().unwrap();
         eprintln!("Created fixture at {}", dir.path().display());
         Fixture {
             dir: ManuallyDrop::new(dir),
+            output_path: BUNDLE_OUT,
         }
+    }
+
+    pub fn new_site() -> Fixture<'static> {
+        let mut fixture = Fixture::new();
+        fixture.output_path = "workers-site/worker";
+
+        fixture.scaffold_site();
+
+        fixture
     }
 
     pub fn get_path(&self) -> PathBuf {
@@ -46,7 +57,7 @@ impl Fixture {
     }
 
     pub fn get_output_path(&self) -> PathBuf {
-        self.get_path().join(BUNDLE_OUT)
+        self.get_path().join(self.output_path)
     }
 
     pub fn create_file(&self, name: &str, content: &str) {
@@ -80,6 +91,23 @@ impl Fixture {
         self.create_file("wrangler.toml", &toml::to_string(&wrangler_toml).unwrap());
     }
 
+    pub fn scaffold_site(&self) {
+        self.create_dir("workers-site");
+        self.create_file(
+            "workers-site/package.json",
+            r#"
+            {
+              "private": true,
+              "main": "index.js",
+              "dependencies": {
+                "@cloudflare/kv-asset-handler": "^0.0.5"
+              }
+            }
+        "#,
+        );
+        self.create_file("workers-site/index.js", "");
+    }
+
     pub fn lock(&self) -> MutexGuard<'static, ()> {
         use std::sync::Mutex;
 
@@ -91,7 +119,7 @@ impl Fixture {
     }
 }
 
-impl Drop for Fixture {
+impl Drop for Fixture<'_> {
     fn drop(&mut self) {
         if !thread::panicking() {
             unsafe { ManuallyDrop::drop(&mut self.dir) }
