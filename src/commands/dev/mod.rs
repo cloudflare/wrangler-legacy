@@ -1,5 +1,6 @@
+use std::thread;
+
 mod server_config;
-#[cfg(not(target_os = "windows"))]
 mod socket;
 use server_config::ServerConfig;
 mod headers;
@@ -27,8 +28,6 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
 use crate::terminal::emoji;
-#[cfg(target_os = "windows")]
-use crate::terminal::message;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
@@ -46,10 +45,7 @@ pub fn dev(
 
     // create a new thread to listen for devtools messages
     // ...but not on windows: https://github.com/housleyjk/ws-rs/issues/306
-    #[cfg(not(target_os = "windows"))]
-    std::thread::spawn(move || socket::listen(session_id));
-    #[cfg(target_os = "windows")]
-    message::warn("console.log messages are currently not supported on Windows. See https://github.com/housleyjk/ws-rs/issues/306 for more information.\n");
+    thread::spawn(move || socket::listen(session_id));
 
     // spawn tokio runtime on the main thread to handle incoming HTTP requests
     let mut runtime = TokioRuntime::new()?;

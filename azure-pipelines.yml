@@ -28,7 +28,7 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - script: cargo test --locked
+      - script: cargo test --locked --features="vendored-openssl"
         displayName: "cargo test --locked"
         env:
           RUST_LOG: warn,wrangler=info
@@ -83,7 +83,7 @@ jobs:
       vmImage: vs2017-win2016
     steps:
       - template: ci/azure-install-rust.yml
-      - script: cargo build --release
+      - script: cargo build --release --features="vendored-openssl"
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
       - template: ci/azure-create-tarball.yml
