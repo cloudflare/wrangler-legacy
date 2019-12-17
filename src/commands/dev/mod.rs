@@ -1,7 +1,7 @@
 mod server_config;
 use server_config::ServerConfig;
 mod headers;
-use headers::{prepend_request_headers_prefix, strip_response_headers_prefix};
+use headers::{destructure_response, structure_request};
 
 use chrono::prelude::*;
 
@@ -55,11 +55,10 @@ pub async fn dev(
                 let server_config = server_config.to_owned();
                 async move {
                     let resp = preview_request(req, client, preview_id, server_config).await?;
-
                     let (mut parts, body) = resp.into_parts();
 
-                    strip_response_headers_prefix(&mut parts)?;
-
+                    destructure_response(&mut parts)?;
+                    println!(" {}", parts.status.as_str());
                     let resp = Response::from_parts(parts, body);
                     Ok::<_, failure::Error>(resp)
                 }
@@ -99,7 +98,7 @@ fn preview_request(
     let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
 
-    prepend_request_headers_prefix(&mut parts);
+    structure_request(&mut parts);
 
     parts.headers.insert(
         HeaderName::from_static("host"),
@@ -115,7 +114,7 @@ fn preview_request(
 
     let req = Request::from_parts(parts, body);
 
-    println!(
+    print!(
         "[{}] \"{} {}{} {:?}\"",
         now.format("%Y-%m-%d %H:%M:%S"),
         method,
