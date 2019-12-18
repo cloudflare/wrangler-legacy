@@ -4,7 +4,7 @@ use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes}
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
 
-use crate::http::{api_client, format_error};
+use crate::http::{cf_v4_api_client, format_error};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Route;
 
@@ -27,7 +27,7 @@ pub fn publish_routes(
 }
 
 fn fetch_all(user: &GlobalUser, zone_identifier: &String) -> Result<Vec<Route>, failure::Error> {
-    let client = api_client(user, HttpApiClientConfig::default())?;
+    let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     let routes: Vec<Route> = match client.request(&ListRoutes { zone_identifier }) {
         Ok(success) => success.result.iter().map(|r| Route::from(r)).collect(),
@@ -42,7 +42,7 @@ fn create(
     zone_identifier: &String,
     route: &Route,
 ) -> Result<Route, failure::Error> {
-    let client = api_client(user, HttpApiClientConfig::default())?;
+    let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     log::info!("Creating your route {:#?}", &route.pattern,);
     match client.request(&CreateRoute {
