@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::Serialize;
 
 use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes};
@@ -81,6 +83,24 @@ pub enum RouteUploadResult {
     Conflict(Route),
     New(Route),
     Error((Route, String)),
+}
+
+impl fmt::Display for RouteUploadResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RouteUploadResult::Same(route) => write!(f, "{} => stayed the same", route.pattern),
+            RouteUploadResult::Conflict(route) => write!(
+                f,
+                "{} => is already pointing to {}",
+                route.pattern,
+                route.script.as_ref().unwrap_or(&"null worker".to_string())
+            ),
+            RouteUploadResult::New(route) => write!(f, "{} => created", route.pattern),
+            RouteUploadResult::Error((route, message)) => {
+                write!(f, "{} => creation failed: {}", route.pattern, message)
+            }
+        }
+    }
 }
 
 fn deploy_route(

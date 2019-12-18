@@ -136,9 +136,12 @@ fn deploy(user: &GlobalUser, deploy_target: &DeployTarget) -> Result<(), failure
 
             let published_routes = publish_routes(&user, zoned_config)?;
 
+            let display_results: Vec<String> =
+                published_routes.iter().map(|r| format!("{}", r)).collect();
+
             message::success(&format!(
                 "Deployed to the following routes:\n{}",
-                serde_json::to_string(&published_routes)?
+                display_results.join("\n")
             ));
 
             Ok(())
