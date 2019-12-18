@@ -182,7 +182,7 @@ impl Manifest {
         // if there is no environment level deploy target, return the top level deploy target
         let route_config = self.route_config();
 
-        if route_config.workers_dev_false_by_itself() {
+        if route_config.workers_dev_false_by_itself() || route_config.has_conflicting_targets() {
             failure::bail!("you must set workers_dev = true or provide a zone_id and route/routes.")
         }
 
