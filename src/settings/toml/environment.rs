@@ -20,13 +20,13 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn route_config(&self) -> Result<RouteConfig, failure::Error> {
-        Ok(RouteConfig {
+    pub fn route_config(&self) -> RouteConfig {
+        RouteConfig {
             account_id: self.account_id.clone(),
             workers_dev: self.workers_dev,
             route: self.route.clone(),
             routes: self.routes.clone(),
             zone_id: self.zone_id.clone(),
-        })
+        }
     }
 }
