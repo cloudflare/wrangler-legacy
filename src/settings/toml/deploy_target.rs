@@ -39,18 +39,9 @@ impl RouteConfig {
     }
 
     // zone id is another weird one where `Some("")` is treated the same as `None`
-    pub fn is_missing_zone_id(&self) -> bool {
+    fn is_missing_zone_id(&self) -> bool {
         if let Some(zone_id) = &self.zone_id {
             zone_id.is_empty()
-        } else {
-            true
-        }
-    }
-
-    // account id is another weird one where `Some("")` is treated the same as `None`
-    pub fn is_missing_account_id(&self) -> bool {
-        if let Some(account_id) = &self.account_id {
-            account_id.is_empty()
         } else {
             true
         }
@@ -70,6 +61,10 @@ impl DeployTarget {
         script_name: &str,
         route_config: &RouteConfig,
     ) -> Result<DeployTarget, failure::Error> {
+        if route_config.workers_dev_false_by_itself() || route_config.has_conflicting_targets() {
+            failure::bail!("you must set workers_dev = true or provide a zone_id and route/routes.")
+        }
+
         if route_config.is_zoneless() {
             // account_id is required
             let account_id = route_config
@@ -85,7 +80,7 @@ impl DeployTarget {
             };
 
             Ok(DeployTarget::Zoneless(zoneless))
-        } else {
+        } else if route_config.is_zoned() {
             // zone_id is required
             let zone_id = route_config.zone_id.as_ref().unwrap();
             if zone_id.is_empty() {
@@ -118,6 +113,8 @@ impl DeployTarget {
             }
 
             Ok(DeployTarget::Zoned(zoned))
+        } else {
+            failure::bail!("No deploy target specified");
         }
     }
 }

@@ -155,38 +155,15 @@ impl Manifest {
         validate_worker_name(&script)?;
         if let Some(environment) = self.get_environment(env)? {
             // if there is a complete environment level deploy target, return that
-            let mut env_route_config = environment.route_config();
-            if env_route_config.workers_dev_false_by_itself()
-                || env_route_config.has_conflicting_targets()
+            if let Some(env_route_config) =
+                environment.route_config(self.account_id.clone(), self.zone_id.clone())
             {
-                failure::bail!(
-                    "you must set workers_dev = true or provide a zone_id and route/routes."
-                )
-            }
-            if env_route_config.is_zoneless() || env_route_config.is_zoned() {
-                if env_route_config.is_zoneless() && env_route_config.is_missing_account_id() {
-                    // if there is an incomplete environment level deploy target,
-                    // fill in the account id and build from that
-                    env_route_config.account_id = Some(self.account_id.clone());
-                }
-
-                if env_route_config.is_missing_zone_id() && env_route_config.has_routes_defined() {
-                    // if there is an incomplete environment level deploy target,
-                    // fill in the zone id and build from that
-                    env_route_config.zone_id = self.zone_id.clone();
-                }
-
                 return DeployTarget::build(&script, &env_route_config);
             }
         }
+
         // if there is no environment level deploy target, return the top level deploy target
-        let route_config = self.route_config();
-
-        if route_config.workers_dev_false_by_itself() || route_config.has_conflicting_targets() {
-            failure::bail!("you must set workers_dev = true or provide a zone_id and route/routes.")
-        }
-
-        DeployTarget::build(&script, &route_config)
+        DeployTarget::build(&script, &self.route_config())
     }
 
     pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
