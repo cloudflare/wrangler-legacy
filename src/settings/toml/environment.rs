@@ -25,11 +25,14 @@ impl Environment {
         top_level_account_id: String,
         top_level_zone_id: Option<String>,
     ) -> Option<RouteConfig> {
+        // TODO: Deserialize empty strings to None
         let account_id = if empty(&self.account_id) {
             Some(top_level_account_id)
         } else {
             self.account_id.clone()
         };
+
+        // TODO: Deserialize empty strings to None
         let zone_id = if empty(&self.zone_id) {
             top_level_zone_id
         } else {
@@ -50,6 +53,7 @@ impl Environment {
     }
 }
 
+// TODO: Deserialize empty strings to None
 fn empty(optional_string: &Option<String>) -> bool {
     if let Some(string) = optional_string {
         string.is_empty()

@@ -153,8 +153,9 @@ impl Manifest {
     pub fn deploy_target(&self, env: Option<&str>) -> Result<DeployTarget, failure::Error> {
         let script = self.worker_name(env);
         validate_worker_name(&script)?;
+
         if let Some(environment) = self.get_environment(env)? {
-            // if there is a complete environment level deploy target, return that
+            // if there is an environment level deploy target, try to return that
             if let Some(env_route_config) =
                 environment.route_config(self.account_id.clone(), self.zone_id.clone())
             {
@@ -162,7 +163,7 @@ impl Manifest {
             }
         }
 
-        // if there is no environment level deploy target, return the top level deploy target
+        // if there is no environment level deploy target, try to return the top level deploy target
         DeployTarget::build(&script, &self.route_config())
     }
 
