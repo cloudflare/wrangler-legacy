@@ -63,8 +63,8 @@ impl DeployTarget {
                 zoned.add_route(&route, script_name);
             }
 
-            if let Some(patterns) = &route_config.routes {
-                for route in patterns {
+            if let Some(routes) = &route_config.routes {
+                for route in routes {
                     zoned.add_route(route, script_name);
                 }
             }
@@ -126,18 +126,18 @@ impl RouteConfig {
     pub fn has_conflicting_targets(&self) -> bool {
         if self.is_zoneless() {
             self.has_routes_defined()
-        } else if let Some(route) = &self.route {
-            !route.is_empty() && self.routes.is_some()
+        } else if let Some(routes) = &self.routes {
+            !routes.is_empty() && self.route.is_some()
         } else {
             false
         }
     }
 
     pub fn has_routes_defined(&self) -> bool {
-        if self.routes.is_some() {
+        if self.route.is_some() {
             true
-        } else if let Some(route) = &self.route {
-            !route.is_empty()
+        } else if let Some(routes) = &self.routes {
+            !routes.is_empty()
         } else {
             false
         }
@@ -148,16 +148,7 @@ impl RouteConfig {
     }
 
     pub fn is_zoned(&self) -> bool {
-        self.has_routes_defined() || !self.is_missing_zone_id()
-    }
-
-    // zone id is another weird one where `Some("")` is treated the same as `None`
-    fn is_missing_zone_id(&self) -> bool {
-        if let Some(zone_id) = &self.zone_id {
-            zone_id.is_empty()
-        } else {
-            true
-        }
+        self.has_routes_defined() || self.zone_id.is_some()
     }
 
     pub fn workers_dev_false_by_itself(&self) -> bool {

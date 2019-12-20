@@ -5,7 +5,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use config::{Config, File};
+
 use serde::{Deserialize, Serialize};
+use serde_with::rust::string_empty_as_none;
 
 use crate::commands::validate_worker_name;
 use crate::settings::toml::deploy_target::{DeployTarget, RouteConfig};
@@ -17,10 +19,6 @@ use crate::settings::toml::Target;
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-fn some_string() -> Option<String> {
-    Some("".to_string())
-}
-
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
     #[serde(default)]
@@ -30,10 +28,10 @@ pub struct Manifest {
     #[serde(default)]
     pub account_id: String,
     pub workers_dev: Option<bool>,
-    #[serde(default = "some_string")]
+    #[serde(default, with = "string_empty_as_none")]
     pub route: Option<String>,
     pub routes: Option<Vec<String>>,
-    #[serde(default = "some_string")]
+    #[serde(default, with = "string_empty_as_none")]
     pub zone_id: Option<String>,
     pub webpack_config: Option<String>,
     pub private: Option<bool>,

@@ -44,6 +44,12 @@ pub fn publish(
     Ok(())
 }
 
+// This looks to see if a user is trying to set a single route to deploy
+// their Sites Worker, and warns that they should use a wildcard at the
+// end for it to work as expected.
+// TODO: consider whether we should throw these kinds of warnings in any
+// multiroute situations, or suggest that multiroute is not a straight-
+// forward use-case for Workers Sites
 fn warn_site_incompatible_route(deploy_target: &DeployTarget) {
     if let DeployTarget::Zoned(zoned) = &deploy_target {
         if zoned.routes.len() == 1 {
@@ -120,8 +126,8 @@ fn deploy(user: &GlobalUser, deploy_target: &DeployTarget) -> Result<(), failure
     match deploy_target {
         DeployTarget::Zoneless(zoneless_config) => {
             // this is a zoneless deploy
-            log::info!("publishing to subdomain");
-            let deploy_address = publish_to_subdomain(user, zoneless_config)?;
+            log::info!("publishing to workers.dev subdomain");
+            let deploy_address = publish_zoneless(user, zoneless_config)?;
 
             message::success(&format!(
                 "Successfully published your script to {}",
@@ -209,13 +215,12 @@ fn build_subdomain_request() -> String {
     serde_json::json!({ "enabled": true }).to_string()
 }
 
-fn publish_to_subdomain(
+fn publish_zoneless(
     user: &GlobalUser,
     zoneless_config: &Zoneless,
 ) -> Result<String, failure::Error> {
     log::info!("checking that subdomain is registered");
-    let subdomain = Subdomain::get(&zoneless_config.account_id, user)?;
-    let subdomain = match subdomain {
+    let subdomain = match Subdomain::get(&zoneless_config.account_id, user)? {
         Some(subdomain) => subdomain,
         None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
     };
