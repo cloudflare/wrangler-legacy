@@ -140,7 +140,10 @@ fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::
     };
 
     let ignore = build_ignore(target, directory)?;
-    Ok(WalkBuilder::new(directory).overrides(ignore).build())
+    Ok(WalkBuilder::new(directory)
+        .git_ignore(false)
+        .overrides(ignore)
+        .build())
 }
 
 fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
@@ -255,6 +258,7 @@ mod tests {
     use super::*;
     use regex::Regex;
     use std::fs;
+    use std::io::Write;
     use std::path::{Path, PathBuf};
 
     use crate::settings::toml::{Site, Target, TargetType};
@@ -430,6 +434,43 @@ mod tests {
         fs::File::create(&test_path).unwrap();
 
         let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+            .unwrap()
+            .map(|entry| entry.unwrap().path().to_owned())
+            .collect();
+
+        assert!(files.contains(&test_path));
+
+        fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[test]
+    fn it_can_include_gitignore_entries() {
+        // We don't want our wrangler include/exclude functionality to read .gitignore files.
+        let mut site = Site::default();
+        site.bucket = PathBuf::from("fake");
+        let target = make_target(site);
+
+        let test_dir = "test7";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
+        }
+
+        fs::create_dir(test_dir).unwrap();
+        // Create .gitignore file in test7 directory
+        let gitignore_pathname = format!("{}/.gitignore", test_dir);
+        let gitignore_path = PathBuf::from(&gitignore_pathname);
+        let mut gitignore = fs::File::create(&gitignore_path).unwrap();
+        gitignore.write_all(b"public/\n").unwrap();
+
+        // Create 'public/' directory, which should be included.
+        let upload_dir = format!("{}/public", test_dir);
+        fs::create_dir(&upload_dir).unwrap();
+        let test_pathname = format!("{}/notice_me.txt", &upload_dir);
+        let test_path = PathBuf::from(&test_pathname);
+        fs::File::create(&test_path).unwrap();
+
+        let files: Vec<_> = get_dir_iterator(&target, Path::new(&upload_dir))
             .unwrap()
             .map(|entry| entry.unwrap().path().to_owned())
             .collect();
