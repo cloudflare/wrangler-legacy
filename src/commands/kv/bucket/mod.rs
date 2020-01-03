@@ -477,6 +477,7 @@ mod tests {
 
         assert!(files.contains(&test_path));
 
+        fs::remove_dir_all(upload_dir).unwrap();
         fs::remove_dir_all(test_dir).unwrap();
     }
 
