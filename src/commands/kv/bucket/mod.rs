@@ -477,6 +477,11 @@ mod tests {
 
         assert!(files.contains(&test_path));
 
+        // Why drop()? Well, fs::remove_dir_all on Windows depends on the DeleteFileW syscall.
+        // This syscalldoesn't actually delete a file, but only marks it for deletion. It still
+        // can be alive when we try to delete the parent directory test_dir, causing a "directory
+        // is not empty" error. As a result, we MUST call drop() to close the gitignore file so
+        // that it is not alive when fs::remove_dir_all(test_dir) is called.
         drop(gitignore);
         fs::remove_dir_all(test_dir).unwrap();
     }
