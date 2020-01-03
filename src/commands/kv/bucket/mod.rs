@@ -477,6 +477,7 @@ mod tests {
 
         assert!(files.contains(&test_path));
 
+        drop(gitignore);
         fs::remove_dir_all(test_dir).unwrap();
     }
 
