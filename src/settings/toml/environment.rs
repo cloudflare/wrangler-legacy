@@ -43,11 +43,11 @@ impl Environment {
             None
         } else {
             Some(RouteConfig {
-                account_id: account_id,
+                account_id,
                 workers_dev: self.workers_dev,
                 route: self.route.clone(),
                 routes: self.routes.clone(),
-                zone_id: zone_id,
+                zone_id,
             })
         }
     }
