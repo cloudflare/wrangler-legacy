@@ -158,11 +158,19 @@ impl Manifest {
                 environment.route_config(self.account_id.clone(), self.zone_id.clone())
             {
                 return DeployTarget::build(&script, &env_route_config);
+            } else {
+                // If the top level config is Zoned, the user needs to specify new route config
+                let top_level_config = DeployTarget::build(&script, &self.route_config())?;
+                match top_level_config {
+                    DeployTarget::Zoned(_) => failure::bail!(
+                        "you must specify route(s) per environment for zoned deploys."
+                    ),
+                    DeployTarget::Zoneless(_) => return Ok(top_level_config),
+                }
             }
+        } else {
+            DeployTarget::build(&script, &self.route_config())
         }
-
-        // if there is no environment level deploy target, try to return the top level deploy target
-        DeployTarget::build(&script, &self.route_config())
     }
 
     pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
