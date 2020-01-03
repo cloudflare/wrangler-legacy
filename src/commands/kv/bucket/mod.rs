@@ -447,7 +447,7 @@ mod tests {
     fn it_can_include_gitignore_entries() {
         // We don't want our wrangler include/exclude functionality to read .gitignore files.
         let mut site = Site::default();
-        site.bucket = PathBuf::from("fake");
+        site.bucket = PathBuf::from("public");
         let target = make_target(site);
 
         let test_dir = "test7";
@@ -461,7 +461,7 @@ mod tests {
         let gitignore_pathname = format!("{}/.gitignore", test_dir);
         let gitignore_path = PathBuf::from(&gitignore_pathname);
         let mut gitignore = fs::File::create(&gitignore_path).unwrap();
-        gitignore.write_all(b"public/\n").unwrap();
+        writeln!(gitignore, "public/").unwrap();
 
         // Create 'public/' directory, which should be included.
         let upload_dir = format!("{}/public", test_dir);
@@ -477,7 +477,6 @@ mod tests {
 
         assert!(files.contains(&test_path));
 
-        fs::remove_dir_all(upload_dir).unwrap();
         fs::remove_dir_all(test_dir).unwrap();
     }
 
