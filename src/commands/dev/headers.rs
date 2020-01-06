@@ -52,7 +52,7 @@ fn set_response_status(parts: &mut ResponseParts) -> Result<(), failure::Error> 
         .expect("Could not determine status code of response");
     // status will be "404 not found" or "200 ok"
     // we need to split that string to create hyper's status code
-    let status_vec: Vec<&str> = status.to_str()?.split(" ").collect();
+    let status_vec: Vec<&str> = status.to_str()?.split(' ').collect();
     parts.status = StatusCode::from_str(status_vec[0])?;
     Ok(())
 }
