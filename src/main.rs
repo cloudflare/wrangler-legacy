@@ -233,6 +233,30 @@ fn run() -> Result<(), failure::Error> {
                 )
         )
         .subcommand(
+            SubCommand::with_name("route")
+                .about(&*format!(
+                    "{} List or delete worker routes.",
+                    emoji::ROUTE
+                ))
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    SubCommand::with_name("list")
+                        .about("List all routes associated with a zone (outputs json)")
+                        .arg(environment_arg.clone())
+                )
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .arg(environment_arg.clone())
+                        .about("Delete multiple keys and their values from a namespace")
+                        .arg(
+                            Arg::with_name("route_id")
+                            .help("the id associated with the route you want to delete (find using `wrangler route list`)")
+                            .required(true)
+                            .index(1)
+                        )
+                )
+        )
+        .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
                     "{} Generate a new worker project",
@@ -551,6 +575,23 @@ fn run() -> Result<(), failure::Error> {
             commands::subdomain::set_subdomain(&name, &user, &target)?;
         } else {
             commands::subdomain::get_subdomain(&user, &target)?;
+        }
+    } else if let Some(route_matches) = matches.subcommand_matches("route") {
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let user = settings::global_user::GlobalUser::new()?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+
+        match route_matches.subcommand() {
+            ("list", Some(_)) => {
+                commands::route::list(&target, &user)?;
+            }
+            ("delete", Some(delete_matches)) => {
+                let route_id = delete_matches.value_of("route_id").unwrap();
+                commands::route::delete(&target, &user, route_id)?;
+            }
+            ("", None) => message::warn("route expects a subcommand"),
+            _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::toml::Manifest::new(config_path)?;
