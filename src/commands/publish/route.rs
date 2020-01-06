@@ -64,11 +64,13 @@ fn create(
 // TODO: improve this error message to reference wrangler route commands
 fn routes_error_help(error_code: u16) -> &'static str {
     match error_code {
-        10020 => r#"
+        10020 => {
+            r#"
             A worker with a different name was previously deployed to the specified route.
             If you would like to overwrite that worker,
             you will need to change `name` in your `wrangler.toml` to match the currently deployed worker,
-            or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n"#,
+            or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n"#
+        }
         _ => "",
     }
 }
