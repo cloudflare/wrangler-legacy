@@ -17,7 +17,7 @@ use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
 
 use hyper_tls::HttpsConnector;
 
-use tokio::runtime::{Runtime as TokioRuntime};
+use tokio::runtime::Runtime as TokioRuntime;
 
 use uuid::Uuid;
 

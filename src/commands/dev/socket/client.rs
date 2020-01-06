@@ -64,21 +64,25 @@ impl Handler for WsClient {
         }
     }
 
-    fn upgrade_ssl_client(&mut self, sock: TcpStream, _: &Url) -> ws::Result<TlsStream<TcpStream>> {
-        let mut builder = TlsConnector::builder();
+    // fn upgrade_ssl_client(
+    //     &mut self,
+    //     sock: TcpStream,
+    //     url: &Url,
+    // ) -> ws::Result<TlsStream<TcpStream>> {
+    //     let mut builder = TlsConnector::builder();
 
-        let connector = builder.use_sni(false).build().map_err(|e| {
-            ws::Error::new(
-                ws::ErrorKind::Internal,
-                format!("Failed to build SSL connector: {}", e),
-            )
-        })?;
+    //     let connector = builder.use_sni(false).build().map_err(|e| {
+    //         ws::Error::new(
+    //             ws::ErrorKind::Internal,
+    //             format!("Failed to build SSL connector: {}", e),
+    //         )
+    //     })?;
 
-        connector.connect("", sock).map_err(|e| {
-            ws::Error::new(
-                ws::ErrorKind::Internal,
-                format!("Failed to upgrade client to SSL: {}", e),
-            )
-        })
-    }
+    //     connector.connect(url, sock).map_err(|e| {
+    //         ws::Error::new(
+    //             ws::ErrorKind::Internal,
+    //             format!("Failed to upgrade client to SSL: {}", e),
+    //         )
+    //     })
+    // }
 }
