@@ -43,6 +43,6 @@
     "cli"
   ],
   "dependencies": {
-    "binary-install": "0.0.0"
+    "binary-install": "0.0.1"
   }
 }

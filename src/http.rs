@@ -74,7 +74,7 @@ fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) {
 }
 
 ////---------------------------NEW API CLIENT CODE---------------------------////
-pub fn api_client(
+pub fn cf_v4_api_client(
     user: &GlobalUser,
     config: HttpApiClientConfig,
 ) -> Result<HttpApiClient, failure::Error> {
