@@ -403,7 +403,7 @@ fn run() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("config")
                 .about(&*format!(
-                    "{} Setup wrangler with your Cloudflare account",
+                    "{} Set up wrangler with your Cloudflare account",
                     emoji::SLEUTH
                 ))
                 .arg(
