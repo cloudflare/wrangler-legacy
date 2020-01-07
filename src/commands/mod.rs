@@ -7,6 +7,7 @@ pub mod init;
 pub mod kv;
 pub mod preview;
 pub mod publish;
+pub mod route;
 pub mod subdomain;
 pub mod whoami;
 
@@ -17,10 +18,11 @@ pub use generate::generate;
 pub use init::init;
 pub use preview::{preview, HTTPMethod};
 pub use publish::publish;
-use regex::Regex;
 pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
 pub use whoami::whoami;
+
+use regex::Regex;
 
 // Run the given command and return its stdout.
 pub fn run(mut command: Command, command_name: &str) -> Result<(), failure::Error> {

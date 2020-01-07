@@ -178,7 +178,7 @@ impl Manifest {
         Ok(target)
     }
 
-    fn get_environment(
+    pub fn get_environment(
         &self,
         environment_name: Option<&str>,
     ) -> Result<Option<&Environment>, failure::Error> {
