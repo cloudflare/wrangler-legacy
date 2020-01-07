@@ -20,8 +20,8 @@ pub fn list(zone_identifier: String, user: &GlobalUser) -> Result<(), failure::E
             let routes = success.result;
             println!("{}", serde_json::to_string(&routes)?);
         }
-        // TODO: handle route errors with http::format_error
-        Err(e) => failure::bail!("{}", e),
+
+        Err(e) => failure::bail!("{}", http::format_error(e, None)),
     }
     Ok(())
 }
@@ -43,8 +43,15 @@ pub fn delete(
             let msg = format!("Successfully deleted route with id {}", success.result.id);
             message::success(&msg);
         }
-        // TODO: handle route errors with http::format_error
-        Err(e) => failure::bail!("{}", e),
+
+        Err(e) => failure::bail!("{}", http::format_error(e, Some(&error_suggestions))),
     }
     Ok(())
+}
+
+fn error_suggestions(code: u16) -> &'static str {
+    match code {
+        10005 => "Confirm the route id by running `wrangler route list`",
+        _ => "",
+    }
 }
