@@ -577,18 +577,33 @@ fn run() -> Result<(), failure::Error> {
             commands::subdomain::get_subdomain(&user, &target)?;
         }
     } else if let Some(route_matches) = matches.subcommand_matches("route") {
-        let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+
+        let env_zone_id = if let Some(environment) = manifest.get_environment(env)? {
+            environment.zone_id.as_ref()
+        } else {
+            None
+        };
+
+        let zone_id: Result<String, failure::Error> = if let Some(zone_id) = env_zone_id {
+            Ok(zone_id.to_string())
+        } else if let Some(zone_id) = manifest.zone_id {
+            Ok(zone_id)
+        } else {
+            failure::bail!(
+                "You must specify a zone_id in `wrangler.toml` to use `wrangler route` commands."
+            )
+        };
 
         match route_matches.subcommand() {
             ("list", Some(_)) => {
-                commands::route::list(&target, &user)?;
+                commands::route::list(zone_id?, &user)?;
             }
             ("delete", Some(delete_matches)) => {
                 let route_id = delete_matches.value_of("route_id").unwrap();
-                commands::route::delete(&target, &user, route_id)?;
+                commands::route::delete(zone_id?, &user, route_id)?;
             }
             ("", None) => message::warn("route expects a subcommand"),
             _ => unreachable!(),

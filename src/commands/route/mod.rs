@@ -1,23 +1,18 @@
 extern crate serde_json;
 
-use crate::http;
-
 use cloudflare::endpoints::workers::{DeleteRoute, ListRoutes};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::HttpApiClientConfig;
 
+use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::Target;
 use crate::terminal::message;
 
-pub fn list(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+pub fn list(zone_identifier: String, user: &GlobalUser) -> Result<(), failure::Error> {
     let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     let result = client.request(&ListRoutes {
-        zone_identifier: &target
-            .zone_id
-            .as_ref()
-            .expect("missing zone_id in `wrangler.toml`"),
+        zone_identifier: &zone_identifier,
     });
 
     match result {
@@ -31,14 +26,15 @@ pub fn list(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     Ok(())
 }
 
-pub fn delete(target: &Target, user: &GlobalUser, route_id: &str) -> Result<(), failure::Error> {
+pub fn delete(
+    zone_identifier: String,
+    user: &GlobalUser,
+    route_id: &str,
+) -> Result<(), failure::Error> {
     let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     let result = client.request(&DeleteRoute {
-        zone_identifier: &target
-            .zone_id
-            .as_ref()
-            .expect("missing zone_id in `wrangler.toml`"),
+        zone_identifier: &zone_identifier,
         identifier: route_id,
     });
 
