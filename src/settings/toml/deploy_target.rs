@@ -23,7 +23,8 @@ impl DeployTarget {
         route_config: &RouteConfig,
     ) -> Result<DeployTarget, failure::Error> {
         if let Some(account_id) = &route_config.account_id {
-            // TODO: Deserialize empty strings to None
+            // TODO: Deserialize empty strings to None; cannot do this for account id
+            // yet without a large refactor.
             if account_id.is_empty() {
                 failure::bail!("field `account_id` is required to deploy to workers.dev");
             }
@@ -43,7 +44,6 @@ impl DeployTarget {
         route_config: &RouteConfig,
     ) -> Result<DeployTarget, failure::Error> {
         if let Some(zone_id) = &route_config.zone_id {
-            // TODO: Deserialize empty strings to None
             if zone_id.is_empty() {
                 failure::bail!("field `zone_id` is required to deploy to routes");
             }
@@ -57,20 +57,26 @@ impl DeployTarget {
                 routes: Vec::new(),
             };
 
-            // TODO: these should be an if/else if block; write deserializer
-            // for `route` key that turns `Some("")` into `None`
             if let Some(route) = &route_config.route {
-                zoned.add_route(&route, script_name);
-            }
-
-            if let Some(routes) = &route_config.routes {
+                zoned.routes.push(Route {
+                    id: None,
+                    script: Some(script_name.to_string()),
+                    pattern: route.to_string(),
+                });
+            } else if let Some(routes) = &route_config.routes {
                 for route in routes {
-                    zoned.add_route(route, script_name);
+                    if !route.is_empty() {
+                        zoned.routes.push(Route {
+                            id: None,
+                            script: Some(script_name.to_string()),
+                            pattern: route.to_string(),
+                        })
+                    }
                 }
             }
 
             if zoned.routes.is_empty() {
-                failure::bail!("No deploy target specified");
+                failure::bail!("No routes specified");
             }
 
             Ok(DeployTarget::Zoned(zoned))
@@ -98,21 +104,6 @@ pub struct Zoned {
     pub routes: Vec<Route>,
 }
 
-impl Zoned {
-    pub fn add_route(&mut self, route: &str, script: &str) -> &Self {
-        // TODO: Write custom deserializer for route, which will make this fn unnecessary
-        if !route.is_empty() {
-            self.routes.push(Route {
-                id: None,
-                script: Some(script.to_string()),
-                pattern: route.to_string(),
-            })
-        }
-
-        self
-    }
-}
-
 #[derive(Debug)]
 pub struct RouteConfig {
     pub workers_dev: Option<bool>,
@@ -123,7 +114,7 @@ pub struct RouteConfig {
 }
 
 impl RouteConfig {
-    pub fn has_conflicting_targets(&self) -> bool {
+    fn has_conflicting_targets(&self) -> bool {
         if self.is_zoneless() {
             self.has_routes_defined()
         } else if let Some(routes) = &self.routes {
@@ -133,7 +124,7 @@ impl RouteConfig {
         }
     }
 
-    pub fn has_routes_defined(&self) -> bool {
+    fn has_routes_defined(&self) -> bool {
         if self.route.is_some() {
             true
         } else if let Some(routes) = &self.routes {
@@ -143,15 +134,15 @@ impl RouteConfig {
         }
     }
 
-    pub fn is_zoneless(&self) -> bool {
+    fn is_zoneless(&self) -> bool {
         self.workers_dev.unwrap_or_default()
     }
 
-    pub fn is_zoned(&self) -> bool {
+    fn is_zoned(&self) -> bool {
         self.has_routes_defined() || self.zone_id.is_some()
     }
 
-    pub fn workers_dev_false_by_itself(&self) -> bool {
+    fn workers_dev_false_by_itself(&self) -> bool {
         if let Some(workers_dev) = self.workers_dev {
             !workers_dev && !self.has_routes_defined()
         } else {

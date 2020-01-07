@@ -44,23 +44,22 @@ pub fn publish(
     Ok(())
 }
 
-// This looks to see if a user is trying to set a single route to deploy
-// their Sites Worker, and warns that they should use a wildcard at the
-// end for it to work as expected.
-// TODO: consider whether we should throw these kinds of warnings in any
-// multiroute situations, or suggest that multiroute is not a straight-
-// forward use-case for Workers Sites
+// This checks all of the configured routes for the wildcard ending and warns
+// the user that their site may not work as expected without it.
 fn warn_site_incompatible_route(deploy_target: &DeployTarget) {
     if let DeployTarget::Zoned(zoned) = &deploy_target {
-        if zoned.routes.len() == 1 {
-            let route = &zoned.routes[0];
-
+        let mut no_star_routes = Vec::new();
+        for route in &zoned.routes {
             if !route.pattern.ends_with('*') {
-                message::warn(&format!(
-                    "The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*",
-                    route.pattern)
-                );
+                no_star_routes.push(route.pattern.to_string());
             }
+        }
+
+        if !no_star_routes.is_empty() {
+            message::warn(&format!(
+                "The following routes in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\n{}",
+                no_star_routes.join("\n"))
+            );
         }
     }
 }
