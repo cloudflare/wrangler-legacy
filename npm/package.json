@@ -4,8 +4,8 @@
   "description": "Wrangle your Cloudflare Workers",
   "main": "binary.js",
   "scripts": {
-    "postinstall": "node -e 'require(\"./binary.js\").install()'",
-    "preuninstall": "node -e 'require(\"./binary.js\").uninstall()'"
+    "postinstall": "node ./install-wrangler.js",
+    "preuninstall": "node ./uninstall-wrangler.js"
   },
   "bin": {
     "wrangler": "./run-wrangler.js"
