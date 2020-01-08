@@ -233,6 +233,25 @@ fn run() -> Result<(), failure::Error> {
                 )
         )
         .subcommand(
+            SubCommand::with_name("secret")
+                .about(&*format!(
+                    "{} Generate a secret that can be referenced in the worker script",
+                    emoji::DANCERS
+                ))
+                .arg(
+                    Arg::with_name("name")
+                        .help("the name of your secret!")
+                        .index(1),
+                )
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to build")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
                     "{} Generate a new worker project",
@@ -551,6 +570,24 @@ fn run() -> Result<(), failure::Error> {
             commands::subdomain::set_subdomain(&name, &user, &target)?;
         } else {
             commands::subdomain::get_subdomain(&user, &target)?;
+        }
+    } else if let Some(matches) = matches.subcommand_matches("secret") {
+        log::info!("Getting project settings");
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let name = matches.value_of("name");
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+
+        log::info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
+
+        let name = matches.value_of("name");
+
+        if let Some(name) = name {
+            commands::secret::set_secret(&name, &user, &target)?;
+        } else {
+            // TODO run another command
+            // commands::subdomain::get_subdomain(&user, &target)?;
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::toml::Manifest::new(config_path)?;

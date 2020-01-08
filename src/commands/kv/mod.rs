@@ -123,7 +123,7 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
 // For interactively handling deletes (and discouraging accidental deletes).
 // Input like "yes", "Yes", "no", "No" will be accepted, thanks to the whitespace-stripping
 // and lowercasing logic below.
-fn interactive_delete(prompt_string: &str) -> Result<bool, failure::Error> {
+pub fn interactive_delete(prompt_string: &str) -> Result<bool, failure::Error> {
     println!("{} [y/n]", prompt_string);
     let mut response: String = read!("{}\n");
     response = response.split_whitespace().collect(); // remove whitespace
