@@ -1,12 +1,13 @@
 use crate::settings::toml::Route;
+use crate::terminal::message;
 
 impl DeployTarget {
     pub fn build(
         script_name: &str,
         route_config: &RouteConfig,
     ) -> Result<DeployTarget, failure::Error> {
-        if route_config.workers_dev_false_by_itself() || route_config.has_conflicting_targets() {
-            failure::bail!("you must set workers_dev = true or provide a zone_id and route/routes.")
+        if route_config.is_valid() {
+            failure::bail!("you must set workers_dev = true OR provide a zone_id and route/routes.")
         }
 
         if route_config.is_zoneless() {
@@ -65,7 +66,9 @@ impl DeployTarget {
                 });
             } else if let Some(routes) = &route_config.routes {
                 for route in routes {
-                    if !route.is_empty() {
+                    if route.is_empty() {
+                        message::warn("your wrangler.toml contains an empty route")
+                    } else {
                         zoned.routes.push(Route {
                             id: None,
                             script: Some(script_name.to_string()),
@@ -114,6 +117,10 @@ pub struct RouteConfig {
 }
 
 impl RouteConfig {
+    fn is_valid(&self) -> bool {
+        self.workers_dev_false_by_itself() || self.has_conflicting_targets()
+    }
+
     fn has_conflicting_targets(&self) -> bool {
         if self.is_zoneless() {
             self.has_routes_defined()
