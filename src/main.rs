@@ -374,11 +374,10 @@ fn run() -> Result<(), failure::Error> {
                         .takes_value(true)
                 )
                 .arg(
-                    Arg::with_name("watch")
-                        .help("watch your project for changes and update the preview automagically")
-                        .long("watch")
-                        .takes_value(true)
-                        .default_value("true"),
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -556,10 +555,10 @@ fn run() -> Result<(), failure::Error> {
         let ip = matches.value_of("ip");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let watch = FromStr::from_str(matches.value_of("watch").unwrap())?;
         let target = manifest.get_target(env)?;
+        let verbose = matches.is_present("verbose");
         let user = settings::global_user::GlobalUser::new().ok();
-        commands::dev::dev(target, user, watch, host, port, ip)?;
+        commands::dev::dev(target, user, host, port, ip, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

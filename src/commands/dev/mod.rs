@@ -3,9 +3,12 @@ mod socket;
 use server_config::ServerConfig;
 mod headers;
 use headers::{destructure_response, structure_request};
+mod watch;
+use watch::watch_for_changes;
 
+use std::mem;
+use std::sync::{Arc, Mutex};
 use std::thread;
-use std::sync::{mpsc, Mutex, Arc};
 
 use chrono::prelude::*;
 
@@ -35,24 +38,42 @@ const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 pub fn dev(
     target: Target,
     user: Option<GlobalUser>,
-    watch: bool,
     host: Option<&str>,
     port: Option<&str>,
     ip: Option<&str>,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
     let server_config = ServerConfig::new(host, ip, port)?;
     let session_id = get_session_id()?;
-    let preview_id = get_preview_id(target.clone(), user.clone(), &server_config, &session_id)?;
+    let preview_id = get_preview_id(
+        target.clone(),
+        user.clone(),
+        &server_config,
+        &session_id.clone(),
+        verbose,
+    )?;
     let preview_id = Arc::new(Mutex::new(preview_id));
 
     // create a new thread to listen for devtools messages
-    thread::spawn(move || socket::listen(&session_id));
-    
-    { // create an artificial scope to create new preview_id Arc
+    {
+        let session_id = session_id.clone();
+        thread::spawn(move || socket::listen(&session_id));
+    }
+
+    {
         let preview_id = preview_id.clone();
         let server_config = server_config.clone();
-        thread::spawn(move || watch_for_changes(target, user, &server_config, Arc::clone(&preview_id), true));
+        thread::spawn(move || {
+            watch_for_changes(
+                target,
+                user,
+                &server_config,
+                Arc::clone(&preview_id),
+                &session_id,
+                verbose,
+            )
+        });
     }
 
     // spawn tokio runtime on the main thread to handle incoming HTTP requests
@@ -62,7 +83,10 @@ pub fn dev(
     Ok(())
 }
 
-async fn serve(server_config: ServerConfig, preview_id: Arc<Mutex<String>>) -> Result<(), failure::Error> {
+async fn serve(
+    server_config: ServerConfig,
+    preview_id: Arc<Mutex<String>>,
+) -> Result<(), failure::Error> {
     // set up https client to connect to the preview service
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
@@ -79,7 +103,9 @@ async fn serve(server_config: ServerConfig, preview_id: Arc<Mutex<String>>) -> R
                 let preview_id = preview_id.lock().unwrap().to_owned();
                 let server_config = server_config.to_owned();
                 async move {
-                    let resp = preview_request(req, client, preview_id.to_owned(), server_config).await?;
+                    let resp =
+                        preview_request(req, client, preview_id.to_owned(), server_config).await?;
+                    mem::drop(preview_id);
                     let (mut parts, body) = resp.into_parts();
 
                     destructure_response(&mut parts)?;
@@ -121,7 +147,6 @@ fn preview_request(
     let method = parts.method.to_string();
     let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
-    println!("request id: {:?}", preview_id);
 
     structure_request(&mut parts);
 
@@ -139,7 +164,6 @@ fn preview_request(
 
     let req = Request::from_parts(parts, body);
 
-    
     println!(
         "[{}] \"{} {}{} {:?}\"",
         now.format("%Y-%m-%d %H:%M:%S"),
@@ -155,15 +179,15 @@ fn get_session_id() -> Result<String, failure::Error> {
     Ok(Uuid::new_v4().to_simple().to_string())
 }
 
-fn get_preview_id(
+pub fn get_preview_id(
     mut target: Target,
     user: Option<GlobalUser>,
     server_config: &ServerConfig,
     session_id: &str,
+    verbose: bool,
 ) -> Result<String, failure::Error> {
-    let verbose = true;
     let sites_preview = false;
-    let script_id: String = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
+    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
     Ok(format!(
         "{}{}{}{}",
         &script_id,
@@ -171,31 +195,4 @@ fn get_preview_id(
         server_config.host.is_https() as u8,
         server_config.host
     ))
-}
-
-fn watch_for_changes(
-    target: Target,
-    user: Option<GlobalUser>,
-    server_config: &ServerConfig,
-    preview_id: Arc<Mutex<String>>,
-    verbose: bool,
-) -> Result<(), failure::Error> {
-    let sites_preview: bool = target.site.is_some();
-
-    let (tx, rx) = mpsc::channel();
-    
-    commands::watch_and_build(&target, Some(tx))?;
-
-    while let Ok(_) = rx.recv() {
-        let user = user.clone();
-        let mut target = target.clone();
-        commands::build(&target)?;
-
-        if let Ok(new_id) = upload(&mut target, user.as_ref(), sites_preview, verbose) {
-            let mut p = preview_id.lock().unwrap();
-            *p = get_preview_id(target, user, server_config, &new_id)?;
-        }
-    }
-
-    Ok(())
 }
