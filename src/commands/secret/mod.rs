@@ -1,12 +1,10 @@
-use crate::http;
+// use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::{emoji, message};
-use crate::commands::kv;
-use std::path::Path;
-use serde::{Deserialize, Serialize};
+use serde::{ Serialize};
 // For interactively handling  reading in a string
-pub fn interactive_delete(prompt_string: &str) -> Result<bool, failure::Error> {
+pub fn interactive_get_string(prompt_string: &str) -> Result<bool, failure::Error> {
     println!("{}",prompt_string);
     let mut response: String = read!("{}\n");
     println!("{}",response);
@@ -27,13 +25,13 @@ pub struct Script {
 
 impl Secret {
 
-    pub fn put(name: &str, target: &Target, account_id: &str, user: &GlobalUser) -> Result<(), failure::Error> {
+    pub fn put(name: &str, user: &GlobalUser) -> Result<(), failure::Error> {
         message::success(&format!("Success! You've uploaded secret {}.", name));
         Ok(())
     }
 }
 impl Script {
-    pub fn put(name: &str, target: &Target, account_id: &str, user: &GlobalUser) -> Result<(), failure::Error> {
+    pub fn put(name: &str, target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
         message::success(&format!("Success! You've bound the secret {} to {}.", name, target.name));
         Ok(())
     }
@@ -51,7 +49,7 @@ fn bind_secret(
         target.name
     );
     message::working(&msg);
-    Script::put(name, &target, &target.account_id, user)
+    Script::put(name, &target,  user)
 }
 fn put_secret(
     
@@ -65,11 +63,11 @@ fn put_secret(
     );
     
     message::working(&msg);
-    Secret::put(name, &target, &target.account_id, user)
+    Secret::put(name,  user)
 }
 
 pub fn set_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-  match interactive_delete(&format!(
+  match interactive_get_string(&format!(
     "Enter the secret text you'd like assigned to {}?",
     name
     )) {
