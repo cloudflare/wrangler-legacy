@@ -1,92 +1,93 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::SystemTime;
+use std::time::Duration;
 
 use chrome_devtools::events::DevtoolsEvent;
 
 use console::style;
 
-use tungstenite::client::AutoStream;
-use tungstenite::{connect, Message, WebSocket};
+use futures::{future, pin_mut, StreamExt};
+use futures_util::sink::SinkExt;
+
+use tokio::time;
+use tokio_tungstenite::connect_async;
+use tungstenite::protocol::Message;
 
 use url::Url;
 
-pub fn listen(session_id: String) -> Result<(), failure::Error> {
+const KEEP_ALIVE_INTERVAL: u64 = 10;
+
+pub async fn listen(session_id: String) -> Result<(), failure::Error> {
     let socket_url = format!("wss://rawhttp.cloudflareworkers.com/inspect/{}", session_id);
     let socket_url = Url::parse(&socket_url)?;
-    let (socket, _) = connect(socket_url)?;
 
-    let socket = Arc::new(Mutex::new(socket));
+    let (ws_stream, _) = connect_async(socket_url)
+        .await
+        .expect("Failed to connect to devtools instance");
 
-    let enable_runtime = r#"{
-      "id": 1,
-      "method": "Runtime.enable"
-    }"#;
+    let (mut write, read) = ws_stream.split();
 
-    {
-        let socket = Arc::clone(&socket);
-        let mut socket = socket.lock().unwrap();
-        socket
-            .write_message(Message::Text(enable_runtime.into()))
-            .unwrap();
-    }
+    let enable_runtime = Message::Text(
+        r#"{
+        "id": 1,
+        "method": "Runtime.enable"
+    }"#
+        .into(),
+    );
+    write.send(enable_runtime).await?;
 
-    {
-        let socket = Arc::clone(&socket);
-        thread::spawn(move || keep_alive(socket));
-    }
+    let (keep_alive_tx, keep_alive_rx) = futures::channel::mpsc::unbounded();
+    tokio::spawn(keep_alive(keep_alive_tx));
+    let keep_alive_to_ws = keep_alive_rx.map(Ok).forward(write);
 
-    loop {
-        let msg = socket
-            .lock()
-            .unwrap()
-            .read_message()
-            .expect("Error reading message from devtools")
-            .into_text()?;
-        log::info!("{}", msg);
-        let msg: Result<DevtoolsEvent, serde_json::Error> = serde_json::from_str(&msg);
-        match msg {
-            Ok(msg) => match msg {
-                DevtoolsEvent::ConsoleAPICalled(event) => match event.log_type.as_str() {
-                    "log" => println!("{}", style(event).blue()),
-                    "error" => eprintln!("{}", style(event).red()),
-                    _ => println!("unknown console event: {}", event),
-                },
-                DevtoolsEvent::ExceptionThrown(event) => eprintln!("{}", style(event).bold().red()),
-            },
-            Err(e) => {
-                // this event was not parsed as a DevtoolsEvent
-                // TODO: change this to a warn after chrome-devtools-rs is parsing all messages
-                log::info!("this event was not parsed as a DevtoolsEvent:\n{}", e);
+    let print_ws_messages = {
+        read.for_each(|message| {
+            async {
+                let message = message.unwrap().into_text().unwrap();
+                log::info!("{}", message);
+                let message: Result<DevtoolsEvent, serde_json::Error> =
+                    serde_json::from_str(&message);
+                match message {
+                    Ok(message) => match message {
+                        DevtoolsEvent::ConsoleAPICalled(event) => match event.log_type.as_str() {
+                            "log" => println!("{}", style(event).blue()),
+                            "error" => println!("{}", style(event).red()),
+                            _ => println!("unknown console event: {}", event),
+                        },
+                        DevtoolsEvent::ExceptionThrown(event) => {
+                            println!("{}", style(event).bold().red())
+                        }
+                    },
+                    Err(e) => {
+                        // this event was not parsed as a DevtoolsEvent
+                        // TODO: change this to a warn after chrome-devtools-rs is parsing all messages
+                        log::info!("this event was not parsed as a DevtoolsEvent:\n{}", e);
+                    }
+                };
             }
-        }
-    }
+        })
+    };
+    pin_mut!(keep_alive_to_ws, print_ws_messages);
+    future::select(keep_alive_to_ws, print_ws_messages).await;
+    Ok(())
 }
 
-fn keep_alive(socket: Arc<Mutex<WebSocket<AutoStream>>>) {
-    let mut keep_alive_time = SystemTime::now();
+async fn keep_alive(tx: futures::channel::mpsc::UnboundedSender<Message>) {
+    let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
+    let mut interval = time::interval(duration);
+
     let mut id = 2;
+
     loop {
-        let elapsed = keep_alive_time.elapsed().unwrap().as_secs();
-        println!("elapsed: {}", elapsed);
-        if elapsed >= 5 {
-            let keep_alive_message = format!(
-                r#"{{
-                "id": {},
-                "method": "Runtime.getIsolateId"
+        interval.tick().await;
+        let keep_alive_message = format!(
+            r#"{{
+              "id": {},
+              "method": "Runtime.getIsolateId"
             }}"#,
-                id
-            );
-            println!("before sending keepalive message");
-            {
-                let mut socket = socket.lock().unwrap();
-                socket
-                    .write_message(Message::Text(keep_alive_message.into()))
-                    .unwrap();
-            }
-            println!("after sending keepalive message");
-            id += 1;
-            keep_alive_time = SystemTime::now();
-        }
+            id
+        );
+
+        tx.unbounded_send(Message::Text(keep_alive_message.into()))
+            .unwrap();
+        id += 1;
     }
 }

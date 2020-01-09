@@ -44,7 +44,10 @@ pub fn dev(
     let preview_id = get_preview_id(target, user, &server_config, &session_id)?;
 
     // create a new thread to listen for devtools messages
-    thread::spawn(move || socket::listen(session_id));
+    thread::spawn(move || {
+        let mut runtime = TokioRuntime::new().unwrap();
+        runtime.block_on(socket::listen(session_id)).unwrap();
+    });
 
     // spawn tokio runtime on the main thread to handle incoming HTTP requests
     let mut runtime = TokioRuntime::new()?;
