@@ -9,6 +9,7 @@ use super::*;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use wrangler_toml::{EnvConfig, WranglerToml, TEST_ENV_NAME};
 
@@ -91,7 +92,7 @@ fn parses_same_from_config_path_as_string() {
     eprintln!("{:?}", &config_path);
     let string_toml = fs::read_to_string(&config_path).unwrap();
 
-    let manifest_from_string = Manifest::new_from_string(string_toml).unwrap();
+    let manifest_from_string = Manifest::from_str(&string_toml).unwrap();
     let manifest_from_config = Manifest::new(&config_path).unwrap();
 
     assert_eq!(manifest_from_config, manifest_from_string);
@@ -102,7 +103,7 @@ fn it_returns_top_level_name_when_no_env() {
     let top_level_name = "worker";
 
     let with_name_no_env = WranglerToml::webpack(top_level_name);
-    let manifest = Manifest::new_from_string(toml::to_string(&with_name_no_env).unwrap()).unwrap();
+    let manifest = Manifest::from_str(&toml::to_string(&with_name_no_env).unwrap()).unwrap();
 
     assert_eq!(manifest.worker_name(None), top_level_name);
 }
@@ -112,8 +113,7 @@ fn it_concatenates_top_level_with_env_when_env_omits_name() {
     let top_level_name = "worker";
 
     let with_name_with_env = WranglerToml::with_env(top_level_name, EnvConfig::default());
-    let manifest =
-        Manifest::new_from_string(toml::to_string(&with_name_with_env).unwrap()).unwrap();
+    let manifest = Manifest::from_str(&toml::to_string(&with_name_with_env).unwrap()).unwrap();
 
     assert_eq!(
         manifest.worker_name(Some(TEST_ENV_NAME)),
@@ -128,8 +128,7 @@ fn it_uses_env_name_when_provided() {
 
     let env_config = EnvConfig::custom_script_name(custom_env_name);
     let with_name_env_override = WranglerToml::with_env(top_level_name, env_config);
-    let manifest =
-        Manifest::new_from_string(toml::to_string(&with_name_env_override).unwrap()).unwrap();
+    let manifest = Manifest::from_str(&toml::to_string(&with_name_env_override).unwrap()).unwrap();
 
     assert_eq!(manifest.worker_name(Some(TEST_ENV_NAME)), custom_env_name);
 }

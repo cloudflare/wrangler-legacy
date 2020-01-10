@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::env;
-
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use config::{Config, File};
 
@@ -61,10 +61,6 @@ impl Manifest {
         check_for_duplicate_names(&manifest)?;
 
         Ok(manifest)
-    }
-
-    pub fn new_from_string(serialized_toml: String) -> Result<Self, toml::de::Error> {
-        toml::from_str(&serialized_toml)
     }
 
     pub fn generate(
@@ -325,6 +321,14 @@ impl Manifest {
                 }
             }
         }
+    }
+}
+
+impl FromStr for Manifest {
+    type Err = toml::de::Error;
+
+    fn from_str(serialized_toml: &str) -> Result<Self, Self::Err> {
+        toml::from_str(serialized_toml)
     }
 }
 
