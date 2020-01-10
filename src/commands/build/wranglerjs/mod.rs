@@ -47,7 +47,8 @@ pub fn run_build(target: &Target) -> Result<(), failure::Error> {
         let wranglerjs_output: WranglerjsOutput =
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
-        write_wranglerjs_output(&bundle, &wranglerjs_output)
+        let custom_webpack = target.webpack_config.is_some();
+        write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack)
     } else {
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
@@ -58,6 +59,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
     command.arg("--watch=1");
 
     let is_site = target.site.clone();
+    let custom_webpack = target.webpack_config.is_some();
 
     log::info!("Running {:?} in watch mode", command);
 
@@ -101,7 +103,8 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                     let wranglerjs_output: WranglerjsOutput =
                         serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
-                    if write_wranglerjs_output(&bundle, &wranglerjs_output).is_ok() {
+                    if write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack).is_ok()
+                    {
                         if let Some(tx) = tx.clone() {
                             tx.send(()).expect("--watch change message failed to send");
                         }
@@ -118,12 +121,19 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
 fn write_wranglerjs_output(
     bundle: &Bundle,
     output: &WranglerjsOutput,
+    custom_webpack: bool,
 ) -> Result<(), failure::Error> {
     if output.has_errors() {
         message::user_error(output.get_errors().as_str());
-        failure::bail!(
+        if custom_webpack {
+            failure::bail!(
+            "webpack returned an error. Try configuring `entry` in your webpack config relative to the current working directory, or setting `context = __dirname` in your webpack config."
+        );
+        } else {
+            failure::bail!(
             "webpack returned an error. You may be able to resolve this issue by running npm install."
         );
+        }
     }
 
     bundle.write(output)?;
@@ -171,19 +181,11 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
     let custom_webpack_config_path = match &target.webpack_config {
-        Some(webpack_config) => match &target.site {
-            None => Some(PathBuf::from(&webpack_config)),
-            Some(_) => {
-                message::warn("Workers Sites does not support custom webpack configuration files");
-                None
-            }
-        },
+        Some(webpack_config) => Some(PathBuf::from(&webpack_config)),
         None => {
-            if target.site.is_none() {
-                let config_path = PathBuf::from("webpack.config.js".to_string());
-                if config_path.exists() {
-                    message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your wrangler.toml:\nwebpack_config = \"webpack.config.js\"");
-                }
+            let config_path = PathBuf::from("webpack.config.js".to_string());
+            if config_path.exists() {
+                message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your wrangler.toml:\nwebpack_config = \"webpack.config.js\"");
             }
             None
         }

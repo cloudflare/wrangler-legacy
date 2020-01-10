@@ -15,7 +15,35 @@ fn it_builds_webpack() {
     let fixture = Fixture::new();
     fixture.scaffold_webpack();
 
-    let wrangler_toml = WranglerToml::webpack_no_config("test-build-webpack");
+    let wrangler_toml = WranglerToml::webpack_build("test-build-webpack");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    build_creates_assets(&fixture, vec!["script.js"]);
+}
+
+#[test]
+fn it_builds_webpack_site() {
+    let fixture = Fixture::new_site();
+
+    let wrangler_toml = WranglerToml::site("test-build-site");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    build_creates_assets(&fixture, vec!["script.js"]);
+}
+
+#[test]
+fn it_builds_webpack_site_with_custom_webpack() {
+    let fixture = Fixture::new_site();
+
+    fixture.create_file(
+        "workers-site/webpack.worker.js",
+        r#"
+        module.exports = { entry: "./workers-site/index.js" };
+    "#,
+    );
+
+    let mut wrangler_toml = WranglerToml::site("test-build-site-specify-config");
+    wrangler_toml.webpack_config = Some("workers-site/webpack.worker.js");
     fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
@@ -42,7 +70,7 @@ fn it_builds_with_webpack_single_js() {
     );
     fixture.create_default_package_json();
 
-    let wrangler_toml = WranglerToml::webpack_no_config("test-build-webpack-single-js");
+    let wrangler_toml = WranglerToml::webpack_build("test-build-webpack-single-js");
     fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
@@ -138,7 +166,7 @@ fn it_builds_with_webpack_single_js_missing_package_main() {
     );
 
     let wrangler_toml =
-        WranglerToml::webpack_no_config("test-build-webpack-single-js-missing-package-main");
+        WranglerToml::webpack_build("test-build-webpack-single-js-missing-package-main");
     fixture.create_wrangler_toml(wrangler_toml);
 
     build_fails_with(
