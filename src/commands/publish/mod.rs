@@ -15,20 +15,20 @@ use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployTarget, KvNamespace, Site, Target, Zoneless};
+use crate::settings::toml::{DeployConfig, KvNamespace, Site, Target, Zoneless};
 use crate::terminal::{emoji, message};
 
 pub fn publish(
     user: &GlobalUser,
     target: &mut Target,
-    deploy_target: DeployTarget,
+    deploy_config: DeployConfig,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
 
     // TODO: write a separate function for publishing a site
     if let Some(site_config) = &target.site.clone() {
-        warn_site_incompatible_route(&deploy_target);
+        warn_site_incompatible_route(&deploy_config);
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
@@ -39,15 +39,15 @@ pub fn publish(
 
     upload_script(&user, &target, asset_manifest)?;
 
-    deploy(&user, &deploy_target)?;
+    deploy(&user, &deploy_config)?;
 
     Ok(())
 }
 
 // This checks all of the configured routes for the wildcard ending and warns
 // the user that their site may not work as expected without it.
-fn warn_site_incompatible_route(deploy_target: &DeployTarget) {
-    if let DeployTarget::Zoned(zoned) = &deploy_target {
+fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
+    if let DeployConfig::Zoned(zoned) = &deploy_config {
         let mut no_star_routes = Vec::new();
         for route in &zoned.routes {
             if !route.pattern.ends_with('*') {
@@ -121,9 +121,9 @@ fn upload_script(
     Ok(())
 }
 
-fn deploy(user: &GlobalUser, deploy_target: &DeployTarget) -> Result<(), failure::Error> {
-    match deploy_target {
-        DeployTarget::Zoneless(zoneless_config) => {
+fn deploy(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), failure::Error> {
+    match deploy_config {
+        DeployConfig::Zoneless(zoneless_config) => {
             // this is a zoneless deploy
             log::info!("publishing to workers.dev subdomain");
             let deploy_address = publish_zoneless(user, zoneless_config)?;
@@ -135,7 +135,7 @@ fn deploy(user: &GlobalUser, deploy_target: &DeployTarget) -> Result<(), failure
 
             Ok(())
         }
-        DeployTarget::Zoned(zoned_config) => {
+        DeployConfig::Zoned(zoned_config) => {
             // this is a zoned deploy
             log::info!("publishing to zone {}", zoned_config.zone_id);
 

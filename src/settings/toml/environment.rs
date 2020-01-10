@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::settings::toml::deploy_target::RouteConfig;
+use crate::settings::toml::deploy_config::RouteConfig;
 use crate::settings::toml::kv_namespace::KvNamespace;
 use crate::settings::toml::site::Site;
 
