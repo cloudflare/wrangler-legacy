@@ -157,7 +157,7 @@ impl Manifest {
             if let Some(env_route_config) =
                 environment.route_config(self.account_id.clone(), self.zone_id.clone())
             {
-                return DeployConfig::build(&script, &env_route_config);
+                DeployConfig::build(&script, &env_route_config)
             } else {
                 // If the top level config is Zoned, the user needs to specify new route config
                 let top_level_config = DeployConfig::build(&script, &self.route_config())?;
@@ -165,7 +165,7 @@ impl Manifest {
                     DeployConfig::Zoned(_) => failure::bail!(
                         "you must specify route(s) per environment for zoned deploys."
                     ),
-                    DeployConfig::Zoneless(_) => return Ok(top_level_config),
+                    DeployConfig::Zoneless(_) => Ok(top_level_config),
                 }
             }
         } else {

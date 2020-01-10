@@ -47,7 +47,7 @@ pub fn upload_files(
 
     pairs = filter_files(pairs, ignore);
 
-    if pairs.len() > 0 {
+    if !pairs.is_empty() {
         let client = kv::api_client(user)?;
         // Iterate over all key-value pairs and create batches of uploads, each of which are
         // maximum 5K key-value pairs in size OR maximum ~50MB in size. Upload each batch
