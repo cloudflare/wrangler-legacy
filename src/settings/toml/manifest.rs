@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use crate::commands::validate_worker_name;
-use crate::settings::toml::deploy_target::{DeployTarget, RouteConfig};
+use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::KvNamespace;
 use crate::settings::toml::site::Site;
@@ -148,7 +148,7 @@ impl Manifest {
         }
     }
 
-    pub fn deploy_target(&self, env: Option<&str>) -> Result<DeployTarget, failure::Error> {
+    pub fn deploy_config(&self, env: Option<&str>) -> Result<DeployConfig, failure::Error> {
         let script = self.worker_name(env);
         validate_worker_name(&script)?;
 
@@ -157,19 +157,19 @@ impl Manifest {
             if let Some(env_route_config) =
                 environment.route_config(self.account_id.clone(), self.zone_id.clone())
             {
-                return DeployTarget::build(&script, &env_route_config);
+                return DeployConfig::build(&script, &env_route_config);
             } else {
                 // If the top level config is Zoned, the user needs to specify new route config
-                let top_level_config = DeployTarget::build(&script, &self.route_config())?;
+                let top_level_config = DeployConfig::build(&script, &self.route_config())?;
                 match top_level_config {
-                    DeployTarget::Zoned(_) => failure::bail!(
+                    DeployConfig::Zoned(_) => failure::bail!(
                         "you must specify route(s) per environment for zoned deploys."
                     ),
-                    DeployTarget::Zoneless(_) => return Ok(top_level_config),
+                    DeployConfig::Zoneless(_) => return Ok(top_level_config),
                 }
             }
         } else {
-            DeployTarget::build(&script, &self.route_config())
+            DeployConfig::build(&script, &self.route_config())
         }
     }
 

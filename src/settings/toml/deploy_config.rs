@@ -1,19 +1,19 @@
 use crate::settings::toml::Route;
 use crate::terminal::message;
 
-impl DeployTarget {
+impl DeployConfig {
     pub fn build(
         script_name: &str,
         route_config: &RouteConfig,
-    ) -> Result<DeployTarget, failure::Error> {
+    ) -> Result<DeployConfig, failure::Error> {
         if route_config.is_valid() {
             failure::bail!("you must set workers_dev = true OR provide a zone_id and route/routes.")
         }
 
         if route_config.is_zoneless() {
-            DeployTarget::build_zoneless(script_name, route_config)
+            DeployConfig::build_zoneless(script_name, route_config)
         } else if route_config.is_zoned() {
-            DeployTarget::build_zoned(script_name, route_config)
+            DeployConfig::build_zoned(script_name, route_config)
         } else {
             failure::bail!("No deploy target specified");
         }
@@ -22,7 +22,7 @@ impl DeployTarget {
     fn build_zoneless(
         script_name: &str,
         route_config: &RouteConfig,
-    ) -> Result<DeployTarget, failure::Error> {
+    ) -> Result<DeployConfig, failure::Error> {
         if let Some(account_id) = &route_config.account_id {
             // TODO: Deserialize empty strings to None; cannot do this for account id
             // yet without a large refactor.
@@ -34,7 +34,7 @@ impl DeployTarget {
                 account_id: account_id.to_string(),
             };
 
-            Ok(DeployTarget::Zoneless(zoneless))
+            Ok(DeployConfig::Zoneless(zoneless))
         } else {
             failure::bail!("field `account_id` is required to deploy to workers.dev");
         }
@@ -43,7 +43,7 @@ impl DeployTarget {
     fn build_zoned(
         script_name: &str,
         route_config: &RouteConfig,
-    ) -> Result<DeployTarget, failure::Error> {
+    ) -> Result<DeployConfig, failure::Error> {
         if let Some(zone_id) = &route_config.zone_id {
             if zone_id.is_empty() {
                 failure::bail!("field `zone_id` is required to deploy to routes");
@@ -82,7 +82,7 @@ impl DeployTarget {
                 failure::bail!("No routes specified");
             }
 
-            Ok(DeployTarget::Zoned(zoned))
+            Ok(DeployConfig::Zoned(zoned))
         } else {
             failure::bail!("field `zone_id` is required to deploy to routes");
         }
@@ -90,7 +90,7 @@ impl DeployTarget {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum DeployTarget {
+pub enum DeployConfig {
     Zoneless(Zoneless),
     Zoned(Zoned),
 }

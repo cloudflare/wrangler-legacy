@@ -556,11 +556,11 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
-        let deploy_target = manifest.deploy_target(env)?;
+        let deploy_config = manifest.deploy_config(env)?;
 
         let verbose = matches.is_present("verbose");
 
-        commands::publish(&user, &mut target, deploy_target, verbose)?;
+        commands::publish(&user, &mut target, deploy_config, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
