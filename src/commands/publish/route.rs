@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::Serialize;
 
 use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes};
@@ -6,31 +8,31 @@ use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http::{cf_v4_api_client, format_error};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::Route;
+use crate::settings::toml::{Route, Zoned};
 
 pub fn publish_routes(
     user: &GlobalUser,
-    routes: Vec<Route>,
-    zone_id: &String,
+    zoned_config: &Zoned,
 ) -> Result<Vec<RouteUploadResult>, failure::Error> {
     // For the moment, we'll just make this call once and make all our decisions based on the response.
     // There is a possibility of race conditions, but we just report back the results and allow the
     // user to decide how to procede.
-    let existing_routes = fetch_all(user, zone_id)?;
+    let existing_routes = fetch_all(user, &zoned_config.zone_id)?;
 
-    let deployed_routes = routes
+    let deployed_routes = zoned_config
+        .routes
         .iter()
-        .map(|route| deploy_route(user, zone_id, route, &existing_routes))
+        .map(|route| deploy_route(user, &zoned_config.zone_id, route, &existing_routes))
         .collect();
 
     Ok(deployed_routes)
 }
 
-fn fetch_all(user: &GlobalUser, zone_identifier: &String) -> Result<Vec<Route>, failure::Error> {
+fn fetch_all(user: &GlobalUser, zone_identifier: &str) -> Result<Vec<Route>, failure::Error> {
     let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     let routes: Vec<Route> = match client.request(&ListRoutes { zone_identifier }) {
-        Ok(success) => success.result.iter().map(|r| Route::from(r)).collect(),
+        Ok(success) => success.result.iter().map(Route::from).collect(),
         Err(e) => failure::bail!("{}", format_error(e, None)), // TODO: add suggestion fn
     };
 
@@ -39,7 +41,7 @@ fn fetch_all(user: &GlobalUser, zone_identifier: &String) -> Result<Vec<Route>, 
 
 fn create(
     user: &GlobalUser,
-    zone_identifier: &String,
+    zone_identifier: &str,
     route: &Route,
 ) -> Result<Route, failure::Error> {
     let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
@@ -83,11 +85,29 @@ pub enum RouteUploadResult {
     Error((Route, String)),
 }
 
+impl fmt::Display for RouteUploadResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RouteUploadResult::Same(route) => write!(f, "{} => stayed the same", route.pattern),
+            RouteUploadResult::Conflict(route) => write!(
+                f,
+                "{} => is already pointing to {}",
+                route.pattern,
+                route.script.as_ref().unwrap_or(&"null worker".to_string())
+            ),
+            RouteUploadResult::New(route) => write!(f, "{} => created", route.pattern),
+            RouteUploadResult::Error((route, message)) => {
+                write!(f, "{} => creation failed: {}", route.pattern, message)
+            }
+        }
+    }
+}
+
 fn deploy_route(
     user: &GlobalUser,
-    zone_id: &String,
+    zone_id: &str,
     route: &Route,
-    existing_routes: &Vec<Route>,
+    existing_routes: &[Route],
 ) -> RouteUploadResult {
     for existing_route in existing_routes {
         if route.pattern == existing_route.pattern {

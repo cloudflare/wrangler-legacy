@@ -1,7 +1,6 @@
 use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
-use super::Route;
 
 use std::env;
 
@@ -17,10 +16,7 @@ pub struct Target {
     pub name: String,
     #[serde(rename = "type")]
     pub target_type: TargetType,
-    pub route: Option<String>,
-    pub routes: Option<Vec<String>>,
     pub webpack_config: Option<String>,
-    pub zone_id: Option<String>,
     pub site: Option<Site>,
 }
 
@@ -45,34 +41,5 @@ impl Target {
                 Ok(current_dir)
             }
         }
-    }
-
-    pub fn routes(&self) -> Result<Vec<Route>, failure::Error> {
-        let mut routes = Vec::new();
-
-        // we should assert that only one of the two keys is specified in the user's toml.
-        if self.route.is_some() && self.routes.is_some() {
-            failure::bail!("You can specify EITHER `route` or `routes` in your wrangler.toml");
-        }
-
-        // everything outside of this module should consider `target.routes()` to be a Vec;
-        // the fact that you can specify singular or plural is a detail of the wrangler.toml contract.
-        if let Some(single_route) = &self.route {
-            routes.push(Route {
-                id: None,
-                script: Some(self.name.to_owned()),
-                pattern: single_route.to_string(),
-            });
-        } else if let Some(multi_route) = &self.routes {
-            for pattern in multi_route {
-                routes.push(Route {
-                    id: None,
-                    script: Some(self.name.to_owned()),
-                    pattern: pattern.to_string(),
-                });
-            }
-        }
-
-        Ok(routes)
     }
 }
