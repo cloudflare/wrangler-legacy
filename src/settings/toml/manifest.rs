@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::env;
-
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use config::{Config, File};
 
@@ -19,7 +19,7 @@ use crate::settings::toml::Target;
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Manifest {
     #[serde(default)]
     pub name: String,
@@ -321,6 +321,14 @@ impl Manifest {
                 }
             }
         }
+    }
+}
+
+impl FromStr for Manifest {
+    type Err = toml::de::Error;
+
+    fn from_str(serialized_toml: &str) -> Result<Self, Self::Err> {
+        toml::from_str(serialized_toml)
     }
 }
 

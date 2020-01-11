@@ -5,7 +5,7 @@ use crate::settings::toml::deploy_config::RouteConfig;
 use crate::settings::toml::kv_namespace::KvNamespace;
 use crate::settings::toml::site::Site;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Environment {
     pub name: Option<String>,
     #[serde(default, with = "string_empty_as_none")]
