@@ -22,6 +22,9 @@ steps:
     env:
       TOOLCHAIN: ${{ parameters.toolchain }}
   - script: |
+        cargo install cargo-tomlfmt
+    displayName: Install cargo tomlfmt
+  - script: |
         rustc -Vv
         cargo -V
     displayName: Query rust and cargo versions

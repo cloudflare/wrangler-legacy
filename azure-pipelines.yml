@@ -20,6 +20,8 @@ jobs:
         displayName: rustup component add clippy
       - script: cargo clippy
         displayName: "cargo clippy --all --all-features -- -D warnings"
+      - script: cargo tomlfmt --dryrun
+        displayName: "cargo tomlfmt --dryrun"
 
   - job: test_wrangler_windows
     displayName: "Run wrangler tests (Windows)"
