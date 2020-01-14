@@ -3,7 +3,10 @@ mod socket;
 use server_config::ServerConfig;
 mod headers;
 use headers::{destructure_response, structure_request};
+mod watch;
+use watch::watch_for_changes;
 
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use chrono::prelude::*;
@@ -37,26 +40,54 @@ pub fn dev(
     host: Option<&str>,
     port: Option<&str>,
     ip: Option<&str>,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
     let server_config = ServerConfig::new(host, ip, port)?;
     let session_id = get_session_id()?;
-    let preview_id = get_preview_id(target, user, &server_config, &session_id)?;
+    let preview_id = get_preview_id(
+        target.clone(),
+        user.clone(),
+        &server_config,
+        &session_id.clone(),
+        verbose,
+    )?;
+    let preview_id = Arc::new(Mutex::new(preview_id));
 
     // create a new thread to listen for devtools messages
-    thread::spawn(move || {
-        let mut runtime = TokioRuntime::new().unwrap();
-        runtime.block_on(socket::listen(session_id)).unwrap();
-    });
+    {
+        let session_id = session_id.clone();
+        thread::spawn(move || {
+            let mut runtime = TokioRuntime::new().unwrap();
+            runtime.block_on(socket::listen(&session_id)).unwrap();
+        });
+    }
 
+    {
+        let preview_id = preview_id.clone();
+        let server_config = server_config.clone();
+        thread::spawn(move || {
+            watch_for_changes(
+                target,
+                user,
+                &server_config,
+                Arc::clone(&preview_id),
+                &session_id,
+                verbose,
+            )
+        });
+    }
     // spawn tokio runtime on the main thread to handle incoming HTTP requests
     let mut runtime = TokioRuntime::new()?;
-    runtime.block_on(serve(server_config, preview_id))?;
+    runtime.block_on(serve(server_config, Arc::clone(&preview_id)))?;
 
     Ok(())
 }
 
-async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), failure::Error> {
+async fn serve(
+    server_config: ServerConfig,
+    preview_id: Arc<Mutex<String>>,
+) -> Result<(), failure::Error> {
     // set up https client to connect to the preview service
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
@@ -65,7 +96,7 @@ async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), fa
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
         let client = client.to_owned();
-        let preview_id = preview_id.to_owned();
+        let preview_id = preview_id.lock().unwrap().to_owned();
         let server_config = server_config.to_owned();
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
@@ -73,7 +104,8 @@ async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), fa
                 let preview_id = preview_id.to_owned();
                 let server_config = server_config.to_owned();
                 async move {
-                    let resp = preview_request(req, client, preview_id, server_config).await?;
+                    let resp =
+                        preview_request(req, client, preview_id.to_owned(), server_config).await?;
                     let (mut parts, body) = resp.into_parts();
 
                     destructure_response(&mut parts)?;
@@ -147,15 +179,15 @@ fn get_session_id() -> Result<String, failure::Error> {
     Ok(Uuid::new_v4().to_simple().to_string())
 }
 
-fn get_preview_id(
+pub fn get_preview_id(
     mut target: Target,
     user: Option<GlobalUser>,
     server_config: &ServerConfig,
     session_id: &str,
+    verbose: bool,
 ) -> Result<String, failure::Error> {
-    let verbose = true;
     let sites_preview = false;
-    let script_id: String = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
+    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
     Ok(format!(
         "{}{}{}{}",
         &script_id,

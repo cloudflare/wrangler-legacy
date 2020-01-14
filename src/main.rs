@@ -372,6 +372,12 @@ fn run() -> Result<(), failure::Error> {
                         .short("i")
                         .long("ip")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output")
                 ),
         )
         .subcommand(
@@ -551,7 +557,8 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
-        commands::dev::dev(target, user, host, port, ip)?;
+        let verbose = matches.is_present("verbose");
+        commands::dev::dev(target, user, host, port, ip, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
