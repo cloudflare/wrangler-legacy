@@ -221,11 +221,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "chrome-devtools-rs"
 version = "0.1.0"
-source = "git+https://github.com/everlastingbugstopper/chrome-devtools-rs?rev=b7a0e9f#b7a0e9f13593988cbc7f112f1683945ff2068239"
+source = "git+https://github.com/everlastingbugstopper/chrome-devtools-rs?rev=cb63ee7#cb63ee7968f1c37b04910e015620a803a8e68b23"
 dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.44 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -2770,7 +2769,7 @@ dependencies = [
  "atty 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "binary-install 0.0.3-alpha (registry+https://github.com/rust-lang/crates.io-index)",
- "chrome-devtools-rs 0.1.0 (git+https://github.com/everlastingbugstopper/chrome-devtools-rs?rev=b7a0e9f)",
+ "chrome-devtools-rs 0.1.0 (git+https://github.com/everlastingbugstopper/chrome-devtools-rs?rev=cb63ee7)",
  "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cloudflare 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2899,7 +2898,7 @@ dependencies = [
 "checksum c2-chacha 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "214238caa1bf3a496ec3392968969cab8549f96ff30652c9e56885329315f6bb"
 "checksum cc 1.0.49 (registry+https://github.com/rust-lang/crates.io-index)" = "e450b8da92aa6f274e7c6437692f9f2ce6d701fb73bacfcf87897b3f89a4c20e"
 "checksum cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
-"checksum chrome-devtools-rs 0.1.0 (git+https://github.com/everlastingbugstopper/chrome-devtools-rs?rev=b7a0e9f)" = "<none>"
+"checksum chrome-devtools-rs 0.1.0 (git+https://github.com/everlastingbugstopper/chrome-devtools-rs?rev=cb63ee7)" = "<none>"
 "checksum chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)" = "31850b4a4d6bae316f7a09e691c944c28299298837edc0a03f755618c23cbc01"
 "checksum clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5067f5bb2d80ef5d68b4c87db81601f0b75bca627bc2ef76b141d7b846a3c6d9"
 "checksum clicolors-control 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "90082ee5dcdd64dc4e9e0d37fbf3ee325419e39c0092191e0393df65518f741e"
