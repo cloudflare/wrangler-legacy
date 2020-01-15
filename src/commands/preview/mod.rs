@@ -37,7 +37,7 @@ pub fn preview(
     livereload: bool,
     verbose: bool,
     headless: bool,
-    url: String
+    url: &str
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
 
@@ -53,9 +53,9 @@ pub fn preview(
 
     let regex = Regex::new(r"((?:http|https)://)([^/\\]*)(.*)").unwrap();
 
-    if regex.is_match(&url) {
+    if regex.is_match(url) {
 
-        let captures = regex.captures(&url).unwrap();
+        let captures = regex.captures(url).unwrap();
 
         protocol = captures.get(1).map_or("https://", |m| m.as_str());
         domain = captures.get(2).map_or("example.com", |m| m.as_str());

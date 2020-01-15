@@ -519,7 +519,7 @@ fn run() -> Result<(), failure::Error> {
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        let url = matches.value_of("url").unwrap_or("https://example.com").to_string();
+        let url = matches.value_of("url").unwrap_or("https://example.com");
 
         commands::preview(target, user, method, body, watch, verbose, headless, url)?;
     } else if matches.subcommand_matches("whoami").is_some() {
