@@ -24,6 +24,8 @@ use std::sync::mpsc::channel;
 use std::thread;
 use ws::{Sender, WebSocket};
 
+use regex::Regex;
+
 // Using this instead of just `https://cloudflareworkers.com` returns just the worker response to the CLI
 const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
 
@@ -35,6 +37,7 @@ pub fn preview(
     livereload: bool,
     verbose: bool,
     headless: bool,
+    url: String
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
 
@@ -43,9 +46,21 @@ pub fn preview(
     let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
 
     let session = Uuid::new_v4().to_simple();
-    let preview_host = "example.com";
-    let https = true;
-    let https_str = if https { "https://" } else { "http://" };
+
+    let mut protocol = "https://";
+    let mut domain = "example.com";
+    let mut path = "";
+
+    let regex = Regex::new(r"((?:http|https)://)([^/\\]*)(.*)").unwrap();
+
+    if regex.is_match(&url) {
+
+        let captures = regex.captures(&url).unwrap();
+
+        protocol = captures.get(1).map_or("https://", |m| m.as_str());
+        domain = captures.get(2).map_or("example.com", |m| m.as_str());
+        path = captures.get(3).map_or("", |m| m.as_str());
+    }
 
     if livereload {
         // explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
@@ -57,8 +72,8 @@ pub fn preview(
 
         if !headless {
             open_browser(&format!(
-            "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}{4}",
-            &session.to_string(), ws_port, script_id, https_str, preview_host,
+            "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}{4}{5}",
+            &session.to_string(), ws_port, script_id, protocol, domain, path
         ))?;
         }
 
@@ -76,14 +91,16 @@ pub fn preview(
     } else {
         if !headless {
             open_browser(&format!(
-                "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}",
-                script_id, https_str, preview_host
+                "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}{3}",
+                script_id, protocol, domain, path
             ))?;
         }
 
+        let https = if protocol == "https://" { true } else { false };
+
         let cookie = format!(
-            "__ew_fiddle_preview={}{}{}{}",
-            script_id, session, https as u8, preview_host
+            "__ew_fiddle_preview={}{}{}{}{}",
+            script_id, session, https as u8, domain, path
         );
 
         let client = http::client(None);

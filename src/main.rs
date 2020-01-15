@@ -326,15 +326,22 @@ fn run() -> Result<(), failure::Error> {
                         .index(2),
                 )
                 .arg(
+                    Arg::with_name("url")
+                        .help("URL to open in the worker preview")
+                        .short("u")
+                        .long("url")
+                        .takes_value(true)
+                )
+                .arg(
                     Arg::with_name("env")
-                        .help("environment to preview")
+                        .help("Environment to preview")
                         .short("e")
                         .long("env")
                         .takes_value(true)
                 )
                 .arg(
                     Arg::with_name("watch")
-                        .help("watch your project for changes and update the preview automagically")
+                        .help("Watch your project for changes and update the preview automagically")
                         .long("watch")
                         .takes_value(false),
                 )
@@ -342,7 +349,7 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("verbose")
                         .long("verbose")
                         .takes_value(false)
-                        .help("toggle verbose output"),
+                        .help("Toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -512,7 +519,9 @@ fn run() -> Result<(), failure::Error> {
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, body, watch, verbose, headless)?;
+        let url = matches.value_of("url").unwrap_or("https://example.com").to_string();
+
+        commands::preview(target, user, method, body, watch, verbose, headless, url)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
