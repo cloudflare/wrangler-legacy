@@ -9,6 +9,8 @@ use std::env;
 use std::process::Command;
 
 use assert_cmd::prelude::*;
+use predicates::prelude::*;
+
 use fixture::Fixture;
 
 #[test]
@@ -173,10 +175,59 @@ fn it_can_preview_rust_project() {
     preview_succeeds(&fixture);
 }
 
+#[test]
+fn it_can_preview_using_url_flag() {
+    let fixture = Fixture::new();
+    fixture.create_file(
+        "index.js",
+        r#"
+        addEventListener('fetch', event => {
+            event.respondWith(handleRequest(event.request))
+        })
+
+        async function handleRequest(request) {
+            return new Response(request.url, { status: 200 })
+        }
+    "#,
+    );
+    fixture.create_default_package_json();
+
+    let wrangler_toml = WranglerToml::javascript("test-preview-javascript");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    // URLs should match as expected
+    preview_matches_url(&fixture, "https://example.com/a", "https://example.com/a");
+
+    // URLs should not match as expected
+    preview_not_matches_url(&fixture, "https://example.com/a", "https://example.com/b");
+}
+
 fn preview_succeeds(fixture: &Fixture) {
     let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture.get_path());
-    preview.arg("preview").arg("--headless").assert().success();
+    preview.arg("preview").arg("--headless");
+    preview.assert().success();
+}
+
+
+fn preview_matches_url(fixture: &Fixture, url: &str, expected: &str) {
+    let _lock = fixture.lock();
+    env::remove_var("CF_ACCOUNT_ID");
+    let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    preview.current_dir(fixture.get_path());
+    preview.arg("preview").arg("--headless");
+    preview.arg("--url").arg(url);
+    preview.assert().stdout(predicate::str::contains(expected));
+}
+
+fn preview_not_matches_url(fixture: &Fixture, url: &str, expected: &str) {
+    let _lock = fixture.lock();
+    env::remove_var("CF_ACCOUNT_ID");
+    let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    preview.current_dir(fixture.get_path());
+    preview.arg("preview").arg("--headless");
+    preview.arg("--url").arg(url);
+    preview.assert().stdout(predicate::str::contains(expected).not());
 }
