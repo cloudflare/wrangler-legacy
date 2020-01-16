@@ -11,6 +11,8 @@ use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
 use exitfailure::ExitFailure;
 
+use url::Url;
+
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
@@ -510,6 +512,11 @@ fn run() -> Result<(), failure::Error> {
 
         let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
+        let default_url = "https://example.com";
+
+        let url = Url::parse(matches.value_of("url").unwrap_or(default_url))
+            .unwrap_or(Url::parse(default_url)?);
+
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
             None => None,
@@ -519,9 +526,7 @@ fn run() -> Result<(), failure::Error> {
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        let url = matches.value_of("url").unwrap_or("https://example.com");
-
-        commands::preview(target, user, method, body, watch, verbose, headless, url)?;
+        commands::preview(target, user, method, url, body, watch, verbose, headless)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

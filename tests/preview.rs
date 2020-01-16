@@ -211,7 +211,6 @@ fn preview_succeeds(fixture: &Fixture) {
     preview.assert().success();
 }
 
-
 fn preview_matches_url(fixture: &Fixture, url: &str, expected: &str) {
     let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
@@ -229,5 +228,7 @@ fn preview_not_matches_url(fixture: &Fixture, url: &str, expected: &str) {
     preview.current_dir(fixture.get_path());
     preview.arg("preview").arg("--headless");
     preview.arg("--url").arg(url);
-    preview.assert().stdout(predicate::str::contains(expected).not());
+    preview
+        .assert()
+        .stdout(predicate::str::contains(expected).not());
 }

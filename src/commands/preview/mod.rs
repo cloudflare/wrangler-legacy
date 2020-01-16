@@ -6,12 +6,13 @@ use fiddle_messenger::*;
 mod http_method;
 pub use http_method::HTTPMethod;
 
+mod request_payload;
+pub use request_payload::RequestPayload;
+
 mod upload;
 use upload::upload;
 
 use crate::commands;
-
-use uuid::Uuid;
 
 use log::info;
 
@@ -24,20 +25,17 @@ use std::sync::mpsc::channel;
 use std::thread;
 use ws::{Sender, WebSocket};
 
-use regex::Regex;
-
-// Using this instead of just `https://cloudflareworkers.com` returns just the worker response to the CLI
-const PREVIEW_ADDRESS: &str = "https://00000000000000000000000000000000.cloudflareworkers.com";
+use url::Url;
 
 pub fn preview(
     mut target: Target,
     user: Option<GlobalUser>,
     method: HTTPMethod,
+    url: Url,
     body: Option<String>,
     livereload: bool,
     verbose: bool,
     headless: bool,
-    url: &str
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
 
@@ -45,22 +43,10 @@ pub fn preview(
 
     let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
 
-    let session = Uuid::new_v4().to_simple();
+    let request_payload = RequestPayload::create(method, url, body);
 
-    let mut protocol = "https://";
-    let mut domain = "example.com";
-    let mut path = "";
-
-    let regex = Regex::new(r"((?:http|https)://)([^/\\]*)(.*)").unwrap();
-
-    if regex.is_match(url) {
-
-        let captures = regex.captures(url).unwrap();
-
-        protocol = captures.get(1).map_or("https://", |m| m.as_str());
-        domain = captures.get(2).map_or("example.com", |m| m.as_str());
-        path = captures.get(3).map_or("", |m| m.as_str());
-    }
+    let session = &request_payload.session;
+    let browser_url = &request_payload.browser_url;
 
     if livereload {
         // explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
@@ -72,49 +58,33 @@ pub fn preview(
 
         if !headless {
             open_browser(&format!(
-            "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}{4}{5}",
-            &session.to_string(), ws_port, script_id, protocol, domain, path
-        ))?;
+                "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}",
+                session, ws_port, script_id, browser_url
+            ))?;
         }
 
-        // don't do initial GET + POST with livereload as the expected behavior is unclear.
+        // Make a the initial request to the URL
+        client_request(&request_payload, &script_id, &headless);
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
         watch_for_changes(
             target,
             user.as_ref(),
-            session.to_string(),
             broadcaster,
             verbose,
+            headless,
+            request_payload,
         )?;
     } else {
         if !headless {
             open_browser(&format!(
-                "https://cloudflareworkers.com/?hide_editor#{0}:{1}{2}{3}",
-                script_id, protocol, domain, path
+                "https://cloudflareworkers.com/?hide_editor#{0}:{1}",
+                script_id, browser_url
             ))?;
         }
 
-        let https = if protocol == "https://" { true } else { false };
-
-        let cookie = format!(
-            "__ew_fiddle_preview={}{}{}{}{}",
-            script_id, session, https as u8, domain, path
-        );
-
-        let client = http::client(None);
-
-        let worker_res = match method {
-            HTTPMethod::Get => get(cookie, &client)?,
-            HTTPMethod::Post => post(cookie, &client, body)?,
-        };
-        let msg = if sites_preview {
-            "Your Worker is a Workers Site, please preview it in browser window.".to_string()
-        } else {
-            format!("Your Worker responded with: {}", worker_res)
-        };
-        message::preview(&msg);
+        client_request(&request_payload, &script_id, &headless);
     }
 
     Ok(())
@@ -136,25 +106,49 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Error> {
-    let res = client.get(PREVIEW_ADDRESS).header("Cookie", cookie).send();
+fn client_request(payload: &RequestPayload, script_id: &String, headless: &bool) {
+    let client = http::client(None);
+
+    let method = &payload.method;
+    let url = &payload.service_url;
+    let body = &payload.body;
+
+    let cookie = payload.cookie(script_id);
+
+    let worker_res = match method {
+        HTTPMethod::Get => get(&url, &cookie, &client).unwrap(),
+        HTTPMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
+    };
+
+    let msg = if !*headless {
+        "Your Worker is a Workers Site, please preview it in browser window.".to_string()
+    } else {
+        format!("Your Worker responded with: {}", worker_res)
+    };
+
+    message::preview(&msg);
+}
+
+fn get(url: &String, cookie: &String, client: &reqwest::Client) -> Result<String, failure::Error> {
+    let res = client.get(url).header("Cookie", cookie).send();
     Ok(res?.text()?)
 }
 
 fn post(
-    cookie: String,
+    url: &String,
+    cookie: &String,
+    body: &Option<String>,
     client: &reqwest::Client,
-    body: Option<String>,
 ) -> Result<String, failure::Error> {
     let res = match body {
         Some(s) => client
-            .post(PREVIEW_ADDRESS)
+            .post(url)
             .header("Cookie", cookie)
-            .body(s)
+            .body(format!("{}", s))
             .send(),
-        None => client.post(PREVIEW_ADDRESS).header("Cookie", cookie).send(),
+        None => client.post(url).header("Cookie", cookie).send(),
     };
-    let msg = format!("POST {}", PREVIEW_ADDRESS);
+    let msg = format!("POST {}", url);
     message::preview(&msg);
     Ok(res?.text()?)
 }
@@ -162,9 +156,10 @@ fn post(
 fn watch_for_changes(
     mut target: Target,
     user: Option<&GlobalUser>,
-    session_id: String,
     broadcaster: Sender,
     verbose: bool,
+    headless: bool,
+    request_payload: RequestPayload,
 ) -> Result<(), failure::Error> {
     let sites_preview: bool = target.site.is_some();
 
@@ -175,17 +170,25 @@ fn watch_for_changes(
         commands::build(&target)?;
 
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {
+            let script_id = format!("{}", new_id);
+
             let msg = FiddleMessage {
-                session_id: session_id.clone(),
-                data: FiddleMessageData::LiveReload { new_id },
+                session_id: request_payload.session.clone(),
+                data: FiddleMessageData::LiveReload {
+                    new_id: new_id.clone(),
+                },
             };
 
-            match broadcaster.send(serde_json::to_string(&msg)?) {
-                Ok(_) => {
-                    message::preview("Updated preview with changes");
+            if !headless {
+                match broadcaster.send(serde_json::to_string(&msg)?) {
+                    Ok(_) => {
+                        message::preview("Updated preview with changes");
+                    }
+                    Err(_e) => message::user_error("communication with preview failed"),
                 }
-                Err(_e) => message::user_error("communication with preview failed"),
             }
+
+            client_request(&request_payload, &script_id, &headless);
         }
     }
 
