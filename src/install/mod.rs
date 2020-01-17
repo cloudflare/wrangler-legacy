@@ -6,99 +6,78 @@ use crate::terminal::emoji;
 use binary_install::{Cache, Download};
 use krate::Krate;
 use log::info;
-use which::which;
+use semver::Version;
 
 use std::env;
-use std::path::Path;
-use std::process::Command;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref CACHE: Cache = get_wrangler_cache().expect("creating binary dependency cache");
+    static ref CACHE: Cache = get_wrangler_cache().expect("Could not get Wrangler cache location");
 }
 
-pub fn install(tool_name: &str, owner: &str) -> Result<Download, failure::Error> {
-    if let Some(download) = tool_exists(tool_name)? {
-        return Ok(download);
-    }
-
-    let binaries = &[tool_name];
-    let latest_version = get_latest_version(tool_name)?;
-    let download = download_prebuilt(tool_name, owner, &latest_version, binaries);
-    match download {
-        Ok(download) => Ok(download),
-        Err(e) => {
-            failure::bail!("could not download pre-built `{}` ({}).", tool_name, e);
-        }
-    }
+enum ToolDownload {
+    NeedsInstall(Version),
+    InstalledAt(Download),
 }
 
-pub fn install_artifact(
+pub fn install(
     tool_name: &str,
     owner: &str,
-    version: &str,
+    is_binary: bool,
+    version: Version,
 ) -> Result<Download, failure::Error> {
-    if let Some(download) = tool_exists(tool_name)? {
-        return Ok(download);
-    }
-
-    let download = download_prebuilt(tool_name, owner, version, &[]);
-    match download {
-        Ok(download) => Ok(download),
-        Err(e) => {
-            failure::bail!("could not download pre-built `{}` ({}).", tool_name, e);
+    match tool_needs_update(tool_name, version)? {
+        ToolDownload::NeedsInstall(version) => {
+            println!("{} Installing {} v{}...", emoji::DOWN, tool_name, version);
+            let binaries: Vec<&str> = if is_binary { vec![tool_name] } else { vec![] };
+            let download =
+                download_prebuilt(tool_name, owner, &version.to_string(), binaries.as_ref());
+            match download {
+                Ok(download) => Ok(download),
+                Err(e) => failure::bail!("could not download `{}`\n{}", tool_name, e),
+            }
         }
+        ToolDownload::InstalledAt(download) => Ok(download),
     }
 }
 
-fn tool_exists(tool_name: &str) -> Result<Option<Download>, failure::Error> {
-    if let Ok(path) = which(tool_name) {
-        let no_parent_msg = format!("{} There is no path parent", emoji::WARN);
-        log::debug!("found global {} binary at: {}", tool_name, path.display());
-        if !tool_needs_update(tool_name, &path)? {
-            return Ok(Some(Download::at(path.parent().expect(&no_parent_msg))));
+fn tool_needs_update(
+    tool_name: &str,
+    target_version: Version,
+) -> Result<ToolDownload, failure::Error> {
+    if let Some((installed_version, installed_location)) =
+        get_installation(tool_name, &target_version)?
+    {
+        if installed_version == target_version {
+            return Ok(ToolDownload::InstalledAt(Download::at(&installed_location)));
         }
     }
+    Ok(ToolDownload::NeedsInstall(target_version))
+}
 
+fn get_installation(
+    tool_name: &str,
+    target_version: &Version,
+) -> Result<Option<(Version, PathBuf)>, failure::Error> {
+    for entry in fs::read_dir(&CACHE.destination)? {
+        let entry = entry?;
+        let filename = entry.file_name().into_string();
+        if let Ok(filename) = filename {
+            if filename.starts_with(tool_name) {
+                let installed_version = filename
+                    .split(&format!("{}-", tool_name))
+                    .collect::<Vec<&str>>()[1];
+                let installed_version = Version::parse(installed_version)?;
+                if &installed_version == target_version {
+                    return Ok(Some((installed_version, entry.path())));
+                }
+            }
+        }
+    }
     Ok(None)
-}
-
-fn tool_needs_update(tool_name: &str, path: &Path) -> Result<bool, failure::Error> {
-    let no_version_msg = format!("failed to find version for {}", tool_name);
-
-    let tool_version_output = Command::new(path.as_os_str())
-        .arg("--version")
-        .output()
-        .expect(&no_version_msg);
-
-    if !tool_version_output.status.success() {
-        let error = String::from_utf8_lossy(&tool_version_output.stderr);
-        log::debug!("could not find version for {}\n{}", tool_name, error);
-        return Ok(true);
-    }
-
-    let installed_tool_version = String::from_utf8_lossy(&tool_version_output.stdout);
-    let installed_tool_version = match installed_tool_version.split_whitespace().last() {
-        None => return Ok(true),
-        Some(v) => v,
-    };
-    let latest_tool_version = get_latest_version(tool_name)?;
-    if installed_tool_version == latest_tool_version {
-        log::debug!(
-            "installed {} version {} is up to date",
-            tool_name,
-            installed_tool_version
-        );
-        return Ok(false);
-    }
-    log::info!(
-        "installed {} version {} is out of date with latest version {}",
-        tool_name,
-        installed_tool_version,
-        latest_tool_version
-    );
-    Ok(true)
 }
 
 fn download_prebuilt(
@@ -119,16 +98,13 @@ fn download_prebuilt(
 
     // no binaries are expected; downloading it as an artifact
     let res = if !binaries.is_empty() {
-        CACHE.download(true, tool_name, binaries, &url)?
+        CACHE.download_version(true, tool_name, binaries, &url, version)?
     } else {
-        CACHE.download_artifact(tool_name, &url)?
+        CACHE.download_artifact_version(tool_name, &url, version)?
     };
 
     match res {
-        Some(download) => {
-            println!("⬇️ Installing {}...", tool_name);
-            Ok(download)
-        }
+        Some(download) => Ok(download),
         None => failure::bail!("{} is not installed!", tool_name),
     }
 }
@@ -158,8 +134,10 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
     }
 }
 
-fn get_latest_version(tool_name: &str) -> Result<String, failure::Error> {
-    Ok(Krate::new(tool_name)?.max_version)
+pub fn get_latest_version(tool_name: &str) -> Result<Version, failure::Error> {
+    let latest_version = Krate::new(tool_name)?.max_version;
+    Version::parse(&latest_version)
+        .map_err(|e| failure::format_err!("could not parse latest version\n{}", e))
 }
 
 fn get_wrangler_cache() -> Result<Cache, failure::Error> {

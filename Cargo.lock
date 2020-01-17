@@ -95,7 +95,7 @@ dependencies = [
 [[package]]
 name = "binary-install"
 version = "0.0.3-alpha"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "git+https://github.com/everlastingbugstopper/binary-install-rs?rev=de69baf#de69baf2f0beed3e64ff309002aa39b00024ae31"
 dependencies = [
  "curl 0.4.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2401,7 +2401,7 @@ dependencies = [
  "assert_cmd 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "atty 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "binary-install 0.0.3-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "binary-install 0.0.3-alpha (git+https://github.com/everlastingbugstopper/binary-install-rs?rev=de69baf)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cloudflare 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "config 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2427,6 +2427,7 @@ dependencies = [
  "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.9.22 (registry+https://github.com/rust-lang/crates.io-index)",
+ "semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2506,7 +2507,7 @@ dependencies = [
 "checksum backtrace 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)" = "924c76597f0d9ca25d762c25a4d369d51267536465dc5064bdf0eb073ed477ea"
 "checksum backtrace-sys 0.1.32 (registry+https://github.com/rust-lang/crates.io-index)" = "5d6575f128516de27e3ce99689419835fce9643a9b215a14d2b5b685be018491"
 "checksum base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
-"checksum binary-install 0.0.3-alpha (registry+https://github.com/rust-lang/crates.io-index)" = "a81dda17f2dbba8271cf61f2ea3e48e3da8aef31665731bce48818cc07863f06"
+"checksum binary-install 0.0.3-alpha (git+https://github.com/everlastingbugstopper/binary-install-rs?rev=de69baf)" = "<none>"
 "checksum bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 "checksum blake2b_simd 0.5.8 (registry+https://github.com/rust-lang/crates.io-index)" = "5850aeee1552f495dd0250014cf64b82b7c8879a89d83b33bbdace2cc4f63182"
 "checksum block-buffer 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)" = "c0940dc441f31689269e10ac70eb1002a3a1d3ad1390e030043662eb7fe4688b"

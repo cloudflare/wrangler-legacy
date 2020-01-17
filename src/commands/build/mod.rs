@@ -18,7 +18,11 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
         }
         TargetType::Rust => {
             let tool_name = "wasm-pack";
-            let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
+            let tool_author = "rustwasm";
+            let is_binary = true;
+            let version = install::get_latest_version(tool_name)?;
+            let binary_path =
+                install::install(tool_name, tool_author, is_binary, version)?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
             let command = command(&args, &binary_path);
