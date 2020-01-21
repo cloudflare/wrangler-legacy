@@ -369,9 +369,15 @@ fn run() -> Result<(), failure::Error> {
                 .arg(
                     Arg::with_name("ip")
                         .help("ip to listsen on. defaults to localhost")
-                        .short("i")
                         .long("ip")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("inspect")
+                        .help("activate inspector on host:port")
+                        .long("inspect")
+                        .takes_value(true)
+                        .default_value("localhost:9339")
                 ),
         )
         .subcommand(
@@ -551,7 +557,8 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
-        commands::dev::dev(target, user, host, port, ip)?;
+        let inspect = matches.value_of("inspect");
+        commands::dev::dev(target, user, host, port, ip, inspect)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

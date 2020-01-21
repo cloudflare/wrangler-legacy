@@ -37,16 +37,23 @@ pub fn dev(
     host: Option<&str>,
     port: Option<&str>,
     ip: Option<&str>,
+    inspect: Option<&str>,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
     let server_config = ServerConfig::new(host, ip, port)?;
     let session_id = get_session_id()?;
     let preview_id = get_preview_id(target, user, &server_config, &session_id)?;
+    let inspect = match inspect {
+        Some(inspect) => Some(inspect.to_string()),
+        None => None,
+    };
 
     // create a new thread to listen for devtools messages
     thread::spawn(move || {
         let mut runtime = TokioRuntime::new().unwrap();
-        runtime.block_on(socket::listen(session_id)).unwrap();
+        runtime
+            .block_on(socket::listen(&session_id, inspect))
+            .unwrap();
     });
 
     // spawn tokio runtime on the main thread to handle incoming HTTP requests
