@@ -52,7 +52,7 @@ hyper-tls = "0.4.0"
 chrono = "0.4.9"
 tokio = {version = "0.2", default-features = false, features = ["io-std", "time"]}
 # chrome-devtools-rs = { path = "../chrome-devtools-rs" }
-chrome-devtools-rs = { git = "https://github.com/everlastingbugstopper/chrome-devtools-rs", rev = "b7a0e9f" }
+chrome-devtools-rs = { git = "https://github.com/everlastingbugstopper/chrome-devtools-rs", rev = "80e1ca6" }
 ws = "0.9.0"
 futures = "0.3"
 futures-util = "0.3"
