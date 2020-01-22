@@ -54,16 +54,8 @@ pub fn dev(
     )?;
     let preview_id = Arc::new(Mutex::new(preview_id));
 
-    // create a new thread to listen for devtools messages
     {
         let session_id = session_id.clone();
-        thread::spawn(move || {
-            let mut runtime = TokioRuntime::new().unwrap();
-            runtime.block_on(socket::listen(&session_id)).unwrap();
-        });
-    }
-
-    {
         let preview_id = preview_id.clone();
         let server_config = server_config.clone();
         thread::spawn(move || {
@@ -77,9 +69,17 @@ pub fn dev(
             )
         });
     }
-    // spawn tokio runtime on the main thread to handle incoming HTTP requests
+
     let mut runtime = TokioRuntime::new()?;
-    runtime.block_on(serve(server_config, Arc::clone(&preview_id)))?;
+
+    let devtools_listener = socket::listen(&session_id);
+    let server = serve(server_config, Arc::clone(&preview_id));
+
+    let runners = futures::future::join(devtools_listener, server);
+
+    runtime.block_on(async {
+        let (_, _) = runners.await;
+    });
 
     Ok(())
 }
