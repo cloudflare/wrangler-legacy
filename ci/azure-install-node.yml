@@ -1,4 +1,5 @@
 steps:
   - task: NodeTool@0
+    displayName: "Install Node version >=12.0"
     inputs:
       versionSpec: '>=12.0'

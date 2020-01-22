@@ -5,44 +5,66 @@ trigger:
       - refs/tags/*
 
 jobs:
-  - job: test_wrangler
-    displayName: "Run wrangler tests, fmt, and clippy"
+  - job: fmt_wrangler
+    displayName: "Run linters"
+    steps:
+      - template: ci/azure-install-rust.yml
+      - script: rustup component add rustfmt
+        displayName: "Install rustfmt"
+      - script: cargo fmt --all -- --check
+        displayName: "Check formatting"
+      - script: rustup component add clippy
+        displayName: "Install clippy"
+      - script: cargo clippy
+        displayName: "Lint with clippy"
+
+  - job: test_wrangler_unix_like
+    displayName: "Test stable Unix-like"
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
       - script: cargo test --locked
-        displayName: "cargo test --locked"
-      - script: rustup component add rustfmt
-        displayName: rustup component add rustfmt
-      - script: cargo fmt --all -- --check
-        displayName: "cargo fmt --all -- --check"
-      - script: rustup component add clippy
-        displayName: rustup component add clippy
-      - script: cargo clippy
-        displayName: "cargo clippy --all --all-features -- -D warnings"
+        displayName: "Run tests"
+        env:
+          RUST_LOG: warn,wrangler=info
 
   - job: test_wrangler_windows
-    displayName: "Run wrangler tests (Windows)"
+    displayName: "Test stable Windows"
     pool:
-      vmImage: vs2017-win2016
+      vmImage: windows-latest
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
       - script: cargo test --locked
-        displayName: "cargo test --locked"
+        displayName: "Run tests"
         env:
           RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1
 
-  - job: test_wrangler_nightly
-    displayName: "Run wrangler tests (nightly)"
+  - job: test_wrangler_nightly_unix_like
+    displayName: "Test nightly Unix-like"
     steps:
       - template: ci/azure-install-rust.yml
         parameters:
-          toolchain: 'nightly'
+          toolchain: "nightly"
       - template: ci/azure-install-node.yml
       - script: cargo test --locked
-        displayName: "cargo test --locked"
+        displayName: "Run tests"
+        env:
+          RUST_LOG: warn,wrangler=info
+          RUST_BACKTRACE: 1
+
+  - job: test_wrangler_nightly_windows
+    displayName: "Test nightly Windows"
+    pool:
+      vmImage: windows-latest
+    steps:
+      - template: ci/azure-install-rust.yml
+        parameters:
+          toolchain: "nightly"
+      - template: ci/azure-install-node.yml
+      - script: cargo test --locked
+        displayName: "Run tests"
         env:
           RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1
@@ -52,6 +74,7 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - script: rustup target add x86_64-unknown-linux-musl
+        displayName: "Add linux target to Rust toolchain"
       - script: |
           sudo apt update -y
           sudo apt install musl-tools -y
@@ -59,6 +82,7 @@ jobs:
       - script: |
           set -ex
           cargo build --target x86_64-unknown-linux-musl --features vendored-openssl --release
+        displayName: "Build release binary"
       - template: ci/azure-create-tarball.yml
         parameters:
           artifacts: target/x86_64-unknown-linux-musl/release/wrangler
@@ -67,10 +91,11 @@ jobs:
   - job: dist_darwin
     displayName: "Dist Darwin binary"
     pool:
-      vmImage: macOS-10.13
+      vmImage: macOS-latest
     steps:
       - template: ci/azure-install-rust.yml
       - script: cargo build --release
+        displayName: "Build release binary"
         env:
           MACOSX_DEPLOYMENT_TARGET: 10.7
       - template: ci/azure-create-tarball.yml
@@ -80,10 +105,11 @@ jobs:
   - job: dist_windows
     displayName: "Dist Windows binary"
     pool:
-      vmImage: vs2017-win2016
+      vmImage: windows-latest
     steps:
       - template: ci/azure-install-rust.yml
       - script: cargo build --release
+        displayName: "Build release binary"
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
       - template: ci/azure-create-tarball.yml
@@ -94,6 +120,7 @@ jobs:
     displayName: "Dist wranglerjs"
     steps:
       - task: ArchiveFiles@2
+        displayName: "Create tarball"
         inputs:
           rootFolderOrFile: wranglerjs
           includeRootFolder: false
@@ -165,7 +192,7 @@ jobs:
           targetPath: gh-release
       - task: GithubRelease@0
         condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
-        displayName: 'Create GitHub Release'
+        displayName: "Create GitHub Release"
         inputs:
           gitHubConnection: ashleygwilliams-token
           repositoryName: cloudflare/wrangler
