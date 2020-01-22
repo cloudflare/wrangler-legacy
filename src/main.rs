@@ -353,6 +353,13 @@ fn run() -> Result<(), failure::Error> {
                     emoji::EAR
                 ))
                 .arg(
+                    Arg::with_name("env")
+                        .help("environment to build")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                )
+                .arg(
                     Arg::with_name("port")
                         .help("port to listen on. defaults to 8787")
                         .short("p")
