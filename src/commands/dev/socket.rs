@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use chrome_devtools::events::DevtoolsEvent;
+use chrome_devtools as protocol;
 
 use console::style;
 
@@ -25,13 +25,9 @@ pub async fn listen(session_id: String) -> Result<(), failure::Error> {
 
     let (mut write, read) = ws_stream.split();
 
-    let enable_runtime = Message::Text(
-        r#"{
-        "id": 1,
-        "method": "Runtime.enable"
-    }"#
-        .into(),
-    );
+    let enable_runtime = protocol::runtime::SendMethod::Enable(1.into());
+    let enable_runtime = serde_json::to_string(&enable_runtime)?;
+    let enable_runtime = Message::Text(enable_runtime.into());
     write.send(enable_runtime).await?;
 
     let (keep_alive_tx, keep_alive_rx) = futures::channel::mpsc::unbounded();
@@ -43,25 +39,25 @@ pub async fn listen(session_id: String) -> Result<(), failure::Error> {
             async {
                 let message = message.unwrap().into_text().unwrap();
                 log::info!("{}", message);
-                let message: Result<DevtoolsEvent, serde_json::Error> =
-                    serde_json::from_str(&message);
-                match message {
-                    Ok(message) => match message {
-                        DevtoolsEvent::ConsoleAPICalled(event) => match event.log_type.as_str() {
-                            "log" => println!("{}", style(event).blue()),
-                            "error" => println!("{}", style(event).red()),
-                            _ => println!("unknown console event: {}", event),
-                        },
-                        DevtoolsEvent::ExceptionThrown(event) => {
+                let message: Result<protocol::Runtime, failure::Error> =
+                    serde_json::from_str(&message).map_err(|e| {
+                        failure::format_err!("this event could not be parsed:\n{}", e)
+                    });
+                if let Ok(protocol::Runtime::Event(event)) = message {
+                    match event {
+                        protocol::runtime::Event::ConsoleAPICalled(event) => {
+                            match event.r#type.as_str() {
+                                "log" => println!("{}", style(event).green()),
+                                "error" => println!("{}", style(event).red()),
+                                _ => println!("{}", style(event).yellow()),
+                            }
+                        }
+                        protocol::runtime::Event::ExceptionThrown(event) => {
                             println!("{}", style(event).bold().red())
                         }
-                    },
-                    Err(e) => {
-                        // this event was not parsed as a DevtoolsEvent
-                        // TODO: change this to a warn after chrome-devtools-rs is parsing all messages
-                        log::info!("this event was not parsed as a DevtoolsEvent:\n{}", e);
+                        _ => (),
                     }
-                };
+                }
             }
         })
     };
@@ -78,16 +74,11 @@ async fn keep_alive(tx: futures::channel::mpsc::UnboundedSender<Message>) {
 
     loop {
         interval.tick().await;
-        let keep_alive_message = format!(
-            r#"{{
-              "id": {},
-              "method": "Runtime.getIsolateId"
-            }}"#,
-            id
-        );
-
-        tx.unbounded_send(Message::Text(keep_alive_message.into()))
-            .unwrap();
+        let keep_alive_message = protocol::runtime::SendMethod::GetIsolateId(id.into());
+        let keep_alive_message = serde_json::to_string(&keep_alive_message)
+            .expect("Could not convert keep alive message to JSON");
+        let keep_alive_message = Message::Text(keep_alive_message.into());
+        tx.unbounded_send(keep_alive_message).unwrap();
         id += 1;
     }
 }
