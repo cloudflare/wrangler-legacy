@@ -35,24 +35,28 @@ pub async fn listen(session_id: &str) -> Result<(), failure::Error> {
     let keep_alive_to_ws = keep_alive_rx.map(Ok).forward(write);
 
     let print_ws_messages = {
-        read.for_each(|message| async {
-            let message = message.unwrap().into_text().unwrap();
-            log::info!("{}", message);
-            let message: Result<protocol::Runtime, failure::Error> = serde_json::from_str(&message)
-                .map_err(|e| failure::format_err!("this event could not be parsed:\n{}", e));
-            if let Ok(protocol::Runtime::Event(event)) = message {
-                match event {
-                    protocol::runtime::Event::ConsoleAPICalled(event) => {
-                        match event.r#type.as_str() {
-                            "log" => println!("{}", style(event).green()),
-                            "error" => println!("{}", style(event).red()),
-                            _ => println!("{}", style(event).yellow()),
+        read.for_each(|message| {
+            async {
+                let message = message.unwrap().into_text().unwrap();
+                log::info!("{}", message);
+                let message: Result<protocol::Runtime, failure::Error> =
+                    serde_json::from_str(&message).map_err(|e| {
+                        failure::format_err!("this event could not be parsed:\n{}", e)
+                    });
+                if let Ok(protocol::Runtime::Event(event)) = message {
+                    match event {
+                        protocol::runtime::Event::ConsoleAPICalled(event) => {
+                            match event.r#type.as_str() {
+                                "log" => println!("{}", style(event).green()),
+                                "error" => println!("{}", style(event).red()),
+                                _ => println!("{}", style(event).yellow()),
+                            }
                         }
+                        protocol::runtime::Event::ExceptionThrown(event) => {
+                            println!("{}", style(event).bold().red())
+                        }
+                        _ => (),
                     }
-                    protocol::runtime::Event::ExceptionThrown(event) => {
-                        println!("{}", style(event).bold().red())
-                    }
-                    _ => (),
                 }
             }
         })
