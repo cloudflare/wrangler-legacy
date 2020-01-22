@@ -66,10 +66,12 @@ pub async fn listen(session_id: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-async fn keep_alive(tx: futures::channel::mpsc::UnboundedSender<Message>) {
+async fn keep_alive(tx: futures::channel::mpsc::UnboundedSender<Message>) -> ! {
     let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
     let mut interval = time::interval(duration);
 
+    // this is set to 2 because we have already sent an id of 1 to enable the runtime
+    // eventually this logic should be moved to the chrome-devtools-rs library
     let mut id = 2;
 
     loop {

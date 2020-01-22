@@ -78,10 +78,10 @@ pub fn dev(
     let runners = futures::future::join(devtools_listener, server);
 
     runtime.block_on(async {
-        let (_, _) = runners.await;
-    });
-
-    Ok(())
+        let (devtools_listener, server) = runners.await;
+        devtools_listener?;
+        server
+    })
 }
 
 async fn serve(
