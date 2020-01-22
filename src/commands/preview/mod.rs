@@ -119,14 +119,14 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Error> {
+fn get(cookie: String, client: &reqwest::blocking::Client) -> Result<String, failure::Error> {
     let res = client.get(PREVIEW_ADDRESS).header("Cookie", cookie).send();
     Ok(res?.text()?)
 }
 
 fn post(
     cookie: String,
-    client: &reqwest::Client,
+    client: &reqwest::blocking::Client,
     body: Option<String>,
 ) -> Result<String, failure::Error> {
     let res = match body {

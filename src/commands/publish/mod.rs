@@ -96,7 +96,7 @@ fn publish_script(
 
     let script_upload_form = upload_form::build(target, asset_manifest)?;
 
-    let mut res = client
+    let res = client
         .put(&worker_addr)
         .multipart(script_upload_form)
         .send()?;
@@ -222,7 +222,7 @@ fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, fa
     let client = http::auth_client(None, user);
 
     log::info!("Making public on subdomain...");
-    let mut res = client
+    let res = client
         .post(&sd_worker_addr)
         .header("Content-type", "application/json")
         .body(build_subdomain_request())
