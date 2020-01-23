@@ -64,6 +64,15 @@ fn run() -> Result<(), failure::Error> {
         .takes_value(true)
         .value_name("ENVIRONMENT NAME");
 
+    let secret_name_arg = Arg::with_name("name")
+        .help("Name of the secret variable")
+        .short("n")
+        .long("name")
+        .required(true)
+        .takes_value(true)
+        .index(1)
+        .value_name("VAR_NAME");
+
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("The Wrangler Team <wrangler@cloudflare.com>")
@@ -238,18 +247,28 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a secret that can be referenced in the worker script",
                     emoji::DANCERS
                 ))
-                .arg(
-                    Arg::with_name("name")
-                        .help("the name of your secret!")
-                        .index(1),
+                .subcommand(
+                    SubCommand::with_name("create")
+                        .about("Create namespace")
+                        .arg(secret_name_arg.clone())
+                        // .arg(
+                        //     Arg::with_name("name")
+                        //     .help("the JSON file of key-value pairs to upload, in form [\"<example-key>\", ...]")
+                        //     .required(true)
+                        //     .takes_value(true)
+                        //     .index(1)
+                        // )
+                        .arg(environment_arg.clone())
+                        // .group(secret_group.clone())
                 )
-                .arg(
-                    Arg::with_name("env")
-                        .help("environment to build")
-                        .short("e")
-                        .long("env")
-                        .takes_value(true)
-                ),
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .about("Delete namespace")
+                        .arg(secret_name_arg.clone())
+
+                        // .group(secret_group.clone())
+                        .arg(environment_arg.clone())
+                )
         )
         .subcommand(
             SubCommand::with_name("generate")
@@ -442,6 +461,9 @@ fn run() -> Result<(), failure::Error> {
             api_token.truncate(api_token.trim_end().len());
             GlobalUser::TokenAuth { api_token }
         } else {
+            // Look here for interactive command for secrets
+            // Rust cloudflare-rs
+            // Endpoint<response return type,params, payload of request>
             message::big_info("We don't recommend using your Global API Key! Please consider using an\n\tAPI Token instead.\n\thttps://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys\n");
             println!("Enter email: ");
             let mut email: String = read!("{}\n");
@@ -571,24 +593,39 @@ fn run() -> Result<(), failure::Error> {
         } else {
             commands::subdomain::get_subdomain(&user, &target)?;
         }
-    } else if let Some(matches) = matches.subcommand_matches("secret") {
+    } else if let Some(secrets_matches) = matches.subcommand_matches("secret") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
-        let name = matches.value_of("name");
-        let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
-
+        // println!("{}", matches.value_of("name").unwrap());
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        let name = matches.value_of("name");
-
-        if let Some(name) = name {
-            commands::secret::set_secret(&name, &user, &target)?;
-        } else {
-            // TODO run another command
-            // commands::subdomain::get_subdomain(&user, &target)?;
+        match secrets_matches.subcommand() {
+            ("create", Some(_create_matches)) => {
+                let name = _create_matches.value_of("name"); //.unwrap_or("worker");
+                let env = _create_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                if let Some(name) = name {
+                    commands::secret::create_secret(&name, &user, &target)?;
+                } else {
+                    // TODO throw error
+                }
+            }
+            ("delete", Some(_delete_matches)) => {
+                let name = _delete_matches.value_of("name"); //.unwrap_or("worker");
+                let env = _delete_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                if let Some(name) = name {
+                    commands::secret::delete_secret(&name, &user, &target)?;
+                } else {
+                    // TODO throw error
+                }
+            }
+            ("", None) => message::warn("secrets expects a subcommand of the action"),
+            _ => unreachable!(),
         }
+    // TODO run another command
+    // commands::subdomain::get_subdomain(&user, &target)?;
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
