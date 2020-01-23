@@ -7,8 +7,8 @@ pub mod init;
 pub mod kv;
 pub mod preview;
 pub mod publish;
-pub mod subdomain;
 pub mod secret;
+pub mod subdomain;
 pub mod whoami;
 
 pub use self::config::global_config;
@@ -19,7 +19,9 @@ pub use init::init;
 pub use preview::{preview, HTTPMethod};
 pub use publish::publish;
 use regex::Regex;
-pub use secret::set_secret;
+pub use secret::create_secret;
+pub use secret::delete_secret;
+// TODO add more secret commands
 pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
 pub use whoami::whoami;
