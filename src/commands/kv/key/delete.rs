@@ -5,6 +5,7 @@ use crate::commands::kv;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
+use crate::terminal::utils;
 
 pub fn delete(
     target: &Target,
@@ -15,7 +16,7 @@ pub fn delete(
     kv::validate_target(target)?;
     let client = kv::api_client(user)?;
 
-    match kv::interactive_delete(&format!("Are you sure you want to delete key \"{}\"?", key)) {
+    match utils::interactive_delete(&format!("Are you sure you want to delete key \"{}\"?", key)) {
         Ok(true) => (),
         Ok(false) => {
             message::info(&format!("Not deleting key \"{}\"", key));

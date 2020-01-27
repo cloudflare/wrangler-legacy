@@ -3,8 +3,8 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::emoji;
 use crate::terminal::message;
+use crate::terminal::utils;
 // use cloudflare::endpoints::workers::create_secret::CreateSecret;
-use crate::commands::kv;
 use crate::http;
 use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSecret, ListSecrets};
 // use cloudflare::endpoints::workerskv::list_namespaces::ListNamespaces;
@@ -12,15 +12,6 @@ use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSec
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::{ApiFailure, ApiSuccess};
 use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
-
-// For interactively handling  reading in a string
-pub fn interactive_get_string(prompt_string: &str) -> String {
-    println!("{}", prompt_string);
-    let foo: String = read!("{}\n");
-    // println!("{}", answer);
-    // read!("{}\n").as_str()
-    foo
-}
 
 fn format_error(e: ApiFailure) -> String {
     print!("TODO next ~5 lines of API Failure details {}", e); //TODO: remove
@@ -69,10 +60,9 @@ fn api_put_secret(
         params: CreateSecretParams {
             name: name.to_string(),
             text: secret_value.to_string(),
-            r#type: "secret_text".to_string(),
+            secret_type: "secret_text".to_string(),
         },
     });
-
     match response {
         // TODO: 201 if new secret, 200 if updated and report to user
         Ok(_) => message::success(&format!("Success! You've uploaded secret {}.", name)),
@@ -95,8 +85,12 @@ fn api_delete_secret(user: &GlobalUser, target: &Target, name: &str) -> Result<(
     });
 
     match response {
-        // TODO: 201 if new secret, 200 if updated and report to user
-        Ok(_) => message::success(&format!("You've deleted the secret {}.", name)),
+        Ok(success) => {
+            // TODO: 201 if new secret, 200 if updated and report to user
+            // if response.status() {
+            message::success(&format!("You've deleted the secret {}.", name))
+            // }
+        }
         Err(e) => failure::bail!(format!("Formatted error{}", format_error(e))),
         (_) => print!("some unknown format"),
     }
@@ -127,16 +121,14 @@ fn api_get_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Er
     match response {
         Ok(success) => {
             let namespaces = success.result;
-            println!("Success {}", serde_json::to_string(&namespaces)?);
         }
         Err(e) => failure::bail!("{}", format_error(e)),
     }
-    message::working(&msg);
     Ok(())
 }
 
 pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    let secret_value = interactive_get_string(&format!(
+    let secret_value = utils::interactive_get_string(&format!(
         "Enter the secret text you'd like assigned to the variable {} on the script named {}",
         name, target.name
     ));
@@ -153,7 +145,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 }
 pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     // NOTE interactive delete and get_string should probably live in utils
-    match kv::interactive_delete(&format!(
+    match utils::interactive_delete(&format!(
         "Are you sure you want to permentally delete the variable {} on the script named {}",
         name, target.name
     )) {
