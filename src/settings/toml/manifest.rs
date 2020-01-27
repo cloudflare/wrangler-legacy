@@ -41,6 +41,7 @@ pub struct Manifest {
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
+    pub config: Option<HashMap<String, String>>,
 }
 
 impl Manifest {
@@ -189,6 +190,7 @@ impl Manifest {
             name: self.name.clone(),                   // MAY inherit
             kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
             site: self.site.clone(),                   // MUST NOT inherit
+            config: self.config.clone(),               // MAY inherit
         };
 
         let environment = self.get_environment(environment_name)?;
@@ -198,9 +200,17 @@ impl Manifest {
             if let Some(account_id) = &environment.account_id {
                 target.account_id = account_id.clone();
             }
-            if environment.webpack_config.is_some() {
-                target.webpack_config = environment.webpack_config.clone();
+            if let Some(webpack_config) = &environment.webpack_config {
+                target.webpack_config = Some(webpack_config.clone());
             }
+            if let Some(target_config) = &mut target.config.clone() {
+                if let Some(env_config) = environment.config.clone() {
+                    target_config.extend(env_config);
+                    let new_config = target_config.clone();
+                    target.config.replace(new_config);
+                }
+            }
+
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
             target.kv_namespaces = environment.kv_namespaces.clone();
         }

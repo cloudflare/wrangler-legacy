@@ -2,6 +2,7 @@ use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
 
+use std::collections::HashMap;
 use std::env;
 
 use std::path::PathBuf;
@@ -18,6 +19,7 @@ pub struct Target {
     pub target_type: TargetType,
     pub webpack_config: Option<String>,
     pub site: Option<Site>,
+    pub config: Option<HashMap<String, String>>,
 }
 
 impl Target {
