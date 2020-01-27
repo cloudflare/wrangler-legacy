@@ -4,20 +4,38 @@ use crate::settings::toml::Target;
 use crate::terminal::emoji;
 use crate::terminal::message;
 use crate::terminal::utils;
-// use cloudflare::endpoints::workers::create_secret::CreateSecret;
-use crate::http;
-use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSecret, ListSecrets};
 // use cloudflare::endpoints::workerskv::list_namespaces::ListNamespaces;
 // use cloudflare::endpoints::workerskv::list_namespaces::ListNamespacesParams;
+use crate::http;
+use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSecret, ListSecrets};
 use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::response::{ApiFailure, ApiSuccess};
-use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
+use cloudflare::framework::response::ApiFailure;
+use cloudflare::framework::HttpApiClientConfig;
 
 fn format_error(e: ApiFailure) -> String {
     print!("TODO next ~5 lines of API Failure details {}", e); //TODO: remove
                                                                // e.code
     http::format_error(e, Some(&secret_errors))
 }
+
+fn validate_target(target: &Target) -> Result<(), failure::Error> {
+    let mut missing_fields = Vec::new();
+
+    if target.account_id.is_empty() {
+        missing_fields.push("account_id")
+    };
+
+    if !missing_fields.is_empty() {
+        failure::bail!(
+            "{} Your wrangler.toml is missing the following field(s): {:?}",
+            emoji::WARN,
+            missing_fields
+        )
+    } else {
+        Ok(())
+    }
+}
+
 // secret_errors() provides more detailed explanations of Workers KV API error codes.
 // See https://api.cloudflare.com/#workers-secrets ? for details.
 fn secret_errors(error_code: u16) -> &'static str {
@@ -67,7 +85,6 @@ fn api_put_secret(
         // TODO: 201 if new secret, 200 if updated and report to user
         Ok(_) => message::success(&format!("Success! You've uploaded secret {}.", name)),
         Err(e) => failure::bail!(format!("Formatted error{}", format_error(e))),
-        (_) => print!("some unknown format"),
     }
     message::working(&msg);
     Ok(())
@@ -75,7 +92,6 @@ fn api_put_secret(
 }
 fn api_delete_secret(user: &GlobalUser, target: &Target, name: &str) -> Result<(), failure::Error> {
     let msg = format!("Deleting the secret {} on script {}.", name, target.name);
-    // let response = call_api(target, name, secret_value);
     let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     let response = client.request(&DeleteSecret {
@@ -85,21 +101,13 @@ fn api_delete_secret(user: &GlobalUser, target: &Target, name: &str) -> Result<(
     });
 
     match response {
-        Ok(success) => {
-            // TODO: 201 if new secret, 200 if updated and report to user
-            // if response.status() {
-            message::success(&format!("You've deleted the secret {}.", name))
-            // }
-        }
+        Ok(_) => message::success(&format!("You've deleted the secret {}.", name)),
         Err(e) => failure::bail!(format!("Formatted error{}", format_error(e))),
-        (_) => print!("some unknown format"),
     }
     message::working(&msg);
     Ok(())
 }
 fn api_get_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    let msg = format!("Listing all the secret names on script {}.", target.name);
-    // let response = call_api(target, name, secret_value);
     let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     let response = client.request(&ListSecrets {
@@ -119,8 +127,9 @@ fn api_get_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Er
     // });
 
     match response {
-        Ok(success) => {
-            let namespaces = success.result;
+        Ok(_success) => {
+            let secrets = _success.result;
+            println!("{}", serde_json::to_string(&secrets)?);
         }
         Err(e) => failure::bail!("{}", format_error(e)),
     }
@@ -128,6 +137,8 @@ fn api_get_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Er
 }
 
 pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    validate_target(target)?;
+
     let secret_value = utils::interactive_get_string(&format!(
         "Enter the secret text you'd like assigned to the variable {} on the script named {}",
         name, target.name
@@ -135,16 +146,11 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     if secret_value.is_empty() {
         failure::bail!(format!("Enter a non empty string."))
     }
-    if target.account_id.is_empty() {
-        failure::bail!(format!(
-            "{} You must provide an account_id in your wrangler.toml before creating a secret!",
-            emoji::WARN
-        ))
-    }
     api_put_secret(&user, &target, name, secret_value)
 }
 pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    // NOTE interactive delete and get_string should probably live in utils
+    validate_target(target)?;
+
     match utils::interactive_delete(&format!(
         "Are you sure you want to permentally delete the variable {} on the script named {}",
         name, target.name
@@ -157,20 +163,9 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
         Err(e) => failure::bail!(e),
     }
 
-    if target.account_id.is_empty() {
-        failure::bail!(format!(
-            "{} You must provide an account_id in your wrangler.toml before deleting a secret",
-            emoji::WARN
-        ))
-    }
     api_delete_secret(&user, &target, name)
 }
 pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    if target.account_id.is_empty() {
-        failure::bail!(format!(
-            "{} You must provide an account_id in your wrangler.toml before listing secrets",
-            emoji::WARN
-        ))
-    }
+    validate_target(target)?;
     api_get_secrets(&user, &target)
 }
