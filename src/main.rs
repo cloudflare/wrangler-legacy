@@ -249,13 +249,13 @@ fn run() -> Result<(), failure::Error> {
                 ))
                 .subcommand(
                     SubCommand::with_name("create")
-                        .about("Create secret")
+                        .about("Create a secret variable to be avalible in script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
-                        .about("Delete secret")
+                        .about("Delete a secret variable from a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
                 )
@@ -456,9 +456,6 @@ fn run() -> Result<(), failure::Error> {
             api_token.truncate(api_token.trim_end().len());
             GlobalUser::TokenAuth { api_token }
         } else {
-            // Look here for interactive command for secrets
-            // Rust cloudflare-rs
-            // Endpoint<response return type,params, payload of request>
             message::big_info("We don't recommend using your Global API Key! Please consider using an\n\tAPI Token instead.\n\thttps://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys\n");
             println!("Enter email: ");
             let mut email: String = read!("{}\n");
@@ -591,7 +588,6 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(secrets_matches) = matches.subcommand_matches("secret") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
-        // println!("{}", matches.value_of("name").unwrap());
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
@@ -602,8 +598,6 @@ fn run() -> Result<(), failure::Error> {
                 let target = manifest.get_target(env)?;
                 if let Some(name) = name {
                     commands::secret::create_secret(&name, &user, &target)?;
-                } else {
-                    // TODO throw error
                 }
             }
             ("delete", Some(_delete_matches)) => {
@@ -612,12 +606,9 @@ fn run() -> Result<(), failure::Error> {
                 let target = manifest.get_target(env)?;
                 if let Some(name) = name {
                     commands::secret::delete_secret(&name, &user, &target)?;
-                } else {
-                    // TODO throw error
                 }
             }
             ("list", Some(_list_matches)) => {
-                // let name = _list_matches.value_of("name"); //.unwrap_or("worker");
                 let env = _list_matches.value_of("env");
                 let target = manifest.get_target(env)?;
                 commands::secret::list_secrets(&user, &target)?;
@@ -625,8 +616,6 @@ fn run() -> Result<(), failure::Error> {
             ("", None) => message::warn("secrets expects a subcommand of the action"),
             _ => unreachable!(),
         }
-    // TODO run another command
-    // commands::subdomain::get_subdomain(&user, &target)?;
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;

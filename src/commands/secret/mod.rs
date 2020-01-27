@@ -13,8 +13,6 @@ use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClientConfig;
 
 fn format_error(e: ApiFailure) -> String {
-    print!("TODO next ~5 lines of API Failure details {}", e); //TODO: remove
-                                                               // e.code
     http::format_error(e, Some(&secret_errors))
 }
 
@@ -69,7 +67,6 @@ fn api_put_secret(
     secret_value: String,
 ) -> Result<(), failure::Error> {
     let msg = format!("Creating the secret for script name {}", target.name);
-    // let response = call_api(target, name, secret_value);
     let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     let response = client.request(&CreateSecret {
@@ -102,7 +99,10 @@ fn api_delete_secret(user: &GlobalUser, target: &Target, name: &str) -> Result<(
 
     match response {
         Ok(_) => message::success(&format!("You've deleted the secret {}.", name)),
-        Err(e) => failure::bail!(format!("Formatted error{}", format_error(e))),
+        Err(e) => failure::bail!(format!(
+            "TODO: delete this print of the error {}",
+            format_error(e)
+        )),
     }
     message::working(&msg);
     Ok(())
