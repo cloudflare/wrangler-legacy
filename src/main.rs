@@ -249,24 +249,19 @@ fn run() -> Result<(), failure::Error> {
                 ))
                 .subcommand(
                     SubCommand::with_name("create")
-                        .about("Create namespace")
+                        .about("Create secret")
                         .arg(secret_name_arg.clone())
-                        // .arg(
-                        //     Arg::with_name("name")
-                        //     .help("the JSON file of key-value pairs to upload, in form [\"<example-key>\", ...]")
-                        //     .required(true)
-                        //     .takes_value(true)
-                        //     .index(1)
-                        // )
                         .arg(environment_arg.clone())
-                        // .group(secret_group.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
-                        .about("Delete namespace")
+                        .about("Delete secret")
                         .arg(secret_name_arg.clone())
-
-                        // .group(secret_group.clone())
+                        .arg(environment_arg.clone())
+                )
+                .subcommand(
+                    SubCommand::with_name("list")
+                        .about("List all secrets for a script")
                         .arg(environment_arg.clone())
                 )
         )
@@ -620,6 +615,12 @@ fn run() -> Result<(), failure::Error> {
                 } else {
                     // TODO throw error
                 }
+            }
+            ("list", Some(_list_matches)) => {
+                // let name = _list_matches.value_of("name"); //.unwrap_or("worker");
+                let env = _list_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                commands::secret::list_secrets(&user, &target)?;
             }
             ("", None) => message::warn("secrets expects a subcommand of the action"),
             _ => unreachable!(),

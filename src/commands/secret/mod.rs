@@ -6,10 +6,9 @@ use crate::terminal::message;
 // use cloudflare::endpoints::workers::create_secret::CreateSecret;
 use crate::commands::kv;
 use crate::http;
-use cloudflare::endpoints::workers::create_secret::CreateSecret;
-use cloudflare::endpoints::workers::create_secret::CreateSecretParams;
-use cloudflare::endpoints::workers::delete_secret::DeleteSecret;
-use cloudflare::endpoints::workers::WorkersSecret;
+use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSecret, ListSecrets};
+// use cloudflare::endpoints::workerskv::list_namespaces::ListNamespaces;
+// use cloudflare::endpoints::workerskv::list_namespaces::ListNamespacesParams;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::{ApiFailure, ApiSuccess};
 use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
@@ -24,8 +23,8 @@ pub fn interactive_get_string(prompt_string: &str) -> String {
 }
 
 fn format_error(e: ApiFailure) -> String {
-    print!("Will remove, API Failure details {}", e);
-    // e.code
+    print!("TODO next ~5 lines of API Failure details {}", e); //TODO: remove
+                                                               // e.code
     http::format_error(e, Some(&secret_errors))
 }
 // secret_errors() provides more detailed explanations of Workers KV API error codes.
@@ -49,6 +48,7 @@ fn secret_errors(error_code: u16) -> &'static str {
         10021 | 10035 | 10038 => "Consider moving this namespace",
         // cloudflare account errors
         10017 | 10026 => "Workers KV is a paid feature, please upgrade your account (https://www.cloudflare.com/products/workers-kv/)",
+        10007 => "The name does not exist on that script. Are you sure you entered the correct environment? account ID?", // Verify
         10001 => "The content you passed in is not an excepted string. Try entering just a string",
         _ => "Unknown code",
     }
@@ -68,7 +68,8 @@ fn api_put_secret(
         script_name: &target.name,
         params: CreateSecretParams {
             name: name.to_string(),
-            value: secret_value.to_string(),
+            text: secret_value.to_string(),
+            r#type: "secret_text".to_string(),
         },
     });
 
@@ -101,7 +102,37 @@ fn api_delete_secret(user: &GlobalUser, target: &Target, name: &str) -> Result<(
     }
     message::working(&msg);
     Ok(())
-    // message::success(&format!("Success! You've uploaded secret {}.", name));
+}
+fn api_get_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    let msg = format!("Listing all the secret names on script {}.", target.name);
+    // let response = call_api(target, name, secret_value);
+    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+
+    let response = client.request(&ListSecrets {
+        account_identifier: &target.account_id,
+        script_name: &target.name,
+    });
+    // TODO remove this is for
+    // Testing with KV namespaces endpoint
+    // let params = ListNamespacesParams {
+    //     page: Some(1),
+    //     per_page: Some(12),
+    // };
+
+    // let response = client.request(&ListNamespaces {
+    //     account_identifier: &target.account_id,
+    //     params,
+    // });
+
+    match response {
+        Ok(success) => {
+            let namespaces = success.result;
+            println!("Success {}", serde_json::to_string(&namespaces)?);
+        }
+        Err(e) => failure::bail!("{}", format_error(e)),
+    }
+    message::working(&msg);
+    Ok(())
 }
 
 pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
@@ -121,18 +152,33 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     api_put_secret(&user, &target, name, secret_value)
 }
 pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
-    let secret_value = interactive_get_string(&format!(
-        "Enter the secret text you'd like assigned to the variable {} on the script named {}",
+    // NOTE interactive delete and get_string should probably live in utils
+    match kv::interactive_delete(&format!(
+        "Are you sure you want to permentally delete the variable {} on the script named {}",
         name, target.name
-    ));
-    if secret_value.is_empty() {
-        failure::bail!(format!("Enter a non empty string."))
+    )) {
+        Ok(true) => (),
+        Ok(false) => {
+            message::info(&format!("Not deleting secret {}", name));
+            return Ok(());
+        }
+        Err(e) => failure::bail!(e),
     }
+
     if target.account_id.is_empty() {
         failure::bail!(format!(
-            "{} You must provide an account_id in your wrangler.toml before creating a secret!",
+            "{} You must provide an account_id in your wrangler.toml before deleting a secret",
             emoji::WARN
         ))
     }
-    api_put_secret(&user, &target, name, secret_value)
+    api_delete_secret(&user, &target, name)
+}
+pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    if target.account_id.is_empty() {
+        failure::bail!(format!(
+            "{} You must provide an account_id in your wrangler.toml before listing secrets",
+            emoji::WARN
+        ))
+    }
+    api_get_secrets(&user, &target)
 }
