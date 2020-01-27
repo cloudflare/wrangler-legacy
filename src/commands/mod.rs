@@ -21,7 +21,7 @@ pub use publish::publish;
 use regex::Regex;
 pub use secret::create_secret;
 pub use secret::delete_secret;
-// TODO add more secret commands
+pub use secret::list_secrets;
 pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
 pub use whoami::whoami;
