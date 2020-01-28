@@ -18,7 +18,6 @@ pub struct RequestPayload {
 
 impl RequestPayload {
     pub fn create(method: HTTPMethod, url: Url, body: Option<String>) -> RequestPayload {
-
         let session = Uuid::new_v4().to_simple().to_string();
 
         let https = if url.scheme() == "https" { 1 } else { 0 };

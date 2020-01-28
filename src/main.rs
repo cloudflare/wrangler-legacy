@@ -512,10 +512,17 @@ fn run() -> Result<(), failure::Error> {
 
         let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
-        let default_url = "https://example.com";
+        let url = Url::parse(matches.value_of("url").unwrap_or("https://example.com"))?;
 
-        let url = Url::parse(matches.value_of("url").unwrap_or(default_url))
-            .unwrap_or(Url::parse(default_url)?);
+        // Validate the URL scheme
+        failure::ensure!(
+            match url.scheme() {
+                "http" => true,
+                "https" => true,
+                _ => false,
+            },
+            "Invalid URL scheme (use either \"https\" or \"http\")"
+        );
 
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
