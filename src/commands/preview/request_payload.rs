@@ -24,7 +24,11 @@ impl RequestPayload {
         let protocol = if https == 1 { "https://" } else { "http://" }.to_string();
         let domain = url.domain().unwrap().to_string();
         let path = url.path().to_string();
-        let query = format!("?{}", url.query().unwrap_or(""));
+
+        let query = match url.query() {
+            Some(query) => format!("?{}", query),
+            None => "".to_string(),
+        };
 
         let browser_url = format!("{}{}{}{}", protocol, domain, path, query);
         let service_url = format!(
