@@ -26,7 +26,7 @@ jobs:
       - script: cargo test --locked
         displayName: "Run tests"
         env:
-          RUST_LOG: warn,wrangler=info
+          RUST_BACKTRACE: 1
 
   - job: test_wrangler_windows
     displayName: "Test stable Windows"
@@ -38,7 +38,6 @@ jobs:
       - script: cargo test --locked
         displayName: "Run tests"
         env:
-          RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1
 
   - job: test_wrangler_nightly_unix_like
@@ -51,7 +50,6 @@ jobs:
       - script: cargo test --locked
         displayName: "Run tests"
         env:
-          RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1
 
   - job: test_wrangler_nightly_windows
@@ -66,7 +64,6 @@ jobs:
       - script: cargo test --locked
         displayName: "Run tests"
         env:
-          RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1
 
   - job: dist_linux
