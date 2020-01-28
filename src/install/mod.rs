@@ -29,7 +29,12 @@ pub fn install(tool_name: &str, owner: &str) -> Result<Download, failure::Error>
     match download {
         Ok(download) => Ok(download),
         Err(e) => {
-            failure::bail!("could not download pre-built `{}` ({}).", tool_name, e);
+            failure::bail!(
+                "could not download pre-built `{}` v{} ({}).",
+                tool_name,
+                latest_version,
+                e
+            );
         }
     }
 }
@@ -47,7 +52,12 @@ pub fn install_artifact(
     match download {
         Ok(download) => Ok(download),
         Err(e) => {
-            failure::bail!("could not download pre-built `{}` ({}).", tool_name, e);
+            failure::bail!(
+                "could not download pre-built `{}` v{} ({}).",
+                tool_name,
+                version,
+                e
+            );
         }
     }
 }
