@@ -4,8 +4,6 @@ use server_config::ServerConfig;
 mod headers;
 use headers::{destructure_response, structure_request};
 
-use std::thread;
-
 use chrono::prelude::*;
 
 use hyper::client::{HttpConnector, ResponseFuture};
@@ -43,14 +41,18 @@ pub fn dev(
     let session_id = get_session_id()?;
     let preview_id = get_preview_id(target, user, &server_config, &session_id)?;
 
-    // create a new thread to listen for devtools messages
-    thread::spawn(move || socket::listen(session_id));
-
-    // spawn tokio runtime on the main thread to handle incoming HTTP requests
     let mut runtime = TokioRuntime::new()?;
-    runtime.block_on(serve(server_config, preview_id))?;
 
-    Ok(())
+    let devtools_listener = socket::listen(session_id);
+    let server = serve(server_config, preview_id);
+
+    let runners = futures::future::join(devtools_listener, server);
+
+    runtime.block_on(async {
+        let (devtools_listener, server) = runners.await;
+        devtools_listener?;
+        server
+    })
 }
 
 async fn serve(server_config: ServerConfig, preview_id: String) -> Result<(), failure::Error> {
