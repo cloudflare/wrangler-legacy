@@ -51,8 +51,8 @@ hyper = "0.13.1"
 hyper-tls = "0.4.0"
 chrono = "0.4.9"
 tokio = {version = "0.2", default-features = false, features = ["io-std", "time"]}
-# chrome-devtools-rs = { path = "../chrome-devtools-rs" }
-chrome-devtools-rs = { git = "https://github.com/everlastingbugstopper/chrome-devtools-rs", rev = "cb63ee7" }
+# chrome-devtools-rs = { path = "../chrome-devtools-rs", features = ["color"] }
+chrome-devtools-rs = { git = "https://github.com/everlastingbugstopper/chrome-devtools-rs", rev = "ae14890", features = ["color"] }
 ws = "0.9.0"
 futures = "0.3"
 futures-util = "0.3"
