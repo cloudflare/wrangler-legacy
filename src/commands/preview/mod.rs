@@ -186,9 +186,9 @@ fn watch_for_changes(
                     }
                     Err(_e) => message::user_error("communication with preview failed"),
                 }
+            } else {
+                client_request(&request_payload, &script_id);
             }
-
-            client_request(&request_payload, &script_id);
         }
     }
 
