@@ -28,7 +28,7 @@ jobs:
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - script: cargo test --locked
+      - script: cargo test --locked global_user
         displayName: "cargo test --locked"
         env:
           RUST_LOG: warn,wrangler=info
