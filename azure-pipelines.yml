@@ -29,7 +29,7 @@ jobs:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
       - script: cargo test --locked
-        displayName: "cargo test --locked"
+        displayName: "cargo test --locked build"
         env:
           RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1
