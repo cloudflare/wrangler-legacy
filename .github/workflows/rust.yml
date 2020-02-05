@@ -1,4 +1,4 @@
-name: Rust
+name: Rust Tests
 
 on: [push]
 
