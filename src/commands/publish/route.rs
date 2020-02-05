@@ -67,7 +67,7 @@ fn get_routes(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure:
 
     let client = http::auth_client(None, user);
 
-    let mut res = client.get(&routes_addr).send()?;
+    let res = client.get(&routes_addr).send()?;
 
     if !res.status().is_success() {
         let msg = format!(
@@ -91,7 +91,7 @@ fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failu
     let routes_addr = get_routes_addr(target)?;
 
     info!("Creating your route {:#?}", &route.pattern,);
-    let mut res = client
+    let res = client
         .post(&routes_addr)
         .header(CONTENT_TYPE, "application/json")
         .body(body)
