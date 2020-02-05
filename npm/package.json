@@ -2,10 +2,10 @@
   "name": "@cloudflare/wrangler",
   "version": "1.6.0",
   "description": "Wrangle your Cloudflare Workers",
-  "main": "index.js",
+  "main": "binary.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "node install-wrangler.js"
+    "postinstall": "node ./install-wrangler.js",
+    "preuninstall": "node ./uninstall-wrangler.js"
   },
   "bin": {
     "wrangler": "./run-wrangler.js"
@@ -20,11 +20,6 @@
     "url": "https://github.com/cloudflare/wrangler/issues"
   },
   "homepage": "https://github.com/cloudflare/wrangler#readme",
-  "dependencies": {
-    "axios": "0.18.1",
-    "rimraf": "2.7.1",
-    "tar": "4.4.10"
-  },
   "keywords": [
     "wrangler",
     "cloudflare",
@@ -46,5 +41,8 @@
     "router",
     "http",
     "cli"
-  ]
+  ],
+  "dependencies": {
+    "binary-install": "0.0.1"
+  }
 }

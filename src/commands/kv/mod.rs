@@ -24,7 +24,7 @@ const NO: &str = "n";
 // Create a special API client that has a longer timeout than usual, given that KV operations
 // can be lengthy if payloads are large.
 fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
-    http::api_client(
+    http::cf_v4_api_client(
         user,
         HttpApiClientConfig {
             // Use 5 minute timeout instead of default 30-second one.
