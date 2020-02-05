@@ -134,6 +134,9 @@ fn download_prebuilt(
 }
 
 fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
+    info!("FAMILY: {}", std::env::consts::FAMILY);
+    info!("OS: {}", std::env::consts::OS);
+    info!("ARCH: {}", std::env::consts::ARCH);
     if tool_name == "wranglerjs" {
         Some(format!(
             "https://workers.cloudflare.com/get-wranglerjs-binary/{0}/v{1}.tar.gz",
@@ -149,6 +152,7 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
         } else {
             return None;
         };
+        
 
         let url = format!(
             "https://workers.cloudflare.com/get-binary/{0}/{1}/v{2}/{3}.tar.gz",
