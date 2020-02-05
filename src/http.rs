@@ -17,7 +17,7 @@ use crate::terminal::message;
 
 ////---------------------------OLD API CLIENT CODE---------------------------////
 // TODO: remove this and replace it entirely with cloudflare-rs
-fn headers(feature: Option<&str>) -> HeaderMap {
+pub fn headers(feature: Option<&str>) -> HeaderMap {
     let version = if install::target::DEBUG {
         "dev"
     } else {
