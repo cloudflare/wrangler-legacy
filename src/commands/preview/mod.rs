@@ -7,7 +7,7 @@ mod http_method;
 pub use http_method::HTTPMethod;
 
 mod upload;
-use upload::upload;
+pub use upload::upload;
 
 use crate::commands;
 
