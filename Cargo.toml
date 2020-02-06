@@ -51,17 +51,11 @@ hyper = "0.13.1"
 hyper-tls = "0.4.0"
 chrono = "0.4.9"
 tokio = {version = "0.2", default-features = false, features = ["io-std", "time"]}
-# chrome-devtools-rs = { path = "../chrome-devtools-rs", features = ["color"] }
-chrome-devtools-rs = { git = "https://github.com/everlastingbugstopper/chrome-devtools-rs", rev = "ae14890", features = ["color"] }
+chrome-devtools-rs = "0.0.0-alpha.0"
 ws = "0.9.0"
 futures = "0.3"
 futures-util = "0.3"
-tungstenite = {version = "0.9.2", default-features = false}
-
-[dependencies.tokio-tungstenite]
-git = "https://github.com/snapview/tokio-tungstenite"
-rev = "adb4f43"
-features = ["tls"]
+tokio-tungstenite = { version = "0.10.1", features = ["tls"] }
 
 [dev-dependencies]
 assert_cmd = "0.11.1"
