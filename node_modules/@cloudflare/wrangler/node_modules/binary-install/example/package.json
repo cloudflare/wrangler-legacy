@@ -1,0 +1,23 @@
+{
+  "name": "example-package-name",
+  "version": "1.0.0",
+  "description": "An example package for binary-install",
+  "main": "binary.js",
+  "bin": {
+    "example-package-name": "./run.js"
+  },
+  "scripts": {
+    "postinstall": "node -e 'require(\"./binary.js\").install()'",
+    "preinstall": "node -e 'require(\"./binary.js\").uninstall()'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EverlastingBugstopper/binary-install.git"
+  },
+  "author": "Avery Harnish",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/EverlastingBugstopper/binary-install/issues"
+  },
+  "homepage": "https://github.com/EverlastingBugstopper/binary-install#readme"
+}

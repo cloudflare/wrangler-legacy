@@ -18,6 +18,18 @@ jobs:
         displayName: Install clippy
       - script: cargo clippy
         displayName: Run clippy
+  
+  - job: test_npm_windows
+    displayName: reproduce windows installer bug
+    pool:
+      vmImage: vs2017-win2016
+    steps:
+      - template: ci/azure-install-rust.yml
+      - template: ci/azure-install-node.yml
+      - script: npm install
+        displayName: install wrangler from npm
+      - script: npm test
+        displayName: test wrangler generate
 
   - job: dist_linux
     displayName: "Dist Linux binary"

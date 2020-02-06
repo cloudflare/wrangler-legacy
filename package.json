@@ -1,0 +1,25 @@
+{
+  "name": "wrangler-test",
+  "version": "1.0.0",
+  "description": "![Banner](/banner.png)",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "rm -rf worker && wrangler generate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/cloudflare/wrangler.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cloudflare/wrangler/issues"
+  },
+  "homepage": "https://github.com/cloudflare/wrangler#readme",
+  "dependencies": {
+    "@cloudflare/wrangler": "^1.7.0"
+  }
+}
