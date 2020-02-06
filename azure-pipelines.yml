@@ -24,7 +24,6 @@ jobs:
     pool:
       vmImage: vs2017-win2016
     steps:
-      - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
       - script: npm install
         displayName: install wrangler from npm
