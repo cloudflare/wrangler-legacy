@@ -6,8 +6,7 @@ use futures::{future, pin_mut, StreamExt};
 use futures_util::sink::SinkExt;
 
 use tokio::time;
-use tokio_tungstenite::connect_async;
-use tungstenite::protocol::Message;
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 use url::Url;
 
