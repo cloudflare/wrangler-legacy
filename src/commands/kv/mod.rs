@@ -164,10 +164,7 @@ mod tests {
             ]),
             name: "test-target".to_string(),
             target_type: TargetType::Webpack,
-            route: None,
-            routes: None,
             webpack_config: None,
-            zone_id: None,
             site: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
