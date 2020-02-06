@@ -1,4 +1,3 @@
-use std::mem;
 use std::sync::{mpsc, Arc, Mutex};
 
 use crate::commands;
@@ -16,17 +15,16 @@ pub fn watch_for_changes(
     session_id: &str,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let (tx, rx) = mpsc::channel();
-    commands::watch_and_build(&target, Some(tx))?;
+    let (sender, receiver) = mpsc::channel();
+    commands::watch_and_build(&target, Some(sender))?;
 
-    while let Ok(_) = rx.recv() {
+    while let Ok(_) = receiver.recv() {
         let user = user.clone();
         let target = target.clone();
         commands::build(&target)?;
 
-        let mut p = preview_id.lock().unwrap();
-        *p = get_preview_id(target, user, server_config, session_id, verbose)?;
-        mem::drop(p);
+        let mut preview_id = preview_id.lock().unwrap();
+        *preview_id = get_preview_id(target, user, server_config, session_id, verbose)?;
     }
 
     Ok(())
