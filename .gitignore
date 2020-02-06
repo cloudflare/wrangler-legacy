@@ -2,3 +2,4 @@
 **/*.rs.bk
 config/default.toml
 npm/node_modules
+node_modules
