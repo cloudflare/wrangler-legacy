@@ -12,7 +12,7 @@ use url::Url;
 
 const KEEP_ALIVE_INTERVAL: u64 = 10;
 
-pub async fn listen(session_id: String) -> Result<(), failure::Error> {
+pub async fn listen(session_id: &str) -> Result<(), failure::Error> {
     let socket_url = format!("wss://rawhttp.cloudflareworkers.com/inspect/{}", session_id);
     let socket_url = Url::parse(&socket_url)?;
 
