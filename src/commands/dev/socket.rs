@@ -2,8 +2,6 @@ use std::time::Duration;
 
 use chrome_devtools as protocol;
 
-use console::style;
-
 use futures::{future, pin_mut, StreamExt};
 use futures_util::sink::SinkExt;
 
@@ -27,7 +25,7 @@ pub async fn listen(session_id: &str) -> Result<(), failure::Error> {
 
     let enable_runtime = protocol::runtime::SendMethod::Enable(1.into());
     let enable_runtime = serde_json::to_string(&enable_runtime)?;
-    let enable_runtime = Message::Text(enable_runtime.into());
+    let enable_runtime = Message::Text(enable_runtime);
     write.send(enable_runtime).await?;
 
     let (keep_alive_tx, keep_alive_rx) = futures::channel::mpsc::unbounded();
@@ -35,29 +33,13 @@ pub async fn listen(session_id: &str) -> Result<(), failure::Error> {
     let keep_alive_to_ws = keep_alive_rx.map(Ok).forward(write);
 
     let print_ws_messages = {
-        read.for_each(|message| {
-            async {
-                let message = message.unwrap().into_text().unwrap();
-                log::info!("{}", message);
-                let message: Result<protocol::Runtime, failure::Error> =
-                    serde_json::from_str(&message).map_err(|e| {
-                        failure::format_err!("this event could not be parsed:\n{}", e)
-                    });
-                if let Ok(protocol::Runtime::Event(event)) = message {
-                    match event {
-                        protocol::runtime::Event::ConsoleAPICalled(event) => {
-                            match event.r#type.as_str() {
-                                "log" => println!("{}", style(event).green()),
-                                "error" => println!("{}", style(event).red()),
-                                _ => println!("{}", style(event).yellow()),
-                            }
-                        }
-                        protocol::runtime::Event::ExceptionThrown(event) => {
-                            println!("{}", style(event).bold().red())
-                        }
-                        _ => (),
-                    }
-                }
+        read.for_each(|message| async {
+            let message = message.unwrap().into_text().unwrap();
+            log::info!("{}", message);
+            let message: Result<protocol::Runtime, failure::Error> = serde_json::from_str(&message)
+                .map_err(|e| failure::format_err!("this event could not be parsed:\n{}", e));
+            if let Ok(protocol::Runtime::Event(event)) = message {
+                println!("{}", event);
             }
         })
     };
@@ -79,7 +61,7 @@ async fn keep_alive(tx: futures::channel::mpsc::UnboundedSender<Message>) -> ! {
         let keep_alive_message = protocol::runtime::SendMethod::GetIsolateId(id.into());
         let keep_alive_message = serde_json::to_string(&keep_alive_message)
             .expect("Could not convert keep alive message to JSON");
-        let keep_alive_message = Message::Text(keep_alive_message.into());
+        let keep_alive_message = Message::Text(keep_alive_message);
         tx.unbounded_send(keep_alive_message).unwrap();
         id += 1;
     }

@@ -5,47 +5,19 @@ trigger:
       - refs/tags/*
 
 jobs:
-  - job: test_wrangler
-    displayName: "Run wrangler tests, fmt, and clippy"
+  - job: lint_wrangler
+    displayName: "Run linters"
     steps:
       - template: ci/azure-install-rust.yml
       - template: ci/azure-install-node.yml
-      - script: cargo test --locked
-        displayName: "cargo test --locked"
       - script: rustup component add rustfmt
-        displayName: rustup component add rustfmt
+        displayName: Install rustfmt
       - script: cargo fmt --all -- --check
-        displayName: "cargo fmt --all -- --check"
+        displayName: Run rustfmt
       - script: rustup component add clippy
-        displayName: rustup component add clippy
+        displayName: Install clippy
       - script: cargo clippy
-        displayName: "cargo clippy --all --all-features -- -D warnings"
-
-  - job: test_wrangler_windows
-    displayName: "Run wrangler tests (Windows)"
-    pool:
-      vmImage: vs2017-win2016
-    steps:
-      - template: ci/azure-install-rust.yml
-      - template: ci/azure-install-node.yml
-      - script: cargo test --locked
-        displayName: "cargo test --locked"
-        env:
-          RUST_LOG: warn,wrangler=info
-          RUST_BACKTRACE: 1
-
-  - job: test_wrangler_nightly
-    displayName: "Run wrangler tests (nightly)"
-    steps:
-      - template: ci/azure-install-rust.yml
-        parameters:
-          toolchain: 'nightly'
-      - template: ci/azure-install-node.yml
-      - script: cargo test --locked
-        displayName: "cargo test --locked"
-        env:
-          RUST_LOG: warn,wrangler=info
-          RUST_BACKTRACE: 1
+        displayName: Run clippy
 
   - job: dist_linux
     displayName: "Dist Linux binary"
