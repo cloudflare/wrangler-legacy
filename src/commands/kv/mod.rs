@@ -27,6 +27,7 @@ fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
     http::cf_v4_api_client(
         user,
         HttpApiClientConfig {
+            default_headers: http::headers(None),
             // Use 5 minute timeout instead of default 30-second one.
             // This is useful for bulk upload operations.
             http_timeout: Duration::from_secs(5 * 60),
