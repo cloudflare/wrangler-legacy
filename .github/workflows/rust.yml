@@ -1,0 +1,78 @@
+name: Rust Tests
+
+on: [push]
+
+jobs:
+  test-linux-stable:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Test Linux Stable
+      run: cargo test --locked --verbose
+      env: 
+        RUST_LOG: warn,wrangler=info
+        RUST_BACKTRACE: 1
+
+  test-linux-nightly:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Test Linux Nightly
+      run: |
+        rustup override set nightly
+        cargo test --locked --verbose
+      env: 
+        RUST_LOG: warn,wrangler=info
+        RUST_BACKTRACE: 1      
+
+  test-windows-stable:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Test Windows Stable
+      run: cargo test --locked --verbose
+      env: 
+        RUST_LOG: warn,wrangler=info
+        RUST_BACKTRACE: 1
+
+  test-windows-nightly:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Test Windows Nightly
+      run: |
+        rustup override set nightly
+        cargo test --locked --verbose
+      env: 
+        RUST_LOG: warn,wrangler=info
+        RUST_BACKTRACE: 1    
+
+
+  test-macos-stable:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Test MacOS Stable
+        run: cargo test --locked --verbose
+        env: 
+          RUST_LOG: warn,wrangler=info
+          RUST_BACKTRACE: 1
+
+  test-macos-nightly:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Test MacOS Nightly
+      run: |
+        rustup override set nightly
+        cargo test --locked --verbose
+      env: 
+        RUST_LOG: warn,wrangler=info
+        RUST_BACKTRACE: 1  
+
