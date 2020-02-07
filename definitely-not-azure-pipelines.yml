@@ -4,21 +4,6 @@ trigger:
       - refs/heads/master
       - refs/tags/*
 
-jobs:
-  - job: lint_wrangler
-    displayName: "Run linters"
-    steps:
-      - template: ci/azure-install-rust.yml
-      - template: ci/azure-install-node.yml
-      - script: rustup component add rustfmt
-        displayName: Install rustfmt
-      - script: cargo fmt --all -- --check
-        displayName: Run rustfmt
-      - script: rustup component add clippy
-        displayName: Install clippy
-      - script: cargo clippy
-        displayName: Run clippy
-
   - job: dist_linux
     displayName: "Dist Linux binary"
     steps:
