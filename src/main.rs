@@ -67,6 +67,7 @@ fn run() -> Result<(), failure::Error> {
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
+        .long_version(&*format!("{}\nFind the latest release here: https://github.com/cloudflare/wrangler/releases/latest", env!("CARGO_PKG_VERSION")))
         .author("The Wrangler Team <wrangler@cloudflare.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
