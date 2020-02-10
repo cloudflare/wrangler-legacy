@@ -248,7 +248,7 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("delete")
                         .arg(environment_arg.clone())
-                        .about("Delete multiple keys and their values from a namespace")
+                        .about("Delete a route by id")
                         .arg(
                             Arg::with_name("route_id")
                             .help("the id associated with the route you want to delete (find using `wrangler route list`)")
