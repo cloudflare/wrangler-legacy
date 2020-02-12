@@ -4,7 +4,9 @@
 
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
-[![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Rust%20Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+[![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+[![Github Actions - Build Status](https://github.com/cloudflare/wrangler/workflows/Builds/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+[![Github Actions - Linter Status](https://github.com/cloudflare/wrangler/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler/actions)
 
 `wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare Workers](https://workers.cloudflare.com/).
 
