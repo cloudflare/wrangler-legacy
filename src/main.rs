@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate text_io;
+extern crate tokio;
 
 use std::env;
 use std::path::Path;
@@ -247,7 +248,7 @@ fn run() -> Result<(), failure::Error> {
                 .subcommand(
                     SubCommand::with_name("delete")
                         .arg(environment_arg.clone())
-                        .about("Delete multiple keys and their values from a namespace")
+                        .about("Delete a route by id")
                         .arg(
                             Arg::with_name("route_id")
                             .help("the id associated with the route you want to delete (find using `wrangler route list`)")
@@ -367,6 +368,47 @@ fn run() -> Result<(), failure::Error> {
                         .long("verbose")
                         .takes_value(false)
                         .help("toggle verbose output"),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("dev")
+                .about(&*format!(
+                    "{} Start a local server for developing your worker",
+                    emoji::EAR
+                ))
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to build")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("port")
+                        .help("port to listen on. defaults to 8787")
+                        .short("p")
+                        .long("port")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("host")
+                        .help("domain to test behind your worker. defaults to example.com")
+                        .short("h")
+                        .long("host")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("ip")
+                        .help("ip to listsen on. defaults to localhost")
+                        .short("i")
+                        .long("ip")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output")
                 ),
         )
         .subcommand(
@@ -537,6 +579,17 @@ fn run() -> Result<(), failure::Error> {
         let headless = matches.is_present("headless");
 
         commands::preview(target, user, method, body, watch, verbose, headless)?;
+    } else if let Some(matches) = matches.subcommand_matches("dev") {
+        log::info!("Starting dev server");
+        let port = matches.value_of("port");
+        let host = matches.value_of("host");
+        let ip = matches.value_of("ip");
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+        let user = settings::global_user::GlobalUser::new().ok();
+        let verbose = matches.is_present("verbose");
+        commands::dev::dev(target, user, host, port, ip, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

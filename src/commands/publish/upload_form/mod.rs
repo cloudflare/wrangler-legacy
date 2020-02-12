@@ -3,7 +3,7 @@ mod project_assets;
 mod text_blob;
 mod wasm_module;
 
-use reqwest::multipart::{Form, Part};
+use reqwest::blocking::multipart::{Form, Part};
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
