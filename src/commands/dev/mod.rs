@@ -42,6 +42,7 @@ pub fn dev(
     ip: Option<&str>,
     verbose: bool,
 ) -> Result<(), failure::Error> {
+    print_alpha_warning();
     commands::build(&target)?;
     let server_config = ServerConfig::new(host, ip, port)?;
     let session_id = get_session_id()?;
@@ -82,6 +83,18 @@ pub fn dev(
         devtools_listener?;
         server
     })
+}
+
+fn print_alpha_warning() {
+    println!(
+        "{} wrangler dev is currently unstable and there are likely to be breaking changes.",
+        emoji::WARN
+    );
+    println!(
+        "{} For this reason, we cannot yet recommend using wrangler dev for integration testing.",
+        emoji::WARN
+    );
+    println!("\n{} Please submit feedback for wrangler dev here: https://github.com/cloudflare/wrangler/issues/1047\n", emoji::INFO);
 }
 
 async fn serve(
