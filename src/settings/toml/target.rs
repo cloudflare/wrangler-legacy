@@ -19,7 +19,7 @@ pub struct Target {
     pub target_type: TargetType,
     pub webpack_config: Option<String>,
     pub site: Option<Site>,
-    pub config: Option<HashMap<String, String>>,
+    pub text: Option<HashMap<String, String>>,
 }
 
 impl Target {

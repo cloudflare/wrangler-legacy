@@ -41,7 +41,7 @@ pub struct Manifest {
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
-    pub config: Option<HashMap<String, String>>,
+    pub text: Option<HashMap<String, String>>,
 }
 
 impl Manifest {
@@ -190,7 +190,7 @@ impl Manifest {
             name: self.name.clone(),                   // MAY inherit
             kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
             site: self.site.clone(),                   // MUST NOT inherit
-            config: self.config.clone(),               // MAY inherit
+            text: self.text.clone(),                   // MAY inherit
         };
 
         let environment = self.get_environment(environment_name)?;
@@ -203,11 +203,11 @@ impl Manifest {
             if let Some(webpack_config) = &environment.webpack_config {
                 target.webpack_config = Some(webpack_config.clone());
             }
-            if let Some(target_config) = &mut target.config.clone() {
-                if let Some(env_config) = environment.config.clone() {
-                    target_config.extend(env_config);
-                    let new_config = target_config.clone();
-                    target.config.replace(new_config);
+            if let Some(target_text) = &mut target.text.clone() {
+                if let Some(env_text) = environment.text.clone() {
+                    target_text.extend(env_text);
+                    let new_text = target_text.clone();
+                    target.text.replace(new_text);
                 }
             }
 
