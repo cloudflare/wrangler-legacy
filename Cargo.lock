@@ -2814,7 +2814,7 @@ dependencies = [
 
 [[package]]
 name = "wrangler"
-version = "1.7.0"
+version = "1.8.0-rc.0"
 dependencies = [
  "assert_cmd",
  "atty",
