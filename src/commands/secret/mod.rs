@@ -1,0 +1,140 @@
+use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSecret, ListSecrets};
+use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::response::ApiFailure;
+use cloudflare::framework::HttpApiClientConfig;
+
+use crate::http;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::toml::Target;
+use crate::terminal::{emoji, interactive, message};
+
+fn format_error(e: ApiFailure) -> String {
+    http::format_error(e, Some(&secret_errors))
+}
+
+fn validate_target(target: &Target) -> Result<(), failure::Error> {
+    let mut missing_fields = Vec::new();
+
+    if target.account_id.is_empty() {
+        missing_fields.push("account_id")
+    };
+
+    if !missing_fields.is_empty() {
+        failure::bail!(
+            "{} Your wrangler.toml is missing the following field(s): {:?}",
+            emoji::WARN,
+            missing_fields
+        )
+    } else {
+        Ok(())
+    }
+}
+
+// secret_errors() provides more detailed explanations of Workers KV API error codes.
+// See https://api.cloudflare.com/#workers-secrets ? for details.
+fn secret_errors(error_code: u16) -> &'static str {
+    match error_code {
+        7003 | 7000 => {
+            "Your wrangler.toml is likely missing the field \"account_id\", which is required to write to Workers KV."
+        }
+        10053 => "There is already another binding with a different type by this name. Check your wrangler.toml or your Cloudflare dashboard for conflicting bindings",
+        10054 => "Your secret is too large, bindings must be 1kB or less",
+        10055 => "You have exceeded the limit of 32 text bindings for this worker. Run `wrangler secret list` or go to your Cloudflare dashboard to clean up unused text/secret variables",
+        _ => "",
+    }
+}
+
+pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    validate_target(target)?;
+
+    let secret_value = interactive::get_user_input(&format!(
+        "Enter the secret text you'd like assigned to the variable {} on the script named {}",
+        name, target.name
+    ));
+
+    if secret_value.is_empty() {
+        failure::bail!("Your secret cannot be empty")
+    }
+
+    message::working(&format!(
+        "Creating the secret for script name {}",
+        target.name
+    ));
+
+    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+
+    let params = CreateSecretParams {
+        name: name.to_string(),
+        text: secret_value.to_string(),
+        secret_type: "secret_text".to_string(),
+    };
+
+    let response = client.request(&CreateSecret {
+        account_identifier: &target.account_id,
+        script_name: &target.name,
+        params,
+    });
+
+    match response {
+        Ok(_) => message::success(&format!("Success! You've uploaded secret {}.", name)),
+        Err(e) => failure::bail!(format_error(e)),
+    }
+
+    Ok(())
+}
+
+pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    validate_target(target)?;
+
+    match interactive::delete(&format!(
+        "Are you sure you want to permanently delete the variable {} on the script named {}",
+        name, target.name
+    )) {
+        Ok(true) => (),
+        Ok(false) => {
+            message::info(&format!("Not deleting secret {}", name));
+            return Ok(());
+        }
+        Err(e) => failure::bail!(e),
+    }
+
+    message::working(&format!(
+        "Deleting the secret {} on script {}.",
+        name, target.name
+    ));
+
+    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+
+    let response = client.request(&DeleteSecret {
+        account_identifier: &target.account_id,
+        script_name: &target.name,
+        secret_name: name,
+    });
+
+    match response {
+        Ok(_) => message::success(&format!("You've deleted the secret {}.", name)),
+        Err(e) => failure::bail!(format_error(e)),
+    }
+
+    Ok(())
+}
+
+pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    validate_target(target)?;
+    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+
+    let response = client.request(&ListSecrets {
+        account_identifier: &target.account_id,
+        script_name: &target.name,
+    });
+
+    match response {
+        Ok(success) => {
+            let secrets = success.result;
+            println!("{}", serde_json::to_string(&secrets)?);
+        }
+        Err(e) => failure::bail!(format_error(e)),
+    }
+
+    Ok(())
+}

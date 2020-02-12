@@ -65,6 +65,15 @@ fn run() -> Result<(), failure::Error> {
         .takes_value(true)
         .value_name("ENVIRONMENT NAME");
 
+    let secret_name_arg = Arg::with_name("name")
+        .help("Name of the secret variable")
+        .short("n")
+        .long("name")
+        .required(true)
+        .takes_value(true)
+        .index(1)
+        .value_name("VAR_NAME");
+
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("The Wrangler Team <wrangler@cloudflare.com>")
@@ -255,6 +264,30 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                )
+        )
+        .subcommand(
+            SubCommand::with_name("secret")
+                .about(&*format!(
+                    "{} Generate a secret that can be referenced in the worker script",
+                    emoji::SECRET
+                ))
+                .subcommand(
+                    SubCommand::with_name("put")
+                        .about("Create or update a secret variable for a script")
+                        .arg(secret_name_arg.clone())
+                        .arg(environment_arg.clone())
+                )
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .about("Delete a secret variable from a script")
+                        .arg(secret_name_arg.clone())
+                        .arg(environment_arg.clone())
+                )
+                .subcommand(
+                    SubCommand::with_name("list")
+                        .about("List all secrets for a script")
+                        .arg(environment_arg.clone())
                 )
         )
         .subcommand(
@@ -660,6 +693,37 @@ fn run() -> Result<(), failure::Error> {
                 commands::route::delete(zone_id?, &user, route_id)?;
             }
             ("", None) => message::warn("route expects a subcommand"),
+            _ => unreachable!(),
+        }
+    } else if let Some(secrets_matches) = matches.subcommand_matches("secret") {
+        log::info!("Getting project settings");
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        log::info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
+
+        match secrets_matches.subcommand() {
+            ("put", Some(create_matches)) => {
+                let name = create_matches.value_of("name");
+                let env = create_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                if let Some(name) = name {
+                    commands::secret::create_secret(&name, &user, &target)?;
+                }
+            }
+            ("delete", Some(delete_matches)) => {
+                let name = delete_matches.value_of("name");
+                let env = delete_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                if let Some(name) = name {
+                    commands::secret::delete_secret(&name, &user, &target)?;
+                }
+            }
+            ("list", Some(list_matches)) => {
+                let env = list_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                commands::secret::list_secrets(&user, &target)?;
+            }
+            ("", None) => message::warn("secret expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
