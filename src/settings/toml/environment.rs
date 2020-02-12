@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
@@ -21,6 +23,7 @@ pub struct Environment {
     pub site: Option<Site>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub text: Option<HashMap<String, String>>,
 }
 
 impl Environment {

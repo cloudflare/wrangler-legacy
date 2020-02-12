@@ -3,8 +3,9 @@ extern crate lazy_static;
 
 pub mod fixture;
 
-use fixture::WranglerToml;
+use fixture::{EnvConfig, WranglerToml, TEST_ENV_NAME};
 
+use std::collections::HashMap;
 use std::env;
 use std::process::Command;
 
@@ -171,6 +172,22 @@ fn it_can_preview_rust_project() {
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);
+}
+
+fn preview_succeeds_with(fixture: &Fixture, env: Option<&str>, expected: &str) {
+    let _lock = fixture.lock();
+    env::remove_var("CF_ACCOUNT_ID");
+    env::remove_var("CF_ZONE_ID");
+    let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    preview.current_dir(fixture.get_path());
+    preview.arg("preview").arg("--headless");
+    if let Some(env) = env {
+        preview.arg("--env").arg(env);
+    }
+    preview
+        .assert()
+        .stdout(predicates::str::contains(expected))
+        .success();
 }
 
 fn preview_succeeds(fixture: &Fixture) {
