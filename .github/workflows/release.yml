@@ -98,8 +98,6 @@ jobs:
       - name: Build (MacOS)
         if: matrix.build == 'macos'
         run: cargo build --release
-        env:
-          MACOSX_DEPLOYMENT_TARGET: 10.7
 
       - name: Build (Windows)
         if: matrix.build == 'windows'
