@@ -22,7 +22,7 @@ This is a list of the things that need to happen during a release.
 1. Run `cargo build`.
 1. Copy `README.md` to `npm/README.md`
 1. Bump the version number in `npm/package.json`
-1. `cd npm && npm shrinkwrap`
+1. `cd npm && npm install`
 1. Push up a commit with the `Cargo.toml`, `Cargo.lock`,
    and `CHANGELOG.md` changes. The commit message can just be "#.#.#".
 1. Request review from the @cloudflare/workers-devexp team.
