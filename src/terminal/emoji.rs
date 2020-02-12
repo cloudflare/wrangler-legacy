@@ -25,6 +25,7 @@ pub static INFO: Emoji = Emoji("💁 ", "");
 pub static KEY: Emoji = Emoji("🔑 ", "");
 pub static MICROSCOPE: Emoji = Emoji("🔬 ", "");
 pub static ROUTE: Emoji = Emoji("➡️ ", "");
+pub static SECRET: Emoji = Emoji("🤫 ", "");
 pub static SHEEP: Emoji = Emoji("🐑 ", "");
 pub static SLEUTH: Emoji = Emoji("🕵️ ", "");
 pub static SPARKLES: Emoji = Emoji("✨ ", "");
