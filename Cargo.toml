@@ -14,7 +14,7 @@ build = "build.rs"
 atty = "0.2.11"
 base64 = "0.10.1"
 binary-install = "0.0.3-alpha"
-chrome-devtools-rs = "0.0.0-alpha.0"
+chrome-devtools-rs = { version = "0.0.0-alpha.0", features = ["color"] }
 chrono = "0.4.9"
 clap = "2.32.0"
 cloudflare = "0.6.4"
