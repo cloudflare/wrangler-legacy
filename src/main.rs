@@ -8,7 +8,7 @@ use std::env;
 use std::path::Path;
 use std::str::FromStr;
 
-use clap::{App, AppSettings, Arg, ArgGroup, crate_version, SubCommand};
+use clap::{crate_version, App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
 use exitfailure::ExitFailure;
 
