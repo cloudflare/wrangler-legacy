@@ -114,17 +114,17 @@ jobs:
 
       - name: Create tarball (Windows)
         if: matrix.build == 'windows'
-        run: 7z a -tzip ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.tar.gz ./target/release/${{ env.RELEASE_BIN }}.exe ${{ env.RELEASE_ADDS }}
+        run: 7z a -ttar ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.tar.gz ./target/release/${{ env.RELEASE_BIN }}.exe ${{ env.RELEASE_ADDS }}
 
       - name: Create tarball (MacOS)
         if: matrix.build == 'macos'
-        run: 7z a -tzip ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz ./target/release/${{ env.RELEASE_BIN }} ${{ env.RELEASE_ADDS }}
+        run: 7z a -ttar ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz ./target/release/${{ env.RELEASE_BIN }} ${{ env.RELEASE_ADDS }}
 
       - name: Create tarball (wranglerjs)
         if: matrix.build == 'wranglerjs'
         run: 7z a -ttar -so -an ./wranglerjs | 7z a -si ./${{ env.RELEASE_DIR }}/wranglerjs-${{ steps.get_version.outputs.VERSION }}.tar.gz
 
-      - name: Upload Zip
+      - name: Upload tarballs
         uses: actions/upload-artifact@v1
         with:
           name: ${{ matrix.build }}
