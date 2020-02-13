@@ -8,7 +8,7 @@ use std::env;
 use std::path::Path;
 use std::str::FromStr;
 
-use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
+use clap::{App, AppSettings, Arg, ArgGroup, crate_version, SubCommand};
 use commands::HTTPMethod;
 use exitfailure::ExitFailure;
 
@@ -75,7 +75,8 @@ fn run() -> Result<(), failure::Error> {
         .value_name("VAR_NAME");
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(crate_version!())
+        .long_version(&*[crate_version!(), "Get the latest release here: https://github.com/cloudflare/wrangler/releases/latest"].join("\n"))
         .author("The Wrangler Team <wrangler@cloudflare.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::DeriveDisplayOrder)
