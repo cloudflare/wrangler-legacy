@@ -20,7 +20,7 @@ pub fn dev_alpha_warning() {
             print_centered(width, FEEDBACK_MSG);
             print_centered(width, "");
             print_bottom(width);
-            println!("");
+            println!();
         } else {
             print_unboxed();
         }
@@ -81,7 +81,7 @@ fn print_line(space: usize, text: &str) {
     if padding * 2 != total_spaces {
         print!(" ");
     }
-    print!("│\n");
+    println!("│");
 }
 
 fn print_outer_padding() {
@@ -94,14 +94,14 @@ fn print_top(width: usize) {
     print_outer_padding();
     print!("┌");
     print_dash(width - OUTER_PADDING);
-    print!("┐\n");
+    println!("┐");
 }
 
 fn print_bottom(width: usize) {
     print_outer_padding();
     print!("└");
     print_dash(width - OUTER_PADDING);
-    print!("┘\n");
+    println!("┘");
 }
 
 fn print_dash(num: usize) {

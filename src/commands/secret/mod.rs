@@ -65,7 +65,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 
     let params = CreateSecretParams {
         name: name.to_string(),
-        text: secret_value.to_string(),
+        text: secret_value,
         secret_type: "secret_text".to_string(),
     };
 
