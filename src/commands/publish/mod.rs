@@ -14,6 +14,7 @@ use crate::commands::kv;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
+use crate::http::Feature;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, KvNamespace, Site, Target, Zoneless};
 use crate::terminal::{emoji, message};
@@ -99,7 +100,7 @@ fn upload_script(
     );
 
     let client = if target.site.is_some() {
-        http::auth_client(Some("site"), user)
+        http::auth_client(Some(Feature::Sites), user)
     } else {
         http::auth_client(None, user)
     };

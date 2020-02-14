@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::time::Duration;
 
 use cloudflare::framework::response::ApiFailure;
-use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
+use cloudflare::framework::HttpApiClient;
 
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
@@ -19,15 +19,10 @@ pub mod namespace;
 // Create a special API client that has a longer timeout than usual, given that KV operations
 // can be lengthy if payloads are large.
 fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
-    http::cf_v4_api_client(
-        user,
-        HttpApiClientConfig {
-            default_headers: http::headers(None),
-            // Use 5 minute timeout instead of default 30-second one.
-            // This is useful for bulk upload operations.
-            http_timeout: Duration::from_secs(5 * 60),
-        },
-    )
+    let config = http::CfApiClientConfig::builder()
+        .timeout(Duration::from_secs(5 * 60))
+        .build();
+    http::cf_api_client(user, config)
 }
 
 fn format_error(e: ApiFailure) -> String {

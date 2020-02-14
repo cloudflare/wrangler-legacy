@@ -7,7 +7,6 @@ use std::path::PathBuf;
 
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
 use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http;
 use crate::settings::global_user::{get_global_config_path, GlobalUser};
@@ -46,7 +45,7 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
 // validate_credentials() checks the /user/tokens/verify endpoint (for API token)
 // or /user endpoint (for global API key) to ensure provided credentials actually work.
 pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
 
     match user {
         GlobalUser::TokenAuth { .. } => {

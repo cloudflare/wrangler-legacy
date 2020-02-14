@@ -2,14 +2,13 @@ extern crate serde_json;
 
 use cloudflare::endpoints::workers::{DeleteRoute, ListRoutes};
 use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::message;
 
 pub fn list(zone_identifier: String, user: &GlobalUser) -> Result<(), failure::Error> {
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
 
     let result = client.request(&ListRoutes {
         zone_identifier: &zone_identifier,
@@ -31,7 +30,7 @@ pub fn delete(
     user: &GlobalUser,
     route_id: &str,
 ) -> Result<(), failure::Error> {
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
 
     let result = client.request(&DeleteRoute {
         zone_identifier: &zone_identifier,

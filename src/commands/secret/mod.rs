@@ -1,7 +1,6 @@
 use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSecret, ListSecrets};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
-use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -61,7 +60,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
         target.name
     ));
 
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
 
     let params = CreateSecretParams {
         name: name.to_string(),
@@ -103,7 +102,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
         name, target.name
     ));
 
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
 
     let response = client.request(&DeleteSecret {
         account_identifier: &target.account_id,
@@ -121,7 +120,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 
 pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     validate_target(target)?;
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
 
     let response = client.request(&ListSecrets {
         account_identifier: &target.account_id,
