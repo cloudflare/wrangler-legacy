@@ -30,7 +30,7 @@ use crate::commands::preview::upload;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
-use crate::terminal::emoji;
+use crate::terminal::{emoji, message_box};
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
@@ -42,6 +42,7 @@ pub fn dev(
     ip: Option<&str>,
     verbose: bool,
 ) -> Result<(), failure::Error> {
+    message_box::dev_alpha_warning();
     commands::build(&target)?;
     let server_config = ServerConfig::new(host, ip, port)?;
     let session_id = get_session_id()?;

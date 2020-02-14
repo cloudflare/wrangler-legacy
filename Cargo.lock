@@ -2329,6 +2329,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "term_size"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e5b9a66db815dcfd2da92db471106457082577c3c278d4138ab3e3b4e189327"
+dependencies = [
+ "kernel32-sys",
+ "libc",
+ "winapi 0.2.8",
+]
+
+[[package]]
 name = "termcolor"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2803,7 +2814,7 @@ dependencies = [
 
 [[package]]
 name = "wrangler"
-version = "1.7.0"
+version = "1.8.0-rc.0"
 dependencies = [
  "assert_cmd",
  "atty",
@@ -2846,6 +2857,7 @@ dependencies = [
  "serde_with",
  "sha2",
  "tempfile",
+ "term_size",
  "text_io",
  "tokio",
  "tokio-tungstenite",
