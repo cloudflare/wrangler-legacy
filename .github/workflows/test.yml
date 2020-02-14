@@ -1,0 +1,77 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  test:
+    name: Test
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build:
+          [
+            linux-stable,
+            linux-nightly,
+            macos-stable,
+            macos-nightly,
+            windows-stable,
+            windows-nightly,
+          ]
+        include:
+          - build: linux-stable
+            os: ubuntu-latest
+            rust: stable
+          - build: macos-stable
+            os: macos-latest
+            rust: stable
+          - build: windows-stable
+            os: windows-latest
+            rust: stable
+          - build: linux-nightly
+            os: ubuntu-latest
+            rust: nightly
+          - build: macos-nightly
+            os: macos-latest
+            rust: nightly
+          - build: windows-nightly
+            os: windows-latest
+            rust: nightly
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ matrix.build }}-${{ matrix.rust }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.build }}-${{ matrix.rust }}-cargo-registry-
+
+      - name: Cache Cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ matrix.build }}-${{ matrix.rust }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.build }}-${{ matrix.rust }}-cargo-index-
+
+      - name: Cache Cargo build
+        uses: actions/cache@v1
+        with:
+          path: target/debug
+          key: ${{ matrix.build }}-${{ matrix.rust }}-debug-target-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.build }}-${{ matrix.rust }}-debug-target-
+
+      - name: Install Rust
+        run: |
+          rustup update ${{ matrix.rust }} --no-self-update 
+          rustup default ${{ matrix.rust }}
+
+      - name: Run Tests
+        run: cargo test
+        env:
+          RUST_LOG: warn,wrangler=info
+          RUST_BACKTRACE: 1

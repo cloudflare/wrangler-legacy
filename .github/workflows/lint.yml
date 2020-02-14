@@ -1,0 +1,19 @@
+name: Linters
+
+on: [push]
+
+jobs:
+  rustfmt:
+    name: Formatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Install Rust
+        run: |
+          rustup update stable
+          rustup default stable
+          rustup component add rustfmt
+
+      - name: Check Formatting
+        run: cargo fmt -- --check

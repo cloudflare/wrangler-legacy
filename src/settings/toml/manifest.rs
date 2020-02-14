@@ -1,26 +1,25 @@
-use super::environment::Environment;
-use super::kv_namespace::KvNamespace;
-use super::site::Site;
-use super::target_type::TargetType;
-use crate::settings::toml::Target;
-
 use std::collections::{HashMap, HashSet};
 use std::env;
-
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use config::{Config, File};
-use serde::{Deserialize, Serialize};
 
+use serde::{Deserialize, Serialize};
+use serde_with::rust::string_empty_as_none;
+
+use crate::commands::validate_worker_name;
+use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
+use crate::settings::toml::environment::Environment;
+use crate::settings::toml::kv_namespace::KvNamespace;
+use crate::settings::toml::site::Site;
+use crate::settings::toml::target_type::TargetType;
+use crate::settings::toml::Target;
 use crate::terminal::emoji;
 use crate::terminal::message;
 
-fn some_string() -> Option<String> {
-    Some("".to_string())
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Manifest {
     #[serde(default)]
     pub name: String,
@@ -29,10 +28,10 @@ pub struct Manifest {
     #[serde(default)]
     pub account_id: String,
     pub workers_dev: Option<bool>,
-    #[serde(default = "some_string")]
+    #[serde(default, with = "string_empty_as_none")]
     pub route: Option<String>,
-    pub routes: Option<HashMap<String, String>>,
-    #[serde(default = "some_string")]
+    pub routes: Option<Vec<String>>,
+    #[serde(default, with = "string_empty_as_none")]
     pub zone_id: Option<String>,
     pub webpack_config: Option<String>,
     pub private: Option<bool>,
@@ -42,6 +41,7 @@ pub struct Manifest {
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
+    pub vars: Option<HashMap<String, String>>,
 }
 
 impl Manifest {
@@ -126,6 +126,54 @@ impl Manifest {
         Ok(template_config)
     }
 
+    pub fn worker_name(&self, env_arg: Option<&str>) -> String {
+        if let Some(environment) = self.get_environment(env_arg).unwrap_or_default() {
+            if let Some(name) = &environment.name {
+                return name.clone();
+            }
+            if let Some(env) = env_arg {
+                return format!("{}-{}", self.name, env);
+            }
+        }
+
+        self.name.clone()
+    }
+
+    fn route_config(&self) -> RouteConfig {
+        RouteConfig {
+            account_id: Some(self.account_id.clone()),
+            workers_dev: self.workers_dev,
+            route: self.route.clone(),
+            routes: self.routes.clone(),
+            zone_id: self.zone_id.clone(),
+        }
+    }
+
+    pub fn deploy_config(&self, env: Option<&str>) -> Result<DeployConfig, failure::Error> {
+        let script = self.worker_name(env);
+        validate_worker_name(&script)?;
+
+        if let Some(environment) = self.get_environment(env)? {
+            // if there is an environment level deploy target, try to return that
+            if let Some(env_route_config) =
+                environment.route_config(self.account_id.clone(), self.zone_id.clone())
+            {
+                DeployConfig::build(&script, &env_route_config)
+            } else {
+                // If the top level config is Zoned, the user needs to specify new route config
+                let top_level_config = DeployConfig::build(&script, &self.route_config())?;
+                match top_level_config {
+                    DeployConfig::Zoned(_) => failure::bail!(
+                        "you must specify route(s) per environment for zoned deploys."
+                    ),
+                    DeployConfig::Zoneless(_) => Ok(top_level_config),
+                }
+            }
+        } else {
+            DeployConfig::build(&script, &self.route_config())
+        }
+    }
+
     pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
         // Site projects are always webpack for now; don't let toml override this.
         let target_type = match self.site {
@@ -137,40 +185,32 @@ impl Manifest {
             target_type,                                 // MUST inherit
             account_id: self.account_id.clone(),         // MAY inherit
             webpack_config: self.webpack_config.clone(), // MAY inherit
-            zone_id: self.zone_id.clone(),               // MAY inherit
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(),                   // MAY inherit
             kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
-            route: None, // can inherit None, but not Some (see negotiate_zoneless)
-            routes: self.routes.clone(), // MUST NOT inherit
-            site: self.site.clone(), // MUST NOT inherit
+            site: self.site.clone(),                   // MUST NOT inherit
+            vars: self.vars.clone(),                   // MAY inherit
         };
 
         let environment = self.get_environment(environment_name)?;
 
-        target.route = self.negotiate_zoneless(environment)?;
         if let Some(environment) = environment {
-            target.name = if let Some(name) = &environment.name {
-                name.clone()
-            } else {
-                match environment_name {
-                    Some(environment_name) => format!("{}-{}", self.name, environment_name),
-                    None => failure::bail!("You must specify `name` in your wrangler.toml"),
-                }
-            };
+            target.name = self.worker_name(environment_name);
             if let Some(account_id) = &environment.account_id {
                 target.account_id = account_id.clone();
             }
-            if environment.routes.is_some() {
-                target.routes = environment.routes.clone();
+            if let Some(webpack_config) = &environment.webpack_config {
+                target.webpack_config = Some(webpack_config.clone());
             }
-            if environment.webpack_config.is_some() {
-                target.webpack_config = environment.webpack_config.clone();
+            if let Some(target_vars) = &mut target.vars.clone() {
+                if let Some(env_vars) = environment.vars.clone() {
+                    target_vars.extend(env_vars);
+                    let new_vars = target_vars.clone();
+                    target.vars.replace(new_vars);
+                }
             }
-            if environment.zone_id.is_some() {
-                target.zone_id = environment.zone_id.clone();
-            }
+
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
             target.kv_namespaces = environment.kv_namespaces.clone();
         }
@@ -178,7 +218,7 @@ impl Manifest {
         Ok(target)
     }
 
-    fn get_environment(
+    pub fn get_environment(
         &self,
         environment_name: Option<&str>,
     ) -> Result<Option<&Environment>, failure::Error> {
@@ -202,107 +242,6 @@ impl Manifest {
             }
         } else {
             Ok(None)
-        }
-    }
-
-    // this function takes the workers_dev booleans and the routes in a manifest
-    // and then returns an Option<String> representing the deploy target
-    // if it is None, it means deploy to workers.dev, otherwise deploy to the route
-
-    // no environments:
-    // +-------------+---------------------+------------------------------+
-    // | workers_dev |        route        |            result            |
-    // +-------------+---------------------+------------------------------+
-    // | None        | None                | failure: pick target         |
-    // | None        | Some("")            | failure: pick target         |
-    // | None        | Some("example.com") | Some("example.com")          |
-    // | false       | None                | failure: pick target         |
-    // | false       | Some("")            | failure: pick target         |
-    // | false       | Some("example.com") | Some("example.com")          |
-    // | true        | None                | None                         |
-    // | true        | Some("")            | None                         |
-    // | true        | Some("example.com") | failure: conflicting targets |
-    // +-------------+---------------------+------------------------------+
-    //
-    // When environments are introduced, this truth table holds true with workers_dev being inherited
-    // and route being ignored.
-    // if top level workers_dev is true, it is inherited but can be overridden by an env route
-    //
-    // this will fail with empty_route_failure
-    // workers_dev = true
-    // [env.foo]
-    // route = ""
-    //
-    // this will return Some("example.com")
-    // workers_dev = true
-    // [env.foo]
-    // route = "example.com"
-    fn negotiate_zoneless(
-        &self,
-        environment: Option<&Environment>,
-    ) -> Result<Option<String>, failure::Error> {
-        let conflicting_targets_failure = "Your environment should only include `workers_dev` or `route`. If you are trying to publish to workers.dev, remove `route` from your wrangler.toml, if you are trying to publish to your own domain, remove `workers_dev`.";
-        let pick_target_failure =
-            "You must specify either `workers_dev` or `route` and `zone_id` in order to publish.";
-        let empty_route_failure =
-            "If you want to deploy to workers.dev, remove `route` from your environment config.";
-
-        log::debug!("top level workers_dev: {:?}", self.workers_dev);
-        log::debug!("top level route: {:?}", self.route);
-
-        // start with top level configuration
-        let (top_workers_dev, top_route) = match (self.workers_dev, self.route.clone()) {
-            (None, Some(route)) => (false, Some(route)),
-            (Some(workers_dev), None) => (workers_dev, None),
-            (Some(workers_dev), Some(route)) => (workers_dev, Some(route)),
-            (None, None) => (false, None),
-        };
-
-        // override top level with environment
-        let (workers_dev, route) = if let Some(env) = &environment {
-            log::debug!("env workers_dev: {:?}", env.workers_dev);
-            log::debug!("env route: {:?}", env.route);
-            match (env.workers_dev, env.route.clone()) {
-                (None, Some(route)) => {
-                    if top_workers_dev && route.is_empty() {
-                        failure::bail!(empty_route_failure)
-                    } else {
-                        (false, Some(route))
-                    }
-                }
-                (Some(workers_dev), None) => (workers_dev, None),
-                (Some(workers_dev), Some(route)) => {
-                    if route.is_empty() && workers_dev {
-                        failure::bail!(empty_route_failure)
-                    }
-                    (workers_dev, Some(route))
-                }
-                (None, None) => (top_workers_dev, top_route),
-            }
-        } else {
-            (top_workers_dev, top_route)
-        };
-
-        log::debug!("negotiated workers_dev: {}", workers_dev);
-        log::debug!("negotiated route: {:?}", route);
-
-        match (workers_dev, route) {
-            (true, None) => Ok(None),
-            (true, Some(route)) => {
-                if route.is_empty() {
-                    Ok(None)
-                } else {
-                    failure::bail!(conflicting_targets_failure)
-                }
-            }
-            (false, Some(route)) => {
-                if route.is_empty() {
-                    failure::bail!(pick_target_failure)
-                } else {
-                    Ok(Some(route))
-                }
-            }
-            (false, None) => failure::bail!(pick_target_failure),
         }
     }
 
@@ -392,6 +331,14 @@ impl Manifest {
                 }
             }
         }
+    }
+}
+
+impl FromStr for Manifest {
+    type Err = toml::de::Error;
+
+    fn from_str(serialized_toml: &str) -> Result<Self, Self::Err> {
+        toml::from_str(serialized_toml)
     }
 }
 
