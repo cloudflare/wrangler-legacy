@@ -16,7 +16,7 @@ impl Subdomain {
 
         let client = http::auth_client(None, user);
 
-        let mut response = client.get(&addr).send()?;
+        let response = client.get(&addr).send()?;
 
         if !response.status().is_success() {
             failure::bail!(
@@ -39,13 +39,14 @@ impl Subdomain {
 
         let client = http::auth_client(None, user);
 
-        let mut response = client.put(&addr).body(subdomain_request).send()?;
+        let response = client.put(&addr).body(subdomain_request).send()?;
 
-        if !response.status().is_success() {
+        let response_status = response.status();
+        if !response_status.is_success() {
             let response_text = response.text()?;
-            log::debug!("Status Code: {}", response.status());
+            log::debug!("Status Code: {}", response_status);
             log::debug!("Status Message: {}", response_text);
-            let msg = if response.status() == 409 {
+            let msg = if response_status == 409 {
                 format!(
                     "{} Your requested subdomain is not available. Please pick another one.",
                     emoji::WARN
@@ -54,7 +55,7 @@ impl Subdomain {
                 format!(
                 "{} There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
                 emoji::WARN,
-                response.status(),
+                response_status,
                 response_text
             )
             };

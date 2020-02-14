@@ -27,10 +27,7 @@ impl WasmModule {
     // `name` corresponds to the binding used in the worker js
     // `part` corresponds to the name given to the file in the upload form
     pub fn binding(&self) -> Binding {
-        let name = &self.binding;
-        let part = &self.filename;
-
-        Binding::new_wasm_module(name, part)
+        Binding::new_wasm_module(self.binding.clone(), self.filename.clone())
     }
 
     pub fn path(&self) -> PathBuf {

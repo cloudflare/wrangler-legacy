@@ -4,6 +4,9 @@
 
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
+[![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+[![Github Actions - Build Status](https://github.com/cloudflare/wrangler/workflows/Builds/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+[![Github Actions - Linter Status](https://github.com/cloudflare/wrangler/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler/actions)
 
 `wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare Workers](https://workers.cloudflare.com/).
 
@@ -59,7 +62,7 @@ $ wrangler publish
   ```
 
   All of the arguments and flags to this command are optional:
-  
+
   - `name`: defaults to `worker`
   - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
   - `type`: defaults to ["webpack"](https://developers.cloudflare.com/workers/tooling/wrangler/webpack)
@@ -95,7 +98,7 @@ $ wrangler publish
   ```
 
   You can also provide your email and global API key (this is not recommended for security reasons):
-  
+
   ```bash
   wrangler config --api-key
   Enter email:
@@ -134,7 +137,7 @@ $ wrangler publish
 
 All information regarding wrangler or Cloudflare Workers is located in the [Cloudflare Workers Developer Docs](https://developers.cloudflare.com/workers/). This includes:
 
-- Using wrangler [commands](https://developers.cloudflare.com/workers/tooling/wrangler/commands) 
+- Using wrangler [commands](https://developers.cloudflare.com/workers/tooling/wrangler/commands)
 - Wrangler [configuration](https://developers.cloudflare.com/workers/tooling/wrangler/configuration)
 - General documentation surrounding Workers development
 - All wrangler features such as Workers Sites and KV

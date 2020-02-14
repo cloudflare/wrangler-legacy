@@ -269,11 +269,9 @@ mod tests {
             kv_namespaces: None,
             name: "".to_string(),
             target_type: TargetType::JavaScript,
-            route: None,
-            routes: None,
             webpack_config: None,
-            zone_id: None,
             site: Some(site),
+            text: None,
         }
     }
 

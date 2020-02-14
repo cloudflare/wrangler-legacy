@@ -12,6 +12,7 @@ use crate::commands::kv;
 use crate::commands::kv::bulk::MAX_PAIRS;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
+use crate::terminal::interactive;
 use crate::terminal::message;
 
 pub fn delete(
@@ -22,7 +23,7 @@ pub fn delete(
 ) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
 
-    match kv::interactive_delete(&format!(
+    match interactive::delete(&format!(
         "Are you sure you want to delete all keys in {}?",
         filename.display()
     )) {

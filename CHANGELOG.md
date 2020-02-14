@@ -1,5 +1,127 @@
 # Changelog
 
+## 💬 1.7.0
+
+- ### Features
+
+  - **Do not factor in .gitignore into workers sites upload directory traversal - [gabbifish], [issue/958] [pull/981]**
+
+    This change ensures that the wrangler include/exclude logic for Workers Sites bucket directory traversal does NOT take into account .gitignore, since best practice for static site generators is to put your build directory into your .gitignore.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/981]: https://github.com/cloudflare/wrangler/pull/981
+    [issue/958]: https://github.com/cloudflare/wrangler/issues/958
+
+  - **Update cloudflare-rs, reqwest, http, uuid - [ashleymichal], [issue/301] [pull/1009]**
+
+    These dependency updates may look like routine maintenance, but this reqwest version actually makes support for corporate proxies possible!
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1009]: https://github.com/cloudflare/wrangler/pull/1009
+    [issue/301]: https://github.com/cloudflare/wrangler/issues/301
+
+  - **Add progress bar during Site upload - [gabbifish], [issue/906] [pull/956]**
+
+    Larger static asset uploads in Wrangler now show a progress bar based on the bulk uploads being made.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/956]: https://github.com/cloudflare/wrangler/pull/956
+    [issue/906]: https://github.com/cloudflare/wrangler/issues/906
+
+  - **Allow custom webpack config for Workers Sites projects - [ashleymichal], [issue/905] [pull/957]**
+
+    Previously we blocked users from declaring `webpack_config` in their `wrangler.toml`, as it can be relatively confusing due to the nested nature of the workers-site directory. We removed that block, and added a friendly help message when webpack build fails and the user has a custom `webpack_config` declared.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/957]: https://github.com/cloudflare/wrangler/pull/957
+    [issue/905]: https://github.com/cloudflare/wrangler/issues/905
+
+  - **Reformat config api-key output - [bradyjoslin], [issue/889] [pull/910]**
+
+    We care a lot about our error output. Now the output from `wrangler config` is consistent between calls with and without the `--api-key` flag.
+
+    [bradyjoslin]: https://github.com/bradyjoslin
+    [pull/910]: https://github.com/cloudflare/wrangler/pull/910
+    [issue/889]: https://github.com/cloudflare/wrangler/issues/889
+
+  - **Improve error message for `wrangler init --site` when wrangler.toml already exists - [ashleygwilliams], [issue/648] [pull/931]**
+
+    `wrangler init` generally expects that you don't already have a `wrangler.toml` present; however it is common that users want to add static site functionality to their existing wrangler project and will try using `wrangler init` to do so. Rather than simply complaining that the toml already exists, now we add the `workers-site` directory to the project, and print out the suggested configuration to add to `wrangler.toml`. Much nicer!
+
+    [ashleygwilliams]: https://github.com/ashleygwilliams
+    [pull/931]: https://github.com/cloudflare/wrangler/pull/931
+    [issue/648]: https://github.com/cloudflare/wrangler/issues/648
+
+  - **Add a helpful error message on authentication error - [EverlastingBugstopper], [issue/492] [pull/932]**
+
+    Previously, when `wrangler publish` ran into authentication errors, the API result would just print to the screen. Now, it prints a helpful hint to users to re-run `wrangler config` to fix the error.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/932]: https://github.com/cloudflare/wrangler/pull/932
+    [issue/492]: https://github.com/cloudflare/wrangler/issues/492
+
+  - **Provide helpful error when user accidentally puts kv-namespace config under `[site]` - [gabbifish], [issue/798] [pull/937]**
+
+    TOML formatting can be tricky, specifically tables, so it is common for users unfamiliar with the format to accidentally nest attributes inside tables without intending it. In this case, if a user adds a kv-namespaces entry to the bottom of a toml with [site] configuration already declared, it is parsed as a part of the [site] table, rather than as a top-level key. The error output from this is not super helpful, as it just says "unknown field `kv-namespaces`" which isn't precisely correct.
+
+    This PR detects when this error occurs and provides a help suggestion to put kv-namespaces ABOVE the [site] table entry to fix the problem.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/937]: https://github.com/cloudflare/wrangler/pull/937
+    [issue/798]: https://github.com/cloudflare/wrangler/issues/798
+
+- ### Fixes
+
+  - **Don't install `wasm-pack` for `webpack` type projects - [EverlastingBugstopper], [issue/745] [pull/849]**
+
+    You may have noticed that Wrangler installs `wasm-pack` for your `webpack` projects, which may seem strange since it's the tool we use to build Rust projects. The reason for this is because you can _also_ build Rust using `wasm-pack` and `webpack` in tandem if you use the [`wasm-pack-plugin`](https://github.com/wasm-tool/wasm-pack-plugin). This plugin recently added support for handling the installation of `wasm-pack` which means Wrangler no longer needs to handle those installs.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/849]: https://github.com/cloudflare/wrangler/pull/849
+    [issue/745]: https://github.com/cloudflare/wrangler/issues/745
+
+- ### Maintenance
+
+  - **Make Azure use latest `rustc` - [EverlastingBugstopper], [issue/887] [pull/893]**
+
+    Updates our CI to update the rust toolchain to the latest stable version after installation.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/893]: https://github.com/cloudflare/wrangler/pull/893
+    [issue/887]: https://github.com/cloudflare/wrangler/issues/887
+
+  - **Fix nightly builds - [EverlastingBugstopper], [pull/895], [pull/898]**
+
+    Now we confirm Wrangler builds against nightly Rust releases!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/895]: https://github.com/cloudflare/wrangler/pull/895
+    [pull/898]: https://github.com/cloudflare/wrangler/pull/898
+
+  - **Fix compiler warnings on windows - [uma0317], [issue/800] [pull/919]**
+
+    We build Wrangler for Mac OSX, Linux, and Windows, and each of these environments has slightly different needs at compile time. In this case, community contributor [uma0317] added configuration that eliminated unused imports for Windows at compile time.
+
+    [uma0317]: https://github.com/uma0317
+    [pull/919]: https://github.com/cloudflare/wrangler/pull/919
+    [issue/800]: https://github.com/cloudflare/wrangler/issues/800
+
+  - **Remove deprecated kv-namespace config check - [ashleymichal], [pull/929]**
+
+    Back in 1.1.0, we introduced more robust support for adding KV namespaces to your project. It was a breaking change for users who were still using our first pass at configuration for this in their toml, so we added a friendly error message telling them how to update their `wrangler.toml`. At this point, all of our users have safely transitioned onto the new syntax, and so we removed the warning; any lingering use of the old syntax will be met with a parse error instead.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/929]: https://github.com/cloudflare/wrangler/pull/929
+
+  - **Use binary-install for npm - [EverlastingBugstopper], [pull/862]**
+
+    This extracts a lot of the logic in Wrangler's installer to an external package, [binary-install], which we will also use for installing wasm-pack on webpack project builds. Switching to this package also has the added benefit of cleaning up the downloaded binary on `npm uninstall -g @cloudflare/wrangler`.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/862]: https://github.com/cloudflare/wrangler/pull/862
+    [binary-install]: http://npmjs.org/package/binary-install
+
+
 ## 🎰 1.6.0
 
 - ### Features

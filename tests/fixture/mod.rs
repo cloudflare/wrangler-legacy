@@ -1,5 +1,5 @@
 mod wrangler_toml;
-pub use wrangler_toml::{EnvConfig, KvConfig, SiteConfig, WranglerToml};
+pub use wrangler_toml::{EnvConfig, KvConfig, SiteConfig, WranglerToml, TEST_ENV_NAME};
 
 use std::fs;
 use std::fs::File;
@@ -14,22 +14,22 @@ use toml;
 
 const BUNDLE_OUT: &str = "worker";
 
-pub struct Fixture<'a> {
+pub struct Fixture {
     // we wrap the fixture's tempdir in a `ManuallyDrop` so that if a test
     // fails, its directory isn't deleted, and we have a chance to manually
     // inspect its state and figure out what is going on.
     dir: ManuallyDrop<TempDir>,
-    output_path: &'a str,
+    output_path: &'static str,
 }
 
-impl Default for Fixture<'_> {
+impl Default for Fixture {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Fixture<'_> {
-    pub fn new() -> Fixture<'static> {
+impl Fixture {
+    pub fn new() -> Fixture {
         let dir = TempDir::new().unwrap();
         eprintln!("Created fixture at {}", dir.path().display());
         Fixture {
@@ -38,7 +38,7 @@ impl Fixture<'_> {
         }
     }
 
-    pub fn new_site() -> Fixture<'static> {
+    pub fn new_site() -> Fixture {
         let mut fixture = Fixture::new();
         fixture.output_path = "workers-site/worker";
 
@@ -119,7 +119,7 @@ impl Fixture<'_> {
     }
 }
 
-impl Drop for Fixture<'_> {
+impl Drop for Fixture {
     fn drop(&mut self) {
         if !thread::panicking() {
             unsafe { ManuallyDrop::drop(&mut self.dir) }

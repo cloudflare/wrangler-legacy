@@ -2,21 +2,17 @@ use serde::Serialize;
 
 #[derive(Serialize, Debug)]
 #[serde(tag = "type")]
+#[serde(rename_all = "snake_case")]
 pub enum Binding {
-    #[serde(rename = "wasm_module")]
     WasmModule { name: String, part: String },
-    #[serde(rename = "kv_namespace")]
     KvNamespace { name: String, namespace_id: String },
-    #[serde(rename = "text_blob")]
     TextBlob { name: String, part: String },
+    PlainText { name: String, text: String },
 }
 
 impl Binding {
-    pub fn new_wasm_module(name: &str, part: &str) -> Binding {
-        Binding::WasmModule {
-            name: name.to_string(),
-            part: part.to_string(),
-        }
+    pub fn new_wasm_module(name: String, part: String) -> Binding {
+        Binding::WasmModule { name, part }
     }
 
     pub fn new_kv_namespace(name: String, namespace_id: String) -> Binding {
@@ -25,5 +21,9 @@ impl Binding {
 
     pub fn new_text_blob(name: String, part: String) -> Binding {
         Binding::TextBlob { name, part }
+    }
+
+    pub fn new_plain_text(name: String, text: String) -> Binding {
+        Binding::PlainText { name, text }
     }
 }

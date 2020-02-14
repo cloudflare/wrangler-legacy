@@ -1,5 +1,4 @@
 use super::kv_namespace::KvNamespace;
-
 use super::site::Site;
 use super::target_type::TargetType;
 
@@ -18,11 +17,9 @@ pub struct Target {
     pub name: String,
     #[serde(rename = "type")]
     pub target_type: TargetType,
-    pub route: Option<String>,
-    pub routes: Option<HashMap<String, String>>,
     pub webpack_config: Option<String>,
-    pub zone_id: Option<String>,
     pub site: Option<Site>,
+    pub text: Option<HashMap<String, String>>,
 }
 
 impl Target {

@@ -1,129 +1,146 @@
-use crate::http;
+use std::fmt;
+
+use serde::Serialize;
+
+use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes};
+use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::HttpApiClientConfig;
+
+use crate::http::{cf_v4_api_client, format_error};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::Target;
-use crate::terminal::emoji;
-use reqwest::header::CONTENT_TYPE;
-use serde::{Deserialize, Serialize};
+use crate::settings::toml::{Route, Zoned};
 
-use log::info;
+pub fn publish_routes(
+    user: &GlobalUser,
+    zoned_config: &Zoned,
+) -> Result<Vec<RouteUploadResult>, failure::Error> {
+    // For the moment, we'll just make this call once and make all our decisions based on the response.
+    // There is a possibility of race conditions, but we just report back the results and allow the
+    // user to decide how to procede.
+    let existing_routes = fetch_all(user, &zoned_config.zone_id)?;
 
-#[derive(Deserialize, Serialize)]
-pub struct Route {
-    script: Option<String>,
-    pub pattern: String,
+    let deployed_routes = zoned_config
+        .routes
+        .iter()
+        .map(|route| deploy_route(user, &zoned_config.zone_id, route, &existing_routes))
+        .collect();
+
+    Ok(deployed_routes)
 }
 
-#[derive(Deserialize)]
-struct RoutesResponse {
-    result: Vec<Route>,
+fn fetch_all(user: &GlobalUser, zone_identifier: &str) -> Result<Vec<Route>, failure::Error> {
+    let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
+
+    let routes: Vec<Route> = match client.request(&ListRoutes { zone_identifier }) {
+        Ok(success) => success.result.iter().map(Route::from).collect(),
+        Err(e) => failure::bail!("{}", format_error(e, None)), // TODO: add suggestion fn
+    };
+
+    Ok(routes)
 }
 
-impl Route {
-    pub fn new(target: &Target) -> Result<Route, failure::Error> {
-        if target
-            .route
-            .clone()
-            .expect("You must provide a zone_id in your wrangler.toml before publishing!")
-            .is_empty()
-        {
-            failure::bail!("You must provide a zone_id in your wrangler.toml before publishing!");
-        }
-        let msg_config_error = format!("{} Your project config has an error, check your `wrangler.toml`: `route` must be provided.", emoji::WARN);
-        Ok(Route {
-            script: Some(target.name.to_string()),
-            pattern: target.route.clone().expect(&msg_config_error),
-        })
+fn create(
+    user: &GlobalUser,
+    zone_identifier: &str,
+    route: &Route,
+) -> Result<Route, failure::Error> {
+    let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
+
+    log::info!("Creating your route {:#?}", &route.pattern,);
+    match client.request(&CreateRoute {
+        zone_identifier,
+        params: CreateRouteParams {
+            pattern: route.pattern.clone(),
+            script: route.script.clone(),
+        },
+    }) {
+        Ok(response) => Ok(Route {
+            id: Some(response.result.id),
+            pattern: route.pattern.clone(),
+            script: route.script.clone(),
+        }),
+        Err(e) => failure::bail!("{}", format_error(e, Some(&routes_error_help))),
     }
+}
 
-    pub fn publish(
-        user: &GlobalUser,
-        target: &Target,
-        route: &Route,
-    ) -> Result<(), failure::Error> {
-        if route.exists(user, target)? {
-            return Ok(());
+// TODO: improve this error message to reference wrangler route commands
+fn routes_error_help(error_code: u16) -> &'static str {
+    match error_code {
+        10020 => {
+            r#"
+            A worker with a different name was previously deployed to the specified route.
+            If you would like to overwrite that worker,
+            you will need to change `name` in your `wrangler.toml` to match the currently deployed worker,
+            or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n"#
         }
-        create(user, target, route)
+        _ => "",
     }
+}
 
-    pub fn exists(&self, user: &GlobalUser, target: &Target) -> Result<bool, failure::Error> {
-        let routes = get_routes(user, target)?;
+#[derive(Debug, Serialize)]
+pub enum RouteUploadResult {
+    Same(Route),
+    Conflict(Route),
+    New(Route),
+    Error((Route, String)),
+}
 
-        for route in routes {
-            if route.matches(self) {
-                return Ok(true);
+impl fmt::Display for RouteUploadResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RouteUploadResult::Same(route) => write!(f, "{} => stayed the same", route.pattern),
+            RouteUploadResult::Conflict(route) => write!(
+                f,
+                "{} => is already pointing to {}",
+                route.pattern,
+                route.script.as_ref().unwrap_or(&"null worker".to_string())
+            ),
+            RouteUploadResult::New(route) => write!(f, "{} => created", route.pattern),
+            RouteUploadResult::Error((route, message)) => {
+                write!(f, "{} => creation failed: {}", route.pattern, message)
             }
         }
-        Ok(false)
-    }
-
-    pub fn matches(&self, route: &Route) -> bool {
-        self.pattern == route.pattern && self.script == route.script
     }
 }
 
-fn get_routes(user: &GlobalUser, target: &Target) -> Result<Vec<Route>, failure::Error> {
-    let routes_addr = get_routes_addr(target)?;
-
-    let client = http::auth_client(None, user);
-
-    let mut res = client.get(&routes_addr).send()?;
-
-    if !res.status().is_success() {
-        let msg = format!(
-            "{} There was an error fetching your project's routes.\n Status Code: {}\n Msg: {}",
-            emoji::WARN,
-            res.status(),
-            res.text()?
-        );
-        failure::bail!(msg)
+fn deploy_route(
+    user: &GlobalUser,
+    zone_id: &str,
+    route: &Route,
+    existing_routes: &[Route],
+) -> RouteUploadResult {
+    for existing_route in existing_routes {
+        if route.pattern == existing_route.pattern {
+            // if the route is already assigned, we don't need to call the api.
+            // if the script names match, it's a no-op.
+            if route.script == existing_route.script {
+                return RouteUploadResult::Same(Route {
+                    id: existing_route.id.clone(),
+                    script: existing_route.script.clone(),
+                    pattern: existing_route.pattern.clone(),
+                });
+            }
+            // if the script names do not match, we want to know which script is conflicting.
+            return RouteUploadResult::Conflict(Route {
+                id: existing_route.id.clone(),
+                script: existing_route.script.clone(),
+                pattern: existing_route.pattern.clone(),
+            });
+        }
     }
 
-    let routes_response: RoutesResponse = serde_json::from_str(&res.text()?)?;
-
-    Ok(routes_response.result)
-}
-
-fn create(user: &GlobalUser, target: &Target, route: &Route) -> Result<(), failure::Error> {
-    let client = http::auth_client(None, user);
-    let body = serde_json::to_string(&route)?;
-
-    let routes_addr = get_routes_addr(target)?;
-
-    info!("Creating your route {:#?}", &route.pattern,);
-    let mut res = client
-        .post(&routes_addr)
-        .header(CONTENT_TYPE, "application/json")
-        .body(body)
-        .send()?;
-
-    if !res.status().is_success() {
-        let msg = if res.status().as_u16() == 10020 {
-            format!(
-            "{} A worker with a different name was previously deployed to `{}`. If you would like to overwrite that worker, you will need to change `name` in your `wrangler.toml` to match the currently deployed worker, or navigate to https://dash.cloudflare.com/workers and rename or delete that worker.\n",
-            emoji::WARN,
-            serde_json::to_string(&route)?
-            )
-        } else {
-            format!(
-                "{} There was an error creating your route.\n Status Code: {}\n Msg: {}",
-                emoji::WARN,
-                res.status(),
-                res.text()?
-            )
-        };
-
-        failure::bail!(msg)
+    // if none of the existing routes match this one, we should create a new route
+    match create(user, zone_id, &route) {
+        // we want to show the new route along with its id
+        Ok(created) => RouteUploadResult::New(created),
+        // if there is an error, we want to know which route triggered it
+        Err(e) => RouteUploadResult::Error((
+            Route {
+                id: None,
+                script: route.script.clone(),
+                pattern: route.pattern.clone(),
+            },
+            e.to_string(),
+        )),
     }
-    Ok(())
-}
-
-fn get_routes_addr(target: &Target) -> Result<String, failure::Error> {
-    if let Some(zone_id) = &target.zone_id {
-        return Ok(format!(
-            "https://api.cloudflare.com/client/v4/zones/{}/workers/routes",
-            zone_id
-        ));
-    }
-    failure::bail!("You much provide a zone_id in your wrangler.toml.")
 }
