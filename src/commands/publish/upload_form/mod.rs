@@ -31,8 +31,8 @@ pub fn build(
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
 
-    if let Some(text) = &target.text {
-        for (key, value) in text.iter() {
+    if let Some(vars) = &target.vars {
+        for (key, value) in vars.iter() {
             plain_texts.push(PlainText::new(key.clone(), value.clone())?)
         }
     }

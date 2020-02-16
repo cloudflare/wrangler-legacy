@@ -23,7 +23,7 @@ pub struct Environment {
     pub site: Option<Site>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
-    pub text: Option<HashMap<String, String>>,
+    pub vars: Option<HashMap<String, String>>,
 }
 
 impl Environment {
