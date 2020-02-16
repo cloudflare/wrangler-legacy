@@ -20,8 +20,8 @@ const getPlatform = () => {
 };
 
 const getBinaryURL = (version, platform) => {
-  const site = process.env.WRANGLER_BINARY_SITE ||
-      process.env.npm_config_wrangler_binary_site ||
+  const site = process.env.WRANGLER_BINARY_HOST ||
+      process.env.npm_config_wrangler_binary_host ||
       'https://workers.cloudflare.com/get-npm-wrangler-binary';
   return `${site}/${version}/${platform}`;
 };
