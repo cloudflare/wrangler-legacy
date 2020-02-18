@@ -19,7 +19,7 @@ use project_assets::ProjectAssets;
 use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
-// these likely belong elsewhere, perhaps in a mod for project type specific behavior.
+// TODO: https://github.com/cloudflare/wrangler/issues/1083
 use super::{krate, Package};
 
 pub fn build(
