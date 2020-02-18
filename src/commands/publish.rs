@@ -1,22 +1,14 @@
-mod krate;
-pub mod package;
-mod route;
-pub mod upload_form;
-
-pub use package::Package;
-use route::publish_routes;
-
 use std::env;
 use std::path::Path;
 
 use crate::commands;
 use crate::commands::kv;
 use crate::commands::kv::bucket::AssetManifest;
-use crate::commands::subdomain::Subdomain;
-use crate::http;
+use crate::deploy;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, KvNamespace, Site, Target, Zoneless};
+use crate::settings::toml::{DeployConfig, KvNamespace, Site, Target};
 use crate::terminal::{emoji, message};
+use crate::upload;
 
 pub fn publish(
     user: &GlobalUser,
@@ -37,9 +29,9 @@ pub fn publish(
     // Build the script before uploading.
     commands::build(&target)?;
 
-    upload_script(&user, &target, asset_manifest)?;
+    upload::script(&user, &target, asset_manifest)?;
 
-    deploy(&user, &deploy_config)?;
+    deploy::worker(&user, &deploy_config)?;
 
     Ok(())
 }
@@ -88,82 +80,6 @@ pub fn bind_static_site_contents(
     Ok(())
 }
 
-fn upload_script(
-    user: &GlobalUser,
-    target: &Target,
-    asset_manifest: Option<AssetManifest>,
-) -> Result<(), failure::Error> {
-    let worker_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
-        target.account_id, target.name,
-    );
-
-    let client = if target.site.is_some() {
-        http::auth_client(Some("site"), user)
-    } else {
-        http::auth_client(None, user)
-    };
-
-    let script_upload_form = upload_form::build(target, asset_manifest)?;
-
-    let res = client
-        .put(&worker_addr)
-        .multipart(script_upload_form)
-        .send()?;
-
-    let res_status = res.status();
-
-    if !res_status.is_success() {
-        let res_text = res.text()?;
-        failure::bail!(error_msg(res_status, res_text))
-    }
-
-    Ok(())
-}
-
-fn deploy(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), failure::Error> {
-    match deploy_config {
-        DeployConfig::Zoneless(zoneless_config) => {
-            // this is a zoneless deploy
-            log::info!("publishing to workers.dev subdomain");
-            let deploy_address = publish_zoneless(user, zoneless_config)?;
-
-            message::success(&format!(
-                "Successfully published your script to {}",
-                deploy_address
-            ));
-
-            Ok(())
-        }
-        DeployConfig::Zoned(zoned_config) => {
-            // this is a zoned deploy
-            log::info!("publishing to zone {}", zoned_config.zone_id);
-
-            let published_routes = publish_routes(&user, zoned_config)?;
-
-            let display_results: Vec<String> =
-                published_routes.iter().map(|r| format!("{}", r)).collect();
-
-            message::success(&format!(
-                "Deployed to the following routes:\n{}",
-                display_results.join("\n")
-            ));
-
-            Ok(())
-        }
-    }
-}
-
-fn error_msg(status: reqwest::StatusCode, text: String) -> String {
-    if text.contains("\"code\": 10034,") {
-        "You need to verify your account's email address before you can publish. You can do this by checking your email or logging in to https://dash.cloudflare.com.".to_string()
-    } else if text.contains("\"code\":10000,") {
-        "Your user configuration is invalid, please run wrangler config and enter a new set of credentials.".to_string()
-    } else {
-        format!("Something went wrong! Status: {}, Details {}", status, text)
-    }
-}
-
 pub fn upload_buckets(
     target: &Target,
     user: &GlobalUser,
@@ -210,48 +126,6 @@ pub fn upload_buckets(
     Ok(asset_manifest)
 }
 
-fn build_subdomain_request() -> String {
-    serde_json::json!({ "enabled": true }).to_string()
-}
-
-fn publish_zoneless(
-    user: &GlobalUser,
-    zoneless_config: &Zoneless,
-) -> Result<String, failure::Error> {
-    log::info!("checking that subdomain is registered");
-    let subdomain = match Subdomain::get(&zoneless_config.account_id, user)? {
-        Some(subdomain) => subdomain,
-        None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
-    };
-
-    let sd_worker_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
-        zoneless_config.account_id, zoneless_config.script_name,
-    );
-
-    let client = http::auth_client(None, user);
-
-    log::info!("Making public on subdomain...");
-    let res = client
-        .post(&sd_worker_addr)
-        .header("Content-type", "application/json")
-        .body(build_subdomain_request())
-        .send()?;
-
-    if !res.status().is_success() {
-        failure::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
-    }
-
-    Ok(format!(
-        "https://{}.{}.workers.dev",
-        zoneless_config.script_name, subdomain
-    ))
-}
-
 fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
     let mut missing_fields = Vec::new();
 
@@ -294,23 +168,4 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
     };
 
     Ok(())
-}
-
-#[test]
-fn fails_with_good_error_msg_on_verify_email_err() {
-    let status = reqwest::StatusCode::FORBIDDEN;
-    let text = r#"{
-  "result": null,
-  "success": false,
-  "errors": [
-    {
-      "code": 10034,
-      "message": "workers.api.error.email_verification_required"
-    }
-  ],
-  "messages": []
-}"#
-    .to_string();
-    let result = error_msg(status, text);
-    assert!(result.contains("https://dash.cloudflare.com"));
 }
