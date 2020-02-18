@@ -12,10 +12,7 @@ use url::Url;
 
 const KEEP_ALIVE_INTERVAL: u64 = 10;
 
-pub async fn listen(session_id: &str) -> Result<(), failure::Error> {
-    let socket_url = format!("wss://rawhttp.cloudflareworkers.com/inspect/{}", session_id);
-    let socket_url = Url::parse(&socket_url)?;
-
+pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
     let (ws_stream, _) = connect_async(socket_url)
         .await
         .expect("Failed to connect to devtools instance");
