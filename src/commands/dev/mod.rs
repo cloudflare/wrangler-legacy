@@ -104,13 +104,27 @@ async fn serve(
                 let client = client.to_owned();
                 let preview_id = preview_id.to_owned();
                 let server_config = server_config.to_owned();
+                let version = req.version();
+                let (parts, body) = req.into_parts();
+                let req_method = parts.method.to_string();
+                let now: DateTime<Local> = Local::now();
+                let path = get_path_as_str(&parts.uri);
                 async move {
                     let resp =
-                        preview_request(req, client, preview_id.to_owned(), server_config).await?;
+                        preview_request(Request::from_parts(parts, body), client, preview_id.to_owned()).await?;
                     let (mut parts, body) = resp.into_parts();
 
                     destructure_response(&mut parts)?;
                     let resp = Response::from_parts(parts, body);
+
+                    println!("[{}] {} {}{} {:?} {}", 
+                        now.format("%Y-%m-%d %H:%M:%S"),
+                        req_method,
+                        server_config.host,
+                        path,
+                        version,
+                        resp.status()
+                    );
                     Ok::<_, failure::Error>(resp)
                 }
             }))
@@ -140,13 +154,10 @@ fn preview_request(
     req: Request<Body>,
     client: HyperClient<HttpsConnector<HttpConnector>>,
     preview_id: String,
-    server_config: ServerConfig,
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
 
     let path = get_path_as_str(&parts.uri);
-    let method = parts.method.to_string();
-    let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
 
     structure_request(&mut parts);
@@ -165,14 +176,6 @@ fn preview_request(
 
     let req = Request::from_parts(parts, body);
 
-    println!(
-        "[{}] \"{} {}{} {:?}\"",
-        now.format("%Y-%m-%d %H:%M:%S"),
-        method,
-        server_config.host,
-        path,
-        req.version()
-    );
     client.request(req)
 }
 
