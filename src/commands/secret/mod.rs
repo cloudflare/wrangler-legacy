@@ -156,24 +156,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 
     match response {
         Ok(_) => message::success(&format!("Success! Deleted secret {}.", name)),
-        Err(e) => match upload_draft_worker(&e, user, target) {
-            None => failure::bail!(format_error(e)),
-            Some(draft_upload_response) => match draft_upload_response {
-                Ok(_) => {
-                    let retry_response = client.request(&DeleteSecret {
-                        account_identifier: &target.account_id,
-                        script_name: &target.name,
-                        secret_name: name,
-                    });
-
-                    match retry_response {
-                        Ok(_) => message::success(&format!("Success! Deleted secret {}.", name)),
-                        Err(e) => failure::bail!(format_error(e)),
-                    }
-                }
-                Err(e) => failure::bail!(e),
-            },
-        },
+        Err(e) => failure::bail!(format_error(e)),
     }
 
     Ok(())
