@@ -110,14 +110,19 @@ async fn serve(
                 let now: DateTime<Local> = Local::now();
                 let path = get_path_as_str(&parts.uri);
                 async move {
-                    let resp =
-                        preview_request(Request::from_parts(parts, body), client, preview_id.to_owned()).await?;
+                    let resp = preview_request(
+                        Request::from_parts(parts, body),
+                        client,
+                        preview_id.to_owned(),
+                    )
+                    .await?;
                     let (mut parts, body) = resp.into_parts();
 
                     destructure_response(&mut parts)?;
                     let resp = Response::from_parts(parts, body);
 
-                    println!("[{}] {} {}{} {:?} {}", 
+                    println!(
+                        "[{}] {} {}{} {:?} {}",
                         now.format("%Y-%m-%d %H:%M:%S"),
                         req_method,
                         server_config.host,
