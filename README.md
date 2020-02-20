@@ -145,7 +145,7 @@ $ wrangler publish
 
   - `env`: environment to build
   - `host`: domain to test behind your worker. defaults to example.com
-  - `ip`: ip to listsen on. defaults to localhost
+  - `ip`: ip to listen on. defaults to localhost
   - `port`: port to listen on. defaults to 8787
 
 ## Additional Documentation
