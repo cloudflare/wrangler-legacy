@@ -1,6 +1,6 @@
 name: Linters
 
-on: [push]
+on: [pull_request]
 
 jobs:
   rustfmt:
