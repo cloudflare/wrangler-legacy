@@ -137,7 +137,7 @@ $ wrangler publish
   From here you should be able to send HTTP requests to `localhost:8787` along with any headers and paths, and your worker should execute as expected. Additionally, you should see console.log messages and exceptions appearing in your terminal.
   
   ```bash
-   Listening on http://localhost:8787
+👂 Listening on http://localhost:8787
   [2020-02-18 19:37:08] GET example.com/ HTTP/1.1 200 OK
   ```
 
