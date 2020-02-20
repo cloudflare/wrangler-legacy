@@ -1,5 +1,6 @@
 use crate::commands::dev::gcs::headers::{destructure_response, structure_request};
 use crate::commands::dev::server_config::ServerConfig;
+use crate::commands::dev::utils::get_path_as_str;
 use crate::terminal::emoji;
 
 use std::sync::{Arc, Mutex};
@@ -23,6 +24,7 @@ pub(super) async fn serve(
     let client = HyperClient::builder().build::<_, Body>(https);
 
     let listening_address = server_config.listening_address.clone();
+
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
         let client = client.to_owned();
@@ -75,13 +77,6 @@ pub(super) async fn serve(
 
 fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
     format!("https://{}{}", PREVIEW_HOST, path_string).parse()
-}
-
-fn get_path_as_str(uri: &Uri) -> String {
-    uri.path_and_query()
-        .map(|x| x.as_str())
-        .unwrap_or("")
-        .to_string()
 }
 
 fn preview_request(

@@ -620,9 +620,10 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
+        let deploy_config = manifest.deploy_config(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
-        commands::dev::dev(target, user, host, port, ip, verbose)?;
+        commands::dev::dev(target, deploy_config, user, host, port, ip, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

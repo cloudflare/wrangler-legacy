@@ -1,6 +1,12 @@
 use crate::settings::toml::Route;
 use crate::terminal::message;
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum DeployConfig {
+    Zoneless(Zoneless),
+    Zoned(Zoned),
+}
+
 impl DeployConfig {
     pub fn build(
         script_name: &str,
@@ -87,12 +93,6 @@ impl DeployConfig {
             failure::bail!("field `zone_id` is required to deploy to routes");
         }
     }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum DeployConfig {
-    Zoneless(Zoneless),
-    Zoned(Zoned),
 }
 
 #[derive(Clone, Debug, PartialEq)]
