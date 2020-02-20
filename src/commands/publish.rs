@@ -86,7 +86,7 @@ pub fn upload_static_site_content(
     verbose: bool,
 ) -> Result<Option<AssetManifest>, failure::Error> {
     let mut asset_manifest = None;
-    if let Some(site_namespace) = target.kv_namespaces().iter().find(|ns| { ns.bucket.is_some() }) {
+    if let Some(site_namespace) = target.kv_namespaces().iter().find(|ns| ns.bucket.is_some()) {
         if let Some(bucket) = &site_namespace.bucket {
             // We don't want folks setting their bucket to the top level directory,
             // which is where wrangler commands are always called from.
@@ -111,7 +111,8 @@ pub fn upload_static_site_content(
                     path.display()
                 )
             }
-            let manifest_result = kv::bucket::sync(target, user, &site_namespace.id, path, verbose)?;
+            let manifest_result =
+                kv::bucket::sync(target, user, &site_namespace.id, path, verbose)?;
             if target.site.is_some() {
                 if asset_manifest.is_none() {
                     asset_manifest = Some(manifest_result)
