@@ -24,7 +24,7 @@ pub fn upload_files(
     user: &GlobalUser,
     namespace_id: &str,
     path: &Path,
-    exclude_keys: Option<&HashSet<String>>,
+    ignore: &HashSet<String>,
     verbose: bool,
 ) -> Result<AssetManifest, failure::Error> {
     let (mut pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) = match &metadata(path) {
@@ -39,11 +39,6 @@ pub fn upload_files(
         }
         Err(e) => Err(format_err!("{}", e)),
     }?;
-
-    let mut ignore = &HashSet::new();
-    if let Some(exclude) = exclude_keys {
-        ignore = exclude;
-    }
 
     pairs = filter_files(pairs, ignore);
 

@@ -48,7 +48,7 @@ pub fn sync(
         &user,
         namespace_id,
         path,
-        Some(&remote_keys),
+        &remote_keys,
         verbose,
     )?;
 
