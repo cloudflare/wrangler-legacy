@@ -432,7 +432,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("ip")
-                        .help("ip to listsen on. defaults to localhost")
+                        .help("ip to listen on. defaults to localhost")
                         .short("i")
                         .long("ip")
                         .takes_value(true)
