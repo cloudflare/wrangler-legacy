@@ -60,7 +60,7 @@ pub fn upload(
                     publish::bind_static_site_contents(user, target, &site_config, true)?;
                 }
 
-                let asset_manifest = publish::upload_buckets(target, user, verbose)?;
+                let asset_manifest = publish::upload_static_site_content(target, user, verbose)?;
                 authenticated_upload(&client, &target, asset_manifest)?
             } else {
                 message::warn(&format!(

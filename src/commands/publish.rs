@@ -24,7 +24,7 @@ pub fn publish(
         bind_static_site_contents(user, target, &site_config, false)?;
     }
 
-    let asset_manifest = upload_buckets(target, user, verbose)?;
+    let asset_manifest = upload_static_site_content(target, user, verbose)?;
 
     // Build the script before uploading.
     commands::build(&target)?;
@@ -80,7 +80,7 @@ pub fn bind_static_site_contents(
     Ok(())
 }
 
-pub fn upload_buckets(
+pub fn upload_static_site_content(
     target: &Target,
     user: &GlobalUser,
     verbose: bool,
