@@ -1,5 +1,195 @@
 # Changelog
 
+## 🙊 1.8.0
+
+- ### Features
+
+  - **`wrangler dev` - [EverlastingBugstopper], [issue/845] [pull/883]**
+
+    `wrangler dev` is a local proxy server to Cloudflare's preview service, allowing you to automatically re-build and preview your application on `localhost`. This feature is in alpha and we're looking for feedback and bug reports: check out [this issue](https://github.com/cloudflare/wrangler/issues/1047)!
+
+    `wrangler dev` works very similarly to `wrangler preview`, but instead of opening your browser to preview your Worker, it will start a server on `localhost` that will execute your Worker on incoming HTTP requests:
+
+    ```
+    $ wrangler dev
+    ```
+
+    You should be able to send HTTP requests to `localhost:8787`, along with any headers or other request data, and your Worker should execute as expected. Additionally, you'll see `console.log` messages and exceptions appearing in your terminal (!!!).
+
+    For more information on `wrangler dev`'s options, such as passing a custom `host`, `ip`, or `port`, run `wrangler dev` in your terminal for the available flags and options.
+
+    [issue/845]: https://github.com/cloudflare/wrangler/issues/845
+    [pull/883]: https://github.com/cloudflare/wrangler/pull/883
+
+  - **Multi-route support - [ashleymichal], [issue/866] [pull/916]**
+
+    Wrangler now allows developers to publish their Workers projects to multiple routes on a Cloudflare zone.
+
+    To deploy your Workers project to multiple routes, you can migrate from the `route` key to `routes`:
+
+    ```toml
+    name = "worker"
+    type = "javascript"
+    account_id = "youraccountid"
+    # change this line
+    # route = "example.com/foo/*"
+    # to this line
+    routes = ["example.com/foo/*", "example.com/bar/*"]
+    zone_id = "yourzoneid"
+    ```
+
+    [issue/866]: https://github.com/cloudflare/wrangler/issues/866
+    [pull/916]: https://github.com/cloudflare/wrangler/pull/916
+
+  - **`wrangler secret` commands - [ashleymichal], [bradyjoslin], [issue/907] [issue/909] [issue/912] [pull/1045]**
+
+    Wrangler now allows developers to use **secrets** in their Workers codebase. Secrets are secure values that can be accessed as constants, similar to text variables, inside of your Workers code.
+
+    To set a secret, you can use `wrangler secret put MY_SECRET_NAME`. The interactive prompt will ask for the secret text you'd like to add to your project:
+
+    ```bash
+    $ wrangler secret put MY_SECRET_NAME
+    Enter the secret text you'd like assigned to the variable MY_SECRET_NAME on the script named my-project
+    ```
+
+    Importantly, secrets are constrained to an environment, and do not carry over between different deployed Workers (e.g. `my-worker` and `my-worker-production`). This allows you to use different API keys, URLs, and other common "environment variable"-style values in your different environments. Specifying an environment can be done using the `--env` (or `-e`, for short):
+
+    ```bash
+    $ wrangler secret put MY_SECRET_NAME --env production
+    Enter the secret text you'd like assigned to the variable MY_SECRET_NAME on the script named my-project-production
+    ```
+
+    The `wrangler secret` subcommand also allows developers to `list` and `delete` secrets for your Workers projects:
+
+    ```bash
+    $ wrangler secret delete MY_SECRET_NAME
+    Are you sure you want to permanently delete the variable MY_SECRET_NAME on the script named my-project [y/n] y
+    🌀  Deleting the secret MY_SECRET_NAME on script my-project.
+    ✨  You've deleted the secret MY_SECRET_NAME.
+
+    $ wrangler secret list
+    [{"name":"API_KEY","type":"secret_text"},{"name":"MY_OTHER_SECRET","type":"secret_text"}]
+    ```
+
+    [issue/907]: https://github.com/cloudflare/wrangler/issues/907
+    [issue/909]: https://github.com/cloudflare/wrangler/issues/909
+    [issue/912]: https://github.com/cloudflare/wrangler/issues/912
+    [pull/1045]: https://github.com/cloudflare/wrangler/pull/1045
+    [issue/1100]: https://github.com/cloudflare/wrangler/issues/1100
+    [pull/1101]: https://github.com/cloudflare/wrangler/pull/1101
+
+  - **Plain text binding support - [EverlastingBugstopper] - [issue/993] [pull/1014]**
+
+    In addition to secrets, Wrangler now also supports setting "plain text" bindings – values that will be available as constants in your Workers code, but aren't encrypted. This can be done by passing values in `wrangler.toml` under the `vars` key:
+
+    ```toml
+    name = "worker"
+    type = "javascript"
+    account_id = "your-account-id"
+    workers_dev = true
+    vars = { ENV = "staging" }
+    [env.prod]
+    vars = { ENV = "production" }
+    ```
+
+    [issue/993]: https://github.com/cloudflare/wrangler/issues/993
+    [pull/1014]: https://github.com/cloudflare/wrangler/pull/1014
+
+  - **Return accounts and account IDs when running `wrangler whoami` - [ashleygwilliams], [issue/630] [pull/983]**
+
+    We've made big improvements to `wrangler whoami`, and now return a list of Cloudflare accounts and account IDs for your authenticated user. If you are unauthenticated, or something is wrong with your API key or token, we'll also return an error with this command to help you understand how to fix your authentication issues!
+
+    ![Preview](https://user-images.githubusercontent.com/1163554/71917894-c624e580-3146-11ea-9793-1e8f8a92a4ea.png)
+
+    [issue/630]: https://github.com/cloudflare/wrangler/issues/630
+    [pull/983]: https://github.com/cloudflare/wrangler/pull/983
+
+  - **Configure sourcemap file - [xtuc], [issue/681] [pull/1063]**
+
+    `webpack` (by default) emits a sourcemap that maps to a `main.js` file, which doesn't match the Workers runtime's configured filename, `worker.js`. This causes exception reporting tools to be unable to process a Workers sourcemap file – we've updated our Webpack config to output the file `worker.js` and have fixed this issue.
+
+    [issue/681]: https://github.com/cloudflare/wrangler/issues/681
+    [pull/1063]: https://github.com/cloudflare/wrangler/pull/1063
+
+  - **Upload "draft" worker if secret is created before initial worker script has been uploaded - [gabbifish], [issue/913] [pull/1087]**
+
+    If your script hasn't yet been deployed to the Workers platform, creating and deleting secrets will also create a "draft" Worker – allowing you to still manage secret bindings before you deploy the first version of your script.
+
+    [issue/913]: https://github.com/cloudflare/wrangler/issues/913
+    [pull/1087]: https://github.com/cloudflare/wrangler/pull/1087
+
+- ### Maintenance
+
+  - **Correctly tar release binaries - [EverlastingBugstopper], [issue/1055] [pull/1062]**
+
+    This PR updates the way that release binaries are generated during Wrangler's release workflow.
+
+    [issue/1055]: https://github.com/cloudflare/wrangler/issues/1055
+    [pull/1062]: https://github.com/cloudflare/wrangler/pull/1062
+
+  - **Change NPM binary permissions - [xtuc], [pull/1058]**
+
+    This PR removes an unnecessary executable permission from `npm/binary.js`.
+
+    [pull/1058]: https://github.com/cloudflare/wrangler/pull/1058
+
+  - **Improvements to GitHub Actions build process - [EverlastingBugstopper], [pull/1037]**
+
+    This PR adds a number of improvements to wrangler's GitHub Actions workflows, including caching, release management, and more granular trigger conditions.
+
+    [pull/1037]: https://github.com/cloudflare/wrangler/pull/1037
+
+  - **Add GitHub Actions badge to README - [EverlastingBugstopper], [pull/1030]**
+
+    This PR adds a GitHub Actions badge to our README, indicating whether the repo's builds are currently passing:
+
+    [![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Rust%20Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+
+    [pull/1030]: https://github.com/cloudflare/wrangler/pull/1030
+
+  - **Test Rust with GitHub Actions - [EverlastingBugstopper], [pull/1028]**
+
+    This PR adds a GitHub Actions workflow for running `wrangler`'s test suite on a number of platforms and Rust versions.
+
+    [pull/1028]: https://github.com/cloudflare/wrangler/pull/1028
+
+  - **Add release checklist - [EverlastingBugstopper], [pull/1021]**
+
+    This PR adds a release checklist, documenting the steps that we use to release new versions of Wrangler. That checklist includes writing this CHANGELOG - very meta!!!
+
+    [pull/1021]: https://github.com/cloudflare/wrangler/pull/1021
+
+  - **Update dependencies - [EverlastingBugstopper], [pull/1000]**
+
+    This PR updates some project dependencies as a result of running `cargo update`.
+
+    [pull/1000]: https://github.com/cloudflare/wrangler/pull/1000
+
+  - **Run CI on pull requests, not pushes - [EverlastingBugstopper], [pull/1090]**
+
+    This PR changes the GitHub Actions workflow "event trigger" to fire on `pull_request`, not `push`. This will allow wrangler's GitHub Actions workflows to run on PRs sent from forks!
+
+    [pull/1090]: https://github.com/cloudflare/wrangler/pull/1090
+
+  - **Zip .tar files in CI - [EverlastingBugstopper], [pull/1069] [pull/1080]**
+
+    These PRs fix some issues in the GitHub Actions release workflow that were causing release artifacts to be incorrectly generated.
+
+    [pull/1080]: https://github.com/cloudflare/wrangler/pull/1080
+    [pull/1069]: https://github.com/cloudflare/wrangler/pull/1069
+
+  - **Fixes clippy warnings - [EverlastingBugstopper], [pull/1071]**
+
+    This PR fixes some linting issues surfaced by clippy throughout the project.
+
+    [pull/1071]: https://github.com/cloudflare/wrangler/pull/1071
+
+  - **Extract upload and deploy to lib modules - [ashleymichal], [pull/1075]**
+
+    This PR refactors some of the underlying code used inside of `wrangler publish`, to create two higher-level `upload` and `deploy` modules. This work has already been used to support "draft workers" in #1087, and to reduce duplication of code between `wrangler preview`, `wrangler dev`, and `wrangler publish`.
+
+    [pull/1075]: https://github.com/cloudflare/wrangler/pull/1075
+
 ## 💬 1.7.0
 
 - ### Features
