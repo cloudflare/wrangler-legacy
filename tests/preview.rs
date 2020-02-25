@@ -222,6 +222,8 @@ fn it_previews_with_env_config_text() {
     let hello: &'static str = "hello";
     let world: &'static str = "world";
 
+    // These are text variables provided in a custom wrangler environment; they should override
+    // vars with the same keys in the top-level environment.
     let mut env_vars: HashMap<&'static str, &'static str> = HashMap::new();
     env_vars.insert("WORLD", world);
     let mut env = EnvConfig::default();
