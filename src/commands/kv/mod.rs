@@ -145,7 +145,7 @@ mod tests {
             target_type: TargetType::Webpack,
             webpack_config: None,
             site: None,
-            config: None,
+            vars: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }

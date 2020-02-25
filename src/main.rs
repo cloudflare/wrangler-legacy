@@ -272,6 +272,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a secret that can be referenced in the worker script",
                     emoji::SECRET
                 ))
+                .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Create or update a secret variable for a script")
@@ -432,7 +433,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("ip")
-                        .help("ip to listsen on. defaults to localhost")
+                        .help("ip to listen on. defaults to localhost")
                         .short("i")
                         .long("ip")
                         .takes_value(true)

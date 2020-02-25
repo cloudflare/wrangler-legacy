@@ -4,6 +4,7 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
+use crate::upload;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
@@ -133,7 +134,7 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::upload_form::build(target, asset_manifest)?;
+    let script_upload_form = upload::form::build(target, asset_manifest)?;
 
     let res = client
         .post(&create_address)
@@ -163,9 +164,9 @@ fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, f
         );
         let mut target = target.clone();
         target.kv_namespaces = None;
-        publish::upload_form::build(&target, None)?
+        upload::form::build(&target, None)?
     } else {
-        publish::upload_form::build(&target, None)?
+        upload::form::build(&target, None)?
     };
 
     let res = client

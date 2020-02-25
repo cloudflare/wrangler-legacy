@@ -4,7 +4,9 @@
 
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
-[![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Rust%20Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+[![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+[![Github Actions - Build Status](https://github.com/cloudflare/wrangler/workflows/Builds/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+[![Github Actions - Linter Status](https://github.com/cloudflare/wrangler/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler/actions)
 
 `wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare Workers](https://workers.cloudflare.com/).
 
@@ -125,6 +127,26 @@ $ wrangler publish
 ### 🗂 `kv`
 
   Interact with your Workers KV store. This is actually a whole suite of subcommands. Read more about in [Wrangler KV Documentation](https://developers.cloudflare.com/workers/tooling/wrangler/kv_commands).
+
+### 👂 `dev`
+
+  `wrangler dev` works very similarly to `wrangler preview` except that instead of opening your browser to preview your worker, it will start a server on localhost that will execute your worker on incoming HTTP requests. From there you can use cURL, Postman, your browser, or any other HTTP client to test the behavior of your worker before publishing it.
+
+  You should run wrangler dev from your worker directory, and if your worker makes any requests to a backend, you should specify the host with `--host example.com`.
+
+  From here you should be able to send HTTP requests to `localhost:8787` along with any headers and paths, and your worker should execute as expected. Additionally, you should see console.log messages and exceptions appearing in your terminal.
+  
+  ```bash
+👂 Listening on http://localhost:8787
+  [2020-02-18 19:37:08] GET example.com/ HTTP/1.1 200 OK
+  ```
+
+  All of the arguments and flags to this command are optional:
+
+  - `env`: environment to build
+  - `host`: domain to test behind your worker. defaults to example.com
+  - `ip`: ip to listen on. defaults to localhost
+  - `port`: port to listen on. defaults to 8787
 
 ## Additional Documentation
 

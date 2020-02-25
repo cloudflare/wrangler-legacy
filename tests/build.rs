@@ -3,6 +3,7 @@ extern crate lazy_static;
 
 pub mod fixture;
 
+use std::fs;
 use std::process::Command;
 use std::str;
 
@@ -313,14 +314,77 @@ fn it_builds_with_webpack_target_webworker() {
     build_creates_assets(&fixture, vec!["script.js"]);
 }
 
-fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) {
+#[test]
+fn it_builds_with_webpack_name_output() {
+    let fixture = Fixture::new();
+    fixture.scaffold_webpack();
+
+    fixture.create_file(
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            "entry": "./index.js",
+            "devtool": "cheap-module-source-map"
+        }
+    "#,
+    );
+    fixture.create_file("index.js", "");
+
+    let wrangler_toml = WranglerToml::webpack_std_config("test-build-webpack-name-output");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    build_creates_assets(&fixture, vec!["script.js"]);
+
+    let out = fs::read_to_string(fixture.get_output_path().join("script.js")).unwrap();
+    assert!(out.contains(r#"//# sourceMappingURL=worker.js.map{"version":3,"file":"worker.js""#));
+}
+
+#[test]
+fn it_builds_with_webpack_name_output_warn() {
+    let fixture = Fixture::new();
+    fixture.scaffold_webpack();
+
+    fixture.create_file(
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            "entry": "./index.js",
+            "output": {
+                "filename": "hi.js"
+            }
+        }
+    "#,
+    );
+    fixture.create_file("index.js", "");
+
+    let wrangler_toml = WranglerToml::webpack_std_config("test-build-webpack-name-output-warn");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    let (_stdout, stderr) = build_creates_assets(&fixture, vec!["script.js"]);
+
+    assert!(
+        stderr.contains("webpack's output filename is being renamed"),
+        format!("given: {}", stderr)
+    );
+}
+
+fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) -> (String, String) {
     let _lock = fixture.lock();
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     build.current_dir(fixture.get_path());
-    build.arg("build").assert().success();
+    build.arg("build");
+
+    let output = build.output().expect("failed to execute process");
+    assert!(output.status.success());
+
     for script_name in script_names {
         assert!(fixture.get_output_path().join(script_name).exists());
     }
+
+    (
+        str::from_utf8(&output.stdout).unwrap().to_string(),
+        str::from_utf8(&output.stderr).unwrap().to_string(),
+    )
 }
 
 fn build_fails_with(fixture: &Fixture, expected_message: &str) {

@@ -19,6 +19,7 @@ use project_assets::ProjectAssets;
 use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
+// TODO: https://github.com/cloudflare/wrangler/issues/1083
 use super::{krate, Package};
 
 pub fn build(
@@ -31,8 +32,8 @@ pub fn build(
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
 
-    if let Some(config) = &target.config {
-        for (key, value) in config.iter() {
+    if let Some(vars) = &target.vars {
+        for (key, value) in vars.iter() {
             plain_texts.push(PlainText::new(key.clone(), value.clone())?)
         }
     }
