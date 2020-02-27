@@ -74,6 +74,11 @@ fn run() -> Result<(), failure::Error> {
         .index(1)
         .value_name("VAR_NAME");
 
+    let verbose_arg = Arg::with_name("verbose")
+        .long("verbose")
+        .takes_value(false)
+        .help("toggle verbose output");
+
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("The Wrangler Team <wrangler@cloudflare.com>")
@@ -97,6 +102,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -105,10 +111,12 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all namespaces on your Cloudflare account")
+                        .arg(verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -125,6 +133,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("key")
                             .help("Key to write value to")
@@ -168,6 +177,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to get")
@@ -182,6 +192,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to delete")
@@ -196,6 +207,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("prefix")
                             .help("The prefix for filtering listed keys")
@@ -220,6 +232,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("path")
                             .help("the JSON file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...]")
@@ -233,6 +246,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                         .about("Delete multiple keys and their values from a namespace")
                         .arg(
                             Arg::with_name("path")
@@ -253,10 +267,12 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("list")
                         .about("List all routes associated with a zone (outputs json)")
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                         .about("Delete a route by id")
                         .arg(
                             Arg::with_name("route_id")
@@ -278,17 +294,20 @@ fn run() -> Result<(), failure::Error> {
                         .about("Create or update a secret variable for a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete a secret variable from a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all secrets for a script")
                         .arg(environment_arg.clone())
+                        .arg(verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -297,6 +316,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a new worker project",
                     emoji::DANCERS
                 ))
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("name")
                         .help("the name of your worker! defaults to 'worker'")
@@ -328,6 +348,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Create a wrangler.toml for an existing project",
                     emoji::INBOX
                 ))
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("name")
                         .help("the name of your worker! defaults to 'worker'")
@@ -354,6 +375,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Build your worker",
                     emoji::CRAB
                 ))
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environment to build")
@@ -368,6 +390,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Preview your code temporarily on cloudflareworkers.com",
                     emoji::MICROSCOPE
                 ))
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("headless")
                         .help("Don't open the browser on preview")
@@ -396,12 +419,6 @@ fn run() -> Result<(), failure::Error> {
                         .help("watch your project for changes and update the preview automagically")
                         .long("watch")
                         .takes_value(false),
-                )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -410,6 +427,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Start a local server for developing your worker",
                     emoji::EAR
                 ))
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environment to build")
@@ -437,12 +455,6 @@ fn run() -> Result<(), failure::Error> {
                         .short("i")
                         .long("ip")
                         .takes_value(true)
-                )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("toggle verbose output")
                 ),
         )
         .subcommand(
@@ -451,18 +463,13 @@ fn run() -> Result<(), failure::Error> {
                     "{} Publish your worker to the orange cloud",
                     emoji::UP
                 ))
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environments to publish to")
                         .short("e")
                         .long("env")
                         .takes_value(true)
-                )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("toggle verbose output")
                 )
                 .arg(
                     Arg::with_name("release")
@@ -477,6 +484,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Set up wrangler with your Cloudflare account",
                     emoji::SLEUTH
                 ))
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("api-key")
                         .help("use an email and global API key for authentication. This is not recommended; use API tokens (the default) if possible")
@@ -496,6 +504,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Configure your workers.dev subdomain",
                     emoji::WORKER
                 ))
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("name")
                         .help("the subdomain on workers.dev you'd like to reserve")
