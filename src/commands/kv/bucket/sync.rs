@@ -8,8 +8,6 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use crate::commands::kv;
 use crate::commands::kv::bucket::directory_keys_only;
 use crate::commands::kv::bucket::directory_keys_values;
-use crate::commands::kv::bucket::upload::upload_files;
-use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::commands::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -23,10 +21,10 @@ pub fn sync(
     namespace_id: &str,
     path: &Path,
     verbose: bool,
-) -> Result<AssetManifest, failure::Error> {
+) -> Result<(Vec<KeyValuePair>, Vec<String>, AssetManifest), failure::Error> {
     kv::validate_target(target)?;
-    // First, upload all changed files in given local directory (aka replace files
-    // in Workers KV that are now stale).
+    // First, find all changed files in given local directory (aka files that are now stale
+    // in Workers KV).
 
     // Get remote keys, which contain the hash of the file (value) as the suffix.
     // Turn it into a HashSet. This will be used by upload() to figure out which
@@ -42,17 +40,11 @@ pub fn sync(
             Err(e) => failure::bail!(kv::format_error(e)),
         }
     }
-    // First, upload all existing files in given directory
-    if verbose {
-        message::info("Preparing to upload updated files...");
-    }
 
-    let (mut pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) =
+    let (pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) =
         directory_keys_values(target, path, verbose)?;
 
-    pairs = filter_files(pairs, &remote_keys);
-
-    upload_files(target, &user, namespace_id, pairs)?;
+    let to_upload = filter_files(pairs, &remote_keys);
 
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
@@ -65,20 +57,13 @@ pub fn sync(
 
     // Find keys that are present in remote but not present in local, and
     // stage them for deletion.
-    let keys_to_delete: Vec<_> = remote_keys
+    let to_delete: Vec<_> = remote_keys
         .difference(&local_keys)
         .map(|key| key.to_owned())
         .collect();
 
-    if !keys_to_delete.is_empty() {
-        if verbose {
-            message::info("Deleting stale files...");
-        }
-        delete_bulk(target, user, namespace_id, keys_to_delete)?;
-    }
-
     message::success("Success");
-    Ok(asset_manifest)
+    Ok((to_upload, to_delete, asset_manifest))
 }
 
 fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) -> Vec<KeyValuePair> {

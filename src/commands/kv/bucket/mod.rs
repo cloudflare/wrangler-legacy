@@ -6,6 +6,7 @@ mod upload;
 
 pub use manifest::AssetManifest;
 pub use sync::sync;
+pub use upload::upload_files;
 
 use std::ffi::OsString;
 use std::fs;

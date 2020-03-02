@@ -1,12 +1,13 @@
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::commands;
 use crate::commands::kv;
-use crate::commands::kv::bucket::AssetManifest;
+use crate::commands::kv::bucket::{sync, upload_files};
+use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::deploy;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, KvNamespace, Site, Target};
+use crate::settings::toml::{DeployConfig, KvNamespace, Target};
 use crate::terminal::{emoji, message};
 use crate::upload;
 
@@ -18,20 +19,42 @@ pub fn publish(
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
 
-    // TODO: write a separate function for publishing a site
-    if let Some(site_config) = &target.site.clone() {
-        warn_site_incompatible_route(&deploy_config);
-        bind_static_site_contents(user, target, &site_config, false)?;
-    }
-
-    let asset_manifest = upload_static_site_content(target, user, verbose)?;
-
     // Build the script before uploading.
     commands::build(&target)?;
 
-    upload::script(&user, &target, asset_manifest)?;
+    if let Some(site_config) = &target.site {
+        let path = &site_config.bucket.clone();
+        assert_non_root_bucket(path)?;
+        warn_site_incompatible_route(&deploy_config);
+        let site_namespace = add_site_namespace(user, target, false)?;
 
-    deploy::worker(&user, &deploy_config)?;
+        let (to_upload, to_delete, asset_manifest) =
+            sync(target, user, &site_namespace.id, &path, verbose)?;
+
+        // First, upload all existing files in given directory
+        if verbose {
+            message::info("Preparing to upload updated files...");
+        }
+        upload_files(target, user, &site_namespace.id, to_upload)?;
+
+        // Next, upload and deploy the worker with the updated asset_manifest
+        upload::script(&user, &target, Some(asset_manifest))?;
+
+        deploy::worker(&user, &deploy_config)?;
+
+        // Finally, remove any stale files
+        if !to_delete.is_empty() {
+            if verbose {
+                message::info("Deleting stale files...");
+            }
+
+            delete_bulk(target, user, &site_namespace.id, to_delete)?;
+        }
+    } else {
+        upload::script(&user, &target, None)?;
+
+        deploy::worker(&user, &deploy_config)?;
+    }
 
     Ok(())
 }
@@ -57,76 +80,57 @@ fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
 }
 
 // Updates given Target with kv_namespace binding for a static site assets KV namespace.
-pub fn bind_static_site_contents(
+pub fn add_site_namespace(
     user: &GlobalUser,
     target: &mut Target,
-    site_config: &Site,
     preview: bool,
-) -> Result<(), failure::Error> {
+) -> Result<KvNamespace, failure::Error> {
     let site_namespace = kv::namespace::site(target, &user, preview)?;
 
     // Check if namespace already is in namespace list
     for namespace in target.kv_namespaces() {
         if namespace.id == site_namespace.id {
-            return Ok(()); // Sites binding already exists; ignore
+            return Ok(namespace); // Sites binding already exists; ignore
         }
     }
 
-    target.add_kv_namespace(KvNamespace {
+    let site_namespace = KvNamespace {
         binding: "__STATIC_CONTENT".to_string(),
         id: site_namespace.id,
-        bucket: Some(site_config.bucket.to_owned()),
-    });
-    Ok(())
+    };
+
+    target.add_kv_namespace(site_namespace.clone());
+
+    Ok(site_namespace)
 }
 
-pub fn upload_static_site_content(
-    target: &Target,
-    user: &GlobalUser,
-    verbose: bool,
-) -> Result<Option<AssetManifest>, failure::Error> {
-    let mut asset_manifest = None;
-    if let Some(site_namespace) = target.kv_namespaces().iter().find(|ns| ns.bucket.is_some()) {
-        if let Some(bucket) = &site_namespace.bucket {
-            // We don't want folks setting their bucket to the top level directory,
-            // which is where wrangler commands are always called from.
-            let current_dir = env::current_dir()?;
-            if bucket.as_os_str() == current_dir {
-                failure::bail!(
-                    "{} You need to specify a bucket directory in your wrangler.toml",
-                    emoji::WARN
-                )
-            }
-            let path = Path::new(&bucket);
-            if !path.exists() {
-                failure::bail!(
-                    "{} bucket directory \"{}\" does not exist",
-                    emoji::WARN,
-                    path.display()
-                )
-            } else if !path.is_dir() {
-                failure::bail!(
-                    "{} bucket \"{}\" is not a directory",
-                    emoji::WARN,
-                    path.display()
-                )
-            }
-            let manifest_result =
-                kv::bucket::sync(target, user, &site_namespace.id, path, verbose)?;
-            if target.site.is_some() {
-                if asset_manifest.is_none() {
-                    asset_manifest = Some(manifest_result)
-                } else {
-                    // only site manifest should be returned
-                    unreachable!()
-                }
-            }
-        } else {
-            unreachable!()
-        }
+// We don't want folks setting their bucket to the top level directory,
+// which is where wrangler commands are always called from.
+pub fn assert_non_root_bucket(bucket: &PathBuf) -> Result<(), failure::Error> {
+    // TODO: this should really use a convenience function for "Wrangler Project Root"
+    let current_dir = env::current_dir()?;
+    if bucket.as_os_str() == current_dir {
+        failure::bail!(
+            "{} You need to specify a bucket directory in your wrangler.toml",
+            emoji::WARN
+        )
+    }
+    let path = Path::new(&bucket);
+    if !path.exists() {
+        failure::bail!(
+            "{} bucket directory \"{}\" does not exist",
+            emoji::WARN,
+            path.display()
+        )
+    } else if !path.is_dir() {
+        failure::bail!(
+            "{} bucket \"{}\" is not a directory",
+            emoji::WARN,
+            path.display()
+        )
     }
 
-    Ok(asset_manifest)
+    Ok(())
 }
 
 fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
