@@ -196,7 +196,7 @@ pub fn get_preview_id(
     verbose: bool,
 ) -> Result<String, failure::Error> {
     let sites_preview = false;
-    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
+    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose).map_err(|_| failure::format_err!("Could not upload your script, check your internet connection or https://www.cloudflarestatus.com/ for any incidents impacting the Cloudflare Workers API."))?;
     Ok(format!(
         "{}{}{}{}",
         &script_id,
