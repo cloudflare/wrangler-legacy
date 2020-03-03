@@ -24,7 +24,7 @@ pub fn publish(
 
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
-        assert_non_root_bucket(path)?;
+        validate_bucket_location(path)?;
         warn_site_incompatible_route(&deploy_config);
         let site_namespace = add_site_namespace(user, target, false)?;
 
@@ -106,12 +106,12 @@ pub fn add_site_namespace(
 
 // We don't want folks setting their bucket to the top level directory,
 // which is where wrangler commands are always called from.
-pub fn assert_non_root_bucket(bucket: &PathBuf) -> Result<(), failure::Error> {
+pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> {
     // TODO: this should really use a convenience function for "Wrangler Project Root"
     let current_dir = env::current_dir()?;
     if bucket.as_os_str() == current_dir {
         failure::bail!(
-            "{} You need to specify a bucket directory in your wrangler.toml",
+            "{} Your bucket cannot be set to the parent directory of your wrangler.toml",
             emoji::WARN
         )
     }
