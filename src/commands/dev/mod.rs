@@ -97,13 +97,13 @@ async fn serve(
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
         let client = client.to_owned();
-        let preview_id = preview_id.lock().unwrap().to_owned();
         let server_config = server_config.to_owned();
+        let preview_id = preview_id.to_owned();
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
                 let client = client.to_owned();
-                let preview_id = preview_id.to_owned();
                 let server_config = server_config.to_owned();
+                let preview_id = preview_id.lock().unwrap().to_owned();
                 let version = req.version();
                 let (parts, body) = req.into_parts();
                 let req_method = parts.method.to_string();
