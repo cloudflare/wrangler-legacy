@@ -16,7 +16,7 @@
 
   - **Remove unneeded carriage return in `wrangler config` - [gabbifish ], [issue/1109][pull/1112]**
 
-    Previously interactive input from `wrangler config` unexpectedly added a carriage return. This fix removes the unneed carriage return from the input collected.
+    Previously, interactive input from `wrangler secret put` added a carriage return to the secret key/value pairs on Windows. This no longer happens and input is parsed properly before uploading.
 
 ## 🙊 1.8.0
 
