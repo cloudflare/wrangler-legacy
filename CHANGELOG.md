@@ -1,5 +1,23 @@
 # Changelog
 
+## 🙈1.8.1
+
+- ### Fixes
+
+  - **Fix live reload for `wrangler dev` - [EverlastingBugstopper], [issue/1082][pull/1117]**
+
+    `wrangler dev` re-builds and re-uploads your script to the Cloudflare API when it detects a file change. The Cloudflare API returns a new token which allows `wrangler dev` to route subsequent requests to the new script. Previously, `wrangler dev` would re-build, re-upload, and receive the new token, but it wouldn't use it for a couple of minutes due to some faulty threading logic. (darn mutexes!) After this change, `wrangler dev` will block incoming requests when it is switching the token, thus fixing the issue.
+
+- ### Maintenance
+
+  - **Error messaging for internet required to talk to Cloudflare API - [EverlastingBugstopper], [issue/1093][pull/1114]**
+
+    With the release of `wrangler dev` in 1.8.0, it was not clear to users that internet is required since the feature communicates with Cloudflare's API. With this error message, users without internet connection are shown actionable next steps - check internet connection and lastly check if Cloudflare's API is down.
+
+  - **Remove unneeded carriage return in `wrangler config` - [gabbifish ], [issue/1109][pull/1112]**
+
+    Previously, interactive input from `wrangler secret put` added a carriage return to the secret key/value pairs on Windows. This no longer happens and input is parsed properly before uploading.
+
 ## 🙊 1.8.0
 
 - ### Features
@@ -750,9 +768,9 @@
 
     Wrangler orchestrates a few other tools under the hood, notably [`wasm-pack`](https://github.com/rustwasm/wasm-pack) and [`cargo-generate`](https://github.com/ashleygwilliams/cargo-generate). We use a library called [`binary-install`](https://github.com/rustwasm/binary-install) to fetch and cache binaries we download. However, to avoid downloading unecessarily, we first check if the user has a copy locally on their machine that they had `cargo install`'d. We had a bug where in this logic branch, we *didn't* check that the local version was the most up-to-date version. This meant that users who had an older installed version may run into errors when wrangler expected to use features of a newer version of that tool. This PR adds the logic to check for the version and will install and cache a newer version for wrangler to use (leaving your local version as is!).
 
-    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
-    [issue/666]: https://github.com/cloudflare/wrnagler/issues/666
-    [pull/726]: https://github.com/cloudflare/wrangler/pull/726
+  [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+  [issue/666]: https://github.com/cloudflare/wrnagler/issues/666
+  [pull/726]: https://github.com/cloudflare/wrangler/pull/726
 
   - **Remove link to 000000000000000000.cloudflareworkers.com - [EverlastingBugstopper], [pull]**
 

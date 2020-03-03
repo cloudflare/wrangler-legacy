@@ -1,6 +1,5 @@
 #![allow(clippy::redundant_closure)]
 
-#[macro_use]
 extern crate text_io;
 extern crate tokio;
 
