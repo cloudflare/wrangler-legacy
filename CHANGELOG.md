@@ -6,7 +6,7 @@
 
   - **Fix live reload for `wrangler dev` - [EverlastingBugstopper], [issue/1082][pull/1117]**
 
-    Updates to a Worker script in a text editor would not trigger the terminal running `wrangler dev` to update automatically. This fix makes sure the multiple threads running on wrangler get an updated lock whenever a reload is detected instead of depending on routine lock checks.
+    `wrangler dev` re-builds and re-uploads your script to the Cloudflare API when it detects a file change. The Cloudflare API returns a new token which allows `wrangler dev` to route subsequent requests to the new script. Previously, `wrangler dev` would re-build, re-upload, and receive the new token, but it wouldn't use it for a couple of minutes due to some faulty threading logic. (darn mutexes!) After this change, `wrangler dev` will block incoming requests when it is switching the token, thus fixing the issue.
 
 - ### Maintenance
 
