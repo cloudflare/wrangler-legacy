@@ -1,22 +1,34 @@
 # Changelog
 
-## 🙈1.8.1
+## 😈 1.8.1
 
-- ### Fixes
+- ### Features
 
-  - **Fix live reload for `wrangler dev` - [EverlastingBugstopper], [issue/1082][pull/1117]**
-
-    `wrangler dev` re-builds and re-uploads your script to the Cloudflare API when it detects a file change. The Cloudflare API returns a new token which allows `wrangler dev` to route subsequent requests to the new script. Previously, `wrangler dev` would re-build, re-upload, and receive the new token, but it wouldn't use it for a couple of minutes due to some faulty threading logic. (darn mutexes!) After this change, `wrangler dev` will block incoming requests when it is switching the token, thus fixing the issue.
-
-- ### Maintenance
-
-  - **Error messaging for internet required to talk to Cloudflare API - [EverlastingBugstopper], [issue/1093][pull/1114]**
+  - **Error messaging for internet required to talk to Cloudflare API - [EverlastingBugstopper], [issue/1093] [pull/1114]**
 
     With the release of `wrangler dev` in 1.8.0, it was not clear to users that internet is required since the feature communicates with Cloudflare's API. With this error message, users without internet connection are shown actionable next steps - check internet connection and lastly check if Cloudflare's API is down.
 
-  - **Remove unneeded carriage return in `wrangler config` - [gabbifish ], [issue/1109][pull/1112]**
+    [issue/1093]: https://github.com/cloudflare/wrangler/issues/1093
+    [pull/1114]: https://github.com/cloudflare/wrangler/pull/1114
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+
+- ### Fixes
+
+  - **Fix live reload for `wrangler dev` - [EverlastingBugstopper], [issue/1082] [pull/1117]**
+
+    `wrangler dev` re-builds and re-uploads your script to the Cloudflare API when it detects a file change. The Cloudflare API returns a new token which allows `wrangler dev` to route subsequent requests to the new script. Previously, `wrangler dev` would re-build, re-upload, and receive the new token, but it wouldn't use it for a couple of minutes due to some faulty threading logic. (darn mutexes!) After this change, `wrangler dev` will block incoming requests when it is switching the token, thus fixing the issue.
+
+    [issue/1082]: https://github.com/cloudflare/wrangler/issues/1082
+    [pull/1117]: https://github.com/cloudflare/wrangler/pull/1117
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+
+  - **Remove unneeded carriage return in `wrangler secret put` - [gabbifish], [issue/1109] [pull/1112]**
 
     Previously, interactive input from `wrangler secret put` added a carriage return to the secret key/value pairs on Windows. This no longer happens and input is parsed properly before uploading.
+
+    [issue/1109]: https://github.com/cloudflare/wrangler/issues/1109
+    [pull/1112]: https://github.com/cloudflare/wrangler/pull/1112
+    [gabbifish]: https://github.com/gabbifish
 
 ## 🙊 1.8.0
 
