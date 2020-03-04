@@ -38,7 +38,7 @@ pub struct EnvConfig {
     pub site: Option<SiteConfig>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvConfig>>,
-    pub config: Option<HashMap<&'static str, &'static str>>,
+    pub vars: Option<HashMap<&'static str, &'static str>>,
 }
 
 impl EnvConfig {
@@ -97,7 +97,7 @@ pub struct WranglerToml {
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvConfig>>,
     pub site: Option<SiteConfig>,
-    pub config: Option<HashMap<&'static str, &'static str>>,
+    pub vars: Option<HashMap<&'static str, &'static str>>,
 }
 
 impl WranglerToml {

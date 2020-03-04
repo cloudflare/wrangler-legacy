@@ -1,7 +1,13 @@
 // For interactively handling reading in a string
 pub fn get_user_input(prompt_string: &str) -> String {
     println!("{}", prompt_string);
-    let input: String = read!("{}\n");
+    let mut input: String = read!("{}\n");
+    input = strip_trailing_whitespace(input);
+    input
+}
+
+fn strip_trailing_whitespace(mut input: String) -> String {
+    input.truncate(input.trim_end().len());
     input
 }
 
@@ -22,5 +28,18 @@ pub fn delete(prompt_string: &str) -> Result<bool, failure::Error> {
         YES => Ok(true),
         NO => Ok(false),
         _ => failure::bail!("Response must either be \"y\" for yes or \"n\" for no"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_trims_user_input_right_whitespace_chars() {
+        let test_str = "mysecret\r".to_string();
+
+        let truncated_str = strip_trailing_whitespace(test_str);
+        assert_eq!(truncated_str, "mysecret")
     }
 }

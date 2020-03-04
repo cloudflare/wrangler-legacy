@@ -1,6 +1,5 @@
 #![allow(clippy::redundant_closure)]
 
-#[macro_use]
 extern crate text_io;
 extern crate tokio;
 
@@ -18,8 +17,7 @@ use wrangler::installer;
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
-use wrangler::terminal::emoji;
-use wrangler::terminal::message;
+use wrangler::terminal::{emoji, interactive, message};
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -272,6 +270,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a secret that can be referenced in the worker script",
                     emoji::SECRET
                 ))
+                .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Create or update a secret variable for a script")
@@ -432,7 +431,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("ip")
-                        .help("ip to listsen on. defaults to localhost")
+                        .help("ip to listen on. defaults to localhost")
                         .short("i")
                         .long("ip")
                         .takes_value(true)
@@ -517,19 +516,12 @@ fn run() -> Result<(), failure::Error> {
             // API Tokens are the default
             message::big_info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens\n\tand create it using the \"Edit Cloudflare Workers\" template");
             message::big_info("If you are trying to use your Global API Key instead of an API Token\n\t(Not Recommended), run \"wrangler config --api-key\".\n");
-            println!("Enter API token: ");
-            let mut api_token: String = read!("{}\n");
-            api_token.truncate(api_token.trim_end().len());
+            let api_token: String = interactive::get_user_input("Enter API token: ");
             GlobalUser::TokenAuth { api_token }
         } else {
             message::big_info("We don't recommend using your Global API Key! Please consider using an\n\tAPI Token instead.\n\thttps://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys\n");
-            println!("Enter email: ");
-            let mut email: String = read!("{}\n");
-            email.truncate(email.trim_end().len());
-
-            println!("Enter global API key: ");
-            let mut api_key: String = read!("{}\n");
-            api_key.truncate(api_key.trim_end().len());
+            let email: String = interactive::get_user_input("Enter email: ");
+            let api_key: String = interactive::get_user_input("Enter global API key: ");
 
             GlobalUser::GlobalKeyAuth { email, api_key }
         };
