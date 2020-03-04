@@ -7,7 +7,7 @@ mod http_method;
 pub use http_method::HTTPMethod;
 
 mod upload;
-use upload::upload;
+pub use upload::upload;
 
 use crate::commands;
 
@@ -17,7 +17,7 @@ use log::info;
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 
 use std::sync::mpsc::channel;
@@ -119,14 +119,14 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn get(cookie: String, client: &reqwest::Client) -> Result<String, failure::Error> {
+fn get(cookie: String, client: &reqwest::blocking::Client) -> Result<String, failure::Error> {
     let res = client.get(PREVIEW_ADDRESS).header("Cookie", cookie).send();
     Ok(res?.text()?)
 }
 
 fn post(
     cookie: String,
-    client: &reqwest::Client,
+    client: &reqwest::blocking::Client,
     body: Option<String>,
 ) -> Result<String, failure::Error> {
     let res = match body {

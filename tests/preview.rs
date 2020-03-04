@@ -3,20 +3,18 @@ extern crate lazy_static;
 
 pub mod fixture;
 
+use fixture::{EnvConfig, WranglerToml, TEST_ENV_NAME};
+
+use std::collections::HashMap;
 use std::env;
 use std::process::Command;
-use std::sync::Mutex;
 
 use assert_cmd::prelude::*;
 use fixture::Fixture;
 
-lazy_static! {
-    static ref BUILD_LOCK: Mutex<u8> = Mutex::new(0);
-}
-
 #[test]
 fn it_can_preview_js_project() {
-    let fixture = Fixture::new("simple_js");
+    let fixture = Fixture::new();
     fixture.create_file(
         "index.js",
         r#"
@@ -34,31 +32,27 @@ fn it_can_preview_js_project() {
     "#,
     );
     fixture.create_default_package_json();
-    fixture.create_wrangler_toml(
-        r#"
-        type = "javascript"
-    "#,
-    );
+
+    let wrangler_toml = WranglerToml::javascript("test-preview-javascript");
+    fixture.create_wrangler_toml(wrangler_toml);
+
     preview_succeeds(&fixture);
-    fixture.cleanup()
 }
 
 #[test]
 fn it_can_preview_webpack_project() {
-    let fixture = Fixture::new("webpack_simple_js");
+    let fixture = Fixture::new();
     fixture.scaffold_webpack();
-    fixture.create_wrangler_toml(
-        r#"
-        type = "webpack"
-    "#,
-    );
+
+    let wrangler_toml = WranglerToml::webpack_build("test-preview-webpack");
+    fixture.create_wrangler_toml(wrangler_toml);
+
     preview_succeeds(&fixture);
-    fixture.cleanup()
 }
 
 #[test]
 fn it_can_preview_rust_project() {
-    let fixture = Fixture::new("simple_rust");
+    let fixture = Fixture::new();
     fixture.create_dir("src");
     fixture.create_dir("worker");
 
@@ -174,18 +168,58 @@ fn it_can_preview_rust_project() {
     "#,
     );
 
-    fixture.create_wrangler_toml(
+    let wrangler_toml = WranglerToml::rust("test-preview-rust");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    preview_succeeds(&fixture);
+}
+
+#[test]
+fn it_previews_with_config_text() {
+    let fixture = Fixture::new();
+    fixture.create_file(
+        "index.js",
         r#"
-        type = "rust"
+        addEventListener('fetch', event => {
+            event.respondWith(handleRequest(event.request))
+        })
+        
+        async function handleRequest(request) {
+            return new Response(CONFIG_TEST)
+        }
     "#,
     );
-    preview_succeeds(&fixture);
-    fixture.cleanup()
+    fixture.create_default_package_json();
+
+    let test_value: &'static str = "sdhftiuyrtdhfjgpoopuyrdfjgkyitudrhf";
+
+    let mut wrangler_toml = WranglerToml::javascript("test-preview-with-config");
+    let mut config: HashMap<&'static str, &'static str> = HashMap::new();
+    config.insert("CONFIG_TEST", test_value);
+    wrangler_toml.vars = Some(config);
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    preview_succeeds_with(&fixture, None, test_value);
+}
+
+fn preview_succeeds_with(fixture: &Fixture, env: Option<&str>, expected: &str) {
+    let _lock = fixture.lock();
+    env::remove_var("CF_ACCOUNT_ID");
+    env::remove_var("CF_ZONE_ID");
+    let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    preview.current_dir(fixture.get_path());
+    preview.arg("preview").arg("--headless");
+    if let Some(env) = env {
+        preview.arg("--env").arg(env);
+    }
+    preview
+        .assert()
+        .stdout(predicates::str::contains(expected))
+        .success();
 }
 
 fn preview_succeeds(fixture: &Fixture) {
-    // Lock to avoid having concurrent builds
-    let _g = BUILD_LOCK.lock().unwrap();
+    let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture.get_path());

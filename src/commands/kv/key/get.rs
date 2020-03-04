@@ -8,7 +8,7 @@ use cloudflare::framework::response::ApiFailure;
 use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 
 pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
@@ -21,9 +21,10 @@ pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()
 
     let client = http::auth_client(None, &user);
 
-    let mut res = client.get(&api_endpoint).send()?;
+    let res = client.get(&api_endpoint).send()?;
 
-    if res.status().is_success() {
+    let response_status = res.status();
+    if response_status.is_success() {
         let body_text = res.text()?;
         // We don't use message::success because we don't want to include the emoji/formatting
         // in case someone is piping this to stdin
@@ -35,7 +36,7 @@ pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()
         let errors = parsed.unwrap_or_default();
         print!(
             "{}",
-            kv::format_error(ApiFailure::Error(res.status(), errors))
+            kv::format_error(ApiFailure::Error(response_status, errors))
         );
     }
 

@@ -2,9 +2,10 @@ use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
-use reqwest::Client;
+use crate::upload;
+use reqwest::blocking::Client;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -133,9 +134,9 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::upload_form::build(target, asset_manifest)?;
+    let script_upload_form = upload::form::build(target, asset_manifest)?;
 
-    let mut res = client
+    let res = client
         .post(&create_address)
         .multipart(script_upload_form)
         .send()?
@@ -163,12 +164,12 @@ fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, f
         );
         let mut target = target.clone();
         target.kv_namespaces = None;
-        publish::upload_form::build(&target, None)?
+        upload::form::build(&target, None)?
     } else {
-        publish::upload_form::build(&target, None)?
+        upload::form::build(&target, None)?
     };
 
-    let mut res = client
+    let res = client
         .post(create_address)
         .multipart(script_upload_form)
         .send()?

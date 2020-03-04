@@ -11,7 +11,7 @@ use url::Url;
 use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 
 pub struct KVMetaData {
@@ -50,7 +50,7 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
 
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
-    let mut res = if data.is_file {
+    let res = if data.is_file {
         match &metadata(&data.value) {
             Ok(file_type) if file_type.is_file() => {
                 let file = fs::File::open(&data.value)?;
@@ -67,7 +67,8 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
         client.put(&url_into_str).body(data.value).send()?
     };
 
-    if res.status().is_success() {
+    let response_status = res.status();
+    if response_status.is_success() {
         message::success("Success")
     } else {
         // This is logic pulled from cloudflare-rs for pretty error formatting right now;
@@ -76,7 +77,7 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
         let errors = parsed.unwrap_or_default();
         print!(
             "{}",
-            kv::format_error(ApiFailure::Error(res.status(), errors))
+            kv::format_error(ApiFailure::Error(response_status, errors))
         );
     }
 

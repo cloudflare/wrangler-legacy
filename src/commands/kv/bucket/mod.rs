@@ -19,7 +19,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{Walk, WalkBuilder};
 
-use crate::settings::target::Target;
+use crate::settings::toml::Target;
 use crate::terminal::message;
 
 pub const KEY_MAX_SIZE: usize = 512;
@@ -133,17 +133,17 @@ const NODE_MODULES: &str = "node_modules";
 
 fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
     // The directory provided should never be node_modules!
-    match directory.file_name() {
-        Some(name) => {
-            if name == NODE_MODULES {
-                failure::bail!("Your directory of files to upload cannot be named node_modules.");
-            }
+    if let Some(name) = directory.file_name() {
+        if name == NODE_MODULES {
+            failure::bail!("Your directory of files to upload cannot be named node_modules.");
         }
-        _ => (),
-    }
+    };
 
     let ignore = build_ignore(target, directory)?;
-    Ok(WalkBuilder::new(directory).overrides(ignore).build())
+    Ok(WalkBuilder::new(directory)
+        .git_ignore(false)
+        .overrides(ignore)
+        .build())
 }
 
 fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
@@ -258,9 +258,10 @@ mod tests {
     use super::*;
     use regex::Regex;
     use std::fs;
+    use std::io::Write;
     use std::path::{Path, PathBuf};
 
-    use crate::settings::target::{Site, Target, TargetType};
+    use crate::settings::toml::{Site, Target, TargetType};
 
     fn make_target(site: Site) -> Target {
         Target {
@@ -268,11 +269,9 @@ mod tests {
             kv_namespaces: None,
             name: "".to_string(),
             target_type: TargetType::JavaScript,
-            route: None,
-            routes: None,
             webpack_config: None,
-            zone_id: None,
             site: Some(site),
+            vars: None,
         }
     }
 
@@ -439,6 +438,49 @@ mod tests {
 
         assert!(files.contains(&test_path));
 
+        fs::remove_dir_all(test_dir).unwrap();
+    }
+
+    #[test]
+    fn it_can_include_gitignore_entries() {
+        // We don't want our wrangler include/exclude functionality to read .gitignore files.
+        let mut site = Site::default();
+        site.bucket = PathBuf::from("public");
+        let target = make_target(site);
+
+        let test_dir = "test7";
+        // If test dir already exists, delete it.
+        if fs::metadata(test_dir).is_ok() {
+            fs::remove_dir_all(test_dir).unwrap();
+        }
+
+        fs::create_dir(test_dir).unwrap();
+        // Create .gitignore file in test7 directory
+        let gitignore_pathname = format!("{}/.gitignore", test_dir);
+        let gitignore_path = PathBuf::from(&gitignore_pathname);
+        let mut gitignore = fs::File::create(&gitignore_path).unwrap();
+        writeln!(gitignore, "public/").unwrap();
+
+        // Create 'public/' directory, which should be included.
+        let upload_dir = format!("{}/public", test_dir);
+        fs::create_dir(&upload_dir).unwrap();
+        let test_pathname = format!("{}/notice_me.txt", &upload_dir);
+        let test_path = PathBuf::from(&test_pathname);
+        fs::File::create(&test_path).unwrap();
+
+        let files: Vec<_> = get_dir_iterator(&target, Path::new(&upload_dir))
+            .unwrap()
+            .map(|entry| entry.unwrap().path().to_owned())
+            .collect();
+
+        assert!(files.contains(&test_path));
+
+        // Why drop()? Well, fs::remove_dir_all on Windows depends on the DeleteFileW syscall.
+        // This syscall doesn't actually delete a file, but only marks it for deletion. It still
+        // can be alive when we try to delete the parent directory test_dir, causing a "directory
+        // is not empty" error. As a result, we MUST call drop() to close the gitignore file so
+        // that it is not alive when fs::remove_dir_all(test_dir) is called.
+        drop(gitignore);
         fs::remove_dir_all(test_dir).unwrap();
     }
 

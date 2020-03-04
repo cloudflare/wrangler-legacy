@@ -4,7 +4,7 @@ use ignore::WalkBuilder;
 pub use watcher::wait_for_changes;
 
 use crate::commands::build::{command, wranglerjs};
-use crate::settings::target::{Target, TargetType};
+use crate::settings::toml::{Target, TargetType};
 use crate::terminal::message;
 use crate::{commands, install};
 
@@ -18,7 +18,7 @@ const JAVASCRIPT_PATH: &str = "./";
 const RUST_PATH: &str = "./";
 
 // Paths to ignore live watching in Rust Workers
-const RUST_IGNORE: &'static [&str] = &["pkg", "target", "worker/generated"];
+const RUST_IGNORE: &[&str] = &["pkg", "target", "worker/generated"];
 
 // watch a project for changes and re-build it when necessary,
 // outputting a build event to tx.

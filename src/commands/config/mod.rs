@@ -1,6 +1,8 @@
+#[cfg(not(target_os = "windows"))]
 use std::fs::File;
 #[cfg(not(target_os = "windows"))]
 use std::os::unix::fs::PermissionsExt;
+#[cfg(not(target_os = "windows"))]
 use std::path::PathBuf;
 
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
@@ -44,7 +46,7 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
 // validate_credentials() checks the /user/tokens/verify endpoint (for API token)
 // or /user endpoint (for global API key) to ensure provided credentials actually work.
 pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
-    let client = http::api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
 
     match user {
         GlobalUser::TokenAuth { .. } => {

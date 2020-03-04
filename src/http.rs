@@ -1,5 +1,6 @@
+use reqwest::blocking::{Client, ClientBuilder};
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
-use reqwest::{Client, ClientBuilder, RedirectPolicy};
+use reqwest::redirect::Policy;
 use std::time::Duration;
 
 use crate::install;
@@ -16,7 +17,7 @@ use crate::terminal::message;
 
 ////---------------------------OLD API CLIENT CODE---------------------------////
 // TODO: remove this and replace it entirely with cloudflare-rs
-fn headers(feature: Option<&str>) -> HeaderMap {
+pub fn headers(feature: Option<&str>) -> HeaderMap {
     let version = if install::target::DEBUG {
         "dev"
     } else {
@@ -34,7 +35,7 @@ fn headers(feature: Option<&str>) -> HeaderMap {
 }
 
 fn builder() -> ClientBuilder {
-    let builder = reqwest::Client::builder();
+    let builder = reqwest::blocking::Client::builder();
     builder
         .connect_timeout(Duration::from_secs(10))
         .timeout(Duration::from_secs(30))
@@ -52,8 +53,8 @@ pub fn auth_client(feature: Option<&str>, user: &GlobalUser) -> Client {
     add_auth_headers(&mut headers, user);
 
     builder()
-        .default_headers(headers.to_owned())
-        .redirect(RedirectPolicy::none())
+        .default_headers(headers)
+        .redirect(Policy::none())
         .build()
         .expect("could not create authenticated http client")
 }
@@ -74,7 +75,7 @@ fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) {
 }
 
 ////---------------------------NEW API CLIENT CODE---------------------------////
-pub fn api_client(
+pub fn cf_v4_api_client(
     user: &GlobalUser,
     config: HttpApiClientConfig,
 ) -> Result<HttpApiClient, failure::Error> {

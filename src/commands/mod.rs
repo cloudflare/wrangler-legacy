@@ -3,11 +3,14 @@ use std::process::Command;
 pub mod build;
 pub mod cloudflared;
 pub mod config;
+pub mod dev;
 pub mod generate;
 pub mod init;
 pub mod kv;
 pub mod preview;
 pub mod publish;
+pub mod route;
+pub mod secret;
 pub mod subdomain;
 pub mod whoami;
 
@@ -15,14 +18,17 @@ pub use self::config::global_config;
 pub use build::build;
 pub use build::watch_and_build;
 pub use cloudflared::run_cloudflared_start_server;
+pub use dev::dev;
 pub use generate::generate;
 pub use init::init;
 pub use preview::{preview, HTTPMethod};
 pub use publish::publish;
-use regex::Regex;
+pub use secret::{create_secret, delete_secret, list_secrets};
 pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
 pub use whoami::whoami;
+
+use regex::Regex;
 
 // Run the given command and return its stdout.
 pub fn run(mut command: Command, command_name: &str) -> Result<(), failure::Error> {
