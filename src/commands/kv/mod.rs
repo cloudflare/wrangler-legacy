@@ -133,10 +133,12 @@ mod tests {
                 KvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
+                    bucket: None,
                 },
                 KvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
+                    bucket: None,
                 },
             ]),
             name: "test-target".to_string(),

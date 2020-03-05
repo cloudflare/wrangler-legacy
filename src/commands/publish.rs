@@ -31,11 +31,13 @@ pub fn publish(
         let (to_upload, to_delete, asset_manifest) =
             sync(target, user, &site_namespace.id, &path, verbose)?;
 
-        // First, upload all existing files in given directory
+        // First, upload all existing files in bucket directory
         if verbose {
             message::info("Preparing to upload updated files...");
         }
         upload_files(target, user, &site_namespace.id, to_upload)?;
+
+        sync_other_buckets(target, user, verbose)?;
 
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&user, &target, Some(asset_manifest))?;
@@ -51,6 +53,8 @@ pub fn publish(
             delete_bulk(target, user, &site_namespace.id, to_delete)?;
         }
     } else {
+        sync_other_buckets(target, user, verbose)?;
+
         upload::script(&user, &target, None)?;
 
         deploy::worker(&user, &deploy_config)?;
@@ -97,6 +101,7 @@ pub fn add_site_namespace(
     let site_namespace = KvNamespace {
         binding: "__STATIC_CONTENT".to_string(),
         id: site_namespace.id,
+        bucket: Some(target.site.clone().unwrap().bucket),
     };
 
     target.add_kv_namespace(site_namespace.clone());
@@ -128,6 +133,45 @@ pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> 
             emoji::WARN,
             path.display()
         )
+    }
+
+    Ok(())
+}
+
+pub fn sync_other_buckets(
+    target: &Target,
+    user: &GlobalUser,
+    verbose: bool,
+) -> Result<(), failure::Error> {
+    let site_bucket = if let Some(site_config) = &target.site {
+        Some(PathBuf::from(&site_config.bucket))
+    } else {
+        None
+    };
+
+    for namespace in target.kv_namespaces() {
+        if namespace.bucket != site_bucket {
+            if let Some(path) = &namespace.bucket {
+                // TODO: add deprecation warning
+                validate_bucket_location(path)?;
+                let (to_upload, to_delete, _) =
+                    kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
+                // First, upload all existing files in bucket directory
+                if verbose {
+                    message::info("Preparing to upload updated files...");
+                }
+                upload_files(target, user, &namespace.id, to_upload)?;
+
+                // Finally, remove any stale files
+                if !to_delete.is_empty() {
+                    if verbose {
+                        message::info("Deleting stale files...");
+                    }
+
+                    delete_bulk(target, user, &namespace.id, to_delete)?;
+                }
+            }
+        }
     }
 
     Ok(())

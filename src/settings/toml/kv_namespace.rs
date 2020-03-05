@@ -1,4 +1,5 @@
 use std::fmt;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -8,6 +9,7 @@ use crate::settings::binding::Binding;
 pub struct KvNamespace {
     pub id: String,
     pub binding: String,
+    pub bucket: Option<PathBuf>,
 }
 
 impl fmt::Display for KvNamespace {
