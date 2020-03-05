@@ -134,7 +134,7 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = upload::form::build(target, asset_manifest)?;
+    let script_upload_form = upload::form::build(target, asset_manifest, None)?;
 
     let res = client
         .post(&create_address)
@@ -164,9 +164,9 @@ fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, f
         );
         let mut target = target.clone();
         target.kv_namespaces = None;
-        upload::form::build(&target, None)?
+        upload::form::build(&target, None, None)?
     } else {
-        upload::form::build(&target, None)?
+        upload::form::build(&target, None, None)?
     };
 
     let res = client

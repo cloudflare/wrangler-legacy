@@ -14,31 +14,30 @@ pub(super) fn upload(
     asset_manifest: Option<AssetManifest>,
     deploy_config: &DeployConfig,
     user: &GlobalUser,
+    preview_token: String,
 ) -> Result<String, failure::Error> {
     let client = http::auth_client(None, &user);
-
     if let Some(site_config) = target.site.clone() {
         publish::bind_static_site_contents(user, target, &site_config, true)?;
     }
 
     let session_config = get_session_config(deploy_config);
-    let address = get_address(deploy_config);
+    let address = get_upload_address(target);
 
-    let script_upload_form = upload::form::build(target, asset_manifest)?;
+    let script_upload_form = upload::form::build(target, asset_manifest, Some(session_config))?;
 
-    let res = client
+    let response = client
         .post(&address)
+        .header("cf-workers-preview-token", preview_token)
         .multipart(script_upload_form)
         .send()?
         .error_for_status()?;
 
-    let text = &res.text()?;
-    log::info!("Response from edge preview: {:#?}", text);
+    let text = &response.text()?;
 
     // TODO: use cloudflare-rs for this :)
-    let response: V4ApiResponse = serde_json::from_str(text)?;
-
-    Ok(response.result.token)
+    let response: PreviewV4ApiResponse = serde_json::from_str(text)?;
+    Ok(response.result.preview_token)
 }
 
 pub(super) fn get_preview_token(
@@ -58,12 +57,18 @@ pub(super) fn get_preview_token(
 
 fn get_session_config(deploy_config: &DeployConfig) -> serde_json::Value {
     match deploy_config {
-        DeployConfig::Zoned(config) => json!({"route": config.routes}),
+        DeployConfig::Zoned(config) => {
+            let mut routes: Vec<String> = Vec::new();
+            for route in &config.routes {
+                routes.push(route.pattern.clone());
+            }
+            json!({ "routes": routes })
+        }
         DeployConfig::Zoneless(_) => json!({"workers_dev": true}),
     }
 }
 
-fn get_address(deploy_config: &DeployConfig) -> String {
+fn get_initialize_address(deploy_config: &DeployConfig) -> String {
     match deploy_config {
         DeployConfig::Zoned(config) => format!(
             "https://api.cloudflare.com/client/v4/zones/{}/workers/realish",
@@ -77,26 +82,43 @@ fn get_address(deploy_config: &DeployConfig) -> String {
     }
 }
 
+fn get_upload_address(target: &mut Target) -> String {
+    format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/realish",
+        target.account_id, target.name
+    )
+}
+
 fn get_exchange_url(
     deploy_config: &DeployConfig,
     user: &GlobalUser,
 ) -> Result<String, failure::Error> {
     let client = http::auth_client(None, &user);
-    let address = get_address(deploy_config);
+    let address = get_initialize_address(deploy_config);
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;
     let text = &response.text()?;
-    let response: V4ApiResponse = serde_json::from_str(text)?;
+    let response: InitV4ApiResponse = serde_json::from_str(text)?;
     Ok(response.result.exchange_url)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Preview {
+struct Init {
     pub exchange_url: String,
     pub token: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct V4ApiResponse {
+struct InitV4ApiResponse {
+    pub result: Init,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Preview {
+    pub preview_token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PreviewV4ApiResponse {
     pub result: Preview,
 }

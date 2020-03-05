@@ -26,7 +26,7 @@ pub fn dev(
     .to_string();
     let mut target = target.clone();
     // TODO: replace asset manifest parameter
-    let preview_token = setup::upload(&mut target, None, &deploy_config, &user)?;
+    let preview_token = setup::upload(&mut target, None, &deploy_config, &user, preview_token)?;
     let server = serve(server_config, preview_token, host);
     let mut runtime = TokioRuntime::new()?;
     runtime.block_on(server)

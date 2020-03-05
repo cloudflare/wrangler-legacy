@@ -31,6 +31,7 @@ pub fn headers(feature: Option<&str>) -> HeaderMap {
 
     let mut headers = HeaderMap::new();
     headers.insert(USER_AGENT, HeaderValue::from_str(&user_agent).unwrap());
+
     headers
 }
 

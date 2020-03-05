@@ -25,7 +25,7 @@ pub fn script(
         http::auth_client(None, user)
     };
 
-    let script_upload_form = form::build(target, asset_manifest)?;
+    let script_upload_form = form::build(target, asset_manifest, None)?;
 
     let res = client
         .put(&worker_addr)

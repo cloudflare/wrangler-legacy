@@ -91,7 +91,7 @@ fn preview_request(
     );
 
     // TODO: figure out how to http _or_ https
-    let uri: Uri = format!("https://{}{}", host, path)
+    parts.uri = format!("https://{}{}", host, path)
         .parse()
         .expect("Could not construct preview url");
 
