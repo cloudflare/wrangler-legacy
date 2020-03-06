@@ -6,6 +6,7 @@ use crate::commands::kv;
 use crate::commands::kv::bucket::{sync, upload_files};
 use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::deploy;
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, KvNamespace, Target};
 use crate::terminal::{emoji, message};
@@ -38,9 +39,10 @@ pub fn publish(
         upload_files(target, user, &site_namespace.id, to_upload)?;
 
         sync_other_buckets(target, user, verbose)?;
+        let upload_client = http::auth_client(Some("site"), user);
 
         // Next, upload and deploy the worker with the updated asset_manifest
-        upload::script(&user, &target, Some(asset_manifest))?;
+        upload::script(&upload_client, &target, Some(asset_manifest))?;
 
         deploy::worker(&user, &deploy_config)?;
 
@@ -55,7 +57,8 @@ pub fn publish(
     } else {
         sync_other_buckets(target, user, verbose)?;
 
-        upload::script(&user, &target, None)?;
+        let upload_client = http::auth_client(None, user);
+        upload::script(&upload_client, &target, None)?;
 
         deploy::worker(&user, &deploy_config)?;
     }

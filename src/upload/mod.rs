@@ -4,13 +4,13 @@ pub mod package;
 
 pub use package::Package;
 
+use reqwest::blocking::Client;
+
 use crate::commands::kv::bucket::AssetManifest;
-use crate::http;
-use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
 pub fn script(
-    user: &GlobalUser,
+    client: &Client,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<(), failure::Error> {
@@ -18,12 +18,6 @@ pub fn script(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         target.account_id, target.name,
     );
-
-    let client = if target.site.is_some() {
-        http::auth_client(Some("site"), user)
-    } else {
-        http::auth_client(None, user)
-    };
 
     let script_upload_form = form::build(target, asset_manifest)?;
 
