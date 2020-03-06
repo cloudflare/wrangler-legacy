@@ -3,7 +3,7 @@
 ![Banner](/banner.png)
 
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
-[![npm](https://badge.fury.io/js/%40cloudflare%2Fwrangler.svg)](https://www.npmjs.com/package/@cloudflare/wrangler) &nbsp;
+[![npm](https://img.shields.io/npm/v/@cloudflare/wrangler.svg)](https://www.npmjs.com/package/@cloudflare/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 [![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
 [![Github Actions - Build Status](https://github.com/cloudflare/wrangler/workflows/Builds/badge.svg)](https://github.com/cloudflare/wrangler/actions)
