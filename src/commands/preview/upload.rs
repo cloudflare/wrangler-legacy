@@ -8,6 +8,8 @@ use crate::upload;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
+use console::style;
+
 #[derive(Debug, Deserialize)]
 struct Preview {
     id: String,
@@ -75,12 +77,13 @@ pub fn upload(
             }
         }
         None => {
-            message::warn(
-                "You haven't run `wrangler config`. Running preview without authentication",
+            let wrangler_config_msg = style("`wrangler config`").yellow().bold();
+            let docs_url_msg = style("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables").blue().bold();
+            message::billboard(
+                &format!("You have not provided your Cloudflare credentials.\n\nPlease run {} or visit\n{}\nfor info on authenticating with environment variables.", wrangler_config_msg, docs_url_msg)
             );
-            message::big_info(
-                "Please run `wrangler config` or visit https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables for info on configuring with environment variables",
-            );
+
+            message::info("Running preview without authentication.");
 
             if sites_preview {
                 failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
