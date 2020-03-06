@@ -49,3 +49,8 @@ pub fn help(msg: &str) {
     let msg = format!("{} {}", emoji::SLEUTH, msg);
     message(&msg);
 }
+
+pub fn deprecation_warning(msg: &str) {
+    let msg = format!("\n\t{} {}", emoji::WARN, msg);
+    message(&msg);
+}

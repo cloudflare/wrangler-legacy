@@ -1,6 +1,8 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+use console::style;
+
 use crate::commands;
 use crate::commands::kv;
 use crate::commands::kv::bucket::{sync, upload_files};
@@ -27,6 +29,7 @@ pub fn publish(
         let path = &site_config.bucket.clone();
         validate_bucket_location(path)?;
         warn_site_incompatible_route(&deploy_config);
+
         let site_namespace = add_site_namespace(user, target, false)?;
 
         let (to_upload, to_delete, asset_manifest) =
@@ -38,7 +41,6 @@ pub fn publish(
         }
         upload_files(target, user, &site_namespace.id, to_upload)?;
 
-        sync_other_buckets(target, user, verbose)?;
         let upload_client = http::auth_client(Some("site"), user);
 
         // Next, upload and deploy the worker with the updated asset_manifest
@@ -55,9 +57,20 @@ pub fn publish(
             delete_bulk(target, user, &site_namespace.id, to_delete)?;
         }
     } else {
-        sync_other_buckets(target, user, verbose)?;
+        let uses_kv_bucket = sync_non_site_buckets(target, user, verbose)?;
 
-        let upload_client = http::auth_client(None, user);
+        let feature = if uses_kv_bucket {
+            let wrangler_toml = style("`wrangler.toml`").yellow().bold();
+            let issue_link = style("https://github.com/cloudflare/wrangler/issues/new?labels=user+report&template=feature_request.md").blue().bold();
+            let msg = format!("As of 1.9.0, you will no longer be able to specify a bucket for a kv namespace in your {}.\nIf your application depends on this feature, please file an issue with your use case here:\n{}", wrangler_toml, issue_link);
+            message::deprecation_warning(&msg);
+
+            Some("bucket")
+        } else {
+            None
+        };
+
+        let upload_client = http::auth_client(feature, user);
         upload::script(&upload_client, &target, None)?;
 
         deploy::worker(&user, &deploy_config)?;
@@ -98,6 +111,10 @@ pub fn add_site_namespace(
     for namespace in target.kv_namespaces() {
         if namespace.id == site_namespace.id {
             return Ok(namespace); // Sites binding already exists; ignore
+        } else {
+            if namespace.bucket.is_some() {
+                failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
+            }
         }
     }
 
@@ -141,43 +158,45 @@ pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> 
     Ok(())
 }
 
-pub fn sync_other_buckets(
+// This is broken into a separate step because the intended design does not
+// necessarily intend for bucket support outside of the [site] usage, especially
+// since assets are still hashed. In a subsequent release, we will either
+// deprecate this step, or we will integrate it more closely and adapt to user
+// feedback.
+//
+// In order to track usage of this "feature", this function returns a bool that
+// indicates whether any non-site kv namespaces were specified / uploaded.
+pub fn sync_non_site_buckets(
     target: &Target,
     user: &GlobalUser,
     verbose: bool,
-) -> Result<(), failure::Error> {
-    let site_bucket = if let Some(site_config) = &target.site {
-        Some(PathBuf::from(&site_config.bucket))
-    } else {
-        None
-    };
+) -> Result<bool, failure::Error> {
+    let mut is_using_non_site_bucket = false;
 
     for namespace in target.kv_namespaces() {
-        if namespace.bucket != site_bucket {
-            if let Some(path) = &namespace.bucket {
-                // TODO: add deprecation warning
-                validate_bucket_location(path)?;
-                let (to_upload, to_delete, _) =
-                    kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
-                // First, upload all existing files in bucket directory
+        if let Some(path) = &namespace.bucket {
+            is_using_non_site_bucket = true;
+            validate_bucket_location(path)?;
+            let (to_upload, to_delete, _) =
+                kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
+            // First, upload all existing files in bucket directory
+            if verbose {
+                message::info("Preparing to upload updated files...");
+            }
+            upload_files(target, user, &namespace.id, to_upload)?;
+
+            // Finally, remove any stale files
+            if !to_delete.is_empty() {
                 if verbose {
-                    message::info("Preparing to upload updated files...");
+                    message::info("Deleting stale files...");
                 }
-                upload_files(target, user, &namespace.id, to_upload)?;
 
-                // Finally, remove any stale files
-                if !to_delete.is_empty() {
-                    if verbose {
-                        message::info("Deleting stale files...");
-                    }
-
-                    delete_bulk(target, user, &namespace.id, to_delete)?;
-                }
+                delete_bulk(target, user, &namespace.id, to_delete)?;
             }
         }
     }
 
-    Ok(())
+    Ok(is_using_non_site_bucket)
 }
 
 fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
