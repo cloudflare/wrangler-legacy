@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use chrono::prelude::*;
+use console::style;
 
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
@@ -30,7 +31,7 @@ use crate::commands::preview::upload;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
-use crate::terminal::{emoji, message_box};
+use crate::terminal::{emoji, message};
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
@@ -42,7 +43,11 @@ pub fn dev(
     ip: Option<&str>,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    message_box::dev_alpha_warning();
+    let wrangler_dev_msg = style("`wrangler dev`").yellow().bold();
+    let feedback_url = style("https://github.com/cloudflare/wrangler/issues/1047")
+        .blue()
+        .bold();
+    message::billboard(&format!("{0} is currently unstable and there are likely to be breaking changes!\nFor this reason, we cannot yet recommend using {0} for integration testing.\n\nPlease submit any feedback here: {1}", wrangler_dev_msg, feedback_url));
     commands::build(&target)?;
     let server_config = ServerConfig::new(host, ip, port)?;
     let session_id = get_session_id()?;
