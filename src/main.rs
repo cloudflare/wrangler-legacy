@@ -852,7 +852,13 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(_) = matches.subcommand_matches("cloudflared") {
-        commands::run_cloudflared_start_server()?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+
+        let user = settings::global_user::GlobalUser::new()?;
+
+        commands::start_tail(&target, &user)?;
     }
     Ok(())
 }

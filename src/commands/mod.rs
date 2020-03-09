@@ -17,7 +17,7 @@ pub mod whoami;
 pub use self::config::global_config;
 pub use build::build;
 pub use build::watch_and_build;
-pub use cloudflared::run_cloudflared_start_server;
+pub use cloudflared::start_tail;
 pub use dev::dev;
 pub use generate::generate;
 pub use init::init;

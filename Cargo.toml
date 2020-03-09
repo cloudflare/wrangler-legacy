@@ -17,7 +17,7 @@ binary-install = "0.0.3-alpha"
 chrome-devtools-rs = { version = "0.0.0-alpha.0", features = ["color"] }
 chrono = "0.4.9"
 clap = "2.32.0"
-cloudflare = "0.6.4"
+cloudflare = { path = "../cloudflare-rs/cloudflare" }
 config = "0.10.1"
 console = "0.9.1"
 data-encoding = "2.1.2"
@@ -52,7 +52,7 @@ sha2 = "0.8.0"
 tempfile = "3.1.0"
 text_io = "0.1.7"
 term_size = "0.3"
-tokio = { version = "0.2", default-features = false, features = ["io-std", "time"] }
+tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros"] }
 tokio-tungstenite = { version = "0.10.1", features = ["tls"] }
 toml = "0.5.5"
 url = "2.1.0"

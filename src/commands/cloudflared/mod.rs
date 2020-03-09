@@ -1,70 +1,160 @@
 use crate::commands;
+use crate::http;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::toml::Target;
 use crate::terminal::message;
+
+use cloudflare::endpoints::workers::{CreateTail, CreateTailHeartbeat, CreateTailParams};
+use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
 
 use std::path::PathBuf;
 use std::process::Command;
 use std::str;
 use std::thread;
+use std::time::Duration;
 
-use futures::future;
-use futures::stream::Stream;
-use hyper::rt::Future;
-use hyper::service::service_fn;
+use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use tokio;
+use tokio::runtime::Runtime as TokioRuntime;
+use reqwest;
 
-pub fn run_cloudflared_start_server() -> Result<(), failure::Error> {
+pub fn start_tail(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+    // do block until async finish here.
+    let mut runtime = TokioRuntime::new()?;
+    // todo: get rid of this gross clone. Maybe just default to static lifetime.
+    runtime.block_on(run_cloudflared_start_server(target.clone(), user.clone()))
+}
+
+async fn run_cloudflared_start_server(
+    target: Target,
+    user: GlobalUser,
+) -> Result<(), failure::Error> {
+    // need to make create tail API call here and also start a thread for API heartbeat calls
+    // (these can be in the same thread but we'll need to communicate the argo tunnel info to
+    // the API thread). We can use a channel to transfer this info?
+    let res = tokio::try_join!(
+        tokio::spawn(async move { start_log_collection_http_server().await }),
+        tokio::spawn(async move { start_argo_tunnel().await }),
+        tokio::spawn(async move { enable_tailing_start_heartbeat(&target, &user).await })
+    );
+    // todo: handle res and throw error if necessary.
+    Ok(())
+}
+
+async fn start_argo_tunnel() -> Result<(), failure::Error> {
+    // maybe we want to put a retry loop over this instead of using a clumsy wait.
     let tool_name = PathBuf::from("cloudflared");
+    // todo: Finally get cloudflared release binaries distributed on GitHub so we could simply uncomment
+    // the line below.
     // let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
-    let args = ["tunnel"];
+    let args = ["tunnel", "--metrics", "localhost:8081"];
 
     let command = command(&args, &tool_name);
     let command_name = format!("{:?}", command);
 
-    start_echo_http_server();
-
-    // Likely want to get rid of these printouts.
-    // Can we also wait for cloudflared to exit?
     message::working("Starting up an Argo Tunnel");
-    commands::run(command, &command_name)?;
+    commands::run(command, &command_name)
+}
 
-    thread::sleep(std::time::Duration::from_secs(300));
+async fn start_log_collection_http_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+{
+    // Start HTTP echo server that prints whatever is posted to it.
+    let addr = ([127, 0, 0, 1], 8080).into();
+
+    message::working("HTTP Echo server is running on 127.0.0.1:8080");
+
+    let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(print_logs)) });
+
+    let server = Server::bind(&addr).serve(service);
+
+    server.await?;
 
     Ok(())
 }
 
-pub fn start_echo_http_server() {
-    // Start HTTP echo server that prints whatever is posted to it.
-    let addr = ([127, 0, 0, 1], 8080).into();
-    message::working("HTTP Echo server is running on 127.0.0.1:8080");
+async fn print_logs(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    match (req.method(), req.uri().path()) {
+        (&Method::POST, "/") => {
+            let whole_body = hyper::body::to_bytes(req.into_body()).await?;
+            println!("{:?}", str::from_utf8(&whole_body).unwrap());
 
-    let server = Server::bind(&addr)
-        .serve(|| service_fn(echo))
-        .map_err(|e| eprintln!("server error: {}", e));
-
-    thread::spawn(move || {
-        hyper::rt::run(server);
-    });
-}
-
-fn echo(req: Request<Body>) -> impl Future<Item = Response<Body>, Error = hyper::Error> {
-    let (parts, body) = req.into_parts();
-
-    match (parts.method, parts.uri.path()) {
-        (Method::POST, "/") => {
-            let entire_body = body.concat2();
-            let resp = entire_body.map(|body| {
-                println!("{:?}", str::from_utf8(&body).unwrap());
-                Response::new(Body::from("Success"))
-            });
-            future::Either::A(resp)
+            Ok(Response::new(Body::from("Success")))
         }
         _ => {
-            let body = Body::from("Can only POST to /");
-            let mut response = Response::new(body);
-            *response.status_mut() = StatusCode::NOT_FOUND;
-            let resp = future::ok(response);
-            future::Either::B(resp)
+            let mut not_found = Response::default();
+            *not_found.status_mut() = StatusCode::NOT_FOUND;
+            Ok(not_found)
         }
+    }
+}
+
+async fn enable_tailing_start_heartbeat(
+    target: &Target,
+    user: &GlobalUser,
+) -> Result<(), failure::Error> {
+    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+
+    let url = get_tunnel_url().await?;
+
+    let response = client.request(&CreateTail {
+        account_identifier: &target.account_id,
+        script_name: &target.name,
+        params: CreateTailParams {
+            url: "https://gabbi.fish".to_string(), // how to pass URL here? Likely via a channel...
+        },
+    });
+
+    match response {
+        Ok(success) => {
+            let tail_id = success.result.id;
+            // Loop indefinitely to send "heartbeat"
+
+            loop {
+                thread::sleep(Duration::from_secs(60));
+                let heartbeat_result = send_heartbeat(target, user, &client, &tail_id);
+                if heartbeat_result.is_err() {
+                    return heartbeat_result;
+                }
+                // This should loop forever until SIGINT is issued or Wrangler process is killed
+                // through other means.
+            }
+        }
+        Err(e) => failure::bail!(http::format_error(e, None)),
+    }
+
+    // Ok(())
+}
+
+async fn get_tunnel_url() -> Result<String, failure::Error> {
+    // todo: replace with exponential backoff retry loop until /metrics endpoint does not return 404.
+    thread::sleep(Duration::from_secs(5));
+
+    let body = reqwest::get("localhost:8081")
+    .await?
+    .text()
+    .await?;
+
+    println!("body = {:?}", body);
+    Ok("butt".to_string())
+}
+
+fn send_heartbeat(
+    target: &Target,
+    user: &GlobalUser,
+    client: &HttpApiClient,
+    tail_id: &str,
+) -> Result<(), failure::Error> {
+    let response = client.request(&CreateTailHeartbeat {
+        account_identifier: &target.account_id,
+        script_name: &target.name,
+        tail_id: tail_id,
+    });
+
+    match response {
+        Ok(_) => Ok(()),
+        Err(e) => failure::bail!(http::format_error(e, None)),
     }
 }
 
