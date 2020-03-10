@@ -5,7 +5,9 @@ use crate::settings::toml::Target;
 use crate::terminal::message;
 
 use cloudflare::endpoints::workers::{CreateTail, CreateTailHeartbeat, CreateTailParams};
-use cloudflare::framework::apiclient::ApiClient;
+// use cloudflare::framework::apiclient::ApiClient
+use cloudflare::framework::{
+    async_api, async_api::ApiClient};
 use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
 
 use std::path::PathBuf;
@@ -19,6 +21,7 @@ use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use tokio;
 use tokio::runtime::Runtime as TokioRuntime;
 use reqwest;
+use regex::Regex;
 
 pub fn start_tail(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     // do block until async finish here.
@@ -35,12 +38,15 @@ async fn run_cloudflared_start_server(
     // (these can be in the same thread but we'll need to communicate the argo tunnel info to
     // the API thread). We can use a channel to transfer this info?
     let res = tokio::try_join!(
+        tokio::spawn(async move { enable_tailing_start_heartbeat(&target, &user).await }),
         tokio::spawn(async move { start_log_collection_http_server().await }),
-        tokio::spawn(async move { start_argo_tunnel().await }),
-        tokio::spawn(async move { enable_tailing_start_heartbeat(&target, &user).await })
+        tokio::spawn(async move { start_argo_tunnel().await })
     );
-    // todo: handle res and throw error if necessary.
-    Ok(())
+
+    match res {
+        Ok(_) => Ok(()),
+        Err(e) => failure::bail!(e)
+    }
 }
 
 async fn start_argo_tunnel() -> Result<(), failure::Error> {
@@ -94,7 +100,7 @@ async fn enable_tailing_start_heartbeat(
     target: &Target,
     user: &GlobalUser,
 ) -> Result<(), failure::Error> {
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_v4_api_client_async(user, HttpApiClientConfig::default())?;
 
     let url = get_tunnel_url().await?;
 
@@ -102,18 +108,22 @@ async fn enable_tailing_start_heartbeat(
         account_identifier: &target.account_id,
         script_name: &target.name,
         params: CreateTailParams {
-            url: "https://gabbi.fish".to_string(), // how to pass URL here? Likely via a channel...
+            url, // how to pass URL here? Likely via a channel...
         },
-    });
+    }).await;
+
+    println!("MADE IT HERE");
 
     match response {
         Ok(success) => {
             let tail_id = success.result.id;
+
+            println!("tail id is {:?}", tail_id);
             // Loop indefinitely to send "heartbeat"
 
             loop {
                 thread::sleep(Duration::from_secs(60));
-                let heartbeat_result = send_heartbeat(target, user, &client, &tail_id);
+                let heartbeat_result = send_heartbeat(target, user, &client, &tail_id).await;
                 if heartbeat_result.is_err() {
                     return heartbeat_result;
                 }
@@ -121,7 +131,10 @@ async fn enable_tailing_start_heartbeat(
                 // through other means.
             }
         }
-        Err(e) => failure::bail!(http::format_error(e, None)),
+        Err(e) => {
+            println!("ERROR {:?}", e);
+            failure::bail!(http::format_error(e, None));
+        }
     }
 
     // Ok(())
@@ -131,26 +144,31 @@ async fn get_tunnel_url() -> Result<String, failure::Error> {
     // todo: replace with exponential backoff retry loop until /metrics endpoint does not return 404.
     thread::sleep(Duration::from_secs(5));
 
-    let body = reqwest::get("localhost:8081")
+    let re = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
+
+    let body = reqwest::get("http://localhost:8081/metrics")
     .await?
     .text()
     .await?;
 
-    println!("body = {:?}", body);
-    Ok("butt".to_string())
+    for cap in re.captures_iter(&body) {
+        println!("body = {}", &cap[1]);
+        return Ok(cap[1].to_string())
+    }
+    failure::bail!("Could not extract tunnel url from cloudflared")
 }
 
-fn send_heartbeat(
+async fn send_heartbeat(
     target: &Target,
     user: &GlobalUser,
-    client: &HttpApiClient,
+    client: &async_api::Client,
     tail_id: &str,
 ) -> Result<(), failure::Error> {
     let response = client.request(&CreateTailHeartbeat {
         account_identifier: &target.account_id,
         script_name: &target.name,
         tail_id: tail_id,
-    });
+    }).await;
 
     match response {
         Ok(_) => Ok(()),

@@ -11,6 +11,7 @@ use http::status::StatusCode;
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
+use cloudflare::framework::async_api;
 
 use crate::terminal::emoji;
 use crate::terminal::message;
@@ -80,6 +81,17 @@ pub fn cf_v4_api_client(
     config: HttpApiClientConfig,
 ) -> Result<HttpApiClient, failure::Error> {
     HttpApiClient::new(
+        Credentials::from(user.to_owned()),
+        config,
+        Environment::Production,
+    )
+}
+
+pub fn cf_v4_api_client_async(
+    user: &GlobalUser,
+    config: HttpApiClientConfig,
+) -> Result<async_api::Client, failure::Error> {
+    async_api::Client::new(
         Credentials::from(user.to_owned()),
         config,
         Environment::Production,
