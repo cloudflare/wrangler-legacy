@@ -8,10 +8,10 @@ use crate::settings::global_user::GlobalUser;
 
 use http::status::StatusCode;
 
+use cloudflare::framework::async_api;
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
-use cloudflare::framework::async_api;
 
 use crate::terminal::emoji;
 use crate::terminal::message;

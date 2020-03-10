@@ -6,9 +6,8 @@ use crate::terminal::message;
 
 use cloudflare::endpoints::workers::{CreateTail, CreateTailHeartbeat, CreateTailParams};
 // use cloudflare::framework::apiclient::ApiClient
-use cloudflare::framework::{
-    async_api, async_api::ApiClient};
-use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
+use cloudflare::framework::HttpApiClientConfig;
+use cloudflare::framework::{async_api, async_api::ApiClient};
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -18,10 +17,10 @@ use std::time::Duration;
 
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use regex::Regex;
+use reqwest;
 use tokio;
 use tokio::runtime::Runtime as TokioRuntime;
-use reqwest;
-use regex::Regex;
 
 pub fn start_tail(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     // do block until async finish here.
@@ -45,7 +44,7 @@ async fn run_cloudflared_start_server(
 
     match res {
         Ok(_) => Ok(()),
-        Err(e) => failure::bail!(e)
+        Err(e) => failure::bail!(e),
     }
 }
 
@@ -104,13 +103,15 @@ async fn enable_tailing_start_heartbeat(
 
     let url = get_tunnel_url().await?;
 
-    let response = client.request(&CreateTail {
-        account_identifier: &target.account_id,
-        script_name: &target.name,
-        params: CreateTailParams {
-            url, // how to pass URL here? Likely via a channel...
-        },
-    }).await;
+    let response = client
+        .request(&CreateTail {
+            account_identifier: &target.account_id,
+            script_name: &target.name,
+            params: CreateTailParams {
+                url, // how to pass URL here? Likely via a channel...
+            },
+        })
+        .await;
 
     println!("MADE IT HERE");
 
@@ -123,7 +124,7 @@ async fn enable_tailing_start_heartbeat(
 
             loop {
                 thread::sleep(Duration::from_secs(60));
-                let heartbeat_result = send_heartbeat(target, user, &client, &tail_id).await;
+                let heartbeat_result = send_heartbeat(target, &client, &tail_id).await;
                 if heartbeat_result.is_err() {
                     return heartbeat_result;
                 }
@@ -131,13 +132,8 @@ async fn enable_tailing_start_heartbeat(
                 // through other means.
             }
         }
-        Err(e) => {
-            println!("ERROR {:?}", e);
-            failure::bail!(http::format_error(e, None));
-        }
+        Err(e) => failure::bail!(http::format_error(e, None)),
     }
-
-    // Ok(())
 }
 
 async fn get_tunnel_url() -> Result<String, failure::Error> {
@@ -147,28 +143,29 @@ async fn get_tunnel_url() -> Result<String, failure::Error> {
     let re = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
     let body = reqwest::get("http://localhost:8081/metrics")
-    .await?
-    .text()
-    .await?;
+        .await?
+        .text()
+        .await?;
 
     for cap in re.captures_iter(&body) {
         println!("body = {}", &cap[1]);
-        return Ok(cap[1].to_string())
+        return Ok(cap[1].to_string());
     }
     failure::bail!("Could not extract tunnel url from cloudflared")
 }
 
 async fn send_heartbeat(
     target: &Target,
-    user: &GlobalUser,
     client: &async_api::Client,
     tail_id: &str,
 ) -> Result<(), failure::Error> {
-    let response = client.request(&CreateTailHeartbeat {
-        account_identifier: &target.account_id,
-        script_name: &target.name,
-        tail_id: tail_id,
-    }).await;
+    let response = client
+        .request(&CreateTailHeartbeat {
+            account_identifier: &target.account_id,
+            script_name: &target.name,
+            tail_id: tail_id,
+        })
+        .await;
 
     match response {
         Ok(_) => Ok(()),
