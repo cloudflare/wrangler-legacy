@@ -1,13 +1,13 @@
 use super::emoji;
 
-use boxx::{BorderColor, BorderStyle, Boxx};
+use billboard::{Billboard, BorderColor, BorderStyle};
 
 fn message(msg: &str) {
     println!("{}", msg);
 }
 
 pub fn billboard(msg: &str) {
-    let billboard = Boxx::builder()
+    let billboard = Billboard::builder()
         .border_style(BorderStyle::Round)
         .border_color(BorderColor::Cyan)
         .margin(1)
