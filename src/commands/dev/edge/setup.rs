@@ -5,6 +5,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 use crate::upload;
 
+use failure::format_err;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use url::Url;
@@ -40,17 +41,20 @@ pub(super) fn upload(
     Ok(response.result.preview_token)
 }
 
-pub(super) fn get_preview_token(
+pub(super) fn init(
     deploy_config: &DeployConfig,
     user: &GlobalUser,
-) -> Result<String, failure::Error> {
+) -> Result<(String, String), failure::Error> {
     let exchange_url = get_exchange_url(deploy_config, user)?;
     let client = http::auth_client(None, &user);
-    let response = client.get(&exchange_url).send()?.error_for_status()?;
+    let response = client
+        .get(exchange_url.clone())
+        .send()?
+        .error_for_status()?;
     let headers = response.headers();
     let token = headers.get("cf-workers-preview-token");
     match token {
-        Some(token) => Ok(token.to_str()?.to_string()),
+        Some(token) => Ok((token.to_str()?.to_string(), exchange_url.host_str().expect("Could not get host string, please file an issue at https://github.com/cloudflare/wrangler").to_string())),
         None => failure::bail!("Could not get token to initialize preview session"),
     }
 }
@@ -92,14 +96,14 @@ fn get_upload_address(target: &mut Target) -> String {
 fn get_exchange_url(
     deploy_config: &DeployConfig,
     user: &GlobalUser,
-) -> Result<String, failure::Error> {
+) -> Result<Url, failure::Error> {
     let client = http::auth_client(None, &user);
     let address = get_initialize_address(deploy_config);
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;
     let text = &response.text()?;
     let response: InitV4ApiResponse = serde_json::from_str(text)?;
-    Ok(response.result.exchange_url)
+    Url::parse(&response.result.exchange_url).map_err(|e| format_err!("{}", e))
 }
 
 #[derive(Debug, Serialize, Deserialize)]

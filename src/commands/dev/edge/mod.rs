@@ -18,12 +18,7 @@ pub fn dev(
     verbose: bool,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
-    let preview_token = setup::get_preview_token(&deploy_config, &user)?;
-    let host = match deploy_config.clone() {
-        DeployConfig::Zoned(config) => "theharnishes.com",
-        DeployConfig::Zoneless(config) => "worker.avery.workers.dev",
-    }
-    .to_string();
+    let (preview_token, host) = setup::init(&deploy_config, &user)?;
     let mut target = target.clone();
     // TODO: replace asset manifest parameter
     let preview_token = setup::upload(&mut target, None, &deploy_config, &user, preview_token)?;
