@@ -61,7 +61,9 @@ pub fn publish(
 
         let feature = if uses_kv_bucket {
             let wrangler_toml = style("`wrangler.toml`").yellow().bold();
-            let issue_link = style("https://github.com/cloudflare/wrangler/issues/1136").blue().bold();
+            let issue_link = style("https://github.com/cloudflare/wrangler/issues/1136")
+                .blue()
+                .bold();
             let msg = format!("As of 1.9.0, you will no longer be able to specify a bucket for a kv namespace in your {}.\nIf your application depends on this feature, please file an issue with your use case here:\n{}", wrangler_toml, issue_link);
             message::deprecation_warning(&msg);
 
