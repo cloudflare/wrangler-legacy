@@ -9,6 +9,7 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
+use console::style;
 use exitfailure::ExitFailure;
 
 use wrangler::commands;
@@ -508,20 +509,30 @@ fn run() -> Result<(), failure::Error> {
 
     let config_path = Path::new("./wrangler.toml");
 
+    let not_recommended_msg = style("(Not Recommended)").red().bold();
+    let recommended_cmd_msg = style("`wrangler config --api-key`").yellow().bold();
+    let api_token_url = style("https://dash.cloudflare.com/profile/api-tokens")
+        .blue()
+        .bold();
+    let token_support_url = style(
+        "https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys",
+    )
+    .blue()
+    .bold();
+
     if let Some(matches) = matches.subcommand_matches("config") {
         // If api-key flag isn't present, use the default auth option (API token)
         let default = !matches.is_present("api-key");
 
         let user: GlobalUser = if default {
             // API Tokens are the default
-            message::big_info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens\n\tand create it using the \"Edit Cloudflare Workers\" template");
-            message::big_info("If you are trying to use your Global API Key instead of an API Token\n\t(Not Recommended), run \"wrangler config --api-key\".\n");
-            let api_token: String = interactive::get_user_input("Enter API token: ");
+            message::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", not_recommended_msg, recommended_cmd_msg, api_token_url));
+            let api_token: String = interactive::get_user_input("Enter API Token: ");
             GlobalUser::TokenAuth { api_token }
         } else {
-            message::big_info("We don't recommend using your Global API Key! Please consider using an\n\tAPI Token instead.\n\thttps://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys\n");
-            let email: String = interactive::get_user_input("Enter email: ");
-            let api_key: String = interactive::get_user_input("Enter global API key: ");
+            message::billboard(&format!("We don't recommend using your Global API Key!\nPlease consider using an API Token instead.\n\n{}", token_support_url));
+            let email: String = interactive::get_user_input("Enter Email: ");
+            let api_key: String = interactive::get_user_input("Enter Global API Key: ");
 
             GlobalUser::GlobalKeyAuth { email, api_key }
         };
