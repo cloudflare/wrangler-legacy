@@ -1,17 +1,22 @@
-#![allow(dead_code)]
 use super::emoji;
+
+use billboard::{Billboard, BorderColor, BorderStyle};
 
 fn message(msg: &str) {
     println!("{}", msg);
 }
 
-pub fn info(msg: &str) {
-    let msg = format!("{} {}", emoji::INFO, msg);
-    message(&msg);
+pub fn billboard(msg: &str) {
+    let billboard = Billboard::builder()
+        .border_style(BorderStyle::Round)
+        .border_color(BorderColor::Cyan)
+        .margin(1)
+        .build();
+    billboard.display(msg);
 }
 
-pub fn big_info(msg: &str) {
-    let msg = format!("\n\t{} {}", emoji::INFO, msg);
+pub fn info(msg: &str) {
+    let msg = format!("{} {}", emoji::INFO, msg);
     message(&msg);
 }
 
