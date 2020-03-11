@@ -59,7 +59,8 @@ pub fn upload_draft_worker(
             for error in &api_errors.errors {
                 if error.code == 10007 {
                     message::working(&format!("Worker {} doesn't exist in the API yet. Creating a draft Worker so we can create new secret.", target.name));
-                    return Some(upload::script(user, target, None));
+                    let upload_client = http::auth_client(None, user);
+                    return Some(upload::script(&upload_client, target, None));
                 } else {
                     return None;
                 }
