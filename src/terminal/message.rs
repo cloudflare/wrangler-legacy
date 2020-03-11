@@ -51,6 +51,10 @@ pub fn help(msg: &str) {
 }
 
 pub fn deprecation_warning(msg: &str) {
-    let msg = format!("\n\t{} {}", emoji::WARN, msg);
-    message(&msg);
+    let bb =  boxx::builder()
+        .border_style(BorderStyle::Round)
+        .border_color(BorderColor::Red)
+        .margin(1)
+        .build();
+    bb.display(msg);
 }
