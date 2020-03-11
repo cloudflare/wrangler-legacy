@@ -135,6 +135,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b41b7ea54a0c9d92199de89e20e58d49f02f8e699814ef3fdf266f6f748d15c7"
 
 [[package]]
+name = "billboard"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c919a66b78887ca03ecfbd9c306413eacc6fb9c9dee9daac481cdfd13ee65ee"
+dependencies = [
+ "console",
+ "term_size",
+ "thiserror",
+]
+
+[[package]]
 name = "binary-install"
 version = "0.0.3-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2346,6 +2357,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "thiserror"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee14bf8e6767ab4c687c9e8bc003879e042a96fd67a3ba5934eadb6536bef4db"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7b51e1fbc44b5a0840be594fbc0f960be09050f2617e61e6aa43bef97cd3ef4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "thread_local"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2752,6 +2783,7 @@ dependencies = [
  "assert_cmd",
  "atty",
  "base64 0.10.1",
+ "billboard",
  "binary-install",
  "chrome-devtools-rs",
  "chrono",
