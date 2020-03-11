@@ -1,15 +1,13 @@
-use crate::commands;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::message;
 
 use cloudflare::endpoints::workers::{CreateTail, CreateTailHeartbeat, CreateTailParams};
 use cloudflare::framework::HttpApiClientConfig;
 use cloudflare::framework::{async_api, async_api::ApiClient};
 
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use std::str;
 use std::thread;
 use std::time::Duration;
@@ -17,16 +15,23 @@ use std::time::Duration;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use log::log_enabled;
-use log::Level::Debug;
+use log::Level::Info;
 use regex::Regex;
 use reqwest;
 use tokio;
+use tokio::process::Command;
 use tokio::runtime::Runtime as TokioRuntime;
 
 pub fn start_tail(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
-    // do block until async finish here.
     let mut runtime = TokioRuntime::new()?;
-    eprintln!("Setting up log streaming to Wrangler...");
+    // Note that we use eprintln!() throughout this file; this is because we want any
+    // helpful output to not be mixed with actual log JSON output, so we use this macro
+    // to print messages to stderr instead of stdout (where log output is printed).
+    eprintln!(
+        "Setting up log streaming from Worker \"{}\" to Wrangler. This may take a few seconds...",
+        target.name
+    );
+
     // todo: get rid of this gross clone. Maybe just default to static lifetime.
     runtime.block_on(run_cloudflared_start_server(target.clone(), user.clone()))
 }
@@ -36,9 +41,9 @@ async fn run_cloudflared_start_server(
     user: GlobalUser,
 ) -> Result<(), failure::Error> {
     let res = tokio::try_join!(
-        tokio::spawn(async move { enable_tailing_start_heartbeat(&target, &user).await }),
-        tokio::spawn(async move { start_log_collection_http_server().await }),
-        tokio::spawn(async move { start_argo_tunnel().await })
+        start_log_collection_http_server(),
+        start_argo_tunnel(),
+        enable_tailing_start_heartbeat(&target, &user)
     );
 
     match res {
@@ -48,27 +53,43 @@ async fn run_cloudflared_start_server(
 }
 
 async fn start_argo_tunnel() -> Result<(), failure::Error> {
+    // todo:remove sleep!! Can maybe use channel to signal from http server thread to argo tunnel
+    // thread that the server is ready on port 8080 and prepared for the cloudflared CLI to open an
+    // Argo Tunnel to it.
+    thread::sleep(Duration::from_secs(5));
+
     let tool_name = PathBuf::from("cloudflared");
     // todo: Finally get cloudflared release binaries distributed on GitHub so we could simply uncomment
     // the line below.
     // let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
-    // todo(gabbi): allow user to pass in their own ports in case ports 8080 (used by cloudflared)
+
+    // todo: allow user to pass in their own ports in case ports 8080 (used by cloudflared)
     // and 8081 (used by cloudflared metrics) are both already being used.
     let args = ["tunnel", "--metrics", "localhost:8081"];
 
-    let command = command(&args, &tool_name);
+    let mut command = command(&args, &tool_name);
     let command_name = format!("{:?}", command);
 
-    // message::working("Starting up an Argo Tunnel");
-    commands::run(command, &command_name)
+    let status = command
+        .kill_on_drop(true)
+        .spawn()
+        .expect(&format!("{} failed to spawn", command_name))
+        .await?;
+
+    if !status.success() {
+        failure::bail!(
+            "tried running command:\n{}\nexited with {}",
+            command_name.replace("\"", ""),
+            status
+        )
+    }
+    Ok(())
 }
 
-async fn start_log_collection_http_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>>
-{
+// async fn start_log_collection_http_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+async fn start_log_collection_http_server() -> Result<(), failure::Error> {
     // Start HTTP echo server that prints whatever is posted to it.
     let addr = ([127, 0, 0, 1], 8080).into();
-
-    // message::working("HTTP Echo server is running on 127.0.0.1:8080");
 
     let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(print_logs)) });
 
@@ -111,8 +132,6 @@ async fn enable_tailing_start_heartbeat(
         })
         .await;
 
-    // println!("MADE IT HERE");
-
     match response {
         Ok(success) => {
             eprintln!("Now prepared to stream logs.");
@@ -135,21 +154,27 @@ async fn enable_tailing_start_heartbeat(
 }
 
 async fn get_tunnel_url() -> Result<String, failure::Error> {
-    // todo: replace with exponential backoff retry loop until /metrics endpoint does not return 404.
-    thread::sleep(Duration::from_secs(5));
-
     // regex for extracting url from cloudflared metrics port.
     let re = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
-    let body = reqwest::get("http://localhost:8081/metrics")
-        .await?
-        .text()
-        .await?;
+    let mut attempt = 0;
 
-    for cap in re.captures_iter(&body) {
-        // println!("body = {}", &cap[1]);
-        return Ok(cap[1].to_string());
+    // This exponential backoff retry loop retries retrieving the cloudflared endpoint url
+    // from the cloudflared /metrics endpoint until it gets the URL or has tried retrieving the URL
+    // over 5 times.
+    while attempt < 5 {
+        if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {
+            let body = resp.text().await?;
+
+            for cap in re.captures_iter(&body) {
+                return Ok(cap[1].to_string());
+            }
+        }
+
+        attempt = attempt + 1;
+        thread::sleep(Duration::from_millis(attempt * attempt * 100));
     }
+
     failure::bail!("Could not extract tunnel url from cloudflared")
 }
 
@@ -172,7 +197,9 @@ async fn send_heartbeat(
     }
 }
 
-// TODO(gabbi): let's not clumsily copy this from commands/build/mod.rs
+// todo: let's not clumsily copy this from commands/build/mod.rs
+// We definitely want to keep the check for RUST_LOG=info below so we avoid
+// spamming user terminal with default cloudflared output (which is pretty darn sizable.)
 pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
@@ -184,8 +211,8 @@ pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
     };
 
     c.args(args);
-    // Let user read cloudflared process logs iff RUST_LOG=debug.
-    if !log_enabled!(Debug) {
+    // Let user read cloudflared process logs iff RUST_LOG=info.
+    if !log_enabled!(Info) {
         c.stderr(Stdio::null());
     }
 
