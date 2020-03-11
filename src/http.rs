@@ -1,7 +1,8 @@
+use std::time::Duration;
+
 use reqwest::blocking::{Client, ClientBuilder};
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 use reqwest::redirect::Policy;
-use std::time::Duration;
 
 use crate::install;
 use crate::settings::global_user::GlobalUser;

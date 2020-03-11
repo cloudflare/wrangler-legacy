@@ -19,6 +19,7 @@ use project_assets::ProjectAssets;
 use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
+// TODO: https://github.com/cloudflare/wrangler/issues/1083
 use super::{krate, Package};
 
 pub fn build(
