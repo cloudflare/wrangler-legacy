@@ -86,7 +86,6 @@ async fn start_argo_tunnel() -> Result<(), failure::Error> {
     Ok(())
 }
 
-// async fn start_log_collection_http_server() -> Result<(), Box<dyn std::error::Error + Send + Sync>>
 async fn start_log_collection_http_server() -> Result<(), failure::Error> {
     // Start HTTP echo server that prints whatever is posted to it.
     let addr = ([127, 0, 0, 1], 8080).into();
