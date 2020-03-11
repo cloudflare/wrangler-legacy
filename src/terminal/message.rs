@@ -51,7 +51,7 @@ pub fn help(msg: &str) {
 }
 
 pub fn deprecation_warning(msg: &str) {
-    let bb = Boxx::builder()
+    let bb = Billboard::builder()
         .border_style(BorderStyle::Round)
         .border_color(BorderColor::Red)
         .margin(1)
