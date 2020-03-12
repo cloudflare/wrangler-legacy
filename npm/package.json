@@ -1,6 +1,6 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Wrangle your Cloudflare Workers",
   "main": "binary.js",
   "scripts": {

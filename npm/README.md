@@ -3,6 +3,7 @@
 ![Banner](/banner.png)
 
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
+[![npm](https://img.shields.io/npm/v/@cloudflare/wrangler.svg)](https://www.npmjs.com/package/@cloudflare/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 [![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
 [![Github Actions - Build Status](https://github.com/cloudflare/wrangler/workflows/Builds/badge.svg)](https://github.com/cloudflare/wrangler/actions)
@@ -21,6 +22,11 @@ You have many options to install wrangler!
 ```bash
 npm i @cloudflare/wrangler -g
 ```
+
+#### Specify binary site URL
+In case you need to store/mirror binaries on premise you will need to specify where wrangler should search for them by providing any of the following:
+- Environment variable: `WRANGLER_BINARY_HOST`
+- NPM configuration: `wrangler_binary_host`
 
 ### Install with `cargo`
 
@@ -132,7 +138,7 @@ $ wrangler publish
 
   `wrangler dev` works very similarly to `wrangler preview` except that instead of opening your browser to preview your worker, it will start a server on localhost that will execute your worker on incoming HTTP requests. From there you can use cURL, Postman, your browser, or any other HTTP client to test the behavior of your worker before publishing it.
 
-  You should run wrangler dev from your worker directory, and if your worker makes any requests to a backend, you should specify the host with `--host example.com`.  You need to be online while building, as the actual worker script itself runs on Cloudflare servers (even though the server proxying requests to the worker is on localhost).
+  You should run wrangler dev from your worker directory, and if your worker makes any requests to a backend, you should specify the host with `--host example.com`.
 
   From here you should be able to send HTTP requests to `localhost:8787` along with any headers and paths, and your worker should execute as expected. Additionally, you should see console.log messages and exceptions appearing in your terminal.
   
