@@ -4,13 +4,13 @@ pub mod package;
 
 pub use package::Package;
 
+use reqwest::blocking::Client;
+
 use crate::commands::kv::bucket::AssetManifest;
-use crate::http;
-use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
 pub fn script(
-    user: &GlobalUser,
+    client: &Client,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<(), failure::Error> {
