@@ -19,10 +19,17 @@ const getPlatform = () => {
   throw new Error(`Unsupported platform: ${type} ${arch}`);
 };
 
+const getBinaryURL = (version, platform) => {
+  const site = process.env.WRANGLER_BINARY_HOST ||
+      process.env.npm_config_wrangler_binary_host ||
+      'https://workers.cloudflare.com/get-npm-wrangler-binary';
+  return `${site}/${version}/${platform}`;
+};
+
 const getBinary = () => {
   const platform = getPlatform();
   const version = require("./package.json").version;
-  const url = `https://workers.cloudflare.com/get-npm-wrangler-binary/${version}/${platform}`;
+  const url = getBinaryURL(version, platform);
   const installDirectory = join(os.homedir(), ".wrangler");
   return new Binary(url, { name: "wrangler", installDirectory });
 };

@@ -49,3 +49,12 @@ pub fn help(msg: &str) {
     let msg = format!("{} {}", emoji::SLEUTH, msg);
     message(&msg);
 }
+
+pub fn deprecation_warning(msg: &str) {
+    let bb = Billboard::builder()
+        .border_style(BorderStyle::Round)
+        .border_color(BorderColor::Red)
+        .margin(1)
+        .build();
+    bb.display(msg);
+}

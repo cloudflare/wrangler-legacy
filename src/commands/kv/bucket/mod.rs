@@ -4,20 +4,21 @@ mod manifest;
 mod sync;
 mod upload;
 
-use data_encoding::HEXLOWER;
-use sha2::{Digest, Sha256};
-
 pub use manifest::AssetManifest;
 pub use sync::sync;
+pub use upload::upload_files;
 
 use std::ffi::OsString;
 use std::fs;
 use std::path::Path;
 
-use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
-
+use data_encoding::HEXLOWER;
+use failure::format_err;
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{Walk, WalkBuilder};
+use sha2::{Digest, Sha256};
+
+use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use crate::settings::toml::Target;
 use crate::terminal::message;
@@ -32,43 +33,53 @@ pub fn directory_keys_values(
     directory: &Path,
     verbose: bool,
 ) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
-    let mut upload_vec: Vec<KeyValuePair> = Vec::new();
-    let mut asset_manifest: AssetManifest = AssetManifest::new();
+    match &fs::metadata(directory) {
+        Ok(file_type) if file_type.is_dir() => {
+            let mut upload_vec: Vec<KeyValuePair> = Vec::new();
+            let mut asset_manifest: AssetManifest = AssetManifest::new();
 
-    let dir_walker = get_dir_iterator(target, directory)?;
+            let dir_walker = get_dir_iterator(target, directory)?;
 
-    for entry in dir_walker {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.is_file() {
-            if verbose {
-                message::working(&format!("Preparing {}", path.display()));
+            for entry in dir_walker {
+                let entry = entry.unwrap();
+                let path = entry.path();
+                if path.is_file() {
+                    if verbose {
+                        message::working(&format!("Preparing {}", path.display()));
+                    }
+
+                    validate_file_size(&path)?;
+
+                    let value = std::fs::read(path)?;
+
+                    // Need to base64 encode value
+                    let b64_value = base64::encode(&value);
+
+                    let (url_safe_path, key) =
+                        generate_path_and_key(path, directory, Some(b64_value.clone()))?;
+
+                    validate_key_size(&key)?;
+
+                    upload_vec.push(KeyValuePair {
+                        key: key.clone(),
+                        value: b64_value,
+                        expiration: None,
+                        expiration_ttl: None,
+                        base64: Some(true),
+                    });
+
+                    asset_manifest.insert(url_safe_path, key);
+                }
             }
-
-            validate_file_size(&path)?;
-
-            let value = std::fs::read(path)?;
-
-            // Need to base64 encode value
-            let b64_value = base64::encode(&value);
-
-            let (url_safe_path, key) =
-                generate_path_and_key(path, directory, Some(b64_value.clone()))?;
-
-            validate_key_size(&key)?;
-
-            upload_vec.push(KeyValuePair {
-                key: key.clone(),
-                value: b64_value,
-                expiration: None,
-                expiration_ttl: None,
-                base64: Some(true),
-            });
-
-            asset_manifest.insert(url_safe_path, key);
+            Ok((upload_vec, asset_manifest))
         }
+        Ok(_file_type) => {
+            // any other file types (files, symlinks)
+            // TODO: return an error type here, like NotADirectoryError
+            Err(format_err!("Check your wrangler.toml; the `bucket` attribute for [site] should point to a directory."))
+        }
+        Err(e) => Err(format_err!("{}", e)),
     }
-    Ok((upload_vec, asset_manifest))
 }
 
 // Returns only the hashed keys for a directory's files.

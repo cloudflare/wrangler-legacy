@@ -1,12 +1,16 @@
-use crate::commands::kv::bucket::AssetManifest;
+use std::path::Path;
+
+use reqwest::blocking::Client;
+use serde::Deserialize;
+
+use crate::commands::kv::bucket::{sync, upload_files, AssetManifest};
+use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
 use crate::upload;
-use reqwest::blocking::Client;
-use serde::Deserialize;
 
 use console::style;
 
@@ -57,11 +61,32 @@ pub fn upload(
                 let client = http::auth_client(None, &user);
 
                 if let Some(site_config) = target.site.clone() {
-                    publish::bind_static_site_contents(user, target, &site_config, true)?;
-                }
+                    let site_namespace = publish::add_site_namespace(user, target, true)?;
 
-                let asset_manifest = publish::upload_buckets(target, user, verbose)?;
-                authenticated_upload(&client, &target, asset_manifest)?
+                    let path = Path::new(&site_config.bucket);
+                    let (to_upload, to_delete, asset_manifest) =
+                        sync(target, user, &site_namespace.id, path, verbose)?;
+
+                    // First, upload all existing files in given directory
+                    if verbose {
+                        message::info("Uploading updated files...");
+                    }
+
+                    upload_files(target, user, &site_namespace.id, to_upload)?;
+
+                    let preview = authenticated_upload(&client, &target, Some(asset_manifest))?;
+                    if !to_delete.is_empty() {
+                        if verbose {
+                            message::info("Deleting stale files...");
+                        }
+
+                        delete_bulk(target, user, &site_namespace.id, to_delete)?;
+                    }
+
+                    preview
+                } else {
+                    authenticated_upload(&client, &target, None)?
+                }
             } else {
                 message::warn(&format!(
                     "Your wrangler.toml is missing the following fields: {:?}",

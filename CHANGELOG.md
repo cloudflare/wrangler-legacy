@@ -1,5 +1,42 @@
 # Changelog
 
+## 🐈 1.8.2
+
+- ### Features
+
+  - **Configurable binary host URL - [noherczeg], [pull/1018]**
+
+    Previously, binaries installed by Wrangler were all assumed to come from npm. If you work in a controlled environment and can only install binaries from a specific endpoint (instead of npm), you can now specify that endpoint using the WRANGLER_BINARY_HOST environment variable.
+
+    [pull/1018]: https://github.com/cloudflare/wrangler/pull/1018
+    [noherczeg]: https://github.com/noherczeg
+
+- ### Fixes
+
+  - **Eliminate downtime when redeploying Workers Sites - [ashleymichal], [issue/783], [pull/1115]**
+
+    When Workers Sites were first introduced, redeploying a site could lead to a few seconds of downtime if the Worker upload fails. Specifically, if a new Workers Sites upload failed, it was possible that the old, now-unused files in Workers KV would be deleted anyways, meaning that the preexisting Workers Site would suddenly have missing resources. This fix waits to delete now-unused files until after a new Workers Sites script is published.
+
+    [issue/783]: https://github.com/cloudflare/wrangler/issues/783
+    [pull/1115]: https://github.com/cloudflare/wrangler/pull/1115
+    [ashleymichal]: https://github.com/ashleymichal
+
+- ### Maintenance
+
+  - **Add npm badge to README - [tomByrer], [pull/1121]**
+
+    Add badge to README that points to npm page for Wrangler.
+
+    [pull/1115]: https://github.com/cloudflare/wrangler/pull/1121
+    [tomByrer]: https://github.com/tomByrer
+
+  - **Unify attention-grabbing messages - [EverlastingBugstopper], [pull/1128]**
+
+    Use more actionable, easy-to-read information printouts throughout Wrangler.
+
+    [pull/1115]: https://github.com/cloudflare/wrangler/pull/1128
+    [tomByrer]: https://github.com/EverlastingBugstopper
+
 ## 😈 1.8.1
 
 - ### Features
