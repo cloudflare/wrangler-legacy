@@ -16,6 +16,7 @@ use data_encoding::HEXLOWER;
 use failure::format_err;
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{Walk, WalkBuilder};
+use indicatif::{ProgressBar, ProgressStyle};
 use sha2::{Digest, Sha256};
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
@@ -31,7 +32,6 @@ pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
 pub fn directory_keys_values(
     target: &Target,
     directory: &Path,
-    verbose: bool,
 ) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
     match &fs::metadata(directory) {
         Ok(file_type) if file_type.is_dir() => {
@@ -39,14 +39,15 @@ pub fn directory_keys_values(
             let mut asset_manifest = AssetManifest::new();
 
             let dir_walker = get_dir_iterator(target, directory)?;
-
+            let spinner_style =
+                ProgressStyle::default_spinner().template("{spinner}   Preparing {msg}...");
+            let spinner = ProgressBar::new_spinner().with_style(spinner_style);
             for entry in dir_walker {
+                spinner.tick();
                 let entry = entry.unwrap();
                 let path = entry.path();
                 if path.is_file() {
-                    if verbose {
-                        message::working(&format!("Preparing {}", path.display()));
-                    }
+                    spinner.set_message(&format!("{}", path.display()));
 
                     validate_file_size(&path)?;
 
@@ -213,7 +214,7 @@ fn get_digest(value: String) -> Result<String, failure::Error> {
     let mut hasher = Sha256::new();
     hasher.input(value);
     let digest = hasher.result();
-    let hex_digest = HEXLOWER.encode(digest.as_ref())[0..9].to_string();
+    let hex_digest = HEXLOWER.encode(digest.as_ref())[0..10].to_string();
     Ok(hex_digest)
 }
 
@@ -527,7 +528,7 @@ mod tests {
         let (path, key) = generate_path_and_key(path, directory, value).unwrap();
 
         let expected_path = "path/to/asset.ext".to_string();
-        let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-f]{64}\.ext").unwrap();
+        let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-f]{10}\.ext").unwrap();
 
         assert_eq!(path, expected_path);
         assert!(expected_key_regex.is_match(&key));

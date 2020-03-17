@@ -17,7 +17,6 @@ pub fn sync(
     user: &GlobalUser,
     namespace_id: &str,
     path: &Path,
-    verbose: bool,
 ) -> Result<(Vec<KeyValuePair>, Vec<String>, AssetManifest), failure::Error> {
     kv::validate_target(target)?;
     // First, find all changed files in given local directory (aka files that are now stale
@@ -39,7 +38,7 @@ pub fn sync(
     }
 
     let (pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) =
-        directory_keys_values(target, path, verbose)?;
+        directory_keys_values(target, path)?;
 
     let to_upload = filter_files(pairs.clone(), &remote_keys);
 
