@@ -1,12 +1,9 @@
 use std::collections::HashSet;
-use std::fs::metadata;
-use std::iter::FromIterator;
 use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use crate::commands::kv;
-use crate::commands::kv::bucket::directory_keys_only;
 use crate::commands::kv::bucket::directory_keys_values;
 use crate::commands::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
@@ -44,16 +41,14 @@ pub fn sync(
     let (pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) =
         directory_keys_values(target, path, verbose)?;
 
-    let to_upload = filter_files(pairs, &remote_keys);
+    let to_upload = filter_files(pairs.clone(), &remote_keys);
 
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
-    let local_keys_vec: Vec<String> = match &metadata(path) {
-        Ok(file_type) if file_type.is_dir() => directory_keys_only(target, path),
-        Ok(_) => failure::bail!("{} should be a directory", path.display()),
-        Err(e) => failure::bail!("{}", e),
-    }?;
-    let local_keys: HashSet<_> = HashSet::from_iter(local_keys_vec.into_iter());
+    let mut local_keys: HashSet<_> = HashSet::new();
+    for pair in pairs.iter() {
+        local_keys.insert(pair.key.clone());
+    }
 
     // Find keys that are present in remote but not present in local, and
     // stage them for deletion.

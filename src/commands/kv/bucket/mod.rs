@@ -36,7 +36,7 @@ pub fn directory_keys_values(
     match &fs::metadata(directory) {
         Ok(file_type) if file_type.is_dir() => {
             let mut upload_vec: Vec<KeyValuePair> = Vec::new();
-            let mut asset_manifest: AssetManifest = AssetManifest::new();
+            let mut asset_manifest = AssetManifest::new();
 
             let dir_walker = get_dir_iterator(target, directory)?;
 
@@ -80,31 +80,6 @@ pub fn directory_keys_values(
         }
         Err(e) => Err(format_err!("{}", e)),
     }
-}
-
-// Returns only the hashed keys for a directory's files.
-fn directory_keys_only(target: &Target, directory: &Path) -> Result<Vec<String>, failure::Error> {
-    let mut key_vec: Vec<String> = Vec::new();
-
-    let dir_walker = get_dir_iterator(target, directory)?;
-
-    for entry in dir_walker {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.is_file() {
-            let value = std::fs::read(path)?;
-
-            // Need to base64 encode value
-            let b64_value = base64::encode(&value);
-
-            let (_, key) = generate_path_and_key(path, directory, Some(b64_value))?;
-
-            validate_key_size(&key)?;
-
-            key_vec.push(key);
-        }
-    }
-    Ok(key_vec)
 }
 
 // Ensure that all files in upload directory do not exceed the MAX_VALUE_SIZE (this ensures that
