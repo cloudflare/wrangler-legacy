@@ -31,8 +31,7 @@ fn validate_target(target: &Target) -> Result<(), failure::Error> {
     }
 }
 
-// secret_errors() provides more detailed explanations of Workers KV API error codes.
-// See https://api.cloudflare.com/#workers-secrets ? for details.
+// secret_errors() provides more detailed explanations of API error codes.
 fn secret_errors(error_code: u16) -> &'static str {
     match error_code {
         7003 | 7000 => {
