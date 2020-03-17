@@ -213,7 +213,7 @@ fn get_digest(value: String) -> Result<String, failure::Error> {
     let mut hasher = Sha256::new();
     hasher.input(value);
     let digest = hasher.result();
-    let hex_digest = HEXLOWER.encode(digest.as_ref());
+    let hex_digest = HEXLOWER.encode(digest.as_ref())[0..9].to_string();
     Ok(hex_digest)
 }
 
