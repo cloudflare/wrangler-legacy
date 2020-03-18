@@ -182,18 +182,6 @@ impl WranglerToml {
         wrangler_toml
     }
 
-    pub fn zoned_multi_route_with_env(
-        name: &'static str,
-        zone_id: &'static str,
-        routes: Vec<&'static str>,
-        env_config: EnvConfig,
-    ) -> WranglerToml {
-        let mut wrangler_toml = WranglerToml::zoned_multi_route(name, zone_id, routes);
-        wrangler_toml.env = Some(test_env(env_config));
-
-        wrangler_toml
-    }
-
     pub fn webpack_build(name: &'static str) -> WranglerToml {
         let mut wrangler_toml = WranglerToml::default();
         wrangler_toml.name = Some(name);

@@ -112,10 +112,8 @@ pub fn add_site_namespace(
     for namespace in target.kv_namespaces() {
         if namespace.id == site_namespace.id {
             return Ok(namespace); // Sites binding already exists; ignore
-        } else {
-            if namespace.bucket.is_some() {
-                failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
-            }
+        } else if namespace.bucket.is_some() {
+            failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
         }
     }
 
