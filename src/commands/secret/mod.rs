@@ -55,16 +55,14 @@ pub fn upload_draft_worker(
 ) -> Option<Result<(), failure::Error>> {
     match e {
         ApiFailure::Error(_, api_errors) => {
-            for error in &api_errors.errors {
-                if error.code == 10007 {
-                    message::working(&format!("Worker {} doesn't exist in the API yet. Creating a draft Worker so we can create new secret.", target.name));
-                    let upload_client = http::auth_client(None, user);
-                    return Some(upload::script(&upload_client, target, None));
-                } else {
-                    return None;
-                }
+            let error = &api_errors.errors[0];
+            if error.code == 10007 {
+                message::working(&format!("Worker {} doesn't exist in the API yet. Creating a draft Worker so we can create new secret.", target.name));
+                let upload_client = http::auth_client(None, user);
+                Some(upload::script(&upload_client, target, None))
+            } else {
+                None
             }
-            return None;
         }
         ApiFailure::Invalid(_) => None,
     }
@@ -151,7 +149,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     let response = client.request(&DeleteSecret {
         account_identifier: &target.account_id,
         script_name: &target.name,
-        secret_name: name.clone(),
+        secret_name: &name,
     });
 
     match response {

@@ -22,7 +22,6 @@ use sha2::{Digest, Sha256};
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use crate::settings::toml::Target;
-use crate::terminal::message;
 
 pub const KEY_MAX_SIZE: usize = 512;
 // Oddly enough, metadata.len() returns a u64, not usize.

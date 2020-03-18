@@ -216,7 +216,7 @@ fn it_can_get_a_multi_route_zoned_deploy_config() {
         .iter()
         .map(|p| Route {
             script: Some(script_name.to_string()),
-            pattern: p.to_string(),
+            pattern: (*p).to_string(),
             id: None,
         })
         .collect();
@@ -247,7 +247,7 @@ fn it_can_get_a_multi_route_zoned_deploy_config_workers_dev_false() {
         .iter()
         .map(|p| Route {
             script: Some(script_name.to_string()),
-            pattern: p.to_string(),
+            pattern: (*p).to_string(),
             id: None,
         })
         .collect();
@@ -575,7 +575,7 @@ fn when_top_level_empty_zoned_multi_route_env() {
         .iter()
         .map(|p| Route {
             script: Some(expected_name.to_string()),
-            pattern: p.to_string(),
+            pattern: (*p).to_string(),
             id: None,
         })
         .collect();
@@ -811,7 +811,7 @@ fn when_top_level_zoneless_env_zoned_multi_route() {
         .iter()
         .map(|p| Route {
             script: Some(expected_name.to_string()),
-            pattern: p.to_string(),
+            pattern: (*p).to_string(),
             id: None,
         })
         .collect();
