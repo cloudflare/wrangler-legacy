@@ -2,7 +2,7 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
-use cloudflare::endpoints::workers::{CreateTail, CreateTailHeartbeat, CreateTailParams};
+use cloudflare::endpoints::workers::{CreateTail, CreateTailParams, SendTailHeartbeat};
 use cloudflare::framework::HttpApiClientConfig;
 use cloudflare::framework::{async_api, async_api::ApiClient};
 
@@ -183,7 +183,7 @@ async fn send_heartbeat(
     tail_id: &str,
 ) -> Result<(), failure::Error> {
     let response = client
-        .request(&CreateTailHeartbeat {
+        .request(&SendTailHeartbeat {
             account_identifier: &target.account_id,
             script_name: &target.name,
             tail_id: tail_id,
