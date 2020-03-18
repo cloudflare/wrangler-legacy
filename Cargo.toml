@@ -18,7 +18,7 @@ billboard = "0.1.0"
 chrome-devtools-rs = { version = "0.0.0-alpha.0", features = ["color"] }
 chrono = "0.4.9"
 clap = "2.32.0"
-cloudflare = { path = "../cloudflare-rs/cloudflare" }
+cloudflare = { git = "https://github.com/cloudflare/cloudflare-rs", branch = "gabbi/workers-tailing-endpoints" }
 config = "0.10.1"
 console = "0.9.1"
 data-encoding = "2.1.2"

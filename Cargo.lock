@@ -342,6 +342,7 @@ dependencies = [
 [[package]]
 name = "cloudflare"
 version = "0.6.4"
+source = "git+https://github.com/cloudflare/cloudflare-rs?branch=gabbi/workers-tailing-endpoints#cf319b2ea03bb71f4416b9f9f482e46393b7b861"
 dependencies = [
  "async-trait",
  "chrono",
