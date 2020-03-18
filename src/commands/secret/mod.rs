@@ -31,8 +31,7 @@ fn validate_target(target: &Target) -> Result<(), failure::Error> {
     }
 }
 
-// secret_errors() provides more detailed explanations of Workers KV API error codes.
-// See https://api.cloudflare.com/#workers-secrets ? for details.
+// secret_errors() provides more detailed explanations of API error codes.
 fn secret_errors(error_code: u16) -> &'static str {
     match error_code {
         7003 | 7000 => {
@@ -59,7 +58,8 @@ pub fn upload_draft_worker(
             for error in &api_errors.errors {
                 if error.code == 10007 {
                     message::working(&format!("Worker {} doesn't exist in the API yet. Creating a draft Worker so we can create new secret.", target.name));
-                    return Some(upload::script(user, target, None));
+                    let upload_client = http::auth_client(None, user);
+                    return Some(upload::script(&upload_client, target, None));
                 } else {
                     return None;
                 }

@@ -3,6 +3,7 @@
 ![Banner](/banner.png)
 
 [![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
+[![npm](https://img.shields.io/npm/v/@cloudflare/wrangler.svg)](https://www.npmjs.com/package/@cloudflare/wrangler) &nbsp;
 [![Build Status](https://dev.azure.com/ashleygwilliams/wrangler/_apis/build/status/cloudflare.wrangler?branchName=master)](https://dev.azure.com/ashleygwilliams/wrangler/_build/latest?definitionId=1&branchName=master)
 [![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
 [![Github Actions - Build Status](https://github.com/cloudflare/wrangler/workflows/Builds/badge.svg)](https://github.com/cloudflare/wrangler/actions)
@@ -21,6 +22,11 @@ You have many options to install wrangler!
 ```bash
 npm i @cloudflare/wrangler -g
 ```
+
+#### Specify binary site URL
+In case you need to store/mirror binaries on premise you will need to specify where wrangler should search for them by providing any of the following:
+- Environment variable: `WRANGLER_BINARY_HOST`
+- NPM configuration: `wrangler_binary_host`
 
 ### Install with `cargo`
 
