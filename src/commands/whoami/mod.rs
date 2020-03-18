@@ -15,7 +15,7 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
         GlobalUser::GlobalKeyAuth { email, .. } => {
             format!("a Global API Key, associated with the email '{}'", email,)
         }
-        GlobalUser::TokenAuth { .. } => format!("an API Token"),
+        GlobalUser::TokenAuth { .. } => "an API Token".to_string(),
     };
 
     println!("\n{} You are logged in with {}.\n", emoji::WAVING, auth,);
@@ -39,7 +39,7 @@ fn format_accounts(user: &GlobalUser, accounts: Vec<Account>) -> Table {
     let table_head = Row::new(vec![Cell::new("Account Name"), Cell::new("Account ID")]);
     table.add_row(table_head);
 
-    if let GlobalUser::TokenAuth { api_token: _ } = user {
+    if let GlobalUser::TokenAuth { .. } = user {
         if accounts.is_empty() {
             println!("Your token is missing the 'Account Settings: Read' permission.\n\nPlease generate and auth with a new token that has these perms to be able to list your accounts.\n");
         }
