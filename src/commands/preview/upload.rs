@@ -65,7 +65,7 @@ pub fn upload(
 
                     let path = Path::new(&site_config.bucket);
                     let (to_upload, to_delete, asset_manifest) =
-                        sync(target, user, &site_namespace.id, path, verbose)?;
+                        sync(target, user, &site_namespace.id, path)?;
 
                     // First, upload all existing files in given directory
                     if verbose {
