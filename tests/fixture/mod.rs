@@ -1,3 +1,5 @@
+use lazy_static::lazy_static;
+
 mod wrangler_toml;
 pub use wrangler_toml::{EnvConfig, KvConfig, SiteConfig, WranglerToml, TEST_ENV_NAME};
 

@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
-
 pub mod fixture;
 
 use fixture::WranglerToml;
