@@ -7,7 +7,9 @@ impl DeployConfig {
         route_config: &RouteConfig,
     ) -> Result<DeployConfig, failure::Error> {
         if route_config.is_valid() {
-            failure::bail!("you must set workers_dev = true OR provide a zone_id and route/routes.")
+            failure::bail!(
+                "you must set EITHER workers_dev = true OR provide a zone_id and route/routes."
+            )
         }
 
         if route_config.is_zoneless() {
