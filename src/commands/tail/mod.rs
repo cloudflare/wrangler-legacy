@@ -32,10 +32,11 @@ pub fn start_tail(target: &Target, user: &GlobalUser) -> Result<(), failure::Err
         target.name
     );
 
-    // todo: get rid of this gross clone. Maybe just default to static lifetime.
+    // TODO: get rid of this gross clone. Maybe just default to static lifetime.
     runtime.block_on(run_cloudflared_start_server(target.clone(), user.clone()))
 }
 
+// TODO: handle sigint to tear down tunnel, http server
 async fn run_cloudflared_start_server(
     target: Target,
     user: GlobalUser,
@@ -52,18 +53,31 @@ async fn run_cloudflared_start_server(
     }
 }
 
+async fn start_log_collection_http_server() -> Result<(), failure::Error> {
+    // Start HTTP echo server that prints whatever is posted to it.
+    let addr = ([127, 0, 0, 1], 8080).into();
+
+    let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(print_logs)) });
+
+    let server = Server::bind(&addr).serve(service);
+
+    server.await?;
+
+    Ok(())
+}
+
 async fn start_argo_tunnel() -> Result<(), failure::Error> {
-    // todo:remove sleep!! Can maybe use channel to signal from http server thread to argo tunnel
+    // TODO: remove sleep!! Can maybe use channel to signal from http server thread to argo tunnel
     // thread that the server is ready on port 8080 and prepared for the cloudflared CLI to open an
     // Argo Tunnel to it.
     thread::sleep(Duration::from_secs(5));
 
     let tool_name = PathBuf::from("cloudflared");
-    // todo: Finally get cloudflared release binaries distributed on GitHub so we could simply uncomment
+    // TODO: Finally get cloudflared release binaries distributed on GitHub so we could simply uncomment
     // the line below.
     // let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
 
-    // todo: allow user to pass in their own ports in case ports 8080 (used by cloudflared)
+    // TODO: allow user to pass in their own ports in case ports 8080 (used by cloudflared)
     // and 8081 (used by cloudflared metrics) are both already being used.
     let args = ["tunnel", "--metrics", "localhost:8081"];
 
@@ -84,35 +98,6 @@ async fn start_argo_tunnel() -> Result<(), failure::Error> {
         )
     }
     Ok(())
-}
-
-async fn start_log_collection_http_server() -> Result<(), failure::Error> {
-    // Start HTTP echo server that prints whatever is posted to it.
-    let addr = ([127, 0, 0, 1], 8080).into();
-
-    let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(print_logs)) });
-
-    let server = Server::bind(&addr).serve(service);
-
-    server.await?;
-
-    Ok(())
-}
-
-async fn print_logs(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    match (req.method(), req.uri().path()) {
-        (&Method::POST, "/") => {
-            let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-            println!("{:?}", str::from_utf8(&whole_body).unwrap());
-
-            Ok(Response::new(Body::from("Success")))
-        }
-        _ => {
-            let mut not_found = Response::default();
-            *not_found.status_mut() = StatusCode::NOT_FOUND;
-            Ok(not_found)
-        }
-    }
 }
 
 async fn enable_tailing_start_heartbeat(
@@ -152,9 +137,25 @@ async fn enable_tailing_start_heartbeat(
     }
 }
 
+async fn print_logs(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    match (req.method(), req.uri().path()) {
+        (&Method::POST, "/") => {
+            let whole_body = hyper::body::to_bytes(req.into_body()).await?;
+            println!("{}", str::from_utf8(&whole_body).unwrap());
+
+            Ok(Response::new(Body::from("Success")))
+        }
+        _ => {
+            let mut not_found = Response::default();
+            *not_found.status_mut() = StatusCode::NOT_FOUND;
+            Ok(not_found)
+        }
+    }
+}
+
 async fn get_tunnel_url() -> Result<String, failure::Error> {
     // regex for extracting url from cloudflared metrics port.
-    let re = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
+    let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
     let mut attempt = 0;
 
@@ -165,7 +166,7 @@ async fn get_tunnel_url() -> Result<String, failure::Error> {
         if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {
             let body = resp.text().await?;
 
-            for cap in re.captures_iter(&body) {
+            for cap in url_regex.captures_iter(&body) {
                 return Ok(cap[1].to_string());
             }
         }
@@ -196,7 +197,7 @@ async fn send_heartbeat(
     }
 }
 
-// todo: let's not clumsily copy this from commands/build/mod.rs
+// TODO: let's not clumsily copy this from commands/build/mod.rs
 // We definitely want to keep the check for RUST_LOG=info below so we avoid
 // spamming user terminal with default cloudflared output (which is pretty darn sizable.)
 pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
