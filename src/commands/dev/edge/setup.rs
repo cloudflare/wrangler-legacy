@@ -75,12 +75,12 @@ fn get_session_config(deploy_config: &DeployConfig) -> serde_json::Value {
 fn get_initialize_address(deploy_config: &DeployConfig) -> String {
     match deploy_config {
         DeployConfig::Zoned(config) => format!(
-            "https://api.cloudflare.com/client/v4/zones/{}/workers/realish",
+            "https://api.cloudflare.com/client/v4/zones/{}/workers/edge-preview",
             config.zone_id
         ),
         // TODO: zoneless is probably wrong
         DeployConfig::Zoneless(config) => format!(
-            "https://api.cloudflare.com/client/v4/account/{}/workers/realish/subdomain",
+            "https://api.cloudflare.com/client/v4/account/{}/workers/edge-preview/subdomain",
             config.account_id
         ),
     }
@@ -88,7 +88,7 @@ fn get_initialize_address(deploy_config: &DeployConfig) -> String {
 
 fn get_upload_address(target: &mut Target) -> String {
     format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/realish",
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/edge-preview",
         target.account_id, target.name
     )
 }
