@@ -32,8 +32,7 @@ pub fn publish(
 
         let site_namespace = add_site_namespace(user, target, false)?;
 
-        let (to_upload, to_delete, asset_manifest) =
-            sync(target, user, &site_namespace.id, &path, verbose)?;
+        let (to_upload, to_delete, asset_manifest) = sync(target, user, &site_namespace.id, &path)?;
 
         // First, upload all existing files in bucket directory
         if verbose {
@@ -113,10 +112,8 @@ pub fn add_site_namespace(
     for namespace in target.kv_namespaces() {
         if namespace.id == site_namespace.id {
             return Ok(namespace); // Sites binding already exists; ignore
-        } else {
-            if namespace.bucket.is_some() {
-                failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
-            }
+        } else if namespace.bucket.is_some() {
+            failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
         }
     }
 
@@ -179,8 +176,7 @@ pub fn sync_non_site_buckets(
         if let Some(path) = &namespace.bucket {
             is_using_non_site_bucket = true;
             validate_bucket_location(path)?;
-            let (to_upload, to_delete, _) =
-                kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
+            let (to_upload, to_delete, _) = kv::bucket::sync(target, user, &namespace.id, path)?;
             // First, upload all existing files in bucket directory
             if verbose {
                 message::info("Preparing to upload updated files...");
