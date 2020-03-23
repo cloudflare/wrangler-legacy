@@ -24,14 +24,12 @@ pub(super) async fn serve(
     let make_service = make_service_fn(move |_| {
         let client = client.to_owned();
         let preview_token = preview_token.to_owned();
-        let server_config = server_config.to_owned();
         let host = host.to_owned();
 
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
                 let client = client.to_owned();
                 let preview_token = preview_token.to_owned();
-                let server_config = server_config.to_owned();
                 let host = host.to_owned();
                 let version = req.version();
                 let (parts, body) = req.into_parts();
@@ -43,7 +41,7 @@ pub(super) async fn serve(
                         Request::from_parts(parts, body),
                         client,
                         preview_token.to_owned(),
-                        host,
+                        host.clone(),
                     )
                     .await?;
 
@@ -51,7 +49,7 @@ pub(super) async fn serve(
                         "[{}] {} {}{} {:?} {}",
                         now.format("%Y-%m-%d %H:%M:%S"),
                         req_method,
-                        server_config.host,
+                        host,
                         path,
                         version,
                         resp.status()

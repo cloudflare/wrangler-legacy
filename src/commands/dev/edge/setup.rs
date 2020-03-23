@@ -80,7 +80,7 @@ fn get_initialize_address(deploy_config: &DeployConfig) -> String {
         ),
         // TODO: zoneless is probably wrong
         DeployConfig::Zoneless(config) => format!(
-            "https://api.cloudflare.com/client/v4/account/{}/workers/edge-preview/subdomain",
+            "https://api.cloudflare.com/client/v4/accounts/{}/workers/subdomain/edge-preview",
             config.account_id
         ),
     }
