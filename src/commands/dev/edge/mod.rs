@@ -15,7 +15,6 @@ pub fn dev(
     deploy_config: DeployConfig,
     user: GlobalUser,
     server_config: ServerConfig,
-    verbose: bool,
 ) -> Result<(), failure::Error> {
     commands::build(&target)?;
     let (preview_token, host) = setup::init(&deploy_config, &user)?;

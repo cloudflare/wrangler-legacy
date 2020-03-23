@@ -28,7 +28,7 @@ pub fn dev(
 
     let server_config = ServerConfig::new(host, ip, port)?;
     match user {
-        Some(user) => edge::dev(target, deploy_config, user, server_config, verbose),
+        Some(user) => edge::dev(target, deploy_config, user, server_config),
         None => gcs::dev(target, server_config, verbose),
     }
 }

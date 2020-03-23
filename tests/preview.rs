@@ -3,7 +3,7 @@ extern crate lazy_static;
 
 pub mod fixture;
 
-use fixture::{EnvConfig, WranglerToml, TEST_ENV_NAME};
+use fixture::WranglerToml;
 
 use std::collections::HashMap;
 use std::env;

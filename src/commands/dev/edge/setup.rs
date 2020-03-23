@@ -18,8 +18,8 @@ pub(super) fn upload(
     preview_token: String,
 ) -> Result<String, failure::Error> {
     let client = http::auth_client(None, &user);
-    if let Some(site_config) = target.site.clone() {
-        publish::bind_static_site_contents(user, target, &site_config, true)?;
+    if target.site.is_some() {
+        publish::add_site_namespace(user, target, true)?;
     }
 
     let session_config = get_session_config(deploy_config);

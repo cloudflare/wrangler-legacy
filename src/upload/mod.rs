@@ -19,12 +19,6 @@ pub fn script(
         target.account_id, target.name,
     );
 
-    let client = if target.site.is_some() {
-        http::auth_client(Some("site"), user)
-    } else {
-        http::auth_client(None, user)
-    };
-
     let script_upload_form = form::build(target, asset_manifest, None)?;
 
     let res = client
