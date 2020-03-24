@@ -24,7 +24,7 @@ npm i @cloudflare/wrangler -g
 ```
 
 #### Specify binary site URL
-In case you need to store/mirror binaries on premise you will need to specify where wrangler should search for them by providing any of the following:
+In case you need to store/mirror binaries on premises you will need to specify where wrangler should search for them by providing any of the following:
 - Environment variable: `WRANGLER_BINARY_HOST`
 - NPM configuration: `wrangler_binary_host`
 
@@ -109,6 +109,8 @@ $ wrangler publish
   ```
 
   You can also [use environment variables](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/) to configure these values.
+
+  For more information on Cloudflare API keys and tokens [please visit](https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys).
 
 ### ☁️ 🆙 `publish`
 
