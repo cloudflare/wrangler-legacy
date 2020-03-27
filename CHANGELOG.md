@@ -1,5 +1,61 @@
 # Changelog
 
+## 🍟 1.8.3
+
+- ### Features
+
+  - **Improvements to the Workers Sites asset manifest - [EverlastingBugstopper], [issue/897] [pull/1145]**
+
+    Workers Sites uses the concept of an asset manifest to invalidate Cloudflare's cache when new files are published. Every time you publish your Workers Site, Wrangler will re-create a mapping of file names with a hash to the contents of the file. This release includes a few steps that improve this experience:
+
+    - Manifest sizes are smaller by a magnitude of ~6.4. This should help some folks who were previously running into size issues when uploading a Workers Site.
+
+    - Any time an asset manifest is created, you will see the files that are being hashed in real time with a fancy loading spinner - no more waiting without any information!
+
+    - Asset manifest creation is now faster due to a  refactor.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1145]: https://github.com/cloudflare/wrangler/pull/1145
+    [issue/897]: https://github.com/cloudflare/wrangler/issues/897
+
+  - **Clarify mutual exclusivity of zoneless v. zoned deploys - [EverlastingBugstopper], [issue/1152] [pull/1154]**
+
+    When publishing a Worker, you must specify either `workers_dev = true` or both a `zone_id` and `route/routes`. Previously, if your `wrangler.toml` violated this requirement, it would error with the following message:
+
+    ```console
+    $ wrangler publish
+    Error: you must set workers_dev = true OR provide a zone_id and route/routes.
+    ```
+
+    It's technically correct, but we can make it even more clear what the issue is. The new error message looks like:
+
+    ```console
+    $ wrangler publish
+    Error: you must set EITHER workers_dev = true OR provide a zone_id and route/routes.
+    ```
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1154]: https://github.com/cloudflare/wrangler/pull/1154
+    [issue/1152]: https://github.com/cloudflare/wrangler/issues/1152
+
+- ### Fixes
+
+  - **Fixes `wrangler config` information message - [EverlastingBugstopper], [pull/1164]**
+
+    In Wrangler 1.8.2, we updated the formatting of some of Wrangler's informational messages. Unfortunately when this was introduced, it came with a bug in `wrangler config` that made the message read out in the wrong order. This is fixed in this release!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1164]: https://github.com/cloudflare/wrangler/pull/1164
+
+- ### Maintenance
+
+  - **Remove unused badges from README - [EverlastingBugstopper], [pull/1166]**
+
+    We no longer use Azure Pipelines as our CI provider, nor do we run non-test builds in CI so we removed those badges from the README.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1166]: https://github.com/cloudflare/wrangler/pull/1166
+
 ## 🐈 1.8.2
 
 - ### Features
