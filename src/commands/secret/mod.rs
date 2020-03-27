@@ -71,7 +71,7 @@ pub fn upload_draft_worker(
 pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     validate_target(target)?;
 
-    let secret_value = interactive::get_user_input(&format!(
+    let secret_value = interactive::get_user_input_multi_line(&format!(
         "Enter the secret text you'd like assigned to the variable {} on the script named {}:",
         name, target.name
     ));
