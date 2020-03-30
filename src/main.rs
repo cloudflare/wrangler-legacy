@@ -526,7 +526,7 @@ fn run() -> Result<(), failure::Error> {
 
         let user: GlobalUser = if default {
             // API Tokens are the default
-            message::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", not_recommended_msg, recommended_cmd_msg, api_token_url));
+            message::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", api_token_url, not_recommended_msg, recommended_cmd_msg));
             let api_token: String = interactive::get_user_input("Enter API Token: ");
             GlobalUser::TokenAuth { api_token }
         } else {
