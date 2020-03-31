@@ -61,9 +61,7 @@ async fn start_log_collection_http_server() -> Result<(), failure::Error> {
 
     let server = Server::bind(&addr).serve(service);
 
-    server.await?;
-
-    Ok(())
+    server.await
 }
 
 async fn start_argo_tunnel() -> Result<(), failure::Error> {
