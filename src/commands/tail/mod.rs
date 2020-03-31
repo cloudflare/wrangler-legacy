@@ -22,7 +22,7 @@ use tokio;
 use tokio::process::Command;
 use tokio::runtime::Runtime as TokioRuntime;
 
-pub fn start_tail(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+pub fn start(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     let mut runtime = TokioRuntime::new()?;
     // Note that we use eprintln!() throughout this file; this is because we want any
     // helpful output to not be mixed with actual log JSON output, so we use this macro

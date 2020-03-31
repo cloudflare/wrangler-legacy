@@ -25,7 +25,6 @@ pub use publish::publish;
 pub use secret::{create_secret, delete_secret, list_secrets};
 pub use subdomain::get_subdomain;
 pub use subdomain::set_subdomain;
-pub use tail::start_tail;
 pub use whoami::whoami;
 
 use regex::Regex;

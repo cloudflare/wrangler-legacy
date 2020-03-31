@@ -879,7 +879,7 @@ fn run() -> Result<(), failure::Error> {
 
         let user = settings::global_user::GlobalUser::new()?;
 
-        commands::start_tail(&target, &user)?;
+        commands::tail::start(&target, &user)?;
     }
     Ok(())
 }
