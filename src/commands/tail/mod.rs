@@ -141,7 +141,10 @@ async fn print_logs(req: Request<Body>) -> Result<Response<Body>, hyper::Error> 
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-            println!("{}", str::from_utf8(&whole_body).expect("failed to deserialize tail log body"));
+            println!(
+                "{}",
+                str::from_utf8(&whole_body).expect("failed to deserialize tail log body")
+            );
 
             Ok(Response::new(Body::from("Success")))
         }
