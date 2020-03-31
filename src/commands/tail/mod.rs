@@ -61,7 +61,9 @@ async fn start_log_collection_http_server() -> Result<(), failure::Error> {
 
     let server = Server::bind(&addr).serve(service);
 
-    server.await
+    server.await?;
+
+    Ok(())
 }
 
 async fn start_argo_tunnel() -> Result<(), failure::Error> {
@@ -139,7 +141,7 @@ async fn print_logs(req: Request<Body>) -> Result<Response<Body>, hyper::Error> 
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-            println!("{}", str::from_utf8(&whole_body).unwrap());
+            println!("{}", str::from_utf8(&whole_body).expect("failed to deserialize tail log body"));
 
             Ok(Response::new(Body::from("Success")))
         }
@@ -169,7 +171,7 @@ async fn get_tunnel_url() -> Result<String, failure::Error> {
             }
         }
 
-        attempt = attempt + 1;
+        attempt += 1;
         thread::sleep(Duration::from_millis(attempt * attempt * 100));
     }
 
@@ -185,7 +187,7 @@ async fn send_heartbeat(
         .request(&SendTailHeartbeat {
             account_identifier: &target.account_id,
             script_name: &target.name,
-            tail_id: tail_id,
+            tail_id,
         })
         .await;
 
