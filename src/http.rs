@@ -9,6 +9,7 @@ use crate::settings::global_user::GlobalUser;
 
 use http::status::StatusCode;
 
+use cloudflare::framework::async_api;
 use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
@@ -81,6 +82,17 @@ pub fn cf_v4_api_client(
     config: HttpApiClientConfig,
 ) -> Result<HttpApiClient, failure::Error> {
     HttpApiClient::new(
+        Credentials::from(user.to_owned()),
+        config,
+        Environment::Production,
+    )
+}
+
+pub fn cf_v4_api_client_async(
+    user: &GlobalUser,
+    config: HttpApiClientConfig,
+) -> Result<async_api::Client, failure::Error> {
+    async_api::Client::new(
         Credentials::from(user.to_owned()),
         config,
         Environment::Production,
