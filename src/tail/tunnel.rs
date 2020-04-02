@@ -6,13 +6,16 @@ use std::time::Duration;
 
 use log::log_enabled;
 use log::Level::Info;
-use tokio;
+use tokio::process::Child;
 use tokio::process::Command;
 
-pub struct Tunnel;
+pub struct Tunnel {
+    child: Child,
+    command_name: String,
+}
 
 impl Tunnel {
-    pub async fn run() -> Result<(), failure::Error> {
+    pub fn new() -> Result<Tunnel, failure::Error> {
         // TODO: remove sleep!! Can maybe use channel to signal from http server thread to argo tunnel
         // thread that the server is ready on port 8080 and prepared for the cloudflared CLI to open an
         // Argo Tunnel to it.
@@ -30,19 +33,28 @@ impl Tunnel {
         let mut command = command(&args, &tool_name);
         let command_name = format!("{:?}", command);
 
-        let status = command
+        let child = command
             .kill_on_drop(true)
             .spawn()
-            .expect(&format!("{} failed to spawn", command_name))
-            .await?;
+            .expect(&format!("{} failed to spawn", command_name));
+
+        Ok(Tunnel {
+            child,
+            command_name,
+        })
+    }
+
+    pub async fn run(self) -> Result<(), failure::Error> {
+        let status = self.child.await?;
 
         if !status.success() {
             failure::bail!(
                 "tried running command:\n{}\nexited with {}",
-                command_name.replace("\"", ""),
+                self.command_name.replace("\"", ""),
                 status
             )
         }
+
         Ok(())
     }
 }
