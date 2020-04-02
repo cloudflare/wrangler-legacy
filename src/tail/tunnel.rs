@@ -1,8 +1,6 @@
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::str;
-use std::thread;
-use std::time::Duration;
 
 use log::log_enabled;
 use log::Level::Info;
@@ -16,11 +14,6 @@ pub struct Tunnel {
 
 impl Tunnel {
     pub fn new() -> Result<Tunnel, failure::Error> {
-        // TODO: remove sleep!! Can maybe use channel to signal from http server thread to argo tunnel
-        // thread that the server is ready on port 8080 and prepared for the cloudflared CLI to open an
-        // Argo Tunnel to it.
-        thread::sleep(Duration::from_secs(5));
-
         let tool_name = PathBuf::from("cloudflared");
         // TODO: Finally get cloudflared release binaries distributed on GitHub so we could simply uncomment
         // the line below.

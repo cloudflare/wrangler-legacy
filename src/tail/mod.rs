@@ -19,9 +19,10 @@ impl Tail {
         let mut runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
+            let log_host = Host::new()?;
             let tunnel_process = Tunnel::new()?;
             let res = tokio::try_join!(
-                Host::run(),
+                log_host.run(),
                 tunnel_process.run(),
                 Session::run(&target, &user)
             );
