@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.8.3"
+version = "1.8.4"
 authors = ["Ashley Williams <ashley666ashley@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -11,7 +11,7 @@ categories = ["wasm", "development-tools", "command-line-utilities", "web-progra
 build = "build.rs"
 
 [dependencies]
-atty = "0.2.11"
+atty = "0.2.14"
 base64 = "0.10.1"
 binary-install = "0.0.3-alpha"
 billboard = "0.1.0"

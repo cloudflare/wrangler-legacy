@@ -1,5 +1,34 @@
 # Changelog
 
+## 🎭 1.8.4
+
+- ### Fixes
+
+  - **Don't remove user configuration on npm installs - [EverlastingBugstopper], [issue/1180] [pull/1181]**
+
+    Wrangler started removing user's authentication configuration files on reinstallation from npm - this is no good and is fixed in this release.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1181]: https://github.com/cloudflare/wrangler/pull/1181
+    [issue/1180]: https://github.com/cloudflare/wrangler/issues/1180
+
+  - **Allow multiline files to be piped to `wrangler secret put` - [EverlastingBugstopper], [issue/1132] [pull/1171]**
+
+    Previously, if you tried to pipe a multiline file to `wrangler secret put`, the secret would only upload the first line of the file. This... was not helpful - `cat hello_world.txt | wrangler secret put` should behave as expected with this release.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1171]: https://github.com/cloudflare/wrangler/pull/1171
+    [issue/1132]: https://github.com/cloudflare/wrangler/issues/1132
+
+- ### Maintenance
+
+  - **Bump GitHub Actions checkout version - [imbsky], [pull/1170]**
+
+    GitHub Actions are pretty nifty, and we've started using them as our CI provider in Wrangler. Actions allow you to specify a step that "uses" a template, and one of the most used templates is the template that checks out relevant code. GitHub just released v2 of that template, and our CI now uses it!
+
+    [imbsky]: https://github.com/imbsky
+    [pull/1170]: https://github.com/cloudflare/wrangler/pull/1170
+
 ## 🍟 1.8.3
 
 - ### Features
