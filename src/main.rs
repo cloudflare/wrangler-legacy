@@ -21,9 +21,11 @@ use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
 use wrangler::terminal::{emoji, interactive, message};
+use wrangler::util::background_check_for_updates;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
+    let latest_version_receiver = background_check_for_updates();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
         // self-installation, otherwise just continue as usual.
@@ -36,7 +38,22 @@ fn main() -> Result<(), ExitFailure> {
             installer::install();
         }
     }
-    Ok(run()?)
+    run()?;
+    if let Ok(latest_version) = latest_version_receiver.try_recv() {
+        let latest_version = style(latest_version).green().bold();
+        let new_version_available = format!(
+            "A new version of Wrangler ({}) is available!",
+            latest_version
+        );
+        let update_message = "You can learn more about updating here:".to_string();
+        let update_docs_url =
+            style("https://developers.cloudflare.com/workers/quickstart#updating-the-cli")
+                .blue()
+                .bold()
+                .to_string();
+        message::billboard(&[new_version_available, update_message, update_docs_url].join("\n"));
+    }
+    Ok(())
 }
 
 fn run() -> Result<(), failure::Error> {
