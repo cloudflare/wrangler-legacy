@@ -505,7 +505,17 @@ fn run() -> Result<(), failure::Error> {
             "{} Retrieve your user info and test your auth config",
             emoji::SLEUTH
         )))
-        .subcommand(SubCommand::with_name("tail").about("Aggregate logs from production worker"))
+        .subcommand(
+            SubCommand::with_name("tail")
+                .about("Aggregate logs from production worker")
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to tail")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                )
+        )
         .get_matches();
 
     let config_path = Path::new("./wrangler.toml");
@@ -862,7 +872,7 @@ fn run() -> Result<(), failure::Error> {
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
         }
-    } else if let Some(_) = matches.subcommand_matches("tail") {
+    } else if let Some(matches) = matches.subcommand_matches("tail") {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;

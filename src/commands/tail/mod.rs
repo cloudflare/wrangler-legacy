@@ -175,7 +175,7 @@ async fn get_tunnel_url() -> Result<String, failure::Error> {
         }
 
         attempt += 1;
-        thread::sleep(Duration::from_millis(attempt * attempt * 100));
+        thread::sleep(Duration::from_millis(attempt * attempt * 1000));
     }
 
     failure::bail!("Could not extract tunnel url from cloudflared")
