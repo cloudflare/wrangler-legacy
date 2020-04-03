@@ -8,6 +8,7 @@ use tunnel::Tunnel;
 
 use tokio;
 use tokio::runtime::Runtime as TokioRuntime;
+use tokio::sync::oneshot;
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -19,13 +20,21 @@ impl Tail {
         let mut runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
+            let (log_tx, log_rx) = oneshot::channel();
             let log_host = Host::new()?;
+            let host_handle = tokio::spawn(log_host.run(log_rx));
+
             let tunnel_process = Tunnel::new()?;
-            let res = tokio::try_join!(
-                log_host.run(),
-                tunnel_process.run(),
-                Session::run(&target, &user)
-            );
+            let (tunnel_tx, tunnel_rx) = tokio::sync::oneshot::channel();
+            let tunnel_handle = tokio::spawn(tunnel_process.run(tunnel_rx));
+
+            let (session_tx, session_rx) = tokio::sync::oneshot::channel();
+            let session_handle = tokio::spawn(Session::run(target, user, session_rx));
+
+            let txs = vec![log_tx, tunnel_tx, session_tx];
+            let sigint_handle = tokio::spawn(handle_sigint(txs));
+
+            let res = tokio::try_join!(sigint_handle, host_handle, session_handle, tunnel_handle,);
 
             match res {
                 Ok(_) => Ok(()),
@@ -33,4 +42,15 @@ impl Tail {
             }
         })
     }
+}
+
+async fn handle_sigint(txs: Vec<oneshot::Sender<()>>) -> Result<(), failure::Error> {
+    tokio::signal::ctrl_c().await?;
+    for tx in txs {
+        if let Err(e) = tx.send(()) {
+            eprintln!("failed to transmit to channel {:?}", e);
+        }
+    }
+
+    Ok(())
 }

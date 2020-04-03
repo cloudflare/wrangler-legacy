@@ -6,17 +6,17 @@ use log::log_enabled;
 use log::Level::Info;
 use tokio::process::Child;
 use tokio::process::Command;
+use tokio::sync::oneshot::Receiver;
 
 pub struct Tunnel {
     child: Child,
-    command_name: String,
 }
 
 impl Tunnel {
     pub fn new() -> Result<Tunnel, failure::Error> {
         let tool_name = PathBuf::from("cloudflared");
-        // TODO: Finally get cloudflared release binaries distributed on GitHub so we could simply uncomment
-        // the line below.
+        // TODO: Finally get cloudflared release binaries distributed on GitHub so we could
+        // simply uncomment the line below.
         // let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
 
         // TODO: allow user to pass in their own ports in case ports 8080 (used by cloudflared)
@@ -27,28 +27,26 @@ impl Tunnel {
         let command_name = format!("{:?}", command);
 
         let child = command
-            .kill_on_drop(true)
             .spawn()
             .expect(&format!("{} failed to spawn", command_name));
 
-        Ok(Tunnel {
-            child,
-            command_name,
-        })
+        Ok(Tunnel { child })
     }
 
-    pub async fn run(self) -> Result<(), failure::Error> {
-        let status = self.child.await?;
+    pub async fn run(self, rx: Receiver<()>) -> Result<(), failure::Error> {
+        rx.await?;
+        self.shutdown().await
+    }
 
-        if !status.success() {
-            failure::bail!(
-                "tried running command:\n{}\nexited with {}",
-                self.command_name.replace("\"", ""),
-                status
-            )
+    pub async fn shutdown(mut self) -> Result<(), failure::Error> {
+        // eprintln!("killing cloudflared");
+        if let Err(e) = self.child.kill() {
+            failure::bail!("failed to kill cloudflared: {}", e)
+        } else {
+            self.child.wait_with_output().await?;
+
+            Ok(())
         }
-
-        Ok(())
     }
 }
 

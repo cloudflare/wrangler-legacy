@@ -4,6 +4,9 @@ use std::time::Duration;
 
 use regex::Regex;
 use reqwest;
+use tokio::sync::oneshot::error::TryRecvError;
+use tokio::sync::oneshot::Receiver;
+use tokio::time;
 
 use cloudflare::endpoints::workers::{CreateTail, CreateTailParams, SendTailHeartbeat};
 use cloudflare::framework::HttpApiClientConfig;
@@ -13,11 +16,17 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
+const KEEP_ALIVE_INTERVAL: u64 = 60;
+
 pub struct Session;
 
 impl Session {
-    pub async fn run(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
-        let client = http::cf_v4_api_client_async(user, HttpApiClientConfig::default())?;
+    pub async fn run(
+        target: Target,
+        user: GlobalUser,
+        mut rx: Receiver<()>,
+    ) -> Result<(), failure::Error> {
+        let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
 
         let url = get_tunnel_url().await?;
 
@@ -36,14 +45,27 @@ impl Session {
                 let tail_id = success.result.id;
 
                 // Loop indefinitely to send "heartbeat" to API and keep log streaming alive.
+                // This should loop forever until SIGINT is issued or Wrangler process is killed
+                // through other means.
+                let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
+                let mut delay = time::delay_for(duration);
+
                 loop {
-                    thread::sleep(Duration::from_secs(60));
-                    let heartbeat_result = send_heartbeat(target, &client, &tail_id).await;
-                    if heartbeat_result.is_err() {
-                        return heartbeat_result;
+                    match rx.try_recv() {
+                        Err(TryRecvError::Empty) => {
+                            if delay.is_elapsed() {
+                                let heartbeat_result =
+                                    send_heartbeat(&target, &client, &tail_id).await;
+                                if heartbeat_result.is_err() {
+                                    return heartbeat_result;
+                                }
+                                delay = time::delay_for(duration);
+                            }
+                        }
+                        _ => {
+                            return Ok(());
+                        }
                     }
-                    // This should loop forever until SIGINT is issued or Wrangler process is killed
-                    // through other means.
                 }
             }
             Err(e) => failure::bail!(http::format_error(e, None)),

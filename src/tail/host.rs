@@ -2,6 +2,7 @@ use hyper::server::conn::AddrIncoming;
 use hyper::server::Builder;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use tokio::sync::oneshot::Receiver;
 
 pub struct Host {
     server: Builder<AddrIncoming>,
@@ -17,10 +18,16 @@ impl Host {
         Ok(Host { server })
     }
 
-    pub async fn run(self) -> Result<(), failure::Error> {
+    pub async fn run(self, rx: Receiver<()>) -> Result<(), failure::Error> {
         let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(print_logs)) });
 
-        self.server.serve(service).await?;
+        let server = self.server.serve(service);
+
+        let graceful = server.with_graceful_shutdown(async {
+            rx.await.ok();
+        });
+
+        graceful.await?;
 
         Ok(())
     }
