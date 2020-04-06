@@ -3,10 +3,16 @@ const { join } = require("path");
 const fs = require("fs");
 const WasmMainTemplatePlugin = require("webpack/lib/wasm/WasmMainTemplatePlugin");
 
+const WEBPACK_OUTPUT_FILENAME = "worker.js";
+const WEBPACK_OUTPUT_SOURCEMAPFILENAME = WEBPACK_OUTPUT_FILENAME + ".map";
+
 function error(msg) {
   console.error("Error: " + msg);
   process.exit(1);
   return new Error("error");
+}
+function warn(...msg) {
+  console.warn("Warning: " + msg.join(" "));
 }
 
 function filterByExtension(ext) {
@@ -53,6 +59,38 @@ function filterByExtension(ext) {
     );
   }
   config.target = "webworker";
+
+  // The worker runtime will set the name of the script to `worker.js`,
+  // regardless of what's specified in the sourcemap.
+  // We can tell webpack to name the generated worker by configuring the output.
+  // It's also safe to force that configuration because it mirrors what the
+  // runtime does.
+  // https://github.com/cloudflare/wrangler/issues/681
+  if (config.output === undefined) {
+    config.output = {};
+  }
+  if (
+    config.output.filename !== undefined &&
+    config.output.filename !== WEBPACK_OUTPUT_FILENAME
+  ) {
+    warn(
+      "webpack's output filename is being renamed to",
+      WEBPACK_OUTPUT_FILENAME,
+      "because of requirements from the Workers runtime"
+    );
+  }
+  if (
+    config.output.sourceMapFilename !== undefined &&
+    config.output.sourceMapFilename !== WEBPACK_OUTPUT_SOURCEMAPFILENAME
+  ) {
+    warn(
+      "webpack's output sourcemap filename is being renamed to",
+      WEBPACK_OUTPUT_SOURCEMAPFILENAME,
+      "because of requirements from the Workers runtime"
+    );
+  }
+  config.output.filename = WEBPACK_OUTPUT_FILENAME;
+  config.output.sourceMapFilename = WEBPACK_OUTPUT_SOURCEMAPFILENAME;
 
   const compiler = webpack(config);
   const fullConfig = compiler.options;

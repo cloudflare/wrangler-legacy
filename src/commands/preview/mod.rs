@@ -10,7 +10,7 @@ mod request_payload;
 pub use request_payload::RequestPayload;
 
 mod upload;
-use upload::upload;
+pub use upload::upload;
 
 use crate::commands;
 
@@ -63,10 +63,11 @@ pub fn preview(
             ))?;
 
             message::preview("Your Worker is a Workers Site, please preview it in browser window.");
-        } else {
-            // Make a the initial request to the URL
-            client_request(&request_payload, &script_id);
         }
+
+        // Make a the initial request to the URL
+        client_request(&request_payload, &script_id);
+
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
@@ -86,9 +87,9 @@ pub fn preview(
             ))?;
 
             message::preview("Your Worker is a Workers Site, please preview it in browser window.");
-        } else {
-            client_request(&request_payload, &script_id);
         }
+        
+        client_request(&request_payload, &script_id);
     }
 
     Ok(())
@@ -129,7 +130,11 @@ fn client_request(payload: &RequestPayload, script_id: &String) {
     message::preview(&msg);
 }
 
-fn get(url: &String, cookie: &String, client: &reqwest::Client) -> Result<String, failure::Error> {
+fn get(
+    url: &String,
+    cookie: &String,
+    client: &reqwest::blocking::Client,
+) -> Result<String, failure::Error> {
     let res = client.get(url).header("Cookie", cookie).send();
     Ok(res?.text()?)
 }
@@ -138,7 +143,7 @@ fn post(
     url: &String,
     cookie: &String,
     body: &Option<String>,
-    client: &reqwest::Client,
+    client: &reqwest::blocking::Client,
 ) -> Result<String, failure::Error> {
     let res = match body {
         Some(s) => client
@@ -186,9 +191,9 @@ fn watch_for_changes(
                     }
                     Err(_e) => message::user_error("communication with preview failed"),
                 }
-            } else {
-                client_request(&request_payload, &script_id);
             }
+
+            client_request(&request_payload, &script_id);
         }
     }
 
