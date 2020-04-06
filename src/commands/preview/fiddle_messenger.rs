@@ -55,7 +55,7 @@ impl Handler for FiddleMessageServer {
         let addr_is_safe = SAFE_ADDRS
             .iter()
             .any(|safe_addr| &incoming_addr == safe_addr);
-            
+
         if origin_is_safe && addr_is_safe {
             info!(
                 "Accepted connection from site {} incoming from {}",

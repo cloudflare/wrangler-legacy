@@ -68,7 +68,6 @@ pub fn preview(
         // Make a the initial request to the URL
         client_request(&request_payload, &script_id);
 
-
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
         watch_for_changes(
@@ -88,7 +87,7 @@ pub fn preview(
 
             message::preview("Your Worker is a Workers Site, please preview it in browser window.");
         }
-        
+
         client_request(&request_payload, &script_id);
     }
 
