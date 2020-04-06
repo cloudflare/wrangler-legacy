@@ -20,19 +20,25 @@ impl Tail {
         let mut runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
+            // Create three one-shot channels for handling ctrl-c
             let (log_tx, log_rx) = oneshot::channel();
-            let log_host = Host::new()?;
-            let host_handle = tokio::spawn(log_host.run(log_rx));
-
-            let tunnel_process = Tunnel::new()?;
-            let (tunnel_tx, tunnel_rx) = tokio::sync::oneshot::channel();
-            let tunnel_handle = tokio::spawn(tunnel_process.run(tunnel_rx));
-
             let (session_tx, session_rx) = tokio::sync::oneshot::channel();
-            let session_handle = tokio::spawn(Session::run(target, user, session_rx));
+            let (tunnel_tx, tunnel_rx) = tokio::sync::oneshot::channel();
 
+            // Pass the three transmitters to a newly spawned sigint handler
             let txs = vec![log_tx, tunnel_tx, session_tx];
             let sigint_handle = tokio::spawn(handle_sigint(txs));
+
+            // Spin up a local http server to receive logs
+            let log_host = Host::new(log_rx);
+            let host_handle = tokio::spawn(log_host.run());
+
+            // Spin up a new cloudflared tunnel to connect trace worker to local server
+            let tunnel_process = Tunnel::new()?;
+            let tunnel_handle = tokio::spawn(tunnel_process.run(tunnel_rx));
+
+            // Register the tail with the Workers API and send periodic heartbeats
+            let session_handle = tokio::spawn(Session::run(target, user, session_rx));
 
             let res = tokio::try_join!(sigint_handle, host_handle, session_handle, tunnel_handle,);
 

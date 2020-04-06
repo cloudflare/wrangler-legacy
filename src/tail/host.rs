@@ -6,22 +6,25 @@ use tokio::sync::oneshot::Receiver;
 
 pub struct Host {
     server: Builder<AddrIncoming>,
+    rx: Receiver<()>,
 }
 
 impl Host {
-    pub fn new() -> Result<Host, failure::Error> {
+    pub fn new(rx: Receiver<()>) -> Host {
         // Start HTTP echo server that prints whatever is posted to it.
         let addr = ([127, 0, 0, 1], 8080).into();
 
         let server = Server::bind(&addr);
 
-        Ok(Host { server })
+        Host { server, rx }
     }
 
-    pub async fn run(self, rx: Receiver<()>) -> Result<(), failure::Error> {
+    pub async fn run(self) -> Result<(), failure::Error> {
         let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(print_logs)) });
 
         let server = self.server.serve(service);
+
+        let rx = self.rx;
 
         let graceful = server.with_graceful_shutdown(async {
             rx.await.ok();

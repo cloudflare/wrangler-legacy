@@ -1,5 +1,4 @@
 use std::str;
-use std::thread;
 use std::time::Duration;
 
 use regex::Regex;
@@ -28,7 +27,7 @@ impl Session {
     ) -> Result<(), failure::Error> {
         let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
 
-        let url = get_tunnel_url().await?;
+        let url = get_tunnel_url(&mut rx).await?;
 
         let response = client
             .request(&CreateTail {
@@ -73,26 +72,38 @@ impl Session {
     }
 }
 
-async fn get_tunnel_url() -> Result<String, failure::Error> {
+async fn get_tunnel_url(rx: &mut Receiver<()>) -> Result<String, failure::Error> {
     // regex for extracting url from cloudflared metrics port.
     let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
     let mut attempt = 0;
+    let mut delay = time::delay_for(Duration::from_millis(attempt * attempt * 1000));
 
     // This exponential backoff retry loop retries retrieving the cloudflared endpoint url
     // from the cloudflared /metrics endpoint until it gets the URL or has tried retrieving the URL
     // over 5 times.
     while attempt < 5 {
-        if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {
-            let body = resp.text().await?;
+        match rx.try_recv() {
+            Err(TryRecvError::Empty) => {
+                if delay.is_elapsed() {
+                    if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {
+                        let body = resp.text().await?;
 
-            for cap in url_regex.captures_iter(&body) {
-                return Ok(cap[1].to_string());
+                        for cap in url_regex.captures_iter(&body) {
+                            let url = cap[1].to_string();
+                            return Ok(url);
+                        }
+                    }
+
+                    let duration = attempt * attempt;
+                    attempt = attempt + 1;
+                    delay = time::delay_for(Duration::from_millis(duration * 1000));
+                }
+            }
+            _ => {
+                return Ok("".to_string());
             }
         }
-
-        attempt += 1;
-        thread::sleep(Duration::from_millis(attempt * attempt * 1000));
     }
 
     failure::bail!("Could not extract tunnel url from cloudflared")
