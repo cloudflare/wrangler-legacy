@@ -7,14 +7,22 @@ use crate::http::{feature::headers, Feature};
 use crate::settings::global_user::GlobalUser;
 
 // TODO: remove this and replace it entirely with cloudflare-rs
-pub fn client(feature: Option<Feature>) -> Client {
+pub fn client() -> Client {
     builder()
-        .default_headers(headers(feature))
+        .default_headers(headers(None))
         .build()
         .expect("could not create http client")
 }
 
-pub fn auth_client(feature: Option<Feature>, user: &GlobalUser) -> Client {
+pub fn legacy_auth_client(user: &GlobalUser) -> Client {
+    get_client(user, None)
+}
+
+pub fn featured_legacy_auth_client(user: &GlobalUser, feature: Feature) -> Client {
+    get_client(user, Some(feature))
+}
+
+fn get_client(user: &GlobalUser, feature: Option<Feature>) -> Client {
     let mut headers = headers(feature);
     add_auth_headers(&mut headers, user);
 

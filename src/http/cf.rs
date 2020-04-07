@@ -9,46 +9,28 @@ use crate::http::{feature::headers, Feature};
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::{emoji, message};
 
-pub struct CfApiClientConfig {
-    feature: Option<Feature>,
-    http_timeout: Duration,
+pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
+    let config = HttpApiClientConfig {
+        http_timeout: Duration::from_secs(30),
+        default_headers: headers(None),
+    };
+
+    HttpApiClient::new(
+        Credentials::from(user.to_owned()),
+        config,
+        Environment::Production,
+    )
 }
 
-impl CfApiClientConfig {
-    pub fn default() -> HttpApiClientConfig {
-        let mut config = Self::builder();
-        config.build()
-    }
-
-    pub fn builder() -> Self {
-        CfApiClientConfig {
-            http_timeout: Duration::from_secs(30),
-            feature: None,
-        }
-    }
-
-    pub fn timeout<'a>(&'a mut self, timeout: Duration) -> &'a mut CfApiClientConfig {
-        self.http_timeout = timeout;
-        self
-    }
-
-    pub fn feature<'a>(&'a mut self, feature: Feature) -> &'a mut CfApiClientConfig {
-        self.feature = Some(feature);
-        self
-    }
-
-    pub fn build<'a>(&'a mut self) -> HttpApiClientConfig {
-        HttpApiClientConfig {
-            http_timeout: self.http_timeout,
-            default_headers: headers(self.feature),
-        }
-    }
-}
-
-pub fn cf_api_client(
+pub fn featured_cf_v4_client(
     user: &GlobalUser,
-    config: HttpApiClientConfig,
+    feature: Feature,
 ) -> Result<HttpApiClient, failure::Error> {
+    let config = HttpApiClientConfig {
+        http_timeout: Duration::from_secs(30),
+        default_headers: headers(Some(feature)),
+    };
+
     HttpApiClient::new(
         Credentials::from(user.to_owned()),
         config,

@@ -8,7 +8,7 @@ pub enum Feature {
     Bucket,
 }
 
-pub(super) fn headers(feature: Option<Feature>) -> HeaderMap {
+pub(crate) fn headers(feature: Option<Feature>) -> HeaderMap {
     let mut headers = HeaderMap::default();
     headers.insert(
         USER_AGENT,

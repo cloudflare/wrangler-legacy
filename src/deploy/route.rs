@@ -28,7 +28,7 @@ pub fn publish_routes(
 }
 
 fn fetch_all(user: &GlobalUser, zone_identifier: &str) -> Result<Vec<Route>, failure::Error> {
-    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     let routes: Vec<Route> = match client.request(&ListRoutes { zone_identifier }) {
         Ok(success) => success.result.iter().map(Route::from).collect(),
@@ -43,7 +43,7 @@ fn create(
     zone_identifier: &str,
     route: &Route,
 ) -> Result<Route, failure::Error> {
-    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     log::info!("Creating your route {:#?}", &route.pattern,);
     match client.request(&CreateRoute {

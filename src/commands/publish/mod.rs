@@ -40,7 +40,7 @@ pub fn publish(
         }
         upload_files(target, user, &site_namespace.id, to_upload)?;
 
-        let upload_client = http::auth_client(Some(Feature::Sites), user);
+        let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
 
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&upload_client, &target, Some(asset_manifest))?;
@@ -58,7 +58,7 @@ pub fn publish(
     } else {
         let uses_kv_bucket = sync_non_site_buckets(target, user, verbose)?;
 
-        let feature = if uses_kv_bucket {
+        let upload_client = if uses_kv_bucket {
             let wrangler_toml = style("`wrangler.toml`").yellow().bold();
             let issue_link = style("https://github.com/cloudflare/wrangler/issues/1136")
                 .blue()
@@ -66,12 +66,11 @@ pub fn publish(
             let msg = format!("As of 1.9.0, you will no longer be able to specify a bucket for a kv namespace in your {}.\nIf your application depends on this feature, please file an issue with your use case here:\n{}", wrangler_toml, issue_link);
             message::deprecation_warning(&msg);
 
-            Some(Feature::Bucket)
+            http::featured_legacy_auth_client(user, Feature::Bucket)
         } else {
-            None
+            http::legacy_auth_client(user)
         };
 
-        let upload_client = http::auth_client(feature, user);
         upload::script(&upload_client, &target, None)?;
 
         deploy::worker(&user, &deploy_config)?;

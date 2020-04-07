@@ -8,7 +8,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::terminal::message;
 
 pub fn list(zone_identifier: String, user: &GlobalUser) -> Result<(), failure::Error> {
-    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     let result = client.request(&ListRoutes {
         zone_identifier: &zone_identifier,
@@ -30,7 +30,7 @@ pub fn delete(
     user: &GlobalUser,
     route_id: &str,
 ) -> Result<(), failure::Error> {
-    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     let result = client.request(&DeleteRoute {
         zone_identifier: &zone_identifier,

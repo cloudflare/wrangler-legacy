@@ -1,7 +1,7 @@
-pub(self) mod feature;
+pub(self) mod cf;
+pub(crate) mod feature;
 pub(self) mod legacy;
-pub(self) mod v4;
 
+pub use cf::{cf_v4_client, featured_cf_v4_client, format_error};
 pub use feature::Feature;
-pub use legacy::{auth_client, client};
-pub use v4::{cf_api_client, format_error, CfApiClientConfig};
+pub use legacy::{client, featured_legacy_auth_client, legacy_auth_client};

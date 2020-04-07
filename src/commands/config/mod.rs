@@ -45,7 +45,7 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
 // validate_credentials() checks the /user/tokens/verify endpoint (for API token)
 // or /user endpoint (for global API key) to ensure provided credentials actually work.
 pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
-    let client = http::cf_api_client(user, http::CfApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     match user {
         GlobalUser::TokenAuth { .. } => {
