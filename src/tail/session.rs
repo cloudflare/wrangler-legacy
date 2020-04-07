@@ -5,7 +5,7 @@ use regex::Regex;
 use reqwest;
 use tokio::sync::oneshot::error::TryRecvError;
 use tokio::sync::oneshot::Receiver;
-use tokio::time;
+use tokio::time::{delay_for, Delay};
 
 use cloudflare::endpoints::workers::{CreateTail, CreateTailParams, SendTailHeartbeat};
 use cloudflare::framework::HttpApiClientConfig;
@@ -19,6 +19,10 @@ const KEEP_ALIVE_INTERVAL: u64 = 60;
 
 pub struct Session;
 
+/// Session is responsible for interacting with the Workers API to establish and maintain the tail
+/// connection; once the tail session is established, it uses the returned tail_id to send periodic
+/// "keepalive" heartbeats to the service. If the service does not receive a heartbeat for ~10
+/// minutes, it will kill the tail session by removing the trace worker.
 impl Session {
     pub async fn run(
         target: Target,
@@ -47,7 +51,7 @@ impl Session {
                 // This should loop forever until SIGINT is issued or Wrangler process is killed
                 // through other means.
                 let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
-                let mut delay = time::delay_for(duration);
+                let mut delay = delay_for(duration);
 
                 loop {
                     match rx.try_recv() {
@@ -58,7 +62,7 @@ impl Session {
                                 if heartbeat_result.is_err() {
                                     return heartbeat_result;
                                 }
-                                delay = time::delay_for(duration);
+                                delay = delay_for(duration);
                             }
                         }
                         _ => {
@@ -76,28 +80,58 @@ async fn get_tunnel_url(rx: &mut Receiver<()>) -> Result<String, failure::Error>
     // regex for extracting url from cloudflared metrics port.
     let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
-    let mut attempt = 0;
-    let mut delay = time::delay_for(Duration::from_millis(attempt * attempt * 1000));
+    struct RetryDelay {
+        delay: Delay,
+        attempt: u64,
+        max_attempts: u64,
+    }
 
-    // This exponential backoff retry loop retries retrieving the cloudflared endpoint url
-    // from the cloudflared /metrics endpoint until it gets the URL or has tried retrieving the URL
-    // over 5 times.
-    while attempt < 5 {
+    // This retry loop retries retrieving the cloudflared endpoint url from the cloudflared /metrics
+    // until it gets the URL or has tried retrieving the URL over 5 times.
+    impl RetryDelay {
+        fn new(max_attempts: u64) -> Self {
+            RetryDelay {
+                delay: delay_for(Duration::from_millis(0)),
+                attempt: 0,
+                max_attempts,
+            }
+        }
+
+        // our retry delay implements an [exponential backoff](TODO), which simply waits twice as
+        // long between each attempt.
+        fn reset(self) -> RetryDelay {
+            RetryDelay {
+                attempt: self.attempt + 1,
+                delay: delay_for(Duration::from_millis(self.attempt * self.attempt * 1000)),
+                max_attempts: self.max_attempts,
+            }
+        }
+
+        fn expired(&self) -> bool {
+            self.attempt < self.max_attempts
+        }
+
+        fn is_elapsed(&self) -> bool {
+            self.delay.is_elapsed()
+        }
+    }
+
+    let mut delay = RetryDelay::new(5);
+
+    while !delay.expired() {
         match rx.try_recv() {
             Err(TryRecvError::Empty) => {
                 if delay.is_elapsed() {
                     if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {
                         let body = resp.text().await?;
 
-                        for cap in url_regex.captures_iter(&body) {
-                            let url = cap[1].to_string();
+                        for url_match in url_regex.captures_iter(&body) {
+                            let url = url_match[1].to_string();
                             return Ok(url);
                         }
                     }
 
-                    let duration = attempt * attempt;
-                    attempt = attempt + 1;
-                    delay = time::delay_for(Duration::from_millis(duration * 1000));
+                    delay = delay.reset();
                 }
             }
             _ => {

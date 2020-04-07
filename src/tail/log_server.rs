@@ -4,19 +4,21 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use tokio::sync::oneshot::Receiver;
 
-pub struct Host {
+pub struct LogServer {
     server: Builder<AddrIncoming>,
     rx: Receiver<()>,
 }
 
-impl Host {
-    pub fn new(rx: Receiver<()>) -> Host {
+/// LogServer is just a basic HTTP server running locally; it listens for POST requests on the root
+/// path and simply prints the JSON body of each request as its own line to STDOUT.
+impl LogServer {
+    pub fn new(rx: Receiver<()>) -> LogServer {
         // Start HTTP echo server that prints whatever is posted to it.
         let addr = ([127, 0, 0, 1], 8080).into();
 
         let server = Server::bind(&addr);
 
-        Host { server, rx }
+        LogServer { server, rx }
     }
 
     pub async fn run(self) -> Result<(), failure::Error> {
@@ -24,10 +26,12 @@ impl Host {
 
         let server = self.server.serve(service);
 
-        let rx = self.rx;
+        // The shutdown receiver listens for a one shot message from our sigint handler as a signal
+        // to gracefully shut down the hyper server.
+        let shutdown_rx = self.rx;
 
         let graceful = server.with_graceful_shutdown(async {
-            rx.await.ok();
+            shutdown_rx.await.ok();
         });
 
         graceful.await?;
@@ -40,6 +44,8 @@ async fn print_logs(req: Request<Body>) -> Result<Response<Body>, hyper::Error> 
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;
+            // TODO: at some point I would like to send this body as a message to a central writer
+            // rather than just using println!, but this works just fine for now.
             println!(
                 "{}",
                 std::str::from_utf8(&whole_body).expect("failed to deserialize tail log body")

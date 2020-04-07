@@ -12,6 +12,11 @@ pub struct Tunnel {
     child: Child,
 }
 
+/// Tunnel wraps a child process that runs cloudflared and forwards requests from the Trace Worker
+/// in the runtime to our local LogServer instance. We wrap it in a struct primarily to hold the
+/// state of the child process so that upon receipt of a SIGINT message we can more swiftly kill it
+/// and wait on its output; otherwise we end up leaving it behind when wrangler exits and this
+/// causes problems if it still exists the next time we start up a tail.
 impl Tunnel {
     pub fn new() -> Result<Tunnel, failure::Error> {
         let tool_name = PathBuf::from("cloudflared");
