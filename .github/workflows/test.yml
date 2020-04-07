@@ -1,6 +1,6 @@
 name: Tests
 
-on: [push]
+on: [pull_request]
 
 jobs:
   test:
@@ -39,7 +39,7 @@ jobs:
             rust: nightly
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
 
       - name: Cache Cargo registry
         uses: actions/cache@v1
@@ -67,7 +67,7 @@ jobs:
 
       - name: Install Rust
         run: |
-          rustup update ${{ matrix.rust }} --no-self-update 
+          rustup update ${{ matrix.rust }} --no-self-update
           rustup default ${{ matrix.rust }}
 
       - name: Run Tests

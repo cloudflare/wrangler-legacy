@@ -203,16 +203,12 @@ impl Manifest {
             if let Some(webpack_config) = &environment.webpack_config {
                 target.webpack_config = Some(webpack_config.clone());
             }
-            if let Some(target_vars) = &mut target.vars.clone() {
-                if let Some(env_vars) = environment.vars.clone() {
-                    target_vars.extend(env_vars);
-                    let new_vars = target_vars.clone();
-                    target.vars.replace(new_vars);
-                }
-            }
 
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
             target.kv_namespaces = environment.kv_namespaces.clone();
+
+            // don't inherit vars
+            target.vars = environment.vars.clone();
         }
 
         Ok(target)

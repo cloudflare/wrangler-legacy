@@ -38,7 +38,7 @@ pub struct EnvConfig {
     pub site: Option<SiteConfig>,
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvConfig>>,
-    pub config: Option<HashMap<&'static str, &'static str>>,
+    pub vars: Option<HashMap<&'static str, &'static str>>,
 }
 
 impl EnvConfig {
@@ -97,7 +97,7 @@ pub struct WranglerToml {
     #[serde(rename = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvConfig>>,
     pub site: Option<SiteConfig>,
-    pub config: Option<HashMap<&'static str, &'static str>>,
+    pub vars: Option<HashMap<&'static str, &'static str>>,
 }
 
 impl WranglerToml {
@@ -179,18 +179,6 @@ impl WranglerToml {
         wrangler_toml.env = Some(test_env(env_config));
 
         eprintln!("{:#?}", &wrangler_toml);
-        wrangler_toml
-    }
-
-    pub fn zoned_multi_route_with_env(
-        name: &'static str,
-        zone_id: &'static str,
-        routes: Vec<&'static str>,
-        env_config: EnvConfig,
-    ) -> WranglerToml {
-        let mut wrangler_toml = WranglerToml::zoned_multi_route(name, zone_id, routes);
-        wrangler_toml.env = Some(test_env(env_config));
-
         wrangler_toml
     }
 

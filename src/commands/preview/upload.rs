@@ -1,11 +1,18 @@
-use crate::commands::kv::bucket::AssetManifest;
+use std::path::Path;
+
+use reqwest::blocking::Client;
+use serde::Deserialize;
+
+use crate::commands::kv::bucket::{sync, upload_files, AssetManifest};
+use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
-use reqwest::blocking::Client;
-use serde::Deserialize;
+use crate::upload;
+
+use console::style;
 
 #[derive(Debug, Deserialize)]
 struct Preview {
@@ -54,11 +61,32 @@ pub fn upload(
                 let client = http::auth_client(None, &user);
 
                 if let Some(site_config) = target.site.clone() {
-                    publish::bind_static_site_contents(user, target, &site_config, true)?;
-                }
+                    let site_namespace = publish::add_site_namespace(user, target, true)?;
 
-                let asset_manifest = publish::upload_buckets(target, user, verbose)?;
-                authenticated_upload(&client, &target, asset_manifest)?
+                    let path = Path::new(&site_config.bucket);
+                    let (to_upload, to_delete, asset_manifest) =
+                        sync(target, user, &site_namespace.id, path)?;
+
+                    // First, upload all existing files in given directory
+                    if verbose {
+                        message::info("Uploading updated files...");
+                    }
+
+                    upload_files(target, user, &site_namespace.id, to_upload)?;
+
+                    let preview = authenticated_upload(&client, &target, Some(asset_manifest))?;
+                    if !to_delete.is_empty() {
+                        if verbose {
+                            message::info("Deleting stale files...");
+                        }
+
+                        delete_bulk(target, user, &site_namespace.id, to_delete)?;
+                    }
+
+                    preview
+                } else {
+                    authenticated_upload(&client, &target, None)?
+                }
             } else {
                 message::warn(&format!(
                     "Your wrangler.toml is missing the following fields: {:?}",
@@ -74,12 +102,13 @@ pub fn upload(
             }
         }
         None => {
-            message::warn(
-                "You haven't run `wrangler config`. Running preview without authentication",
+            let wrangler_config_msg = style("`wrangler config`").yellow().bold();
+            let docs_url_msg = style("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables").blue().bold();
+            message::billboard(
+                &format!("You have not provided your Cloudflare credentials.\n\nPlease run {} or visit\n{}\nfor info on authenticating with environment variables.", wrangler_config_msg, docs_url_msg)
             );
-            message::big_info(
-                "Please run `wrangler config` or visit https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables for info on configuring with environment variables",
-            );
+
+            message::info("Running preview without authentication.");
 
             if sites_preview {
                 failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
@@ -133,7 +162,7 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = publish::upload_form::build(target, asset_manifest)?;
+    let script_upload_form = upload::form::build(target, asset_manifest)?;
 
     let res = client
         .post(&create_address)
@@ -163,9 +192,9 @@ fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, f
         );
         let mut target = target.clone();
         target.kv_namespaces = None;
-        publish::upload_form::build(&target, None)?
+        upload::form::build(&target, None)?
     } else {
-        publish::upload_form::build(&target, None)?
+        upload::form::build(&target, None)?
     };
 
     let res = client

@@ -3,7 +3,7 @@ extern crate lazy_static;
 
 pub mod fixture;
 
-use fixture::{EnvConfig, WranglerToml, TEST_ENV_NAME};
+use fixture::WranglerToml;
 
 use std::collections::HashMap;
 use std::env;
@@ -172,6 +172,34 @@ fn it_can_preview_rust_project() {
     fixture.create_wrangler_toml(wrangler_toml);
 
     preview_succeeds(&fixture);
+}
+
+#[test]
+fn it_previews_with_config_text() {
+    let fixture = Fixture::new();
+    fixture.create_file(
+        "index.js",
+        r#"
+        addEventListener('fetch', event => {
+            event.respondWith(handleRequest(event.request))
+        })
+        
+        async function handleRequest(request) {
+            return new Response(CONFIG_TEST)
+        }
+    "#,
+    );
+    fixture.create_default_package_json();
+
+    let test_value: &'static str = "sdhftiuyrtdhfjgpoopuyrdfjgkyitudrhf";
+
+    let mut wrangler_toml = WranglerToml::javascript("test-preview-with-config");
+    let mut config: HashMap<&'static str, &'static str> = HashMap::new();
+    config.insert("CONFIG_TEST", test_value);
+    wrangler_toml.vars = Some(config);
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    preview_succeeds_with(&fixture, None, test_value);
 }
 
 fn preview_succeeds_with(fixture: &Fixture, env: Option<&str>, expected: &str) {

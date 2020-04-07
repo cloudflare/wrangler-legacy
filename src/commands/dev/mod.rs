@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use chrono::prelude::*;
+use console::style;
 
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
@@ -30,7 +31,7 @@ use crate::commands::preview::upload;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
-use crate::terminal::{emoji, message_box};
+use crate::terminal::{emoji, message};
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
@@ -42,7 +43,11 @@ pub fn dev(
     ip: Option<&str>,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    message_box::dev_alpha_warning();
+    let wrangler_dev_msg = style("`wrangler dev`").yellow().bold();
+    let feedback_url = style("https://github.com/cloudflare/wrangler/issues/1047")
+        .blue()
+        .bold();
+    message::billboard(&format!("{0} is currently unstable and there are likely to be breaking changes!\nFor this reason, we cannot yet recommend using {0} for integration testing.\n\nPlease submit any feedback here: {1}", wrangler_dev_msg, feedback_url));
     commands::build(&target)?;
     let server_config = ServerConfig::new(host, ip, port)?;
     let session_id = get_session_id()?;
@@ -97,20 +102,39 @@ async fn serve(
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
         let client = client.to_owned();
-        let preview_id = preview_id.lock().unwrap().to_owned();
         let server_config = server_config.to_owned();
+        let preview_id = preview_id.to_owned();
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
                 let client = client.to_owned();
-                let preview_id = preview_id.to_owned();
                 let server_config = server_config.to_owned();
+                let preview_id = preview_id.lock().unwrap().to_owned();
+                let version = req.version();
+                let (parts, body) = req.into_parts();
+                let req_method = parts.method.to_string();
+                let now: DateTime<Local> = Local::now();
+                let path = get_path_as_str(&parts.uri);
                 async move {
-                    let resp =
-                        preview_request(req, client, preview_id.to_owned(), server_config).await?;
+                    let resp = preview_request(
+                        Request::from_parts(parts, body),
+                        client,
+                        preview_id.to_owned(),
+                    )
+                    .await?;
                     let (mut parts, body) = resp.into_parts();
 
                     destructure_response(&mut parts)?;
                     let resp = Response::from_parts(parts, body);
+
+                    println!(
+                        "[{}] {} {}{} {:?} {}",
+                        now.format("%Y-%m-%d %H:%M:%S"),
+                        req_method,
+                        server_config.host,
+                        path,
+                        version,
+                        resp.status()
+                    );
                     Ok::<_, failure::Error>(resp)
                 }
             }))
@@ -140,13 +164,10 @@ fn preview_request(
     req: Request<Body>,
     client: HyperClient<HttpsConnector<HttpConnector>>,
     preview_id: String,
-    server_config: ServerConfig,
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
 
     let path = get_path_as_str(&parts.uri);
-    let method = parts.method.to_string();
-    let now: DateTime<Local> = Local::now();
     let preview_id = &preview_id;
 
     structure_request(&mut parts);
@@ -165,14 +186,6 @@ fn preview_request(
 
     let req = Request::from_parts(parts, body);
 
-    println!(
-        "[{}] \"{} {}{} {:?}\"",
-        now.format("%Y-%m-%d %H:%M:%S"),
-        method,
-        server_config.host,
-        path,
-        req.version()
-    );
     client.request(req)
 }
 
@@ -188,7 +201,7 @@ pub fn get_preview_id(
     verbose: bool,
 ) -> Result<String, failure::Error> {
     let sites_preview = false;
-    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
+    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose).map_err(|_| failure::format_err!("Could not upload your script. Check your internet connection or https://www.cloudflarestatus.com/ for rare incidents impacting the Cloudflare Workers API."))?;
     Ok(format!(
         "{}{}{}{}",
         &script_id,
