@@ -18,7 +18,10 @@ impl LogServer {
 
         let server = Server::bind(&addr);
 
-        LogServer { server, shutdown_rx }
+        LogServer {
+            server,
+            shutdown_rx,
+        }
     }
 
     pub async fn run(self) -> Result<(), failure::Error> {

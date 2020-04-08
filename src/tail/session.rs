@@ -55,6 +55,12 @@ impl Session {
 
                 loop {
                     match shutdown_rx.try_recv() {
+                        // this variant of the [TryRecvError](https://docs.rs/tokio/0.2.16/tokio/sync/oneshot/error/enum.TryRecvError.html)
+                        // occurs when the receiver listens for a message and the channel is empty;
+                        // in this case, it means that we have not received a shutdown command and
+                        // can continue with our task. The other variant would indicate that the
+                        // sender has been dropped, in which case we want to follow shut down as if
+                        // we received the signal.
                         Err(TryRecvError::Empty) => {
                             if delay.is_elapsed() {
                                 let heartbeat_result =

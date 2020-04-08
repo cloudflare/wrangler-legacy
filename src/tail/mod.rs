@@ -1,5 +1,5 @@
-/// The Tail feature for Wrangler is the Workers ecosystem answer to the need for live
-/// log collection in production. When a user runs `wrangler tail`, several things happen:
+/// `wrangler tail` allows Workers users to collect logs from their deployed Workers.
+/// When a user runs `wrangler tail`, several things happen:
 ///     1. A simple HTTP server (LogServer) is started and begins listening for requests on localhost:8080
 ///     2. An [Argo Tunnel](https://developers.cloudflare.com/argo-tunnel/) instance (Tunnel) is started
 ///        using [cloudflared](https://developers.cloudflare.com/argo-tunnel/downloads/), exposing the
@@ -9,7 +9,7 @@
 ///     4. The Workers API binds the URL to a [Trace Worker], and directs all `console` and
 ///        exception logging to the Trace Worker, which POSTs each batch of logs as a JSON
 ///        payload to the provided Tunnel URL.
-///     5. Upon receipt. the LogServer prints the payload of each POST request to STDOUT.
+///     5. Upon receipt, the LogServer prints the payload of each POST request to STDOUT.
 mod log_server;
 mod session;
 mod tunnel;
@@ -64,13 +64,14 @@ impl Tail {
     }
 }
 
-/// handle_sigint simply waits on a ctrl_c from the system and sends messages to each registered
+/// handle_sigint waits on a ctrl_c from the system and sends messages to each registered
 /// transmitter when it is received.
 async fn listen_for_sigint(txs: Vec<oneshot::Sender<()>>) -> Result<(), failure::Error> {
     tokio::signal::ctrl_c().await?;
     for tx in txs {
-        // if send errors, it is because the receiver has been de-allocated, and that's okay
-        // because we were just telling it to shut down anyway.
+        // if `tx.send()` returns an error, it is because the receiver has gone out of scope,
+        // likely due to the task returning early for some reason, in which case we don't need
+        // to tell that task to shut down because it already has.
         tx.send(()).ok();
     }
 
