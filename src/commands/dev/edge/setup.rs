@@ -29,7 +29,7 @@ pub(super) fn upload(
 
     let response = client
         .post(&address)
-        .header("cf-workers-preview-token", preview_token)
+        .header("cf-preview-upload-config-token", preview_token)
         .multipart(script_upload_form)
         .send()?
         .error_for_status()?;
