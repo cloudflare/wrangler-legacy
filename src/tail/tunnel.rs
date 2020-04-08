@@ -43,6 +43,9 @@ impl Tunnel {
         self.shutdown().await
     }
 
+    /// shutdown is relatively simple, it sends a second `kill` signal to the child process,
+    /// short-circuiting cloudflared's "graceful shutdown" period. this approach has been endorsed
+    /// by the team who maintains cloudflared as safe practice.
     pub async fn shutdown(mut self) -> Result<(), failure::Error> {
         let pid = self.child.id();
         if let Err(e) = self.child.kill() {
