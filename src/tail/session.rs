@@ -27,11 +27,11 @@ impl Session {
     pub async fn run(
         target: Target,
         user: GlobalUser,
-        mut rx: Receiver<()>,
+        mut shutdown_rx: Receiver<()>,
     ) -> Result<(), failure::Error> {
         let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
 
-        let url = get_tunnel_url(&mut rx).await?;
+        let url = get_tunnel_url(&mut shutdown_rx).await?;
 
         let response = client
             .request(&CreateTail {
@@ -54,7 +54,7 @@ impl Session {
                 let mut delay = delay_for(duration);
 
                 loop {
-                    match rx.try_recv() {
+                    match shutdown_rx.try_recv() {
                         Err(TryRecvError::Empty) => {
                             if delay.is_elapsed() {
                                 let heartbeat_result =
@@ -76,7 +76,7 @@ impl Session {
     }
 }
 
-async fn get_tunnel_url(rx: &mut Receiver<()>) -> Result<String, failure::Error> {
+async fn get_tunnel_url(shutdown_rx: &mut Receiver<()>) -> Result<String, failure::Error> {
     // regex for extracting url from cloudflared metrics port.
     let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
@@ -97,8 +97,8 @@ async fn get_tunnel_url(rx: &mut Receiver<()>) -> Result<String, failure::Error>
             }
         }
 
-        // our retry delay implements an [exponential backoff](TODO), which simply waits twice as
-        // long between each attempt.
+        // our retry delay is an [exponential backoff](https://en.wikipedia.org/wiki/Exponential_backoff),
+        // which simply waits twice as long between each attempt to avoid hammering the LogServer.
         fn reset(self) -> RetryDelay {
             RetryDelay {
                 attempt: self.attempt + 1,
@@ -119,7 +119,7 @@ async fn get_tunnel_url(rx: &mut Receiver<()>) -> Result<String, failure::Error>
     let mut delay = RetryDelay::new(5);
 
     while !delay.expired() {
-        match rx.try_recv() {
+        match shutdown_rx.try_recv() {
             Err(TryRecvError::Empty) => {
                 if delay.is_elapsed() {
                     if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {

@@ -38,15 +38,15 @@ impl Tunnel {
         Ok(Tunnel { child })
     }
 
-    pub async fn run(self, rx: Receiver<()>) -> Result<(), failure::Error> {
-        rx.await?;
+    pub async fn run(self, shutdown_rx: Receiver<()>) -> Result<(), failure::Error> {
+        shutdown_rx.await?;
         self.shutdown().await
     }
 
     pub async fn shutdown(mut self) -> Result<(), failure::Error> {
-        // eprintln!("killing cloudflared");
+        let pid = self.child.id();
         if let Err(e) = self.child.kill() {
-            failure::bail!("failed to kill cloudflared: {}", e)
+            failure::bail!("failed to kill cloudflared: {}\ncloudflared will eventually exit, or you can explicitly kill it by running `kill {}`", e, pid)
         } else {
             self.child.wait_with_output().await?;
 

@@ -1,7 +1,8 @@
 /// The Tail feature for Wrangler is the Workers ecosystem answer to the need for live
 /// log collection in production. When a user runs `wrangler tail`, several things happen:
 ///     1. A simple HTTP server (LogServer) is started and begins listening for requests on localhost:8080
-///     2. An [Argo Tunnel](TODO) instance (Tunnel) is started using [cloudflared](TODO), exposing the
+///     2. An [Argo Tunnel](https://developers.cloudflare.com/argo-tunnel/) instance (Tunnel) is started
+///        using [cloudflared](https://developers.cloudflare.com/argo-tunnel/downloads/), exposing the
 ///        LogServer to the internet on a randomly generated URL.
 ///     3. Wrangler initiates a tail Session by making a request to the Workers API /tail endpoint,
 ///        providing the Tunnel URL as an argument.
