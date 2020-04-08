@@ -14,7 +14,7 @@ impl Subdomain {
     pub fn get(account_id: &str, user: &GlobalUser) -> Result<Option<String>, failure::Error> {
         let addr = subdomain_addr(account_id);
 
-        let client = http::auth_client(None, user);
+        let client = http::legacy_auth_client(user);
 
         let response = client.get(&addr).send()?;
 
@@ -37,7 +37,7 @@ impl Subdomain {
         };
         let subdomain_request = serde_json::to_string(&subdomain)?;
 
-        let client = http::auth_client(None, user);
+        let client = http::legacy_auth_client(user);
 
         let response = client.put(&addr).body(subdomain_request).send()?;
 
