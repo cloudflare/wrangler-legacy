@@ -2,10 +2,8 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::emoji;
 
-use cloudflare::endpoints::account;
-use cloudflare::endpoints::account::Account;
+use cloudflare::endpoints::account::{self, Account};
 use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::HttpApiClientConfig;
 
 use prettytable::{Cell, Row, Table};
 
@@ -26,7 +24,7 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
 }
 
 fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
     let response = client.request(&account::ListAccounts { params: None });
     match response {
         Ok(res) => Ok(res.result),

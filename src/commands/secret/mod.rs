@@ -1,7 +1,6 @@
 use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSecret, ListSecrets};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
-use cloudflare::framework::HttpApiClientConfig;
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -58,7 +57,7 @@ pub fn upload_draft_worker(
             let error = &api_errors.errors[0];
             if error.code == 10007 {
                 message::working(&format!("Worker {} doesn't exist in the API yet. Creating a draft Worker so we can create new secret.", target.name));
-                let upload_client = http::auth_client(None, user);
+                let upload_client = http::legacy_auth_client(user);
                 Some(upload::script(&upload_client, target, None))
             } else {
                 None
@@ -71,7 +70,7 @@ pub fn upload_draft_worker(
 pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     validate_target(target)?;
 
-    let secret_value = interactive::get_user_input(&format!(
+    let secret_value = interactive::get_user_input_multi_line(&format!(
         "Enter the secret text you'd like assigned to the variable {} on the script named {}:",
         name, target.name
     ));
@@ -85,7 +84,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
         target.name
     ));
 
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     let params = CreateSecretParams {
         name: name.to_string(),
@@ -144,7 +143,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
         name, target.name
     ));
 
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     let response = client.request(&DeleteSecret {
         account_identifier: &target.account_id,
@@ -162,7 +161,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 
 pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     validate_target(target)?;
-    let client = http::cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     let response = client.request(&ListSecrets {
         account_identifier: &target.account_id,

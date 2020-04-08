@@ -1,11 +1,10 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Wrangle your Cloudflare Workers",
   "main": "binary.js",
   "scripts": {
-    "postinstall": "node ./install-wrangler.js",
-    "preuninstall": "node ./uninstall-wrangler.js"
+    "postinstall": "node ./install-wrangler.js"
   },
   "bin": {
     "wrangler": "./run-wrangler.js"

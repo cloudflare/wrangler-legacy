@@ -58,7 +58,7 @@ pub fn upload(
             let missing_fields = validate(&target);
 
             if missing_fields.is_empty() {
-                let client = http::auth_client(None, &user);
+                let client = http::legacy_auth_client(&user);
 
                 if let Some(site_config) = target.site.clone() {
                     let site_namespace = publish::add_site_namespace(user, target, true)?;
@@ -97,8 +97,7 @@ pub fn upload(
                     failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
                 }
 
-                let client = http::client(None);
-                unauthenticated_upload(&client, &target)?
+                unauthenticated_upload(&target)?
             }
         }
         None => {
@@ -114,9 +113,7 @@ pub fn upload(
                 failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
             }
 
-            let client = http::client(None);
-
-            unauthenticated_upload(&client, &target)?
+            unauthenticated_upload(&target)?
         }
     };
 
@@ -179,7 +176,7 @@ fn authenticated_upload(
     Ok(Preview::from(response.result))
 }
 
-fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, failure::Error> {
+fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
@@ -196,7 +193,7 @@ fn unauthenticated_upload(client: &Client, target: &Target) -> Result<Preview, f
     } else {
         upload::form::build(&target, None, None)?
     };
-
+    let client = http::client();
     let res = client
         .post(create_address)
         .multipart(script_upload_form)

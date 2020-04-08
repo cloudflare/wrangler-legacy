@@ -17,7 +17,7 @@ pub(super) fn upload(
     user: &GlobalUser,
     preview_token: String,
 ) -> Result<String, failure::Error> {
-    let client = http::auth_client(None, &user);
+    let client = http::legacy_auth_client(&user);
     if target.site.is_some() {
         publish::add_site_namespace(user, target, true)?;
     }
@@ -46,7 +46,7 @@ pub(super) fn init(
     user: &GlobalUser,
 ) -> Result<(String, String), failure::Error> {
     let exchange_url = get_exchange_url(deploy_config, user)?;
-    let client = http::auth_client(None, &user);
+    let client = http::legacy_auth_client(&user);
     let response = client
         .get(exchange_url.clone())
         .send()?
@@ -97,7 +97,7 @@ fn get_exchange_url(
     deploy_config: &DeployConfig,
     user: &GlobalUser,
 ) -> Result<Url, failure::Error> {
-    let client = http::auth_client(None, &user);
+    let client = http::legacy_auth_client(&user);
     let address = get_initialize_address(deploy_config);
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;
