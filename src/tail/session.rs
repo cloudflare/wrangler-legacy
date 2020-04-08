@@ -89,7 +89,7 @@ async fn get_tunnel_url(shutdown_rx: &mut Receiver<()>) -> Result<String, failur
     // This retry loop retries retrieving the cloudflared endpoint url from the cloudflared /metrics
     // until it gets the URL or has tried retrieving the URL over 5 times.
     impl RetryDelay {
-        fn new(max_attempts: u64) -> Self {
+        fn new(max_attempts: u64) -> RetryDelay {
             RetryDelay {
                 delay: delay_for(Duration::from_millis(0)),
                 attempt: 0,
@@ -100,15 +100,19 @@ async fn get_tunnel_url(shutdown_rx: &mut Receiver<()>) -> Result<String, failur
         // our retry delay is an [exponential backoff](https://en.wikipedia.org/wiki/Exponential_backoff),
         // which simply waits twice as long between each attempt to avoid hammering the LogServer.
         fn reset(self) -> RetryDelay {
+            let attempt = self.attempt + 1;
+            let delay = delay_for(Duration::from_millis(attempt * attempt * 1000));
+            let max_attempts = self.max_attempts;
+
             RetryDelay {
-                attempt: self.attempt + 1,
-                delay: delay_for(Duration::from_millis(self.attempt * self.attempt * 1000)),
-                max_attempts: self.max_attempts,
+                attempt,
+                delay,
+                max_attempts,
             }
         }
 
         fn expired(&self) -> bool {
-            self.attempt < self.max_attempts
+            self.attempt > self.max_attempts
         }
 
         fn is_elapsed(&self) -> bool {
