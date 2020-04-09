@@ -61,8 +61,6 @@ pub fn preview(
                 "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}",
                 session, ws_port, script_id, browser_url
             ))?;
-
-            message::preview("Your Worker is a Workers Site, please preview it in browser window.");
         }
 
         // Make a the initial request to the URL
@@ -84,8 +82,6 @@ pub fn preview(
                 "https://cloudflareworkers.com/?hide_editor#{0}:{1}",
                 script_id, browser_url
             ))?;
-
-            message::preview("Your Worker is a Workers Site, please preview it in browser window.");
         }
 
         client_request(&request_payload, &script_id);
@@ -124,8 +120,11 @@ fn client_request(payload: &RequestPayload, script_id: &String) {
         HTTPMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
     };
 
-    let msg = format!("Your Worker responded with: {}", worker_res);
-
+    let msg = if sites_preview {
+        "Your Worker is a Workers Site, please preview it in browser window.".to_string()
+    } else {
+        format!("Your Worker responded with: {}", worker_res)
+    };
     message::preview(&msg);
 }
 
