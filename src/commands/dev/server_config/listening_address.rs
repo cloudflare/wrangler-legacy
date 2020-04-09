@@ -19,7 +19,7 @@ impl ListeningAddress {
     }
 
     fn as_str(&self) -> String {
-        self.address.to_string().replace("[::1]", "localhost")
+        self.address.to_string().replace("[::]", "localhost")
     }
 }
 

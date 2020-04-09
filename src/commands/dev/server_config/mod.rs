@@ -17,7 +17,7 @@ impl ServerConfig {
         port: Option<&str>,
     ) -> Result<Self, failure::Error> {
         let port = port.unwrap_or("8787");
-        let ip = ip.unwrap_or("localhost");
+        let ip = ip.unwrap_or("[::]");
         let host = host.unwrap_or("https://example.com").to_string();
 
         let listening_address = ListeningAddress::new(ip, port)?;
