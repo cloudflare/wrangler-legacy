@@ -38,7 +38,7 @@ pub struct Manifest {
     // TODO: maybe one day, serde toml support will allow us to serialize sites
     // as a TOML inline table (this would prevent confusion with environments too!)
     pub site: Option<Site>,
-    #[serde(rename = "kv-namespaces")]
+    #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
     pub vars: Option<HashMap<String, String>>,
