@@ -12,10 +12,12 @@
 ///     5. Upon receipt, the LogServer prints the payload of each POST request to STDOUT.
 mod log_server;
 mod session;
+mod shutdown;
 mod tunnel;
 
 use log_server::LogServer;
 use session::Session;
+use shutdown::{Signal, ShutdownHandler };
 use tunnel::Tunnel;
 
 use tokio;
@@ -36,13 +38,12 @@ impl Tail {
             // channels for handling ctrl-c. Each channel has two parts:
             // tx: Transmitter
             // rx: Receiver
-            let (log_tx, log_rx) = oneshot::channel();
-            let (session_tx, session_rx) = oneshot::channel();
-            let (tunnel_tx, tunnel_rx) = oneshot::channel();
+            let mut shutdown_handler = ShutdownHandler::new();
+            let log_rx = shutdown_handler.subscribe();
+            let session_rx = shutdown_handler.subscribe();
+            let tunnel_rx = shutdown_handler.subscribe();
 
-            // Pass the three transmitters to a newly spawned sigint handler
-            let txs = vec![log_tx, tunnel_tx, session_tx];
-            let listener = tokio::spawn(listen_for_sigint(txs));
+            let listener = tokio::spawn(shutdown_handler.run());
 
             // Spin up a local http server to receive logs
             let log_server = tokio::spawn(LogServer::new(log_rx).run());
@@ -62,18 +63,4 @@ impl Tail {
             }
         })
     }
-}
-
-/// handle_sigint waits on a ctrl_c from the system and sends messages to each registered
-/// transmitter when it is received.
-async fn listen_for_sigint(txs: Vec<oneshot::Sender<()>>) -> Result<(), failure::Error> {
-    tokio::signal::ctrl_c().await?;
-    for tx in txs {
-        // if `tx.send()` returns an error, it is because the receiver has gone out of scope,
-        // likely due to the task returning early for some reason, in which case we don't need
-        // to tell that task to shut down because it already has.
-        tx.send(()).ok();
-    }
-
-    Ok(())
 }
