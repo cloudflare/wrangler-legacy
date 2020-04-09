@@ -1,4 +1,4 @@
-// TODO:(gabbi) This file should use cloudflare-rs instead of our http::auth_client
+// TODO:(gabbi) This file should use cloudflare-rs instead of our http::legacy_auth_client
 // when https://github.com/cloudflare/cloudflare-rs/issues/26 is handled (this is
 // because the GET key operation doesn't return json on success--just the raw
 // value).
@@ -19,7 +19,7 @@ pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()
         kv::url_encode_key(key)
     );
 
-    let client = http::auth_client(None, &user);
+    let client = http::legacy_auth_client(&user);
 
     let res = client.get(&api_endpoint).send()?;
 

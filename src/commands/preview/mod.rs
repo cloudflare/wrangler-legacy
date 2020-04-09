@@ -86,7 +86,7 @@ pub fn preview(
             script_id, session, https as u8, preview_host
         );
 
-        let client = http::client(None);
+        let client = http::client();
 
         let worker_res = match method {
             HTTPMethod::Get => get(cookie, &client)?,
