@@ -80,7 +80,7 @@ impl Session {
             }
             Err(e) => {
                 tx.send(()).unwrap();
-                failure::bail!(http::format_error(e, None))
+                failure::bail!(http::format_error(e, Some(&tail_help)))
             }
         }
     }
@@ -172,6 +172,25 @@ async fn send_heartbeat(
 
     match response {
         Ok(_) => Ok(()),
-        Err(e) => failure::bail!(http::format_error(e, None)),
+        Err(e) => failure::bail!(http::format_error(e, Some(&tail_help))),
+    }
+}
+
+// tail_help() provides more detailed explanations of Workers KV API error codes.
+// See https://api.cloudflare.com/#workers-kv-namespace-errors for details.
+fn tail_help(error_code: u16) -> &'static str {
+    match error_code {
+        7003 | 7000 => {
+            "Your wrangler.toml is likely missing the field \"account_id\", which is required to tail a worker."
+        }
+        // unauthorized
+        10000 => {
+            "Make sure your API token has permission to both edit and read workers on your account"
+        }
+        // script not found
+        10007 => "wrangler can only tail live workers; make sure to `publish` your worker first.", // key errors
+        // limit errors
+        10057 | 10058 | 10059 => "See documentation",
+        _ => "",
     }
 }
