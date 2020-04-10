@@ -64,7 +64,7 @@ pub fn preview(
         }
 
         // Make a the initial request to the URL
-        client_request(&request_payload, &script_id);
+        client_request(&request_payload, &script_id, &sites_preview);
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
@@ -84,7 +84,7 @@ pub fn preview(
             ))?;
         }
 
-        client_request(&request_payload, &script_id);
+        client_request(&request_payload, &script_id, &sites_preview);
     }
 
     Ok(())
@@ -106,8 +106,8 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn client_request(payload: &RequestPayload, script_id: &String) {
-    let client = http::client(None);
+fn client_request(payload: &RequestPayload, script_id: &String, sites_preview: &bool) {
+    let client = http::client();
 
     let method = &payload.method;
     let url = &payload.service_url;
@@ -120,7 +120,7 @@ fn client_request(payload: &RequestPayload, script_id: &String) {
         HTTPMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
     };
 
-    let msg = if sites_preview {
+    let msg = if *sites_preview {
         "Your Worker is a Workers Site, please preview it in browser window.".to_string()
     } else {
         format!("Your Worker responded with: {}", worker_res)
@@ -191,7 +191,7 @@ fn watch_for_changes(
                 }
             }
 
-            client_request(&request_payload, &script_id);
+            client_request(&request_payload, &script_id, &sites_preview);
         }
     }
 
