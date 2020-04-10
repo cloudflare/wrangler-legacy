@@ -17,12 +17,11 @@ mod tunnel;
 
 use log_server::LogServer;
 use session::Session;
-use shutdown::{Signal, ShutdownHandler };
+use shutdown::ShutdownHandler;
 use tunnel::Tunnel;
 
 use tokio;
 use tokio::runtime::Runtime as TokioRuntime;
-use tokio::sync::oneshot;
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -38,12 +37,13 @@ impl Tail {
             // channels for handling ctrl-c. Each channel has two parts:
             // tx: Transmitter
             // rx: Receiver
+            let (tx, rx) = tokio::sync::oneshot::channel(); // shutdown short circuit
             let mut shutdown_handler = ShutdownHandler::new();
             let log_rx = shutdown_handler.subscribe();
             let session_rx = shutdown_handler.subscribe();
             let tunnel_rx = shutdown_handler.subscribe();
 
-            let listener = tokio::spawn(shutdown_handler.run());
+            let listener = tokio::spawn(shutdown_handler.run(rx));
 
             // Spin up a local http server to receive logs
             let log_server = tokio::spawn(LogServer::new(log_rx).run());
@@ -53,13 +53,18 @@ impl Tail {
             let tunnel = tokio::spawn(tunnel_process.run(tunnel_rx));
 
             // Register the tail with the Workers API and send periodic heartbeats
-            let session = tokio::spawn(Session::run(target, user, session_rx));
+            let session = tokio::spawn(Session::run(target, user, session_rx, tx));
 
-            let res = tokio::try_join!(listener, log_server, session, tunnel);
+            let res = tokio::try_join!(
+                async { listener.await? },
+                async { log_server.await? },
+                async { session.await? },
+                async { tunnel.await? }
+            );
 
             match res {
                 Ok(_) => Ok(()),
-                Err(e) => failure::bail!(e),
+                Err(e) => Err(e),
             }
         })
     }

@@ -4,7 +4,7 @@ use std::time::Duration;
 use regex::Regex;
 use reqwest;
 use tokio::sync::oneshot::error::TryRecvError;
-use tokio::sync::oneshot::Receiver;
+use tokio::sync::oneshot::{Receiver, Sender};
 use tokio::time::{delay_for, Delay};
 
 use cloudflare::endpoints::workers::{CreateTail, CreateTailParams, SendTailHeartbeat};
@@ -28,6 +28,7 @@ impl Session {
         target: Target,
         user: GlobalUser,
         mut shutdown_rx: Receiver<()>,
+        tx: Sender<()>,
     ) -> Result<(), failure::Error> {
         let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
 
@@ -77,7 +78,10 @@ impl Session {
                     }
                 }
             }
-            Err(e) => failure::bail!(http::format_error(e, None)),
+            Err(e) => {
+                tx.send(()).unwrap();
+                failure::bail!(http::format_error(e, None))
+            }
         }
     }
 }

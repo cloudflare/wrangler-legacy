@@ -1,18 +1,12 @@
 use tokio::sync::oneshot::{channel, Receiver, Sender};
 
-pub enum Signal {
-    Continue,
-    ShutDown,
-}
-
-#[derive(Default)]
 pub struct ShutdownHandler {
     txs: Vec<Sender<()>>,
 }
 
 impl ShutdownHandler {
     pub fn new() -> ShutdownHandler {
-        ShutdownHandler::default()
+        ShutdownHandler { txs: Vec::new() }
     }
 
     pub fn subscribe(&mut self) -> Receiver<()> {
@@ -22,10 +16,14 @@ impl ShutdownHandler {
         rx
     }
 
-/// handle_sigint waits on a ctrl_c from the system and sends messages to each registered
-/// transmitter when it is received.
-    pub async fn run(self) -> Result<(), failure::Error> {
-        tokio::signal::ctrl_c().await?;
+    /// ShutdownHandler waits on a ctrl_c from the system, or a short circuit command from the top
+    /// level error handler, and sends messages to each registered transmitter when it is received.
+    pub async fn run(self, short_circuit: Receiver<()>) -> Result<(), failure::Error> {
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {}
+            _ = short_circuit => {}
+        }
+
         for tx in self.txs {
             // if `tx.send()` returns an error, it is because the receiver has gone out of scope,
             // likely due to the task returning early for some reason, in which case we don't need
