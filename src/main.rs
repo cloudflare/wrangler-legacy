@@ -12,6 +12,8 @@ use commands::HTTPMethod;
 use console::style;
 use exitfailure::ExitFailure;
 
+use url::Url;
+
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
@@ -384,15 +386,22 @@ fn run() -> Result<(), failure::Error> {
                         .index(2),
                 )
                 .arg(
+                    Arg::with_name("url")
+                        .help("URL to open in the worker preview")
+                        .short("u")
+                        .long("url")
+                        .takes_value(true)
+                )
+                .arg(
                     Arg::with_name("env")
-                        .help("environment to preview")
+                        .help("Environment to preview")
                         .short("e")
                         .long("env")
                         .takes_value(true)
                 )
                 .arg(
                     Arg::with_name("watch")
-                        .help("watch your project for changes and update the preview automagically")
+                        .help("Watch your project for changes and update the preview automagically")
                         .long("watch")
                         .takes_value(false),
                 )
@@ -400,7 +409,7 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("verbose")
                         .long("verbose")
                         .takes_value(false)
-                        .help("toggle verbose output"),
+                        .help("Toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -616,6 +625,18 @@ fn run() -> Result<(), failure::Error> {
 
         let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
+        let url = Url::parse(matches.value_of("url").unwrap_or("https://example.com"))?;
+
+        // Validate the URL scheme
+        failure::ensure!(
+            match url.scheme() {
+                "http" => true,
+                "https" => true,
+                _ => false,
+            },
+            "Invalid URL scheme (use either \"https\" or \"http\")"
+        );
+
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
             None => None,
@@ -625,7 +646,7 @@ fn run() -> Result<(), failure::Error> {
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, body, watch, verbose, headless)?;
+        commands::preview(target, user, method, url, body, watch, verbose, headless)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
         let port = matches.value_of("port");
