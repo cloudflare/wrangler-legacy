@@ -7,7 +7,7 @@ pub fn start(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     // helpful output to not be mixed with actual log JSON output, so we use this macro
     // to print messages to stderr instead of stdout (where log output is printed).
     eprintln!(
-        "Setting up log streaming from Worker \"{}\" to Wrangler. This may take a few seconds...",
+        "Setting up log streaming from Worker script \"{}\" to Wrangler. This may take a few seconds...",
         target.name
     );
 

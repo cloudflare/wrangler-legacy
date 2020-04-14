@@ -519,7 +519,7 @@ fn run() -> Result<(), failure::Error> {
                 .about("Aggregate logs from production worker")
                 .arg(
                     Arg::with_name("env")
-                        .help("environment to tail")
+                        .help("environment to tail logs from")
                         .short("e")
                         .long("env")
                         .takes_value(true)

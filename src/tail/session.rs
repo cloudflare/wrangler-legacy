@@ -188,7 +188,7 @@ fn tail_help(error_code: u16) -> &'static str {
             "Make sure your API token has permission to both edit and read workers on your account"
         }
         // script not found
-        10007 => "wrangler can only tail live workers; make sure to `publish` your worker first.", // key errors
+        10007 => "wrangler can only tail live Worker scripts. Run `wrangler publish` before attempting to tail.", // key errors
         // limit errors
         10057 | 10058 | 10059 => "See documentation",
         _ => "",
