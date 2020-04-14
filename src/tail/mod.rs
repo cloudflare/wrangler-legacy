@@ -12,15 +12,16 @@
 ///     5. Upon receipt, the LogServer prints the payload of each POST request to STDOUT.
 mod log_server;
 mod session;
+mod shutdown;
 mod tunnel;
 
 use log_server::LogServer;
 use session::Session;
+use shutdown::ShutdownHandler;
 use tunnel::Tunnel;
 
 use tokio;
 use tokio::runtime::Runtime as TokioRuntime;
-use tokio::sync::oneshot;
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -36,13 +37,13 @@ impl Tail {
             // channels for handling ctrl-c. Each channel has two parts:
             // tx: Transmitter
             // rx: Receiver
-            let (log_tx, log_rx) = oneshot::channel();
-            let (session_tx, session_rx) = oneshot::channel();
-            let (tunnel_tx, tunnel_rx) = oneshot::channel();
+            let (tx, rx) = tokio::sync::oneshot::channel(); // shutdown short circuit
+            let mut shutdown_handler = ShutdownHandler::new();
+            let log_rx = shutdown_handler.subscribe();
+            let session_rx = shutdown_handler.subscribe();
+            let tunnel_rx = shutdown_handler.subscribe();
 
-            // Pass the three transmitters to a newly spawned sigint handler
-            let txs = vec![log_tx, tunnel_tx, session_tx];
-            let listener = tokio::spawn(listen_for_sigint(txs));
+            let listener = tokio::spawn(shutdown_handler.run(rx));
 
             // Spin up a local http server to receive logs
             let log_server = tokio::spawn(LogServer::new(log_rx).run());
@@ -52,28 +53,19 @@ impl Tail {
             let tunnel = tokio::spawn(tunnel_process.run(tunnel_rx));
 
             // Register the tail with the Workers API and send periodic heartbeats
-            let session = tokio::spawn(Session::run(target, user, session_rx));
+            let session = tokio::spawn(Session::run(target, user, session_rx, tx));
 
-            let res = tokio::try_join!(listener, log_server, session, tunnel);
+            let res = tokio::try_join!(
+                async { listener.await? },
+                async { log_server.await? },
+                async { session.await? },
+                async { tunnel.await? }
+            );
 
             match res {
                 Ok(_) => Ok(()),
-                Err(e) => failure::bail!(e),
+                Err(e) => Err(e),
             }
         })
     }
-}
-
-/// handle_sigint waits on a ctrl_c from the system and sends messages to each registered
-/// transmitter when it is received.
-async fn listen_for_sigint(txs: Vec<oneshot::Sender<()>>) -> Result<(), failure::Error> {
-    tokio::signal::ctrl_c().await?;
-    for tx in txs {
-        // if `tx.send()` returns an error, it is because the receiver has gone out of scope,
-        // likely due to the task returning early for some reason, in which case we don't need
-        // to tell that task to shut down because it already has.
-        tx.send(()).ok();
-    }
-
-    Ok(())
 }
