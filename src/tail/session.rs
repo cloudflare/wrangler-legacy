@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use regex::Regex;
 use reqwest;
-use tokio::sync::oneshot::error::TryRecvError;
 use tokio::sync::oneshot::{Receiver, Sender};
 use tokio::time::{delay_for, Delay};
 
@@ -27,12 +26,20 @@ impl Session {
     pub async fn run(
         target: Target,
         user: GlobalUser,
-        mut shutdown_rx: Receiver<()>,
+        shutdown_rx: Receiver<()>,
         tx: Sender<()>,
     ) -> Result<(), failure::Error> {
+        // We need to exit on a shutdown command without waiting for API calls to complete.
+        tokio::select! {
+            _ = shutdown_rx => { Ok(()) }
+            result = Session::start(target, user, tx) => { result }
+        }
+    }
+
+    async fn start(target: Target, user: GlobalUser, tx: Sender<()>) -> Result<(), failure::Error> {
         let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
 
-        let url = get_tunnel_url(&mut shutdown_rx).await?;
+        let url = get_tunnel_url().await?;
 
         let response = client
             .request(&CreateTail {
@@ -55,26 +62,12 @@ impl Session {
                 let mut delay = delay_for(duration);
 
                 loop {
-                    match shutdown_rx.try_recv() {
-                        // this variant of the [TryRecvError](https://docs.rs/tokio/0.2.16/tokio/sync/oneshot/error/enum.TryRecvError.html)
-                        // occurs when the receiver listens for a message and the channel is empty;
-                        // in this case, it means that we have not received a shutdown command and
-                        // can continue with our task. The other variant would indicate that the
-                        // sender has been dropped, in which case we want to follow shut down as if
-                        // we received the signal.
-                        Err(TryRecvError::Empty) => {
-                            if delay.is_elapsed() {
-                                let heartbeat_result =
-                                    send_heartbeat(&target, &client, &tail_id).await;
-                                if heartbeat_result.is_err() {
-                                    return heartbeat_result;
-                                }
-                                delay = delay_for(duration);
-                            }
+                    if delay.is_elapsed() {
+                        let heartbeat_result = send_heartbeat(&target, &client, &tail_id).await;
+                        if heartbeat_result.is_err() {
+                            return heartbeat_result;
                         }
-                        _ => {
-                            return Ok(());
-                        }
+                        delay = delay_for(duration);
                     }
                 }
             }
@@ -86,7 +79,7 @@ impl Session {
     }
 }
 
-async fn get_tunnel_url(shutdown_rx: &mut Receiver<()>) -> Result<String, failure::Error> {
+async fn get_tunnel_url() -> Result<String, failure::Error> {
     // regex for extracting url from cloudflared metrics port.
     let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
@@ -133,24 +126,17 @@ async fn get_tunnel_url(shutdown_rx: &mut Receiver<()>) -> Result<String, failur
     let mut delay = RetryDelay::new(5);
 
     while !delay.expired() {
-        match shutdown_rx.try_recv() {
-            Err(TryRecvError::Empty) => {
-                if delay.is_elapsed() {
-                    if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {
-                        let body = resp.text().await?;
+        if delay.is_elapsed() {
+            if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {
+                let body = resp.text().await?;
 
-                        for url_match in url_regex.captures_iter(&body) {
-                            let url = url_match[1].to_string();
-                            return Ok(url);
-                        }
-                    }
-
-                    delay = delay.reset();
+                for url_match in url_regex.captures_iter(&body) {
+                    let url = url_match[1].to_string();
+                    return Ok(url);
                 }
             }
-            _ => {
-                return Ok("".to_string());
-            }
+
+            delay = delay.reset();
         }
     }
 

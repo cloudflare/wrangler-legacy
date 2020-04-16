@@ -341,8 +341,9 @@ dependencies = [
 
 [[package]]
 name = "cloudflare"
-version = "0.6.4"
-source = "git+https://github.com/cloudflare/cloudflare-rs?branch=gabbi/workers-tailing-endpoints#260af00720f105a4e9395fdffce18c87619fbe63"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b15d54f4764f67500dccaf08c08a94d31cdac1d52cfa994f5c3b3939847cf5ba"
 dependencies = [
  "async-trait",
  "chrono",
