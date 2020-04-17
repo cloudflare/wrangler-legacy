@@ -1,4 +1,4 @@
-// TODO: (gabbi) This file should use cloudflare-rs instead of our http::auth_client
+// TODO: (gabbi) This file should use cloudflare-rs instead of our http::legacy_auth_client
 // when https://github.com/cloudflare/cloudflare-rs/issues/26 is handled (this is
 // because the SET key request body is not json--it is the raw value).
 
@@ -44,13 +44,13 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
     };
     let url = Url::parse_with_params(&api_endpoint, query_params);
 
-    let client = http::auth_client(None, &user);
+    let client = http::legacy_auth_client(&user);
 
     let url_into_str = url?.into_string();
 
     // If is_file is true, overwrite value to be the contents of the given
     // filename in the 'value' arg.
-    let mut res = if data.is_file {
+    let res = if data.is_file {
         match &metadata(&data.value) {
             Ok(file_type) if file_type.is_file() => {
                 let file = fs::File::open(&data.value)?;
@@ -67,7 +67,8 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
         client.put(&url_into_str).body(data.value).send()?
     };
 
-    if res.status().is_success() {
+    let response_status = res.status();
+    if response_status.is_success() {
         message::success("Success")
     } else {
         // This is logic pulled from cloudflare-rs for pretty error formatting right now;
@@ -76,7 +77,7 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
         let errors = parsed.unwrap_or_default();
         print!(
             "{}",
-            kv::format_error(ApiFailure::Error(res.status(), errors))
+            kv::format_error(ApiFailure::Error(response_status, errors))
         );
     }
 

@@ -1,4 +1,4 @@
-// TODO:(gabbi) This file should use cloudflare-rs instead of our http::auth_client
+// TODO:(gabbi) This file should use cloudflare-rs instead of our http::legacy_auth_client
 // when https://github.com/cloudflare/cloudflare-rs/issues/26 is handled (this is
 // because the GET key operation doesn't return json on success--just the raw
 // value).
@@ -19,11 +19,12 @@ pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()
         kv::url_encode_key(key)
     );
 
-    let client = http::auth_client(None, &user);
+    let client = http::legacy_auth_client(&user);
 
-    let mut res = client.get(&api_endpoint).send()?;
+    let res = client.get(&api_endpoint).send()?;
 
-    if res.status().is_success() {
+    let response_status = res.status();
+    if response_status.is_success() {
         let body_text = res.text()?;
         // We don't use message::success because we don't want to include the emoji/formatting
         // in case someone is piping this to stdin
@@ -35,7 +36,7 @@ pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()
         let errors = parsed.unwrap_or_default();
         print!(
             "{}",
-            kv::format_error(ApiFailure::Error(res.status(), errors))
+            kv::format_error(ApiFailure::Error(response_status, errors))
         );
     }
 

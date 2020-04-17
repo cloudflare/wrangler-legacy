@@ -4,6 +4,7 @@ use failure::format_err;
 
 use super::binding::Binding;
 use super::filename_from_path;
+use super::plain_text::PlainText;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
 
@@ -16,6 +17,7 @@ pub struct ProjectAssets {
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
     pub text_blobs: Vec<TextBlob>,
+    pub plain_texts: Vec<PlainText>,
 }
 
 impl ProjectAssets {
@@ -24,6 +26,7 @@ impl ProjectAssets {
         wasm_modules: Vec<WasmModule>,
         kv_namespaces: Vec<KvNamespace>,
         text_blobs: Vec<TextBlob>,
+        plain_texts: Vec<PlainText>,
     ) -> Result<Self, failure::Error> {
         let script_name = filename_from_path(&script_path).ok_or_else(|| {
             format_err!("filename should not be empty: {}", script_path.display())
@@ -35,6 +38,7 @@ impl ProjectAssets {
             wasm_modules,
             kv_namespaces,
             text_blobs,
+            plain_texts,
         })
     }
 
@@ -51,6 +55,10 @@ impl ProjectAssets {
         }
         for blob in &self.text_blobs {
             let binding = blob.binding();
+            bindings.push(binding);
+        }
+        for plain_text in &self.plain_texts {
+            let binding = plain_text.binding();
             bindings.push(binding);
         }
 
