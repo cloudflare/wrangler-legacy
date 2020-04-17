@@ -62,13 +62,12 @@ impl Session {
                 let mut delay = delay_for(duration);
 
                 loop {
-                    if delay.is_elapsed() {
-                        let heartbeat_result = send_heartbeat(&target, &client, &tail_id).await;
-                        if heartbeat_result.is_err() {
-                            return heartbeat_result;
-                        }
-                        delay = delay_for(duration);
+                    delay.await;
+                    let heartbeat_result = send_heartbeat(&target, &client, &tail_id).await;
+                    if heartbeat_result.is_err() {
+                        return heartbeat_result;
                     }
+                    delay = delay_for(duration);
                 }
             }
             Err(e) => {
