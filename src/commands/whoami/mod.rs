@@ -7,16 +7,18 @@ use cloudflare::endpoints::user::GetUserDetails;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 
+use console::Style;
 use prettytable::{Cell, Row, Table};
 
 pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
+    let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {
         GlobalUser::GlobalKeyAuth { email, .. } => {
             format!("a Global API Key, associated with the email '{}'", email,)
         }
         GlobalUser::TokenAuth { .. } => {
-            let token_auth_email = fetch_api_token_email(user)?;
+            let token_auth_email = fetch_api_token_email(user, &mut missing_permissions)?;
 
             if let Some(token_auth_email) = token_auth_email {
                 format!(
@@ -29,14 +31,39 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
         }
     };
 
-    println!("\n{} You are logged in with {}.\n", emoji::WAVING, auth,);
     let accounts = fetch_accounts(user)?;
-    let table = format_accounts(user, accounts);
-    println!("{}", &table);
+    let table = format_accounts(user, accounts, &mut missing_permissions);
+    let mut msg = format!("{} You are logged in with {}!\n", emoji::WAVING, auth);
+    let num_permissions_missing = missing_permissions.len();
+    if num_permissions_missing > 0 {
+        let bold_yellow = Style::new().bold().yellow();
+        let config_msg = bold_yellow.apply_to("`wrangler config`");
+        let whoami_msg = bold_yellow.apply_to("`wrangler whoami`");
+        if missing_permissions.len() == 1 {
+            msg.push_str(&format!(
+                "\nYour token is missing the '{}' permission.",
+                bold_yellow.apply_to(missing_permissions.get(0).unwrap())
+            ));
+        } else if missing_permissions.len() == 2 {
+            msg.push_str(&format!(
+                "\nYour token is missing the '{}' and '{}' permissions.",
+                bold_yellow.apply_to(missing_permissions.get(0).unwrap()),
+                bold_yellow.apply_to(missing_permissions.get(1).unwrap())
+            ));
+        }
+        msg.push_str(&format!("\n\nPlease generate a new token and authenticate with {}\nfor more information when running {}", config_msg, whoami_msg));
+    }
+    message::billboard(&msg);
+    if table.len() > 1 {
+        println!("{}", &table);
+    }
     Ok(())
 }
 
-fn fetch_api_token_email(user: &GlobalUser) -> Result<Option<String>, failure::Error> {
+fn fetch_api_token_email(
+    user: &GlobalUser,
+    missing_permissions: &mut Vec<String>,
+) -> Result<Option<String>, failure::Error> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&GetUserDetails {});
     match response {
@@ -45,7 +72,7 @@ fn fetch_api_token_email(user: &GlobalUser) -> Result<Option<String>, failure::E
             ApiFailure::Error(_, api_errors) => {
                 let error = &api_errors.errors[0];
                 if error.code == 9109 {
-                    message::billboard("Your token is missing the 'User Details: Read' permission.\n\nPlease generate and auth with a new token that has these perms to be able to identify this token.\n");
+                    missing_permissions.push("User Details: Read".to_string());
                 }
                 Ok(None)
             }
@@ -63,14 +90,18 @@ fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
     }
 }
 
-fn format_accounts(user: &GlobalUser, accounts: Vec<Account>) -> Table {
+fn format_accounts(
+    user: &GlobalUser,
+    accounts: Vec<Account>,
+    missing_permissions: &mut Vec<String>,
+) -> Table {
     let mut table = Table::new();
     let table_head = Row::new(vec![Cell::new("Account Name"), Cell::new("Account ID")]);
     table.add_row(table_head);
 
     if let GlobalUser::TokenAuth { .. } = user {
         if accounts.is_empty() {
-            message::billboard("Your token is missing the 'Account Settings: Read' permission.\n\nPlease generate and auth with a new token that has these perms to be able to list your accounts.");
+            missing_permissions.push("Account Settings: Read".to_string());
         }
     }
 
