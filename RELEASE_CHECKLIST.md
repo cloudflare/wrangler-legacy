@@ -49,7 +49,7 @@ Most of your comments will be about the changelog. Once the PR is finalized and 
 
 ### Tag and build release
 
-This part of the release process is handled by Github Actions, and our binaries are distributed as GitHub Releases. When you push a version tag, it kicks off an action that creates a new GitHub release for that tag, builds release binaries and attaches them to the release.
+This part of the release process is handled by GitHub Actions, and our binaries are distributed as GitHub Releases. When you push a version tag, it kicks off an action that creates a new GitHub release for that tag, builds release binaries and attaches them to the release.
 
 1. Once ready to merge, tag the commit by running either `git tag -a v#.#.# -m #.#.#` (release), or `git tag -a v#.#.#-rc.# -m #.#.#` (release candidate)
 1. Run `git push --tags`.
