@@ -3,7 +3,7 @@ use std::net::{SocketAddr, ToSocketAddrs};
 
 use failure::format_err;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ListeningAddress {
     pub address: SocketAddr,
 }
