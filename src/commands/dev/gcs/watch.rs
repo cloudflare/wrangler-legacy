@@ -24,7 +24,14 @@ pub fn watch_for_changes(
         let target = target.clone();
         commands::build(&target)?;
 
+        // acquire the lock so incoming requests are halted
+        // until the new script is ready for them
         let mut preview_id = preview_id.lock().unwrap();
+
+        // while holding the lock, assign a new preview id
+        //
+        // this allows the server to route subsequent requests
+        // to the proper script
         *preview_id = get_preview_id(target, user, server_config, session_id, verbose)?;
     }
 
