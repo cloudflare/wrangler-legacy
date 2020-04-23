@@ -3,7 +3,6 @@ mod setup;
 
 use server::serve;
 
-use crate::commands;
 use crate::commands::dev::ServerConfig;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
@@ -16,7 +15,6 @@ pub fn dev(
     user: GlobalUser,
     server_config: ServerConfig,
 ) -> Result<(), failure::Error> {
-    commands::build(&target)?;
     let (preview_token, host) = setup::init(&deploy_config, &user)?;
     let mut target = target.clone();
     let host = match deploy_config {
