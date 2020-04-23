@@ -28,18 +28,25 @@ impl Session {
         user: GlobalUser,
         shutdown_rx: Receiver<()>,
         tx: Sender<()>,
+        metrics_port: u16,
     ) -> Result<(), failure::Error> {
         // We need to exit on a shutdown command without waiting for API calls to complete.
         tokio::select! {
             _ = shutdown_rx => { Ok(()) }
-            result = Session::start(target, user, tx) => { result }
+            result = Session::start(target, user, tx, metrics_port) => { result }
         }
     }
 
-    async fn start(target: Target, user: GlobalUser, tx: Sender<()>) -> Result<(), failure::Error> {
+    async fn start(
+        target: Target,
+        user: GlobalUser,
+        tx: Sender<()>,
+        metrics_port: u16,
+    ) -> Result<(), failure::Error> {
         let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
 
-        let url = get_tunnel_url().await?;
+        // TODO: make Tunnel struct responsible for getting its own port!
+        let url = get_tunnel_url(metrics_port).await?;
 
         let response = client
             .request(&CreateTail {
@@ -78,7 +85,7 @@ impl Session {
     }
 }
 
-async fn get_tunnel_url() -> Result<String, failure::Error> {
+async fn get_tunnel_url(metrics_port: u16) -> Result<String, failure::Error> {
     // regex for extracting url from cloudflared metrics port.
     let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
@@ -126,7 +133,8 @@ async fn get_tunnel_url() -> Result<String, failure::Error> {
 
     while !delay.expired() {
         if delay.is_elapsed() {
-            if let Ok(resp) = reqwest::get("http://localhost:8081/metrics").await {
+            let metrics_url = format!("http://localhost:{}/metrics", metrics_port);
+            if let Ok(resp) = reqwest::get(&metrics_url).await {
                 let body = resp.text().await?;
 
                 for url_match in url_regex.captures_iter(&body) {
