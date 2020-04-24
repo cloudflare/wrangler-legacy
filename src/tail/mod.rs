@@ -29,7 +29,12 @@ use crate::settings::toml::Target;
 pub struct Tail;
 
 impl Tail {
-    pub fn run(target: Target, user: GlobalUser) -> Result<(), failure::Error> {
+    pub fn run(
+        target: Target,
+        user: GlobalUser,
+        tunnel_port: u16,
+        metrics_port: u16,
+    ) -> Result<(), failure::Error> {
         let mut runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
@@ -46,14 +51,14 @@ impl Tail {
             let listener = tokio::spawn(shutdown_handler.run(rx));
 
             // Spin up a local http server to receive logs
-            let log_server = tokio::spawn(LogServer::new(log_rx).run());
+            let log_server = tokio::spawn(LogServer::new(tunnel_port, log_rx).run());
 
             // Spin up a new cloudflared tunnel to connect trace worker to local server
-            let tunnel_process = Tunnel::new()?;
+            let tunnel_process = Tunnel::new(tunnel_port, metrics_port)?;
             let tunnel = tokio::spawn(tunnel_process.run(tunnel_rx));
 
             // Register the tail with the Workers API and send periodic heartbeats
-            let session = tokio::spawn(Session::run(target, user, session_rx, tx));
+            let session = tokio::spawn(Session::run(target, user, session_rx, tx, metrics_port));
 
             let res = tokio::try_join!(
                 async { listener.await? },

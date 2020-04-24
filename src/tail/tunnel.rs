@@ -18,15 +18,15 @@ pub struct Tunnel {
 /// and wait on its output; otherwise we leave an orphaned process when wrangler exits and this
 /// causes problems if it still exists the next time we start up a tail.
 impl Tunnel {
-    pub fn new() -> Result<Tunnel, failure::Error> {
+    pub fn new(tunnel_port: u16, metrics_port: u16) -> Result<Tunnel, failure::Error> {
         let tool_name = PathBuf::from("cloudflared");
         // TODO: Finally get cloudflared release binaries distributed on GitHub so we could
         // simply uncomment the line below.
         // let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
 
-        // TODO: allow user to pass in their own ports in case ports 8080 (used by cloudflared)
-        // and 8081 (used by cloudflared metrics) are both already being used.
-        let args = ["tunnel", "--metrics", "localhost:8081"];
+        let tunnel_url = format!("localhost:{}", tunnel_port);
+        let metrics_url = format!("localhost:{}", metrics_port);
+        let args = ["tunnel", "--url", &tunnel_url, "--metrics", &metrics_url];
 
         let mut command = command(&args, &tool_name);
         let command_name = format!("{:?}", command);

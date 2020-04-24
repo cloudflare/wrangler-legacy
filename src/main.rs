@@ -524,6 +524,19 @@ fn run() -> Result<(), failure::Error> {
                         .long("env")
                         .takes_value(true)
                 )
+                .arg(
+                    Arg::with_name("tunnel_port")
+                        .help("port to accept tail log requests")
+                        .short("p")
+                        .long("port")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("metrics_port")
+                        .help("provides endpoint for cloudflared metrics. used to retrieve tunnel url")
+                        .long("metrics")
+                        .takes_value(true)
+                )
         )
         .get_matches();
 
@@ -897,10 +910,16 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
-
         let user = settings::global_user::GlobalUser::new()?;
 
-        commands::tail::start(&target, &user)?;
+        let tunnel_port: Option<u16> = matches
+            .value_of("tunnel_port")
+            .map(|p| p.parse().expect("--port expects a number"));
+        let metrics_port: Option<u16> = matches
+            .value_of("metrics_port")
+            .map(|p| p.parse().expect("--metrics expects a number"));
+
+        commands::tail::start(&target, &user, tunnel_port, metrics_port)?;
     }
     Ok(())
 }

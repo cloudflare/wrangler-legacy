@@ -12,9 +12,9 @@ pub struct LogServer {
 /// LogServer is just a basic HTTP server running locally; it listens for POST requests on the root
 /// path and simply prints the JSON body of each request as its own line to STDOUT.
 impl LogServer {
-    pub fn new(shutdown_rx: Receiver<()>) -> LogServer {
+    pub fn new(port: u16, shutdown_rx: Receiver<()>) -> LogServer {
         // Start HTTP echo server that prints whatever is posted to it.
-        let addr = ([127, 0, 0, 1], 8080).into();
+        let addr = ([127, 0, 0, 1], port).into();
 
         let server = Server::bind(&addr);
 
