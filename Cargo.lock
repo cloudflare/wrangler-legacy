@@ -2085,18 +2085,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha2"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27044adfd2e1f077f649f59deb9490d3941d674002f7d062870a60ebe9bd47a0"
-dependencies = [
- "block-buffer",
- "digest",
- "fake-simd",
- "opaque-debug",
-]
-
-[[package]]
 name = "siphasher"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2520,6 +2508,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "twox-hash"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bfd5b7557925ce778ff9b9ef90e3ade34c524b5ff10e239c69a42d546d2af56"
+dependencies = [
+ "rand 0.7.3",
+]
+
+[[package]]
 name = "typenum"
 version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2790,7 +2787,6 @@ dependencies = [
  "cloudflare",
  "config",
  "console 0.9.2",
- "data-encoding",
  "dirs 1.0.5",
  "env_logger",
  "exitfailure",
@@ -2818,13 +2814,13 @@ dependencies = [
  "serde 1.0.105",
  "serde_json",
  "serde_with",
- "sha2",
  "tempfile",
  "term_size",
  "text_io",
  "tokio",
  "tokio-tungstenite",
  "toml",
+ "twox-hash",
  "url",
  "uuid",
  "which",
