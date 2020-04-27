@@ -10,14 +10,14 @@ pub use upload::upload_files;
 
 use std::ffi::OsString;
 use std::fs;
+use std::hash::Hasher;
 use std::path::Path;
 
-use data_encoding::HEXLOWER;
 use failure::format_err;
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{Walk, WalkBuilder};
 use indicatif::{ProgressBar, ProgressStyle};
-use sha2::{Digest, Sha256};
+use twox_hash::XxHash64;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
@@ -197,10 +197,15 @@ pub fn generate_path_and_key(
     let relative_path = path.strip_prefix(directory).unwrap();
 
     let url_safe_path = generate_url_safe_path(relative_path)?;
-
     let path_with_hash = if let Some(value) = value {
-        let digest = get_digest(value)?;
-
+        let digest = get_digest(value);
+        // it is ok to truncate the digest here because
+        // we also include the file name in the asset manifest key
+        //
+        // the most important thing here is to detect changes
+        // of a single file to invalidate the cache and
+        // it's impossible to serve two different files with the same name
+        let digest = digest[0..10].to_string();
         generate_path_with_hash(relative_path, digest)?
     } else {
         url_safe_path.to_owned()
@@ -209,12 +214,13 @@ pub fn generate_path_and_key(
     Ok((url_safe_path, path_with_hash))
 }
 
-fn get_digest(value: String) -> Result<String, failure::Error> {
-    let mut hasher = Sha256::new();
-    hasher.input(value);
-    let digest = hasher.result();
-    let hex_digest = HEXLOWER.encode(digest.as_ref())[0..10].to_string();
-    Ok(hex_digest)
+fn get_digest(value: String) -> String {
+    let value = value.as_bytes();
+    let mut hasher = XxHash64::default();
+    hasher.write(value);
+    let digest = hasher.finish();
+    // encode u64 as hexadecimal to save space and information
+    format!("{:x}", digest)
 }
 
 // Assumes that `path` is a file (called from a match branch for path.is_file())
@@ -473,7 +479,7 @@ mod tests {
     #[test]
     fn it_inserts_hash_before_extension() {
         let value = "<h1>Hello World!</h1>";
-        let hashed_value = get_digest(String::from(value)).unwrap();
+        let hashed_value = get_digest(String::from(value));
 
         let path = PathBuf::from("path").join("to").join("asset.html");
         let actual_path_with_hash =
@@ -487,7 +493,7 @@ mod tests {
     #[test]
     fn it_inserts_hash_without_extension() {
         let value = "<h1>Hello World!</h1>";
-        let hashed_value = get_digest(String::from(value)).unwrap();
+        let hashed_value = get_digest(String::from(value));
 
         let path = PathBuf::from("path").join("to").join("asset");
         let actual_path_with_hash =
@@ -525,7 +531,6 @@ mod tests {
         let directory = Path::new("./build");
         let value = Some("<h1>Hello World!</h1>".to_string());
         let (path, key) = generate_path_and_key(path, directory, value).unwrap();
-
         let expected_path = "path/to/asset.ext".to_string();
         let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-f]{10}\.ext").unwrap();
 

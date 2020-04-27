@@ -4,7 +4,7 @@ mod listening_address;
 use host::Host;
 use listening_address::ListeningAddress;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ServerConfig {
     pub host: Host,
     pub listening_address: ListeningAddress,
