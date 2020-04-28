@@ -61,7 +61,7 @@ pub fn upload(
                 let client = http::legacy_auth_client(&user);
 
                 if let Some(site_config) = target.site.clone() {
-                    let site_namespace = publish::add_site_namespace(user, target, true)?;
+                    let site_namespace = publish::add_site_namespace(user, target)?;
 
                     let path = Path::new(&site_config.bucket);
                     let (to_upload, to_delete, asset_manifest) =
@@ -74,7 +74,8 @@ pub fn upload(
 
                     upload_files(target, user, &site_namespace.id, to_upload)?;
 
-                    let preview = authenticated_upload(&client, &target, Some(asset_manifest))?;
+                    let preview =
+                        authenticated_upload(&client, user, &target, Some(asset_manifest))?;
                     if !to_delete.is_empty() {
                         if verbose {
                             message::info("Deleting stale files...");
@@ -85,7 +86,7 @@ pub fn upload(
 
                     preview
                 } else {
-                    authenticated_upload(&client, &target, None)?
+                    authenticated_upload(&client, user, &target, None)?
                 }
             } else {
                 message::warn(&format!(
@@ -150,6 +151,7 @@ fn validate(target: &Target) -> Vec<&str> {
 
 fn authenticated_upload(
     client: &Client,
+    user: &GlobalUser,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Preview, failure::Error> {
@@ -159,7 +161,7 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = upload::form::build(target, asset_manifest)?;
+    let script_upload_form = upload::form::build(target, asset_manifest, true, Some(user))?;
 
     let res = client
         .post(&create_address)
@@ -189,9 +191,9 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         );
         let mut target = target.clone();
         target.kv_namespaces = None;
-        upload::form::build(&target, None)?
+        upload::form::build(&target, None, true, None)?
     } else {
-        upload::form::build(&target, None)?
+        upload::form::build(&target, None, true, None)?
     };
     let client = http::client();
     let res = client

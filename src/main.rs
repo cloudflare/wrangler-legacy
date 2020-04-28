@@ -778,7 +778,7 @@ fn run() -> Result<(), failure::Error> {
             ("list", Some(list_matches)) => {
                 let env = list_matches.value_of("env");
                 let target = manifest.get_target(env)?;
-                commands::kv::namespace::list(&target, &user)?;
+                commands::kv::namespace::print_list(&target, &user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
             _ => unreachable!(),

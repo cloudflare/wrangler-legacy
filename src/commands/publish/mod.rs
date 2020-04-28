@@ -30,7 +30,7 @@ pub fn publish(
         validate_bucket_location(path)?;
         warn_site_incompatible_route(&deploy_config);
 
-        let site_namespace = add_site_namespace(user, target, false)?;
+        let site_namespace = add_site_namespace(user, target)?;
 
         let (to_upload, to_delete, asset_manifest) = sync(target, user, &site_namespace.id, &path)?;
 
@@ -103,9 +103,9 @@ fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
 pub fn add_site_namespace(
     user: &GlobalUser,
     target: &mut Target,
-    preview: bool,
 ) -> Result<KvNamespace, failure::Error> {
-    let site_namespace = kv::namespace::site(target, &user, preview)?;
+    let title = format!("__{}-{}", target.name, "workers_sites_assets");
+    let site_namespace = kv::namespace::upsert(target, &user, &title)?;
 
     // Check if namespace already is in namespace list
     for namespace in target.kv_namespaces() {

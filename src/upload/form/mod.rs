@@ -9,10 +9,12 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use crate::commands::build::wranglerjs;
+use crate::commands::kv;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
+use crate::settings::global_user::GlobalUser;
 use crate::settings::metadata::Metadata;
-use crate::settings::toml::{Target, TargetType};
+use crate::settings::toml::{KvNamespace, Target, TargetType};
 
 use plain_text::PlainText;
 use project_assets::ProjectAssets;
@@ -25,9 +27,43 @@ use super::{krate, Package};
 pub fn build(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
+    preview: bool,
+    // user is an option because preview can be
+    // authenticated or unauthenticated
+    user: Option<&GlobalUser>,
 ) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
-    let kv_namespaces = target.kv_namespaces();
+    let mut kv_namespaces = target.kv_namespaces();
+
+    if preview && kv_namespaces.len() > 0 {
+        // safe to unwrap because unauthenticated
+        // preview does not have namespaces
+        let user = user.unwrap();
+        let all_namespaces = kv::namespace::get_list(target, user)?;
+        let mut preview_namespaces: Vec<KvNamespace> = Vec::with_capacity(kv_namespaces.len());
+        for this_namespace in kv_namespaces {
+            let mut existing_title = None;
+            for existing_namespace in &all_namespaces {
+                if this_namespace.id == existing_namespace.id {
+                    existing_title = Some(existing_namespace.title.clone());
+                    break;
+                }
+            }
+            if let Some(existing_title) = existing_title {
+                let new_title = format!("{}_preview", existing_title);
+                let preview_namespace = kv::namespace::upsert(target, user, &new_title)?;
+                preview_namespaces.push(KvNamespace {
+                    id: preview_namespace.id,
+                    binding: this_namespace.binding,
+                    bucket: this_namespace.bucket,
+                });
+            } else {
+                failure::bail!("The namespace with binding {} does not exist. Update your wrangler.toml to point to a valid KV namespace.")
+            }
+        }
+        kv_namespaces = preview_namespaces.clone();
+    }
+
     let mut text_blobs: Vec<TextBlob> = Vec::new();
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
