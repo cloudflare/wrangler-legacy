@@ -3,7 +3,7 @@ use std::fmt;
 use failure::format_err;
 use url::Url;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Host {
     url: Url,
 }
