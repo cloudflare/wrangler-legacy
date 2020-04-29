@@ -51,3 +51,81 @@ fn find_open_port(requested: Option<u16>, default: u16) -> Result<u16, failure::
         Ok(socket.local_addr()?.port())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    // These tests are extremely stateful; since what we are testing is how this function behaves
+    // when requested ports are unavailable, and since our tests run concurrently, each test uses
+    // unique ports to avoid collisions. There are two possible solutions to this problem:
+    // 1. require that these tests be run serially, and find a way to clean up bound ports
+    // 2. use dependency injection and write a substitute for the TcpListener::bind fn.
+    use super::*;
+
+    #[test]
+    fn test_find_open_port_no_requested_default_available() {
+        let requested = None;
+        let default = 3000;
+        let port = find_open_port(requested, default).unwrap();
+
+        // returns default
+        assert_eq!(port, default);
+    }
+
+    #[test]
+    fn test_find_open_port_no_requested_default_unavailable() {
+        let requested = None;
+        let default = 3001;
+        let listener = find_open_port(requested, default);
+
+        // returns random
+        assert!(listener.is_ok());
+    }
+
+    #[test]
+    fn test_find_open_port_requested_available_default_available() {
+        let requested = 3002;
+        let default = 3003;
+        let port = find_open_port(Some(requested), default).unwrap();
+
+        // returns requested
+        assert_eq!(port, requested);
+    }
+
+    #[test]
+    fn test_find_open_port_requested_available_default_unavailable() {
+        let requested = 3004;
+        let default = 3005;
+        let _default_listener =
+            TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], default))).unwrap();
+        let port = find_open_port(Some(requested), default).unwrap();
+
+        // returns requested
+        assert_eq!(port, requested);
+    }
+
+    #[test]
+    fn test_find_open_port_requested_unavailable_default_available() {
+        let requested = 3006;
+        let default = 3007;
+        let _requested_listener =
+            TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], requested))).unwrap();
+        let listener = find_open_port(Some(requested), default);
+
+        // throws error
+        assert!(listener.is_err());
+    }
+
+    #[test]
+    fn test_find_open_port_requested_unavailable_default_unavailable() {
+        let requested = 3008;
+        let default = 3009;
+        let _requested_listener =
+            TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], requested))).unwrap();
+        let _default_listener =
+            TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], default))).unwrap();
+        let listener = find_open_port(Some(requested), default);
+
+        // throws error
+        assert!(listener.is_err());
+    }
+}
