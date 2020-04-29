@@ -35,7 +35,7 @@ pub fn create(
             // so if the length of kv_namespaces() is 1 and site exists
             // we know that that one namespace is a site namespace
             // and they need to add the whole array definition to their manifest
-            match (target.kv_namespaces().len(), &target.site) {
+            match (target.kv_namespaces(user, &mut target)?.len(), &target.site) {
                 (0, None) | (1, Some(_)) => {
                     match env {
                         Some(env) => message::success(&format!(

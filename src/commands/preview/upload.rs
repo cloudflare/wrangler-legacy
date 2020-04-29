@@ -55,13 +55,14 @@ pub fn upload(
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
 
-            let missing_fields = validate(&target);
+            let missing_fields = validate(user, &target)?;
 
             if missing_fields.is_empty() {
                 let client = http::legacy_auth_client(&user);
 
                 if let Some(site_config) = target.site.clone() {
-                    let site_namespace = publish::add_site_namespace(user, target, true)?;
+                    // TODO: make this get preview namespace instead
+                    let site_namespace = site_config.kv_namespace(user, target)?;
 
                     let path = Path::new(&site_config.bucket);
                     let (to_upload, to_delete, asset_manifest) =
@@ -120,31 +121,32 @@ pub fn upload(
     Ok(preview.id)
 }
 
-fn validate(target: &Target) -> Vec<&str> {
+fn validate(user: &GlobalUser, target: &Target) -> Result<Vec<String>, failure::Error> {
     let mut missing_fields = Vec::new();
 
     if target.account_id.is_empty() {
-        missing_fields.push("account_id")
+        missing_fields.push("account_id".to_string())
     };
     if target.name.is_empty() {
-        missing_fields.push("name")
+        missing_fields.push("name".to_string())
     };
 
-    for kv in target.kv_namespaces() {
+    for kv in target.kv_namespaces(user, &mut target)? {
         if kv.binding.is_empty() {
-            missing_fields.push("kv-namespace binding")
+            missing_fields.push("kv-namespace binding".to_string())
         }
 
         if kv.id.is_empty() {
-            missing_fields.push("kv-namespace id")
+            missing_fields.push("kv-namespace id".to_string())
         }
     }
 
-    missing_fields
+    Ok(missing_fields)
 }
 
 fn authenticated_upload(
     client: &Client,
+    user: &GlobalUser,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Preview, failure::Error> {
@@ -154,7 +156,7 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = upload::form::build(target, asset_manifest)?;
+    let script_upload_form = upload::form::build_preview(Some(user), target, asset_manifest)?;
 
     let res = client
         .post(&create_address)
@@ -171,22 +173,26 @@ fn authenticated_upload(
     Ok(Preview::from(response.result))
 }
 
-fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
+fn unauthenticated_upload(
+    user: Option<&GlobalUser>,
+    target: &Target,
+) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
     // KV namespaces are not supported by the preview service unless you authenticate
     // so we omit them and provide the user with a little guidance. We don't error out, though,
     // because there are valid workarounds for this for testing purposes.
-    let script_upload_form = if target.kv_namespaces().len() > 0 {
+    // let user = None;
+    let script_upload_form = if target.preview_kv_namespaces(None, &mut target)?.len() > 0 {
         message::warn(
             "KV Namespaces are not supported in preview without setting API credentials and account_id",
         );
         let mut target = target.clone();
         target.remove_all_kv_namespaces();
-        upload::form::build(&target, None)?
+        upload::form::build_preview(user, &target, None)?
     } else {
-        upload::form::build(&target, None)?
+        upload::form::build_preview(user, &target, None)?
     };
     let client = http::client();
     let res = client

@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use crate::commands::build::wranglerjs;
 use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
+use crate::settings::global_user::GlobalUser;
 use crate::settings::metadata::Metadata;
 use crate::settings::toml::{Target, TargetType};
 
@@ -23,11 +24,12 @@ use wasm_module::WasmModule;
 use super::{krate, Package};
 
 pub fn build(
+    user: &GlobalUser,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
-    let kv_namespaces = target.kv_namespaces();
+    let kv_namespaces = target.kv_namespaces(user, &mut target)?;
     let mut text_blobs: Vec<TextBlob> = Vec::new();
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();

@@ -5,6 +5,9 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::commands::generate::run_generate;
+use crate::commands::kv;
+use crate::settings::global_user::GlobalUser;
+use crate::settings::toml::{KvNamespace, Target};
 
 const SITE_ENTRY_POINT: &str = "workers-site";
 
@@ -16,6 +19,8 @@ pub struct Site {
     entry_point: Option<PathBuf>,
     pub include: Option<Vec<String>>,
     pub exclude: Option<Vec<String>>,
+    #[serde(skip)]
+    pub kv_namespace: Option<KvNamespace>,
 }
 
 impl Site {
@@ -24,6 +29,24 @@ impl Site {
         site.bucket = PathBuf::from(bucket);
 
         site
+    }
+
+    pub fn kv_namespace(
+        &self,
+        user: &GlobalUser,
+        target: &mut Target,
+    ) -> Result<KvNamespace, failure::Error> {
+        if let Some(site_namespace) = &self.kv_namespace {
+            Ok(site_namespace.to_owned())
+        } else {
+            let site_namespace_title = format!("__{}-{}", target.name, "workers_sites_assets");
+            let site_namespace = kv::namespace::upsert(target, &user, &site_namespace_title)?;
+            Ok(KvNamespace {
+                id: site_namespace.id,
+                binding: "__STATIC_CONTENT".to_string(),
+                bucket: Some(self.bucket),
+            })
+        }
     }
 
     // if the user has configured `site.entry-point`, use that
@@ -43,7 +66,7 @@ impl Site {
         let template = "https://github.com/cloudflare/worker-sites-init";
 
         if !entry_point.exists() {
-            log::info!("Generating a new workers site project");
+            log::info!("Generating a new Workers Sites project");
             run_generate(entry_point.file_name().unwrap().to_str().unwrap(), template)?;
 
             // This step is to prevent having a git repo within a git repo after
@@ -62,6 +85,7 @@ impl Default for Site {
             entry_point: Some(PathBuf::from(SITE_ENTRY_POINT)),
             include: None,
             exclude: None,
+            kv_namespace: None,
         }
     }
 }

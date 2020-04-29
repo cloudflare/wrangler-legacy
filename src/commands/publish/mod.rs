@@ -10,7 +10,7 @@ use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::deploy;
 use crate::http::{self, Feature};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, KvNamespace, Target};
+use crate::settings::toml::{DeployConfig, Target};
 use crate::terminal::{emoji, message};
 use crate::upload;
 
@@ -20,7 +20,7 @@ pub fn publish(
     deploy_config: DeployConfig,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    validate_target_required_fields_present(target)?;
+    validate_target_required_fields_present(user, target)?;
 
     // Build the script before uploading.
     commands::build(&target)?;
@@ -30,7 +30,7 @@ pub fn publish(
         validate_bucket_location(path)?;
         warn_site_incompatible_route(&deploy_config);
 
-        let site_namespace = add_site_namespace(user, target, false)?;
+        let site_namespace = site_config.kv_namespace(user, target)?;
 
         let (to_upload, to_delete, asset_manifest) = sync(target, user, &site_namespace.id, &path)?;
 
@@ -43,7 +43,7 @@ pub fn publish(
         let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
 
         // Next, upload and deploy the worker with the updated asset_manifest
-        upload::script(&upload_client, &target, Some(asset_manifest))?;
+        upload::script(&upload_client, user, &target, Some(asset_manifest))?;
 
         deploy::worker(&user, &deploy_config)?;
 
@@ -71,7 +71,7 @@ pub fn publish(
             http::legacy_auth_client(user)
         };
 
-        upload::script(&upload_client, &target, None)?;
+        upload::script(&upload_client, user, &target, None)?;
 
         deploy::worker(&user, &deploy_config)?;
     }
@@ -97,34 +97,6 @@ fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
             );
         }
     }
-}
-
-// Updates given Target with kv_namespace binding for a static site assets KV namespace.
-pub fn add_site_namespace(
-    user: &GlobalUser,
-    target: &mut Target,
-    preview: bool,
-) -> Result<KvNamespace, failure::Error> {
-    let site_namespace = kv::namespace::site(target, &user, preview)?;
-
-    // Check if namespace already is in namespace list
-    for namespace in target.kv_namespaces() {
-        if namespace.id == site_namespace.id {
-            return Ok(namespace); // Sites binding already exists; ignore
-        } else if namespace.bucket.is_some() {
-            failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
-        }
-    }
-
-    let site_namespace = KvNamespace {
-        binding: "__STATIC_CONTENT".to_string(),
-        id: site_namespace.id,
-        bucket: Some(target.site.clone().unwrap().bucket),
-    };
-
-    target.add_kv_namespace(site_namespace.clone());
-
-    Ok(site_namespace)
 }
 
 // We don't want folks setting their bucket to the top level directory,
@@ -171,7 +143,7 @@ pub fn sync_non_site_buckets(
 ) -> Result<bool, failure::Error> {
     let mut is_using_non_site_bucket = false;
 
-    for namespace in target.kv_namespaces() {
+    for namespace in target.kv_namespaces(user, &mut target)? {
         if let Some(path) = &namespace.bucket {
             is_using_non_site_bucket = true;
             validate_bucket_location(path)?;
@@ -196,7 +168,10 @@ pub fn sync_non_site_buckets(
     Ok(is_using_non_site_bucket)
 }
 
-fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
+fn validate_target_required_fields_present(
+    user: &GlobalUser,
+    target: &Target,
+) -> Result<(), failure::Error> {
     let mut missing_fields = Vec::new();
 
     if target.account_id.is_empty() {
@@ -206,7 +181,7 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         missing_fields.push("name")
     };
 
-    for kv in target.kv_namespaces() {
+    for kv in target.kv_namespaces(user, &mut target)? {
         if kv.binding.is_empty() {
             missing_fields.push("kv-namespace binding")
         }

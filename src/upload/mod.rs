@@ -7,10 +7,12 @@ pub use package::Package;
 use reqwest::blocking::Client;
 
 use crate::commands::kv::bucket::AssetManifest;
+use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
 pub fn script(
     client: &Client,
+    user: &GlobalUser,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<(), failure::Error> {
@@ -19,7 +21,7 @@ pub fn script(
         target.account_id, target.name,
     );
 
-    let script_upload_form = form::build(target, asset_manifest)?;
+    let script_upload_form = form::build(user, target, asset_manifest)?;
 
     let res = client
         .put(&worker_addr)

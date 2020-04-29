@@ -1,3 +1,4 @@
+use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Manifest;
 
 use super::kv_namespace::KvNamespace;
@@ -70,14 +71,29 @@ impl Target {
         Ok(target)
     }
 
-    pub fn kv_namespaces(&self) -> Vec<KvNamespace> {
-        self.kv_namespaces.clone().unwrap_or_else(Vec::new)
+    pub fn kv_namespaces(
+        &self,
+        user: &GlobalUser,
+        target: &mut Target,
+    ) -> Result<Vec<KvNamespace>, failure::Error> {
+        let kv_namespaces = self.kv_namespaces.clone().unwrap_or_else(Vec::new);
+        if let Some(site) = &self.site {
+            let site_namespace = site.kv_namespace(user, target)?;
+            for kv_namespace in kv_namespaces {
+                if kv_namespace.id == site_namespace.id {
+                    failure::bail!("Namespace {} is reserved for your Workers Site. You will need to remove it from your wrangler.toml to proceed.", kv_namespace.id)
+                }
+            }
+        }
+        Ok(kv_namespaces)
     }
 
     pub fn add_kv_namespace(&mut self, kv_namespace: KvNamespace) {
-        let mut updated_namespaces = self.kv_namespaces();
-        updated_namespaces.push(kv_namespace);
-        self.kv_namespaces = Some(updated_namespaces);
+        if let Some(existing_namespaces) = self.kv_namespaces {
+            existing_namespaces.push(kv_namespace);
+        } else {
+            self.kv_namespaces = Some(vec![kv_namespace]);
+        }
     }
 
     pub fn remove_all_kv_namespaces(&mut self) {
@@ -118,5 +134,20 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(target.kv_namespaces().len(), 1)
+    }
+
+    #[test]
+    fn it_returns_vec_len_2_with_site() {
+        let target = Target {
+            kv_namespaces: Some(vec![KvNamespace {
+                id: "012345".to_string(),
+                binding: "BINDING".to_string(),
+                bucket: None,
+            }]),
+            site: Some(Site::new("./public")),
+            ..Default::default()
+        };
+
+        assert_eq!(target.kv_namespaces().len(), 2)
     }
 }

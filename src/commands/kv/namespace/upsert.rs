@@ -7,25 +7,19 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
 
-pub fn site(
+pub fn upsert(
     target: &Target,
     user: &GlobalUser,
-    preview: bool,
+    namespace_title: &str,
 ) -> Result<WorkersKvNamespace, failure::Error> {
     kv::validate_target(target)?;
 
-    let title = if preview {
-        format!("__{}-{}", target.name, "workers_sites_assets_preview")
-    } else {
-        format!("__{}-{}", target.name, "workers_sites_assets")
-    };
-
     let client = kv::api_client(user)?;
-    let response = kv::namespace::create::call_api(&client, target, &title);
+    let response = kv::namespace::create::call_api(&client, target, &namespace_title);
 
     match response {
         Ok(success) => {
-            let msg = format!("Created namespace for Workers Site \"{}\"", title);
+            let msg = format!("Created namespace \"{}\"", namespace_title);
             message::working(&msg);
             Ok(success.result)
         }
@@ -34,12 +28,12 @@ pub fn site(
                 if api_errors.errors.iter().any(|e| e.code == 10026) {
                     failure::bail!("You will need to enable Workers Unlimited for your account before you can use this feature.")
                 } else if api_errors.errors.iter().any(|e| e.code == 10014) {
-                    log::info!("Namespace {} already exists.", title);
+                    log::info!("Namespace {} already exists.", namespace_title);
 
-                    let msg = format!("Using namespace for Workers Site \"{}\"", title);
+                    let msg = format!("Using namespace \"{}\"", namespace_title);
                     message::working(&msg);
 
-                    get_id_from_namespace_list(&client, target, &title)
+                    get_id_from_namespace_title(&client, target, &namespace_title)
                 } else {
                     failure::bail!("{:?}", api_errors.errors)
                 }
@@ -49,7 +43,7 @@ pub fn site(
     }
 }
 
-fn get_id_from_namespace_list(
+fn get_id_from_namespace_title(
     client: &impl ApiClient,
     target: &Target,
     title: &str,
