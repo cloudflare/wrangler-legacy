@@ -19,8 +19,9 @@ fn it_builds_from_config() {
 
     let manifest = Manifest::new(&toml_path).unwrap();
 
-    let target = manifest.get_target(None).unwrap();
-    assert!(target.kv_namespaces.is_none());
+    let environment_name = None;
+    let target = Target::from_manifest(&manifest, environment_name).unwrap();
+    assert_eq!(target.kv_namespaces().len(), 0);
 }
 
 #[test]
@@ -28,11 +29,13 @@ fn it_builds_from_environments_config() {
     let toml_path = toml_fixture_path("environments");
     let manifest = Manifest::new(&toml_path).unwrap();
 
-    let target = manifest.get_target(None).unwrap();
-    assert!(target.kv_namespaces.is_none());
+    let environment_name = None;
+    let target = Target::from_manifest(&manifest, environment_name).unwrap();
+    assert_eq!(target.kv_namespaces().len(), 0);
 
-    let target = manifest.get_target(Some("production")).unwrap();
-    assert!(target.kv_namespaces.is_none());
+    let environment_name = Some("production");
+    let target = Target::from_manifest(&manifest, environment_name).unwrap();
+    assert_eq!(target.kv_namespaces().len(), 0);
 }
 
 #[test]
@@ -41,10 +44,12 @@ fn it_builds_from_environments_config_with_kv() {
 
     let manifest = Manifest::new(&toml_path).unwrap();
 
-    let target = manifest.get_target(None).unwrap();
-    assert!(target.kv_namespaces.is_none());
+    let environment_name = None;
+    let target = Target::from_manifest(&manifest, environment_name).unwrap();
+    assert_eq!(target.kv_namespaces().len(), 0);
 
-    let target = manifest.get_target(Some("production")).unwrap();
+    let environment_name = Some("production");
+    let target = Target::from_manifest(&manifest, environment_name).unwrap();
     let kv_1 = KvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "prodKV-1".to_string(),
@@ -56,16 +61,13 @@ fn it_builds_from_environments_config_with_kv() {
         bucket: None,
     };
 
-    match target.kv_namespaces {
-        Some(kv_namespaces) => {
-            assert!(kv_namespaces.len() == 2);
-            assert!(kv_namespaces.contains(&kv_1));
-            assert!(kv_namespaces.contains(&kv_2));
-        }
-        None => assert!(false),
-    }
+    let kv_namespaces = target.kv_namespaces();
+    assert_eq!(kv_namespaces.len(), 2);
+    assert!(kv_namespaces.contains(&kv_1));
+    assert!(kv_namespaces.contains(&kv_2));
 
-    let target = manifest.get_target(Some("staging")).unwrap();
+    let environment_name = Some("staging");
+    let target = Target::from_manifest(&manifest, environment_name).unwrap();
     let kv_1 = KvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "stagingKV-1".to_string(),
@@ -76,14 +78,12 @@ fn it_builds_from_environments_config_with_kv() {
         binding: "stagingKV-2".to_string(),
         bucket: None,
     };
-    match target.kv_namespaces {
-        Some(kv_namespaces) => {
-            assert!(kv_namespaces.len() == 2);
-            assert!(kv_namespaces.contains(&kv_1));
-            assert!(kv_namespaces.contains(&kv_2));
-        }
-        None => assert!(false),
-    }
+
+    let kv_namespaces = target.kv_namespaces();
+
+    assert_eq!(kv_namespaces.len(), 2);
+    assert!(kv_namespaces.contains(&kv_1));
+    assert!(kv_namespaces.contains(&kv_2));
 }
 
 #[test]

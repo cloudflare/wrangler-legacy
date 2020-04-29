@@ -21,7 +21,7 @@ use twox_hash::XxHash64;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
-use crate::settings::toml::Target;
+use crate::settings::toml::Site;
 
 pub const KEY_MAX_SIZE: usize = 512;
 // Oddly enough, metadata.len() returns a u64, not usize.
@@ -29,7 +29,7 @@ pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
 
 // Returns the hashed key and value pair for all files in a directory.
 pub fn directory_keys_values(
-    target: &Target,
+    site: Option<Site>,
     directory: &Path,
 ) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
     match &fs::metadata(directory) {
@@ -37,7 +37,7 @@ pub fn directory_keys_values(
             let mut upload_vec: Vec<KeyValuePair> = Vec::new();
             let mut asset_manifest = AssetManifest::new();
 
-            let dir_walker = get_dir_iterator(target, directory)?;
+            let dir_walker = get_dir_iterator(site, directory)?;
             let spinner_style =
                 ProgressStyle::default_spinner().template("{spinner}   Preparing {msg}...");
             let spinner = ProgressBar::new_spinner().with_style(spinner_style);
@@ -117,7 +117,7 @@ fn validate_key_size(key: &str) -> Result<(), failure::Error> {
 const REQUIRED_IGNORE_FILES: &[&str] = &["node_modules"];
 const NODE_MODULES: &str = "node_modules";
 
-fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
+fn get_dir_iterator(site: Option<Site>, directory: &Path) -> Result<Walk, failure::Error> {
     // The directory provided should never be node_modules!
     if let Some(name) = directory.file_name() {
         if name == NODE_MODULES {
@@ -125,14 +125,14 @@ fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::
         }
     };
 
-    let ignore = build_ignore(target, directory)?;
+    let ignore = build_ignore(site, directory)?;
     Ok(WalkBuilder::new(directory)
         .git_ignore(false)
         .overrides(ignore)
         .build())
 }
 
-fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
+fn build_ignore(site: Option<Site>, directory: &Path) -> Result<Override, failure::Error> {
     let mut required_override = OverrideBuilder::new(directory);
     // First include files that must be ignored.
     for ignored in REQUIRED_IGNORE_FILES {
@@ -140,7 +140,7 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::
         log::info!("Ignoring {}", ignored);
     }
 
-    if let Some(site) = &target.site {
+    if let Some(site) = &site {
         // If `include` present, use it and don't touch the `exclude` field
         if let Some(included) = &site.include {
             for i in included {
@@ -253,25 +253,12 @@ mod tests {
     use std::io::Write;
     use std::path::{Path, PathBuf};
 
-    use crate::settings::toml::{Site, Target, TargetType};
-
-    fn make_target(site: Site) -> Target {
-        Target {
-            account_id: "".to_string(),
-            kv_namespaces: None,
-            name: "".to_string(),
-            target_type: TargetType::JavaScript,
-            webpack_config: None,
-            site: Some(site),
-            vars: None,
-        }
-    }
+    use crate::settings::toml::Site;
 
     #[test]
     fn it_can_ignore_node_modules() {
         let mut site = Site::default();
         site.bucket = PathBuf::from("fake");
-        let target = make_target(site);
 
         let test_dir = "test1";
         // If test dir already exists, delete it.
@@ -284,7 +271,7 @@ mod tests {
         let test_path = PathBuf::from(&test_pathname);
         fs::File::create(&test_path).unwrap();
 
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+        let files: Vec<_> = get_dir_iterator(Some(site), Path::new(test_dir))
             .unwrap()
             .map(|entry| entry.unwrap().path().to_owned())
             .collect();
@@ -298,7 +285,6 @@ mod tests {
     fn it_can_ignore_hidden() {
         let mut site = Site::default();
         site.bucket = PathBuf::from("fake");
-        let target = make_target(site);
 
         let test_dir = "test2";
         // If test dir already exists, delete it.
@@ -311,7 +297,7 @@ mod tests {
         let test_path = PathBuf::from(&test_pathname);
         fs::File::create(&test_path).unwrap();
 
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+        let files: Vec<_> = get_dir_iterator(Some(site), Path::new(test_dir))
             .unwrap()
             .map(|entry| entry.unwrap().path().to_owned())
             .collect();
@@ -325,7 +311,6 @@ mod tests {
     fn it_can_allow_unfiltered_files() {
         let mut site = Site::default();
         site.bucket = PathBuf::from("fake");
-        let target = make_target(site);
 
         let test_dir = "test3";
         // If test dir already exists, delete it.
@@ -338,7 +323,7 @@ mod tests {
         let test_path = PathBuf::from(&test_pathname);
         fs::File::create(&test_path).unwrap();
 
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+        let files: Vec<_> = get_dir_iterator(Some(site), Path::new(test_dir))
             .unwrap()
             .map(|entry| entry.unwrap().path().to_owned())
             .collect();
@@ -353,7 +338,6 @@ mod tests {
         let mut site = Site::default();
         site.bucket = PathBuf::from("fake");
         site.include = Some(vec!["this_isnt_here.txt".to_string()]);
-        let target = make_target(site);
 
         let test_dir = "test4";
         // If test dir already exists, delete it.
@@ -366,7 +350,7 @@ mod tests {
         let test_path = PathBuf::from(&test_pathname);
         fs::File::create(&test_path).unwrap();
 
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+        let files: Vec<_> = get_dir_iterator(Some(site), Path::new(test_dir))
             .unwrap()
             .map(|entry| entry.unwrap().path().to_owned())
             .collect();
@@ -381,7 +365,6 @@ mod tests {
         let mut site = Site::default();
         site.bucket = PathBuf::from("fake");
         site.exclude = Some(vec!["ignore_me.txt".to_string()]);
-        let target = make_target(site);
 
         let test_dir = "test5";
         // If test dir already exists, delete it.
@@ -394,7 +377,7 @@ mod tests {
         let test_path = PathBuf::from(&test_pathname);
         fs::File::create(&test_path).unwrap();
 
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+        let files: Vec<_> = get_dir_iterator(Some(site), Path::new(test_dir))
             .unwrap()
             .map(|entry| entry.unwrap().path().to_owned())
             .collect();
@@ -410,7 +393,6 @@ mod tests {
         site.bucket = PathBuf::from("fake");
         site.include = Some(vec!["notice_me.txt".to_string()]);
         site.exclude = Some(vec!["notice_me.txt".to_string()]);
-        let target = make_target(site);
 
         let test_dir = "test6";
         // If test dir already exists, delete it.
@@ -423,7 +405,7 @@ mod tests {
         let test_path = PathBuf::from(&test_pathname);
         fs::File::create(&test_path).unwrap();
 
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
+        let files: Vec<_> = get_dir_iterator(Some(site), Path::new(test_dir))
             .unwrap()
             .map(|entry| entry.unwrap().path().to_owned())
             .collect();
@@ -438,7 +420,6 @@ mod tests {
         // We don't want our wrangler include/exclude functionality to read .gitignore files.
         let mut site = Site::default();
         site.bucket = PathBuf::from("public");
-        let target = make_target(site);
 
         let test_dir = "test7";
         // If test dir already exists, delete it.
@@ -460,7 +441,7 @@ mod tests {
         let test_path = PathBuf::from(&test_pathname);
         fs::File::create(&test_path).unwrap();
 
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(&upload_dir))
+        let files: Vec<_> = get_dir_iterator(Some(site), Path::new(&upload_dir))
             .unwrap()
             .map(|entry| entry.unwrap().path().to_owned())
             .collect();

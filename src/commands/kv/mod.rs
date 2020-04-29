@@ -7,10 +7,9 @@ use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
 
 use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
 
-use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::Target;
-
 use crate::http::{self, feature::headers};
+use crate::settings::global_user::GlobalUser;
+use crate::settings::toml::{KvNamespace, Target};
 
 pub mod bucket;
 pub mod bulk;
@@ -77,45 +76,37 @@ pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
     }
 }
 
-fn check_duplicate_namespaces(target: &Target) -> bool {
+fn check_duplicate_namespaces(kv_namespaces: &[KvNamespace]) -> bool {
     // HashSet for detecting duplicate namespace bindings
     let mut binding_names: HashSet<String> = HashSet::new();
 
-    if let Some(namespaces) = &target.kv_namespaces {
-        for namespace in namespaces {
-            // Check if this is a duplicate binding
-            if binding_names.contains(&namespace.binding) {
-                return true;
-            } else {
-                binding_names.insert(namespace.binding.clone());
-            }
+    for namespace in kv_namespaces {
+        // Check if this is a duplicate binding
+        if binding_names.contains(&namespace.binding) {
+            return true;
+        } else {
+            binding_names.insert(namespace.binding.clone());
         }
     }
     false
 }
 
 // Get namespace id for a given binding name.
-pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failure::Error> {
-    if check_duplicate_namespaces(&target) {
-        failure::bail!(
-            "Namespace binding \"{}\" is duplicated in \"{}\"",
-            binding,
-            target.name
-        )
+pub fn get_namespace_id_from_binding(
+    kv_namespaces: &[KvNamespace],
+    binding: &str,
+) -> Result<String, failure::Error> {
+    if check_duplicate_namespaces(kv_namespaces) {
+        failure::bail!("Namespace binding \"{}\" is duplicated", binding,)
     }
 
-    if let Some(namespaces) = &target.kv_namespaces {
-        for namespace in namespaces {
-            if namespace.binding == binding {
-                return Ok(namespace.id.to_string());
-            }
+    for namespace in kv_namespaces {
+        if namespace.binding == binding {
+            return Ok(namespace.id.to_string());
         }
     }
-    failure::bail!(
-        "Namespace binding \"{}\" not found in \"{}\"",
-        binding,
-        target.name
-    )
+
+    failure::bail!("Namespace binding \"{}\" not found", binding,)
 }
 
 fn url_encode_key(key: &str) -> String {
@@ -129,26 +120,12 @@ mod tests {
 
     #[test]
     fn it_can_detect_duplicate_bindings() {
-        let target_with_dup_kv_bindings = Target {
-            account_id: "".to_string(),
-            kv_namespaces: Some(vec![
-                KvNamespace {
-                    id: "fake".to_string(),
-                    binding: "KV".to_string(),
-                    bucket: None,
-                },
-                KvNamespace {
-                    id: "fake".to_string(),
-                    binding: "KV".to_string(),
-                    bucket: None,
-                },
-            ]),
-            name: "test-target".to_string(),
-            target_type: TargetType::Webpack,
-            webpack_config: None,
-            site: None,
-            vars: None,
+        let duplicate_namespace = KvNamespace {
+            id: "fake".to_string(),
+            binding: "KV".to_string(),
+            bucket: None,
         };
-        assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
+        let kv_namespaces = vec![duplicate_namespace.clone(), duplicate_namespace];
+        assert!(kv::get_namespace_id_from_binding(&kv_namespaces, "").is_err());
     }
 }

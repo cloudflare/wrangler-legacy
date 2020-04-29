@@ -206,19 +206,14 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         missing_fields.push("name")
     };
 
-    match &target.kv_namespaces {
-        Some(kv_namespaces) => {
-            for kv in kv_namespaces {
-                if kv.binding.is_empty() {
-                    missing_fields.push("kv-namespace binding")
-                }
-
-                if kv.id.is_empty() {
-                    missing_fields.push("kv-namespace id")
-                }
-            }
+    for kv in target.kv_namespaces() {
+        if kv.binding.is_empty() {
+            missing_fields.push("kv-namespace binding")
         }
-        None => {}
+
+        if kv.id.is_empty() {
+            missing_fields.push("kv-namespace id")
+        }
     }
 
     let (field_pluralization, is_are) = match missing_fields.len() {

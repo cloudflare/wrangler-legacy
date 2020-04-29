@@ -15,7 +15,6 @@ use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::KvNamespace;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
-use crate::settings::toml::Target;
 use crate::terminal::emoji;
 use crate::terminal::message;
 
@@ -172,46 +171,6 @@ impl Manifest {
         } else {
             DeployConfig::build(&script, &self.route_config())
         }
-    }
-
-    pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
-        // Site projects are always webpack for now; don't let toml override this.
-        let target_type = match self.site {
-            Some(_) => TargetType::Webpack,
-            None => self.target_type.clone(),
-        };
-
-        let mut target = Target {
-            target_type,                                 // MUST inherit
-            account_id: self.account_id.clone(),         // MAY inherit
-            webpack_config: self.webpack_config.clone(), // MAY inherit
-            // importantly, the top level name will be modified
-            // to include the name of the environment
-            name: self.name.clone(),                   // MAY inherit
-            kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
-            site: self.site.clone(),                   // MUST NOT inherit
-            vars: self.vars.clone(),                   // MAY inherit
-        };
-
-        let environment = self.get_environment(environment_name)?;
-
-        if let Some(environment) = environment {
-            target.name = self.worker_name(environment_name);
-            if let Some(account_id) = &environment.account_id {
-                target.account_id = account_id.clone();
-            }
-            if let Some(webpack_config) = &environment.webpack_config {
-                target.webpack_config = Some(webpack_config.clone());
-            }
-
-            // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
-            target.kv_namespaces = environment.kv_namespaces.clone();
-
-            // don't inherit vars
-            target.vars = environment.vars.clone();
-        }
-
-        Ok(target)
     }
 
     pub fn get_environment(

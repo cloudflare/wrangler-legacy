@@ -30,8 +30,13 @@ pub fn create(
         Ok(success) => {
             let namespace = success.result;
             message::success(&format!("Success: {:#?}", namespace));
-            match target.kv_namespaces {
-                None => {
+            // match on the length and the existence of target.site
+            // since kv_namespaces() includes site namespaces
+            // so if the length of kv_namespaces() is 1 and site exists
+            // we know that that one namespace is a site namespace
+            // and they need to add the whole array definition to their manifest
+            match (target.kv_namespaces().len(), &target.site) {
+                (0, None) | (1, Some(_)) => {
                     match env {
                         Some(env) => message::success(&format!(
                             "Add the following to your wrangler.toml under [env.{}]:",
@@ -46,14 +51,14 @@ pub fn create(
                         binding, namespace.id
                     );
                 }
-                Some(_) => {
+                _ => {
                     match env {
                         Some(env) => message::success(&format!(
                             "Add the following to your wrangler.toml's \"kv-namespaces\" array in [env.{}]:",
                             env
                         )),
                         None => message::success("Add the following to your wrangler.toml's \"kv-namespaces\" array:"),
-                    };
+                    }
                     println!("{{ binding = \"{}\", id = \"{}\" }}", binding, namespace.id);
                 }
             }
