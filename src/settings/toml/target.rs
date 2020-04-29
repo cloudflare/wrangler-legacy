@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 pub struct Target {
     pub account_id: String,
     #[serde(rename = "kv-namespaces")]
@@ -43,5 +43,29 @@ impl Target {
                 Ok(current_dir)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_returns_empty_vec() {
+        let target = Target::default();
+        assert_eq!(target.kv_namespaces().len(), 0)
+    }
+
+    #[test]
+    fn it_returns_vec_len_1() {
+        let target = Target {
+            kv_namespaces: Some(vec![KvNamespace {
+                id: "012345".to_string(),
+                binding: "BINDING".to_string(),
+                bucket: None,
+            }]),
+            ..Default::default()
+        };
+        assert_eq!(target.kv_namespaces().len(), 1)
     }
 }
