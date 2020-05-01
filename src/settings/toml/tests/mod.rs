@@ -147,5 +147,5 @@ fn base_fixture_path() -> PathBuf {
 }
 
 fn toml_fixture_path(fixture: &str) -> PathBuf {
-    base_fixture_path().join(fixture)
+    base_fixture_path().join(fixture).with_extension("toml")
 }
