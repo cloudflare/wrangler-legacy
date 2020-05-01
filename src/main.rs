@@ -1,7 +1,7 @@
 #![allow(clippy::redundant_closure)]
 
-#[macro_use]
 extern crate text_io;
+extern crate tokio;
 
 use std::env;
 use std::path::Path;
@@ -9,7 +9,10 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use commands::HTTPMethod;
+use console::style;
 use exitfailure::ExitFailure;
+
+use url::Url;
 
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
@@ -17,8 +20,7 @@ use wrangler::installer;
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
-use wrangler::terminal::emoji;
-use wrangler::terminal::message;
+use wrangler::terminal::{emoji, interactive, message};
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -63,6 +65,15 @@ fn run() -> Result<(), failure::Error> {
         .long("env")
         .takes_value(true)
         .value_name("ENVIRONMENT NAME");
+
+    let secret_name_arg = Arg::with_name("name")
+        .help("Name of the secret variable")
+        .short("n")
+        .long("name")
+        .required(true)
+        .takes_value(true)
+        .index(1)
+        .value_name("VAR_NAME");
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
@@ -233,6 +244,55 @@ fn run() -> Result<(), failure::Error> {
                 )
         )
         .subcommand(
+            SubCommand::with_name("route")
+                .about(&*format!(
+                    "{} List or delete worker routes.",
+                    emoji::ROUTE
+                ))
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    SubCommand::with_name("list")
+                        .about("List all routes associated with a zone (outputs json)")
+                        .arg(environment_arg.clone())
+                )
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .arg(environment_arg.clone())
+                        .about("Delete a route by id")
+                        .arg(
+                            Arg::with_name("route_id")
+                            .help("the id associated with the route you want to delete (find using `wrangler route list`)")
+                            .required(true)
+                            .index(1)
+                        )
+                )
+        )
+        .subcommand(
+            SubCommand::with_name("secret")
+                .about(&*format!(
+                    "{} Generate a secret that can be referenced in the worker script",
+                    emoji::SECRET
+                ))
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    SubCommand::with_name("put")
+                        .about("Create or update a secret variable for a script")
+                        .arg(secret_name_arg.clone())
+                        .arg(environment_arg.clone())
+                )
+                .subcommand(
+                    SubCommand::with_name("delete")
+                        .about("Delete a secret variable from a script")
+                        .arg(secret_name_arg.clone())
+                        .arg(environment_arg.clone())
+                )
+                .subcommand(
+                    SubCommand::with_name("list")
+                        .about("List all secrets for a script")
+                        .arg(environment_arg.clone())
+                )
+        )
+        .subcommand(
             SubCommand::with_name("generate")
                 .about(&*format!(
                     "{} Generate a new worker project",
@@ -326,15 +386,22 @@ fn run() -> Result<(), failure::Error> {
                         .index(2),
                 )
                 .arg(
+                    Arg::with_name("url")
+                        .help("URL to open in the worker preview")
+                        .short("u")
+                        .long("url")
+                        .takes_value(true)
+                )
+                .arg(
                     Arg::with_name("env")
-                        .help("environment to preview")
+                        .help("Environment to preview")
                         .short("e")
                         .long("env")
                         .takes_value(true)
                 )
                 .arg(
                     Arg::with_name("watch")
-                        .help("watch your project for changes and update the preview automagically")
+                        .help("Watch your project for changes and update the preview automagically")
                         .long("watch")
                         .takes_value(false),
                 )
@@ -342,7 +409,48 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("verbose")
                         .long("verbose")
                         .takes_value(false)
-                        .help("toggle verbose output"),
+                        .help("Toggle verbose output"),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("dev")
+                .about(&*format!(
+                    "{} Start a local server for developing your worker",
+                    emoji::EAR
+                ))
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to build")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("port")
+                        .help("port to listen on. defaults to 8787")
+                        .short("p")
+                        .long("port")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("host")
+                        .help("domain to test behind your worker. defaults to example.com")
+                        .short("h")
+                        .long("host")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("ip")
+                        .help("ip to listen on. defaults to localhost")
+                        .short("i")
+                        .long("ip")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output")
                 ),
         )
         .subcommand(
@@ -410,27 +518,30 @@ fn run() -> Result<(), failure::Error> {
 
     let config_path = Path::new("./wrangler.toml");
 
+    let not_recommended_msg = style("(Not Recommended)").red().bold();
+    let recommended_cmd_msg = style("`wrangler config --api-key`").yellow().bold();
+    let api_token_url = style("https://dash.cloudflare.com/profile/api-tokens")
+        .blue()
+        .bold();
+    let token_support_url = style(
+        "https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys",
+    )
+    .blue()
+    .bold();
+
     if let Some(matches) = matches.subcommand_matches("config") {
         // If api-key flag isn't present, use the default auth option (API token)
         let default = !matches.is_present("api-key");
 
         let user: GlobalUser = if default {
             // API Tokens are the default
-            message::big_info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens\n\tand create it using the \"Edit Cloudflare Workers\" template");
-            message::big_info("If you are trying to use your Global API Key instead of an API Token\n\t(Not Recommended), run \"wrangler config --api-key\".\n");
-            println!("Enter API token: ");
-            let mut api_token: String = read!("{}\n");
-            api_token.truncate(api_token.trim_end().len());
+            message::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", api_token_url, not_recommended_msg, recommended_cmd_msg));
+            let api_token: String = interactive::get_user_input("Enter API Token: ");
             GlobalUser::TokenAuth { api_token }
         } else {
-            message::big_info("We don't recommend using your Global API Key! Please consider using an\n\tAPI Token instead.\n\thttps://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys\n");
-            println!("Enter email: ");
-            let mut email: String = read!("{}\n");
-            email.truncate(email.trim_end().len());
-
-            println!("Enter global API key: ");
-            let mut api_key: String = read!("{}\n");
-            api_key.truncate(api_key.trim_end().len());
+            message::billboard(&format!("We don't recommend using your Global API Key!\nPlease consider using an API Token instead.\n\n{}", token_support_url));
+            let email: String = interactive::get_user_input("Enter Email: ");
+            let api_key: String = interactive::get_user_input("Enter Global API Key: ");
 
             GlobalUser::GlobalKeyAuth { email, api_key }
         };
@@ -503,6 +614,18 @@ fn run() -> Result<(), failure::Error> {
 
         let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
 
+        let url = Url::parse(matches.value_of("url").unwrap_or("https://example.com"))?;
+
+        // Validate the URL scheme
+        failure::ensure!(
+            match url.scheme() {
+                "http" => true,
+                "https" => true,
+                _ => false,
+            },
+            "Invalid URL scheme (use either \"https\" or \"http\")"
+        );
+
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
             None => None,
@@ -512,7 +635,18 @@ fn run() -> Result<(), failure::Error> {
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, body, watch, verbose, headless)?;
+        commands::preview(target, user, method, url, body, watch, verbose, headless)?;
+    } else if let Some(matches) = matches.subcommand_matches("dev") {
+        log::info!("Starting dev server");
+        let port = matches.value_of("port");
+        let host = matches.value_of("host");
+        let ip = matches.value_of("ip");
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+        let user = settings::global_user::GlobalUser::new().ok();
+        let verbose = matches.is_present("verbose");
+        commands::dev::dev(target, user, host, port, ip, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -532,10 +666,11 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env)?;
+        let deploy_config = manifest.deploy_config(env)?;
 
         let verbose = matches.is_present("verbose");
 
-        commands::publish(&user, &mut target, verbose)?;
+        commands::publish(&user, &mut target, deploy_config, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
@@ -551,6 +686,69 @@ fn run() -> Result<(), failure::Error> {
             commands::subdomain::set_subdomain(&name, &user, &target)?;
         } else {
             commands::subdomain::get_subdomain(&user, &target)?;
+        }
+    } else if let Some(route_matches) = matches.subcommand_matches("route") {
+        let user = settings::global_user::GlobalUser::new()?;
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let env = matches.value_of("env");
+
+        let env_zone_id = if let Some(environment) = manifest.get_environment(env)? {
+            environment.zone_id.as_ref()
+        } else {
+            None
+        };
+
+        let zone_id: Result<String, failure::Error> = if let Some(zone_id) = env_zone_id {
+            Ok(zone_id.to_string())
+        } else if let Some(zone_id) = manifest.zone_id {
+            Ok(zone_id)
+        } else {
+            failure::bail!(
+                "You must specify a zone_id in `wrangler.toml` to use `wrangler route` commands."
+            )
+        };
+
+        match route_matches.subcommand() {
+            ("list", Some(_)) => {
+                commands::route::list(zone_id?, &user)?;
+            }
+            ("delete", Some(delete_matches)) => {
+                let route_id = delete_matches.value_of("route_id").unwrap();
+                commands::route::delete(zone_id?, &user, route_id)?;
+            }
+            ("", None) => message::warn("route expects a subcommand"),
+            _ => unreachable!(),
+        }
+    } else if let Some(secrets_matches) = matches.subcommand_matches("secret") {
+        log::info!("Getting project settings");
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        log::info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
+
+        match secrets_matches.subcommand() {
+            ("put", Some(create_matches)) => {
+                let name = create_matches.value_of("name");
+                let env = create_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                if let Some(name) = name {
+                    commands::secret::create_secret(&name, &user, &target)?;
+                }
+            }
+            ("delete", Some(delete_matches)) => {
+                let name = delete_matches.value_of("name");
+                let env = delete_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                if let Some(name) = name {
+                    commands::secret::delete_secret(&name, &user, &target)?;
+                }
+            }
+            ("list", Some(list_matches)) => {
+                let env = list_matches.value_of("env");
+                let target = manifest.get_target(env)?;
+                commands::secret::list_secrets(&user, &target)?;
+            }
+            ("", None) => message::warn("secret expects a subcommand"),
+            _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::toml::Manifest::new(config_path)?;

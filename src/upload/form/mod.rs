@@ -1,8 +1,9 @@
+mod plain_text;
 mod project_assets;
 mod text_blob;
 mod wasm_module;
 
-use reqwest::multipart::{Form, Part};
+use reqwest::blocking::multipart::{Form, Part};
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -13,10 +14,12 @@ use crate::settings::binding;
 use crate::settings::metadata::Metadata;
 use crate::settings::toml::{Target, TargetType};
 
+use plain_text::PlainText;
 use project_assets::ProjectAssets;
 use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
+// TODO: https://github.com/cloudflare/wrangler/issues/1083
 use super::{krate, Package};
 
 pub fn build(
@@ -25,6 +28,16 @@ pub fn build(
 ) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
     let kv_namespaces = target.kv_namespaces();
+    let mut text_blobs: Vec<TextBlob> = Vec::new();
+    let mut plain_texts: Vec<PlainText> = Vec::new();
+    let mut wasm_modules: Vec<WasmModule> = Vec::new();
+
+    if let Some(vars) = &target.vars {
+        for (key, value) in vars.iter() {
+            plain_texts.push(PlainText::new(key.clone(), value.clone())?)
+        }
+    }
+
     match target_type {
         TargetType::Rust => {
             log::info!("Rust project detected. Publishing...");
@@ -36,11 +49,16 @@ pub fn build(
             let path = PathBuf::from(format!("./pkg/{}_bg.wasm", name));
             let binding = "wasm".to_string();
             let wasm_module = WasmModule::new(path, binding)?;
-
+            wasm_modules.push(wasm_module);
             let script_path = PathBuf::from("./worker/generated/script.js");
 
-            let assets =
-                ProjectAssets::new(script_path, vec![wasm_module], kv_namespaces, Vec::new())?;
+            let assets = ProjectAssets::new(
+                script_path,
+                wasm_modules,
+                kv_namespaces,
+                text_blobs,
+                plain_texts,
+            )?;
 
             build_form(&assets)
         }
@@ -51,7 +69,13 @@ pub fn build(
 
             let script_path = package.main(&build_dir)?;
 
-            let assets = ProjectAssets::new(script_path, Vec::new(), kv_namespaces, Vec::new())?;
+            let assets = ProjectAssets::new(
+                script_path,
+                wasm_modules,
+                kv_namespaces,
+                text_blobs,
+                plain_texts,
+            )?;
 
             build_form(&assets)
         }
@@ -63,16 +87,12 @@ pub fn build(
 
             let script_path = bundle.script_path();
 
-            let mut wasm_modules = Vec::new();
-
             if bundle.has_wasm() {
                 let path = bundle.wasm_path();
                 let binding = bundle.get_wasm_binding();
                 let wasm_module = WasmModule::new(path, binding)?;
                 wasm_modules.push(wasm_module);
             }
-
-            let mut text_blobs = Vec::new();
 
             if let Some(asset_manifest) = asset_manifest {
                 log::info!("adding __STATIC_CONTENT_MANIFEST");
@@ -82,7 +102,13 @@ pub fn build(
                 text_blobs.push(text_blob);
             }
 
-            let assets = ProjectAssets::new(script_path, wasm_modules, kv_namespaces, text_blobs)?;
+            let assets = ProjectAssets::new(
+                script_path,
+                wasm_modules,
+                kv_namespaces,
+                text_blobs,
+                plain_texts,
+            )?;
 
             build_form(&assets)
         }

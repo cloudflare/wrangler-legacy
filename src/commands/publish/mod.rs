@@ -1,241 +1,199 @@
-mod krate;
-pub mod package;
-mod route;
-pub mod upload_form;
-
-pub use package::Package;
-
-use route::Route;
-
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+use console::style;
 
 use crate::commands;
 use crate::commands::kv;
-use crate::commands::kv::bucket::AssetManifest;
-use crate::commands::subdomain::Subdomain;
-use crate::commands::validate_worker_name;
-use crate::http;
+use crate::commands::kv::bucket::{sync, upload_files};
+use crate::commands::kv::bulk::delete::delete_bulk;
+use crate::deploy;
+use crate::http::{self, Feature};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{KvNamespace, Site, Target};
+use crate::settings::toml::{DeployConfig, KvNamespace, Target};
 use crate::terminal::{emoji, message};
+use crate::upload;
 
 pub fn publish(
     user: &GlobalUser,
     target: &mut Target,
+    deploy_config: DeployConfig,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let msg = match &target.route {
-        Some(route) => &route,
-        None => "workers_dev",
-    };
-
-    log::info!("{}", msg);
-
     validate_target_required_fields_present(target)?;
-    validate_worker_name(&target.name)?;
-
-    if let Some(site_config) = target.site.clone() {
-        if let Some(route) = &target.route {
-            if !route.ends_with('*') {
-                message::warn(&format!("The route in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\nroute = {}*", route));
-            }
-        }
-        bind_static_site_contents(user, target, &site_config, false)?;
-    }
-
-    let asset_manifest = upload_buckets(target, user, verbose)?;
 
     // Build the script before uploading.
     commands::build(&target)?;
 
-    publish_script(&user, &target, asset_manifest)?;
+    if let Some(site_config) = &target.site {
+        let path = &site_config.bucket.clone();
+        validate_bucket_location(path)?;
+        warn_site_incompatible_route(&deploy_config);
+
+        let site_namespace = add_site_namespace(user, target, false)?;
+
+        let (to_upload, to_delete, asset_manifest) = sync(target, user, &site_namespace.id, &path)?;
+
+        // First, upload all existing files in bucket directory
+        if verbose {
+            message::info("Preparing to upload updated files...");
+        }
+        upload_files(target, user, &site_namespace.id, to_upload)?;
+
+        let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
+
+        // Next, upload and deploy the worker with the updated asset_manifest
+        upload::script(&upload_client, &target, Some(asset_manifest))?;
+
+        deploy::worker(&user, &deploy_config)?;
+
+        // Finally, remove any stale files
+        if !to_delete.is_empty() {
+            if verbose {
+                message::info("Deleting stale files...");
+            }
+
+            delete_bulk(target, user, &site_namespace.id, to_delete)?;
+        }
+    } else {
+        let uses_kv_bucket = sync_non_site_buckets(target, user, verbose)?;
+
+        let upload_client = if uses_kv_bucket {
+            let wrangler_toml = style("`wrangler.toml`").yellow().bold();
+            let issue_link = style("https://github.com/cloudflare/wrangler/issues/1136")
+                .blue()
+                .bold();
+            let msg = format!("As of 1.9.0, you will no longer be able to specify a bucket for a kv namespace in your {}.\nIf your application depends on this feature, please file an issue with your use case here:\n{}", wrangler_toml, issue_link);
+            message::deprecation_warning(&msg);
+
+            http::featured_legacy_auth_client(user, Feature::Bucket)
+        } else {
+            http::legacy_auth_client(user)
+        };
+
+        upload::script(&upload_client, &target, None)?;
+
+        deploy::worker(&user, &deploy_config)?;
+    }
 
     Ok(())
 }
 
+// This checks all of the configured routes for the wildcard ending and warns
+// the user that their site may not work as expected without it.
+fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
+    if let DeployConfig::Zoned(zoned) = &deploy_config {
+        let mut no_star_routes = Vec::new();
+        for route in &zoned.routes {
+            if !route.pattern.ends_with('*') {
+                no_star_routes.push(route.pattern.to_string());
+            }
+        }
+
+        if !no_star_routes.is_empty() {
+            message::warn(&format!(
+                "The following routes in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\n{}",
+                no_star_routes.join("\n"))
+            );
+        }
+    }
+}
+
 // Updates given Target with kv_namespace binding for a static site assets KV namespace.
-pub fn bind_static_site_contents(
+pub fn add_site_namespace(
     user: &GlobalUser,
     target: &mut Target,
-    site_config: &Site,
     preview: bool,
-) -> Result<(), failure::Error> {
+) -> Result<KvNamespace, failure::Error> {
     let site_namespace = kv::namespace::site(target, &user, preview)?;
 
     // Check if namespace already is in namespace list
     for namespace in target.kv_namespaces() {
         if namespace.id == site_namespace.id {
-            return Ok(()); // Sites binding already exists; ignore
+            return Ok(namespace); // Sites binding already exists; ignore
+        } else if namespace.bucket.is_some() {
+            failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
         }
     }
 
-    target.add_kv_namespace(KvNamespace {
+    let site_namespace = KvNamespace {
         binding: "__STATIC_CONTENT".to_string(),
         id: site_namespace.id,
-        bucket: Some(site_config.bucket.to_owned()),
-    });
-    Ok(())
+        bucket: Some(target.site.clone().unwrap().bucket),
+    };
+
+    target.add_kv_namespace(site_namespace.clone());
+
+    Ok(site_namespace)
 }
 
-fn publish_script(
-    user: &GlobalUser,
-    target: &Target,
-    asset_manifest: Option<AssetManifest>,
-) -> Result<(), failure::Error> {
-    let worker_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
-        target.account_id, target.name,
-    );
-
-    let client = if target.site.is_some() {
-        http::auth_client(Some("site"), user)
-    } else {
-        http::auth_client(None, user)
-    };
-
-    let script_upload_form = upload_form::build(target, asset_manifest)?;
-
-    let mut res = client
-        .put(&worker_addr)
-        .multipart(script_upload_form)
-        .send()?;
-
-    let res_status = res.status();
-    let res_text = res.text()?;
-
-    if !res_status.is_success() {
-        failure::bail!(error_msg(res_status, res_text))
+// We don't want folks setting their bucket to the top level directory,
+// which is where wrangler commands are always called from.
+pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> {
+    // TODO: this should really use a convenience function for "Wrangler Project Root"
+    let current_dir = env::current_dir()?;
+    if bucket.as_os_str() == current_dir {
+        failure::bail!(
+            "{} Your bucket cannot be set to the parent directory of your wrangler.toml",
+            emoji::WARN
+        )
     }
-
-    let pattern = if target.route.is_some() {
-        let route = Route::new(&target)?;
-        Route::publish(&user, &target, &route)?;
-        log::info!("publishing to route");
-        route.pattern
-    } else {
-        log::info!("publishing to subdomain");
-        publish_to_subdomain(target, user)?
-    };
-
-    log::info!("{}", &pattern);
-    message::success(&format!(
-        "Successfully published your script to {}",
-        &pattern
-    ));
+    let path = Path::new(&bucket);
+    if !path.exists() {
+        failure::bail!(
+            "{} bucket directory \"{}\" does not exist",
+            emoji::WARN,
+            path.display()
+        )
+    } else if !path.is_dir() {
+        failure::bail!(
+            "{} bucket \"{}\" is not a directory",
+            emoji::WARN,
+            path.display()
+        )
+    }
 
     Ok(())
 }
 
-fn error_msg(status: reqwest::StatusCode, text: String) -> String {
-    if text.contains("\"code\": 10034,") {
-        "You need to verify your account's email address before you can publish. You can do this by checking your email or logging in to https://dash.cloudflare.com.".to_string()
-    } else if text.contains("\"code\":10000,") {
-        "Your user configuration is invalid, please run wrangler config and enter a new set of credentials.".to_string()
-    } else {
-        format!("Something went wrong! Status: {}, Details {}", status, text)
-    }
-}
-
-#[test]
-fn fails_with_good_error_msg_on_verify_email_err() {
-    let status = reqwest::StatusCode::FORBIDDEN;
-    let text = r#"{
-  "result": null,
-  "success": false,
-  "errors": [
-    {
-      "code": 10034,
-      "message": "workers.api.error.email_verification_required"
-    }
-  ],
-  "messages": []
-}"#
-    .to_string();
-    let result = error_msg(status, text);
-    assert!(result.contains("https://dash.cloudflare.com"));
-}
-
-pub fn upload_buckets(
+// This is broken into a separate step because the intended design does not
+// necessarily intend for bucket support outside of the [site] usage, especially
+// since assets are still hashed. In a subsequent release, we will either
+// deprecate this step, or we will integrate it more closely and adapt to user
+// feedback.
+//
+// In order to track usage of this "feature", this function returns a bool that
+// indicates whether any non-site kv namespaces were specified / uploaded.
+pub fn sync_non_site_buckets(
     target: &Target,
     user: &GlobalUser,
     verbose: bool,
-) -> Result<Option<AssetManifest>, failure::Error> {
-    let mut asset_manifest = None;
-    for namespace in &target.kv_namespaces() {
-        if let Some(bucket) = &namespace.bucket {
-            // We don't want folks setting their bucket to the top level directory,
-            // which is where wrangler commands are always called from.
-            let current_dir = env::current_dir()?;
-            if bucket.as_os_str() == current_dir {
-                failure::bail!(
-                    "{} You need to specify a bucket directory in your wrangler.toml",
-                    emoji::WARN
-                )
+) -> Result<bool, failure::Error> {
+    let mut is_using_non_site_bucket = false;
+
+    for namespace in target.kv_namespaces() {
+        if let Some(path) = &namespace.bucket {
+            is_using_non_site_bucket = true;
+            validate_bucket_location(path)?;
+            let (to_upload, to_delete, _) = kv::bucket::sync(target, user, &namespace.id, path)?;
+            // First, upload all existing files in bucket directory
+            if verbose {
+                message::info("Preparing to upload updated files...");
             }
-            let path = Path::new(&bucket);
-            if !path.exists() {
-                failure::bail!(
-                    "{} bucket directory \"{}\" does not exist",
-                    emoji::WARN,
-                    path.display()
-                )
-            } else if !path.is_dir() {
-                failure::bail!(
-                    "{} bucket \"{}\" is not a directory",
-                    emoji::WARN,
-                    path.display()
-                )
-            }
-            let manifest_result = kv::bucket::sync(target, user, &namespace.id, path, verbose)?;
-            if target.site.is_some() {
-                if asset_manifest.is_none() {
-                    asset_manifest = Some(manifest_result)
-                } else {
-                    // only site manifest should be returned
-                    unreachable!()
+            upload_files(target, user, &namespace.id, to_upload)?;
+
+            // Finally, remove any stale files
+            if !to_delete.is_empty() {
+                if verbose {
+                    message::info("Deleting stale files...");
                 }
+
+                delete_bulk(target, user, &namespace.id, to_delete)?;
             }
         }
     }
 
-    Ok(asset_manifest)
-}
-
-fn build_subdomain_request() -> String {
-    serde_json::json!({ "enabled": true }).to_string()
-}
-
-fn publish_to_subdomain(target: &Target, user: &GlobalUser) -> Result<String, failure::Error> {
-    log::info!("checking that subdomain is registered");
-    let subdomain = Subdomain::get(&target.account_id, user)?;
-    let subdomain = match subdomain {
-        Some(subdomain) => subdomain,
-        None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
-    };
-
-    let sd_worker_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
-        target.account_id, target.name,
-    );
-
-    let client = http::auth_client(None, user);
-
-    log::info!("Making public on subdomain...");
-    let mut res = client
-        .post(&sd_worker_addr)
-        .header("Content-type", "application/json")
-        .body(build_subdomain_request())
-        .send()?;
-
-    if !res.status().is_success() {
-        failure::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
-    }
-    Ok(format!("https://{}.{}.workers.dev", target.name, subdomain))
+    Ok(is_using_non_site_bucket)
 }
 
 fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
@@ -263,26 +221,6 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         None => {}
     }
 
-    let destination = if target.route.is_some() {
-        // check required fields for publishing to a route
-        if target
-            .zone_id
-            .as_ref()
-            .unwrap_or(&"".to_string())
-            .is_empty()
-        {
-            missing_fields.push("zone_id")
-        };
-        if target.route.as_ref().unwrap_or(&"".to_string()).is_empty() {
-            missing_fields.push("route")
-        };
-        // zoned deploy destination
-        "a route"
-    } else {
-        // zoneless deploy destination
-        "your subdomain"
-    };
-
     let (field_pluralization, is_are) = match missing_fields.len() {
         n if n >= 2 => ("fields", "are"),
         1 => ("field", "is"),
@@ -291,12 +229,11 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "{} Your wrangler.toml is missing the {} {:?} which {} required to publish to {}!",
+            "{} Your wrangler.toml is missing the {} {:?} which {} required to publish your worker!",
             emoji::WARN,
             field_pluralization,
             missing_fields,
             is_are,
-            destination
         );
     };
 

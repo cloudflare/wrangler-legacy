@@ -1,5 +1,469 @@
 # Changelog
 
+## 🎭 1.8.4
+
+- ### Fixes
+
+  - **Don't remove user configuration on npm installs - [EverlastingBugstopper], [issue/1180] [pull/1181]**
+
+    Wrangler started removing user's authentication configuration files on reinstallation from npm - this is no good and is fixed in this release.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1181]: https://github.com/cloudflare/wrangler/pull/1181
+    [issue/1180]: https://github.com/cloudflare/wrangler/issues/1180
+
+  - **Allow multiline files to be piped to `wrangler secret put` - [EverlastingBugstopper], [issue/1132] [pull/1171]**
+
+    Previously, if you tried to pipe a multiline file to `wrangler secret put`, the secret would only upload the first line of the file. This... was not helpful - `cat hello_world.txt | wrangler secret put` should behave as expected with this release.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1171]: https://github.com/cloudflare/wrangler/pull/1171
+    [issue/1132]: https://github.com/cloudflare/wrangler/issues/1132
+
+- ### Maintenance
+
+  - **Bump GitHub Actions checkout version - [imbsky], [pull/1170]**
+
+    GitHub Actions are pretty nifty, and we've started using them as our CI provider in Wrangler. Actions allow you to specify a step that "uses" a template, and one of the most used templates is the template that checks out relevant code. GitHub just released v2 of that template, and our CI now uses it!
+
+    [imbsky]: https://github.com/imbsky
+    [pull/1170]: https://github.com/cloudflare/wrangler/pull/1170
+
+## 🍟 1.8.3
+
+- ### Features
+
+  - **Improvements to the Workers Sites asset manifest - [EverlastingBugstopper], [issue/897] [pull/1145]**
+
+    Workers Sites uses the concept of an asset manifest to invalidate Cloudflare's cache when new files are published. Every time you publish your Workers Site, Wrangler will re-create a mapping of file names with a hash to the contents of the file. This release includes a few steps that improve this experience:
+
+    - Manifest sizes are smaller by a magnitude of ~6.4. This should help some folks who were previously running into size issues when uploading a Workers Site.
+
+    - Any time an asset manifest is created, you will see the files that are being hashed in real time with a fancy loading spinner - no more waiting without any information!
+
+    - Asset manifest creation is now faster due to a  refactor.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1145]: https://github.com/cloudflare/wrangler/pull/1145
+    [issue/897]: https://github.com/cloudflare/wrangler/issues/897
+
+  - **Clarify mutual exclusivity of zoneless v. zoned deploys - [EverlastingBugstopper], [issue/1152] [pull/1154]**
+
+    When publishing a Worker, you must specify either `workers_dev = true` or both a `zone_id` and `route/routes`. Previously, if your `wrangler.toml` violated this requirement, it would error with the following message:
+
+    ```console
+    $ wrangler publish
+    Error: you must set workers_dev = true OR provide a zone_id and route/routes.
+    ```
+
+    It's technically correct, but we can make it even more clear what the issue is. The new error message looks like:
+
+    ```console
+    $ wrangler publish
+    Error: you must set EITHER workers_dev = true OR provide a zone_id and route/routes.
+    ```
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1154]: https://github.com/cloudflare/wrangler/pull/1154
+    [issue/1152]: https://github.com/cloudflare/wrangler/issues/1152
+
+- ### Fixes
+
+  - **Fixes `wrangler config` information message - [EverlastingBugstopper], [pull/1164]**
+
+    In Wrangler 1.8.2, we updated the formatting of some of Wrangler's informational messages. Unfortunately when this was introduced, it came with a bug in `wrangler config` that made the message read out in the wrong order. This is fixed in this release!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1164]: https://github.com/cloudflare/wrangler/pull/1164
+
+- ### Maintenance
+
+  - **Remove unused badges from README - [EverlastingBugstopper], [pull/1166]**
+
+    We no longer use Azure Pipelines as our CI provider, nor do we run non-test builds in CI so we removed those badges from the README.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1166]: https://github.com/cloudflare/wrangler/pull/1166
+
+## 🐈 1.8.2
+
+- ### Features
+
+  - **Configurable binary host URL - [noherczeg], [pull/1018]**
+
+    Previously, binaries installed by Wrangler were all assumed to come from npm. If you work in a controlled environment and can only install binaries from a specific endpoint (instead of npm), you can now specify that endpoint using the WRANGLER_BINARY_HOST environment variable.
+
+    [pull/1018]: https://github.com/cloudflare/wrangler/pull/1018
+    [noherczeg]: https://github.com/noherczeg
+
+- ### Fixes
+
+  - **Eliminate downtime when redeploying Workers Sites - [ashleymichal], [issue/783], [pull/1115]**
+
+    When Workers Sites were first introduced, redeploying a site could lead to a few seconds of downtime if the Worker upload fails. Specifically, if a new Workers Sites upload failed, it was possible that the old, now-unused files in Workers KV would be deleted anyways, meaning that the preexisting Workers Site would suddenly have missing resources. This fix waits to delete now-unused files until after a new Workers Sites script is published.
+
+    [issue/783]: https://github.com/cloudflare/wrangler/issues/783
+    [pull/1115]: https://github.com/cloudflare/wrangler/pull/1115
+    [ashleymichal]: https://github.com/ashleymichal
+
+- ### Maintenance
+
+  - **Add npm badge to README - [tomByrer], [pull/1121]**
+
+    Add badge to README that points to npm page for Wrangler.
+
+    [pull/1115]: https://github.com/cloudflare/wrangler/pull/1121
+    [tomByrer]: https://github.com/tomByrer
+
+  - **Unify attention-grabbing messages - [EverlastingBugstopper], [pull/1128]**
+
+    Use more actionable, easy-to-read information printouts throughout Wrangler.
+
+    [pull/1115]: https://github.com/cloudflare/wrangler/pull/1128
+    [tomByrer]: https://github.com/EverlastingBugstopper
+
+## 😈 1.8.1
+
+- ### Features
+
+  - **Error messaging for internet required to talk to Cloudflare API - [EverlastingBugstopper], [issue/1093] [pull/1114]**
+
+    With the release of `wrangler dev` in 1.8.0, it was not clear to users that internet is required since the feature communicates with Cloudflare's API. With this error message, users without internet connection are shown actionable next steps - check internet connection and lastly check if Cloudflare's API is down.
+
+    [issue/1093]: https://github.com/cloudflare/wrangler/issues/1093
+    [pull/1114]: https://github.com/cloudflare/wrangler/pull/1114
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+
+- ### Fixes
+
+  - **Fix live reload for `wrangler dev` - [EverlastingBugstopper], [issue/1082] [pull/1117]**
+
+    `wrangler dev` re-builds and re-uploads your script to the Cloudflare API when it detects a file change. The Cloudflare API returns a new token which allows `wrangler dev` to route subsequent requests to the new script. Previously, `wrangler dev` would re-build, re-upload, and receive the new token, but it wouldn't use it for a couple of minutes due to some faulty threading logic. (darn mutexes!) After this change, `wrangler dev` will block incoming requests when it is switching the token, thus fixing the issue.
+
+    [issue/1082]: https://github.com/cloudflare/wrangler/issues/1082
+    [pull/1117]: https://github.com/cloudflare/wrangler/pull/1117
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+
+  - **Remove unneeded carriage return in `wrangler secret put` - [gabbifish], [issue/1109] [pull/1112]**
+
+    Previously, interactive input from `wrangler secret put` added a carriage return to the secret key/value pairs on Windows. This no longer happens and input is parsed properly before uploading.
+
+    [issue/1109]: https://github.com/cloudflare/wrangler/issues/1109
+    [pull/1112]: https://github.com/cloudflare/wrangler/pull/1112
+    [gabbifish]: https://github.com/gabbifish
+
+## 🙊 1.8.0
+
+- ### Features
+
+  - **`wrangler dev` - [EverlastingBugstopper], [issue/845] [pull/883]**
+
+    `wrangler dev` is a local proxy server to Cloudflare's preview service, allowing you to automatically re-build and preview your application on `localhost`. This feature is in alpha and we're looking for feedback and bug reports: check out [this issue](https://github.com/cloudflare/wrangler/issues/1047)!
+
+    `wrangler dev` works very similarly to `wrangler preview`, but instead of opening your browser to preview your Worker, it will start a server on `localhost` that will execute your Worker on incoming HTTP requests:
+
+    ```
+    $ wrangler dev
+    ```
+
+    You should be able to send HTTP requests to `localhost:8787`, along with any headers or other request data, and your Worker should execute as expected. Additionally, you'll see `console.log` messages and exceptions appearing in your terminal (!!!).
+
+    For more information on `wrangler dev`'s options, such as passing a custom `host`, `ip`, or `port`, run `wrangler dev` in your terminal for the available flags and options.
+
+    [issue/845]: https://github.com/cloudflare/wrangler/issues/845
+    [pull/883]: https://github.com/cloudflare/wrangler/pull/883
+
+  - **Multi-route support - [ashleymichal], [issue/866] [pull/916]**
+
+    Wrangler now allows developers to publish their Workers projects to multiple routes on a Cloudflare zone.
+
+    To deploy your Workers project to multiple routes, you can migrate from the `route` key to `routes`:
+
+    ```toml
+    name = "worker"
+    type = "javascript"
+    account_id = "youraccountid"
+    # change this line
+    # route = "example.com/foo/*"
+    # to this line
+    routes = ["example.com/foo/*", "example.com/bar/*"]
+    zone_id = "yourzoneid"
+    ```
+
+    [issue/866]: https://github.com/cloudflare/wrangler/issues/866
+    [pull/916]: https://github.com/cloudflare/wrangler/pull/916
+
+  - **`wrangler secret` commands - [ashleymichal], [bradyjoslin], [issue/907] [issue/909] [issue/912] [pull/1045]**
+
+    Wrangler now allows developers to use **secrets** in their Workers codebase. Secrets are secure values that can be accessed as constants, similar to text variables, inside of your Workers code.
+
+    To set a secret, you can use `wrangler secret put MY_SECRET_NAME`. The interactive prompt will ask for the secret text you'd like to add to your project:
+
+    ```bash
+    $ wrangler secret put MY_SECRET_NAME
+    Enter the secret text you'd like assigned to the variable MY_SECRET_NAME on the script named my-project
+    ```
+
+    Importantly, secrets are constrained to an environment, and do not carry over between different deployed Workers (e.g. `my-worker` and `my-worker-production`). This allows you to use different API keys, URLs, and other common "environment variable"-style values in your different environments. Specifying an environment can be done using the `--env` (or `-e`, for short):
+
+    ```bash
+    $ wrangler secret put MY_SECRET_NAME --env production
+    Enter the secret text you'd like assigned to the variable MY_SECRET_NAME on the script named my-project-production
+    ```
+
+    The `wrangler secret` subcommand also allows developers to `list` and `delete` secrets for your Workers projects:
+
+    ```bash
+    $ wrangler secret delete MY_SECRET_NAME
+    Are you sure you want to permanently delete the variable MY_SECRET_NAME on the script named my-project [y/n] y
+    🌀  Deleting the secret MY_SECRET_NAME on script my-project.
+    ✨  You've deleted the secret MY_SECRET_NAME.
+
+    $ wrangler secret list
+    [{"name":"API_KEY","type":"secret_text"},{"name":"MY_OTHER_SECRET","type":"secret_text"}]
+    ```
+
+    [issue/907]: https://github.com/cloudflare/wrangler/issues/907
+    [issue/909]: https://github.com/cloudflare/wrangler/issues/909
+    [issue/912]: https://github.com/cloudflare/wrangler/issues/912
+    [pull/1045]: https://github.com/cloudflare/wrangler/pull/1045
+    [issue/1100]: https://github.com/cloudflare/wrangler/issues/1100
+    [pull/1101]: https://github.com/cloudflare/wrangler/pull/1101
+
+  - **Plain text binding support - [EverlastingBugstopper] - [issue/993] [pull/1014]**
+
+    In addition to secrets, Wrangler now also supports setting "plain text" bindings – values that will be available as constants in your Workers code, but aren't encrypted. This can be done by passing values in `wrangler.toml` under the `vars` key:
+
+    ```toml
+    name = "worker"
+    type = "javascript"
+    account_id = "your-account-id"
+    workers_dev = true
+    vars = { ENV = "staging" }
+    [env.prod]
+    vars = { ENV = "production" }
+    ```
+
+    [issue/993]: https://github.com/cloudflare/wrangler/issues/993
+    [pull/1014]: https://github.com/cloudflare/wrangler/pull/1014
+
+  - **Return accounts and account IDs when running `wrangler whoami` - [ashleygwilliams], [issue/630] [pull/983]**
+
+    We've made big improvements to `wrangler whoami`, and now return a list of Cloudflare accounts and account IDs for your authenticated user. If you are unauthenticated, or something is wrong with your API key or token, we'll also return an error with this command to help you understand how to fix your authentication issues!
+
+    ![Preview](https://user-images.githubusercontent.com/1163554/71917894-c624e580-3146-11ea-9793-1e8f8a92a4ea.png)
+
+    [issue/630]: https://github.com/cloudflare/wrangler/issues/630
+    [pull/983]: https://github.com/cloudflare/wrangler/pull/983
+
+  - **Configure sourcemap file - [xtuc], [issue/681] [pull/1063]**
+
+    `webpack` (by default) emits a sourcemap that maps to a `main.js` file, which doesn't match the Workers runtime's configured filename, `worker.js`. This causes exception reporting tools to be unable to process a Workers sourcemap file – we've updated our Webpack config to output the file `worker.js` and have fixed this issue.
+
+    [issue/681]: https://github.com/cloudflare/wrangler/issues/681
+    [pull/1063]: https://github.com/cloudflare/wrangler/pull/1063
+
+  - **Upload "draft" worker if secret is created before initial worker script has been uploaded - [gabbifish], [issue/913] [pull/1087]**
+
+    If your script hasn't yet been deployed to the Workers platform, creating and deleting secrets will also create a "draft" Worker – allowing you to still manage secret bindings before you deploy the first version of your script.
+
+    [issue/913]: https://github.com/cloudflare/wrangler/issues/913
+    [pull/1087]: https://github.com/cloudflare/wrangler/pull/1087
+
+- ### Maintenance
+
+  - **Correctly tar release binaries - [EverlastingBugstopper], [issue/1055] [pull/1062]**
+
+    This PR updates the way that release binaries are generated during Wrangler's release workflow.
+
+    [issue/1055]: https://github.com/cloudflare/wrangler/issues/1055
+    [pull/1062]: https://github.com/cloudflare/wrangler/pull/1062
+
+  - **Change NPM binary permissions - [xtuc], [pull/1058]**
+
+    This PR removes an unnecessary executable permission from `npm/binary.js`.
+
+    [pull/1058]: https://github.com/cloudflare/wrangler/pull/1058
+
+  - **Improvements to GitHub Actions build process - [EverlastingBugstopper], [pull/1037]**
+
+    This PR adds a number of improvements to wrangler's GitHub Actions workflows, including caching, release management, and more granular trigger conditions.
+
+    [pull/1037]: https://github.com/cloudflare/wrangler/pull/1037
+
+  - **Add GitHub Actions badge to README - [EverlastingBugstopper], [pull/1030]**
+
+    This PR adds a GitHub Actions badge to our README, indicating whether the repo's builds are currently passing:
+
+    [![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Rust%20Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+
+    [pull/1030]: https://github.com/cloudflare/wrangler/pull/1030
+
+  - **Test Rust with GitHub Actions - [EverlastingBugstopper], [pull/1028]**
+
+    This PR adds a GitHub Actions workflow for running `wrangler`'s test suite on a number of platforms and Rust versions.
+
+    [pull/1028]: https://github.com/cloudflare/wrangler/pull/1028
+
+  - **Add release checklist - [EverlastingBugstopper], [pull/1021]**
+
+    This PR adds a release checklist, documenting the steps that we use to release new versions of Wrangler. That checklist includes writing this CHANGELOG - very meta!!!
+
+    [pull/1021]: https://github.com/cloudflare/wrangler/pull/1021
+
+  - **Update dependencies - [EverlastingBugstopper], [pull/1000]**
+
+    This PR updates some project dependencies as a result of running `cargo update`.
+
+    [pull/1000]: https://github.com/cloudflare/wrangler/pull/1000
+
+  - **Run CI on pull requests, not pushes - [EverlastingBugstopper], [pull/1090]**
+
+    This PR changes the GitHub Actions workflow "event trigger" to fire on `pull_request`, not `push`. This will allow wrangler's GitHub Actions workflows to run on PRs sent from forks!
+
+    [pull/1090]: https://github.com/cloudflare/wrangler/pull/1090
+
+  - **Zip .tar files in CI - [EverlastingBugstopper], [pull/1069] [pull/1080]**
+
+    These PRs fix some issues in the GitHub Actions release workflow that were causing release artifacts to be incorrectly generated.
+
+    [pull/1080]: https://github.com/cloudflare/wrangler/pull/1080
+    [pull/1069]: https://github.com/cloudflare/wrangler/pull/1069
+
+  - **Fixes clippy warnings - [EverlastingBugstopper], [pull/1071]**
+
+    This PR fixes some linting issues surfaced by clippy throughout the project.
+
+    [pull/1071]: https://github.com/cloudflare/wrangler/pull/1071
+
+  - **Extract upload and deploy to lib modules - [ashleymichal], [pull/1075]**
+
+    This PR refactors some of the underlying code used inside of `wrangler publish`, to create two higher-level `upload` and `deploy` modules. This work has already been used to support "draft workers" in #1087, and to reduce duplication of code between `wrangler preview`, `wrangler dev`, and `wrangler publish`.
+
+    [pull/1075]: https://github.com/cloudflare/wrangler/pull/1075
+
+## 💬 1.7.0
+
+- ### Features
+
+  - **Do not factor in .gitignore into workers sites upload directory traversal - [gabbifish], [issue/958] [pull/981]**
+
+    This change ensures that the wrangler include/exclude logic for Workers Sites bucket directory traversal does NOT take into account .gitignore, since best practice for static site generators is to put your build directory into your .gitignore.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/981]: https://github.com/cloudflare/wrangler/pull/981
+    [issue/958]: https://github.com/cloudflare/wrangler/issues/958
+
+  - **Update cloudflare-rs, reqwest, http, uuid - [ashleymichal], [issue/301] [pull/1009]**
+
+    These dependency updates may look like routine maintenance, but this reqwest version actually makes support for corporate proxies possible!
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1009]: https://github.com/cloudflare/wrangler/pull/1009
+    [issue/301]: https://github.com/cloudflare/wrangler/issues/301
+
+  - **Add progress bar during Site upload - [gabbifish], [issue/906] [pull/956]**
+
+    Larger static asset uploads in Wrangler now show a progress bar based on the bulk uploads being made.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/956]: https://github.com/cloudflare/wrangler/pull/956
+    [issue/906]: https://github.com/cloudflare/wrangler/issues/906
+
+  - **Allow custom webpack config for Workers Sites projects - [ashleymichal], [issue/905] [pull/957]**
+
+    Previously we blocked users from declaring `webpack_config` in their `wrangler.toml`, as it can be relatively confusing due to the nested nature of the workers-site directory. We removed that block, and added a friendly help message when webpack build fails and the user has a custom `webpack_config` declared.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/957]: https://github.com/cloudflare/wrangler/pull/957
+    [issue/905]: https://github.com/cloudflare/wrangler/issues/905
+
+  - **Reformat config api-key output - [bradyjoslin], [issue/889] [pull/910]**
+
+    We care a lot about our error output. Now the output from `wrangler config` is consistent between calls with and without the `--api-key` flag.
+
+    [bradyjoslin]: https://github.com/bradyjoslin
+    [pull/910]: https://github.com/cloudflare/wrangler/pull/910
+    [issue/889]: https://github.com/cloudflare/wrangler/issues/889
+
+  - **Improve error message for `wrangler init --site` when wrangler.toml already exists - [ashleygwilliams], [issue/648] [pull/931]**
+
+    `wrangler init` generally expects that you don't already have a `wrangler.toml` present; however it is common that users want to add static site functionality to their existing wrangler project and will try using `wrangler init` to do so. Rather than simply complaining that the toml already exists, now we add the `workers-site` directory to the project, and print out the suggested configuration to add to `wrangler.toml`. Much nicer!
+
+    [ashleygwilliams]: https://github.com/ashleygwilliams
+    [pull/931]: https://github.com/cloudflare/wrangler/pull/931
+    [issue/648]: https://github.com/cloudflare/wrangler/issues/648
+
+  - **Add a helpful error message on authentication error - [EverlastingBugstopper], [issue/492] [pull/932]**
+
+    Previously, when `wrangler publish` ran into authentication errors, the API result would just print to the screen. Now, it prints a helpful hint to users to re-run `wrangler config` to fix the error.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/932]: https://github.com/cloudflare/wrangler/pull/932
+    [issue/492]: https://github.com/cloudflare/wrangler/issues/492
+
+  - **Provide helpful error when user accidentally puts kv-namespace config under `[site]` - [gabbifish], [issue/798] [pull/937]**
+
+    TOML formatting can be tricky, specifically tables, so it is common for users unfamiliar with the format to accidentally nest attributes inside tables without intending it. In this case, if a user adds a kv-namespaces entry to the bottom of a toml with [site] configuration already declared, it is parsed as a part of the [site] table, rather than as a top-level key. The error output from this is not super helpful, as it just says "unknown field `kv-namespaces`" which isn't precisely correct.
+
+    This PR detects when this error occurs and provides a help suggestion to put kv-namespaces ABOVE the [site] table entry to fix the problem.
+
+    [gabbifish]: https://github.com/gabbifish
+    [pull/937]: https://github.com/cloudflare/wrangler/pull/937
+    [issue/798]: https://github.com/cloudflare/wrangler/issues/798
+
+- ### Fixes
+
+  - **Don't install `wasm-pack` for `webpack` type projects - [EverlastingBugstopper], [issue/745] [pull/849]**
+
+    You may have noticed that Wrangler installs `wasm-pack` for your `webpack` projects, which may seem strange since it's the tool we use to build Rust projects. The reason for this is because you can _also_ build Rust using `wasm-pack` and `webpack` in tandem if you use the [`wasm-pack-plugin`](https://github.com/wasm-tool/wasm-pack-plugin). This plugin recently added support for handling the installation of `wasm-pack` which means Wrangler no longer needs to handle those installs.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/849]: https://github.com/cloudflare/wrangler/pull/849
+    [issue/745]: https://github.com/cloudflare/wrangler/issues/745
+
+- ### Maintenance
+
+  - **Make Azure use latest `rustc` - [EverlastingBugstopper], [issue/887] [pull/893]**
+
+    Updates our CI to update the rust toolchain to the latest stable version after installation.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/893]: https://github.com/cloudflare/wrangler/pull/893
+    [issue/887]: https://github.com/cloudflare/wrangler/issues/887
+
+  - **Fix nightly builds - [EverlastingBugstopper], [pull/895], [pull/898]**
+
+    Now we confirm Wrangler builds against nightly Rust releases!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/895]: https://github.com/cloudflare/wrangler/pull/895
+    [pull/898]: https://github.com/cloudflare/wrangler/pull/898
+
+  - **Fix compiler warnings on windows - [uma0317], [issue/800] [pull/919]**
+
+    We build Wrangler for Mac OSX, Linux, and Windows, and each of these environments has slightly different needs at compile time. In this case, community contributor [uma0317] added configuration that eliminated unused imports for Windows at compile time.
+
+    [uma0317]: https://github.com/uma0317
+    [pull/919]: https://github.com/cloudflare/wrangler/pull/919
+    [issue/800]: https://github.com/cloudflare/wrangler/issues/800
+
+  - **Remove deprecated kv-namespace config check - [ashleymichal], [pull/929]**
+
+    Back in 1.1.0, we introduced more robust support for adding KV namespaces to your project. It was a breaking change for users who were still using our first pass at configuration for this in their toml, so we added a friendly error message telling them how to update their `wrangler.toml`. At this point, all of our users have safely transitioned onto the new syntax, and so we removed the warning; any lingering use of the old syntax will be met with a parse error instead.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/929]: https://github.com/cloudflare/wrangler/pull/929
+
+  - **Use binary-install for npm - [EverlastingBugstopper], [pull/862]**
+
+    This extracts a lot of the logic in Wrangler's installer to an external package, [binary-install], which we will also use for installing wasm-pack on webpack project builds. Switching to this package also has the added benefit of cleaning up the downloaded binary on `npm uninstall -g @cloudflare/wrangler`.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/862]: https://github.com/cloudflare/wrangler/pull/862
+    [binary-install]: http://npmjs.org/package/binary-install
+
+
 ## 🎰 1.6.0
 
 - ### Features
@@ -438,9 +902,9 @@
 
     Wrangler orchestrates a few other tools under the hood, notably [`wasm-pack`](https://github.com/rustwasm/wasm-pack) and [`cargo-generate`](https://github.com/ashleygwilliams/cargo-generate). We use a library called [`binary-install`](https://github.com/rustwasm/binary-install) to fetch and cache binaries we download. However, to avoid downloading unecessarily, we first check if the user has a copy locally on their machine that they had `cargo install`'d. We had a bug where in this logic branch, we *didn't* check that the local version was the most up-to-date version. This meant that users who had an older installed version may run into errors when wrangler expected to use features of a newer version of that tool. This PR adds the logic to check for the version and will install and cache a newer version for wrangler to use (leaving your local version as is!).
 
-    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
-    [issue/666]: https://github.com/cloudflare/wrnagler/issues/666
-    [pull/726]: https://github.com/cloudflare/wrangler/pull/726
+  [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+  [issue/666]: https://github.com/cloudflare/wrnagler/issues/666
+  [pull/726]: https://github.com/cloudflare/wrangler/pull/726
 
   - **Remove link to 000000000000000000.cloudflareworkers.com - [EverlastingBugstopper], [pull]**
 

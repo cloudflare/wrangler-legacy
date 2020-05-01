@@ -4,23 +4,24 @@ mod manifest;
 mod sync;
 mod upload;
 
-use data_encoding::HEXLOWER;
-use sha2::{Digest, Sha256};
-
 pub use manifest::AssetManifest;
 pub use sync::sync;
+pub use upload::upload_files;
 
 use std::ffi::OsString;
 use std::fs;
+use std::hash::Hasher;
 use std::path::Path;
+
+use failure::format_err;
+use ignore::overrides::{Override, OverrideBuilder};
+use ignore::{Walk, WalkBuilder};
+use indicatif::{ProgressBar, ProgressStyle};
+use twox_hash::XxHash64;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
-use ignore::overrides::{Override, OverrideBuilder};
-use ignore::{Walk, WalkBuilder};
-
 use crate::settings::toml::Target;
-use crate::terminal::message;
 
 pub const KEY_MAX_SIZE: usize = 512;
 // Oddly enough, metadata.len() returns a u64, not usize.
@@ -30,70 +31,55 @@ pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
 pub fn directory_keys_values(
     target: &Target,
     directory: &Path,
-    verbose: bool,
 ) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
-    let mut upload_vec: Vec<KeyValuePair> = Vec::new();
-    let mut asset_manifest: AssetManifest = AssetManifest::new();
+    match &fs::metadata(directory) {
+        Ok(file_type) if file_type.is_dir() => {
+            let mut upload_vec: Vec<KeyValuePair> = Vec::new();
+            let mut asset_manifest = AssetManifest::new();
 
-    let dir_walker = get_dir_iterator(target, directory)?;
+            let dir_walker = get_dir_iterator(target, directory)?;
+            let spinner_style =
+                ProgressStyle::default_spinner().template("{spinner}   Preparing {msg}...");
+            let spinner = ProgressBar::new_spinner().with_style(spinner_style);
+            for entry in dir_walker {
+                spinner.tick();
+                let entry = entry.unwrap();
+                let path = entry.path();
+                if path.is_file() {
+                    spinner.set_message(&format!("{}", path.display()));
 
-    for entry in dir_walker {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.is_file() {
-            if verbose {
-                message::working(&format!("Preparing {}", path.display()));
+                    validate_file_size(&path)?;
+
+                    let value = std::fs::read(path)?;
+
+                    // Need to base64 encode value
+                    let b64_value = base64::encode(&value);
+
+                    let (url_safe_path, key) =
+                        generate_path_and_key(path, directory, Some(b64_value.clone()))?;
+
+                    validate_key_size(&key)?;
+
+                    upload_vec.push(KeyValuePair {
+                        key: key.clone(),
+                        value: b64_value,
+                        expiration: None,
+                        expiration_ttl: None,
+                        base64: Some(true),
+                    });
+
+                    asset_manifest.insert(url_safe_path, key);
+                }
             }
-
-            validate_file_size(&path)?;
-
-            let value = std::fs::read(path)?;
-
-            // Need to base64 encode value
-            let b64_value = base64::encode(&value);
-
-            let (url_safe_path, key) =
-                generate_path_and_key(path, directory, Some(b64_value.clone()))?;
-
-            validate_key_size(&key)?;
-
-            upload_vec.push(KeyValuePair {
-                key: key.clone(),
-                value: b64_value,
-                expiration: None,
-                expiration_ttl: None,
-                base64: Some(true),
-            });
-
-            asset_manifest.insert(url_safe_path, key);
+            Ok((upload_vec, asset_manifest))
         }
-    }
-    Ok((upload_vec, asset_manifest))
-}
-
-// Returns only the hashed keys for a directory's files.
-fn directory_keys_only(target: &Target, directory: &Path) -> Result<Vec<String>, failure::Error> {
-    let mut key_vec: Vec<String> = Vec::new();
-
-    let dir_walker = get_dir_iterator(target, directory)?;
-
-    for entry in dir_walker {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.is_file() {
-            let value = std::fs::read(path)?;
-
-            // Need to base64 encode value
-            let b64_value = base64::encode(&value);
-
-            let (_, key) = generate_path_and_key(path, directory, Some(b64_value))?;
-
-            validate_key_size(&key)?;
-
-            key_vec.push(key);
+        Ok(_file_type) => {
+            // any other file types (files, symlinks)
+            // TODO: return an error type here, like NotADirectoryError
+            Err(format_err!("Check your wrangler.toml; the `bucket` attribute for [site] should point to a directory."))
         }
+        Err(e) => Err(format_err!("{}", e)),
     }
-    Ok(key_vec)
 }
 
 // Ensure that all files in upload directory do not exceed the MAX_VALUE_SIZE (this ensures that
@@ -211,10 +197,15 @@ pub fn generate_path_and_key(
     let relative_path = path.strip_prefix(directory).unwrap();
 
     let url_safe_path = generate_url_safe_path(relative_path)?;
-
     let path_with_hash = if let Some(value) = value {
-        let digest = get_digest(value)?;
-
+        let digest = get_digest(value);
+        // it is ok to truncate the digest here because
+        // we also include the file name in the asset manifest key
+        //
+        // the most important thing here is to detect changes
+        // of a single file to invalidate the cache and
+        // it's impossible to serve two different files with the same name
+        let digest = digest[0..10].to_string();
         generate_path_with_hash(relative_path, digest)?
     } else {
         url_safe_path.to_owned()
@@ -223,12 +214,13 @@ pub fn generate_path_and_key(
     Ok((url_safe_path, path_with_hash))
 }
 
-fn get_digest(value: String) -> Result<String, failure::Error> {
-    let mut hasher = Sha256::new();
-    hasher.input(value);
-    let digest = hasher.result();
-    let hex_digest = HEXLOWER.encode(digest.as_ref());
-    Ok(hex_digest)
+fn get_digest(value: String) -> String {
+    let value = value.as_bytes();
+    let mut hasher = XxHash64::default();
+    hasher.write(value);
+    let digest = hasher.finish();
+    // encode u64 as hexadecimal to save space and information
+    format!("{:x}", digest)
 }
 
 // Assumes that `path` is a file (called from a match branch for path.is_file())
@@ -269,11 +261,9 @@ mod tests {
             kv_namespaces: None,
             name: "".to_string(),
             target_type: TargetType::JavaScript,
-            route: None,
-            routes: None,
             webpack_config: None,
-            zone_id: None,
             site: Some(site),
+            vars: None,
         }
     }
 
@@ -489,7 +479,7 @@ mod tests {
     #[test]
     fn it_inserts_hash_before_extension() {
         let value = "<h1>Hello World!</h1>";
-        let hashed_value = get_digest(String::from(value)).unwrap();
+        let hashed_value = get_digest(String::from(value));
 
         let path = PathBuf::from("path").join("to").join("asset.html");
         let actual_path_with_hash =
@@ -503,7 +493,7 @@ mod tests {
     #[test]
     fn it_inserts_hash_without_extension() {
         let value = "<h1>Hello World!</h1>";
-        let hashed_value = get_digest(String::from(value)).unwrap();
+        let hashed_value = get_digest(String::from(value));
 
         let path = PathBuf::from("path").join("to").join("asset");
         let actual_path_with_hash =
@@ -541,9 +531,8 @@ mod tests {
         let directory = Path::new("./build");
         let value = Some("<h1>Hello World!</h1>".to_string());
         let (path, key) = generate_path_and_key(path, directory, value).unwrap();
-
         let expected_path = "path/to/asset.ext".to_string();
-        let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-f]{64}\.ext").unwrap();
+        let expected_key_regex = Regex::new(r"^path/to/asset\.[0-9a-f]{10}\.ext").unwrap();
 
         assert_eq!(path, expected_path);
         assert!(expected_key_regex.is_match(&key));
