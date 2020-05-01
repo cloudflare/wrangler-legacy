@@ -3,6 +3,7 @@ use std::net::{SocketAddr, TcpListener};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::tail::Tail;
+use crate::terminal::emoji;
 
 const DEFAULT_TUNNEL_PORT: u16 = 8080;
 const DEFAULT_METRICS_PORT: u16 = 8081;
@@ -20,8 +21,11 @@ pub fn start(
     // helpful output to not be mixed with actual log JSON output, so we use this macro
     // to print messages to stderr instead of stdout (where log output is printed).
     eprintln!(
-        "Setting up log streaming from Worker script \"{}\". Using ports {} and {}.",
-        target.name, tunnel_port, metrics_port,
+        "{} Setting up log streaming from Worker script \"{}\". Using ports {} and {}.",
+        emoji::TAIL,
+        target.name,
+        tunnel_port,
+        metrics_port,
     );
 
     Tail::run(target.clone(), user.clone(), tunnel_port, metrics_port)

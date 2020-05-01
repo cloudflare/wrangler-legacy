@@ -516,7 +516,7 @@ fn run() -> Result<(), failure::Error> {
         )))
         .subcommand(
             SubCommand::with_name("tail")
-                .about("Aggregate logs from production worker")
+                .about(&*format!("{} Aggregate logs from production worker", emoji::TAIL))
                 .arg(
                     Arg::with_name("env")
                         .help("environment to tail logs from")
