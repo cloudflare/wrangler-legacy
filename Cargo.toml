@@ -14,8 +14,7 @@ build = "build.rs"
 atty = "0.2.14"
 base64 = "0.10.1"
 billboard = "0.1.0"
-binary-install = { git = "https://github.com/rustwasm/binary-install" }
-# binary-install = { git = "../binary-install-rs" }
+binary-install = { path = "../binary-install-rs" }
 chrome-devtools-rs = { version = "0.0.0-alpha.0", features = ["color"] }
 chrono = "0.4.9"
 clap = "2.32.0"

@@ -31,7 +31,7 @@ pub fn install(
 ) -> Result<Download, failure::Error> {
     match tool_needs_update(tool_name, version)? {
         ToolDownload::NeedsInstall(version) => {
-            println!("{} Installing {} v{}...", emoji::DOWN, tool_name, version);
+            println!("{}  Installing {} v{}...", emoji::DOWN, tool_name, version);
             let binaries: Vec<&str> = if is_binary { vec![tool_name] } else { vec![] };
             let download =
                 download_prebuilt(tool_name, owner, &version.to_string(), binaries.as_ref());
@@ -48,11 +48,14 @@ fn tool_needs_update(
     tool_name: &str,
     target_version: Version,
 ) -> Result<ToolDownload, failure::Error> {
-    if let Some((installed_version, installed_location)) =
-        get_installation(tool_name, &target_version)?
-    {
-        if installed_version == target_version {
-            return Ok(ToolDownload::InstalledAt(Download::at(&installed_location)));
+    let current_installation = get_installation(tool_name, &target_version);
+    // if something goes wrong checking the current installation
+    // we shouldn't fail, we should just re-install for them
+    if let Ok(current_installation) = current_installation {
+        if let Some((installed_version, installed_location)) = current_installation {
+            if installed_version == target_version {
+                return Ok(ToolDownload::InstalledAt(Download::at(&installed_location)));
+            }
         }
     }
     Ok(ToolDownload::NeedsInstall(target_version))
@@ -70,9 +73,12 @@ fn get_installation(
                 let installed_version = filename
                     .split(&format!("{}-", tool_name))
                     .collect::<Vec<&str>>()[1];
-                let installed_version = Version::parse(installed_version)?;
-                if &installed_version == target_version {
-                    return Ok(Some((installed_version, entry.path())));
+                let installed_version = Version::parse(installed_version);
+                // if the installed version can't be parsed, ignore it
+                if let Ok(installed_version) = installed_version {
+                    if &installed_version == target_version {
+                        return Ok(Some((installed_version, entry.path())));
+                    }
                 }
             }
         }
