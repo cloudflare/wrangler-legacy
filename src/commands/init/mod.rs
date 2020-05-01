@@ -42,7 +42,7 @@ entry-point = "workers-site"
         )?;
 
         site.scaffold_worker()?;
-        message::success("Succesfully scaffolded workers site");
+        message::success("Successfully scaffolded workers site");
     } else {
         Manifest::generate(name.to_string(), Some(target_type), &config_path, None)?;
     }
