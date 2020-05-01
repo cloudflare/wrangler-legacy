@@ -1,6 +1,7 @@
 use std::str;
 use std::time::Duration;
 
+use indicatif::{ProgressBar, ProgressStyle};
 use regex::Regex;
 use reqwest;
 use tokio::sync::oneshot::{Receiver, Sender};
@@ -43,11 +44,14 @@ impl Session {
         tx: Sender<()>,
         metrics_port: u16,
     ) -> Result<(), failure::Error> {
+        let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
+        let spinner = ProgressBar::new_spinner().with_style(style);
+        spinner.set_message("This may take a few seconds...");
+        spinner.enable_steady_tick(20);
         let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
 
         // TODO: make Tunnel struct responsible for getting its own port!
         let url = get_tunnel_url(metrics_port).await?;
-
         let response = client
             .request(&CreateTail {
                 account_identifier: &target.account_id,
@@ -58,7 +62,7 @@ impl Session {
 
         match response {
             Ok(success) => {
-                eprintln!("Now prepared to stream logs.");
+                spinner.abandon_with_message("Now prepared to stream logs.");
 
                 let tail_id = success.result.id;
 
