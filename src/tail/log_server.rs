@@ -55,9 +55,9 @@ async fn print_logs(req: Request<Body>) -> Result<Response<Body>, hyper::Error> 
             Ok(Response::new(Body::from("Success")))
         }
         _ => {
-            let mut not_found = Response::default();
-            *not_found.status_mut() = StatusCode::NOT_FOUND;
-            Ok(not_found)
+            let mut bad_request = Response::default();
+            *bad_request.status_mut() = StatusCode::BAD_REQUEST;
+            Ok(bad_request)
         }
     }
 }
