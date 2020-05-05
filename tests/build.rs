@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
-
 pub mod fixture;
 
 use std::fs;
@@ -369,7 +366,6 @@ fn it_builds_with_webpack_name_output_warn() {
 }
 
 fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) -> (String, String) {
-    let _lock = fixture.lock();
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     build.current_dir(fixture.get_path());
     build.arg("build");
@@ -388,7 +384,6 @@ fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) -> (String, 
 }
 
 fn build_fails_with(fixture: &Fixture, expected_message: &str) {
-    let _lock = fixture.lock();
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     build.current_dir(fixture.get_path());
     build.arg("build");
