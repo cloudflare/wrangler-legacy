@@ -20,11 +20,14 @@ use session::Session;
 use shutdown::ShutdownHandler;
 use tunnel::Tunnel;
 
+use console::style;
 use tokio;
 use tokio::runtime::Runtime as TokioRuntime;
+use which::which;
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
+use crate::terminal::emoji;
 
 pub struct Tail;
 
@@ -35,6 +38,9 @@ impl Tail {
         tunnel_port: u16,
         metrics_port: u16,
     ) -> Result<(), failure::Error> {
+        is_cloudflared_installed()?;
+        print_startup_message(&target.name, tunnel_port, metrics_port);
+
         let mut runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
@@ -73,4 +79,29 @@ impl Tail {
             }
         })
     }
+}
+
+fn is_cloudflared_installed() -> Result<(), failure::Error> {
+    // this can be removed once we automatically install cloudflared
+    if which("cloudflared").is_err() {
+        let install_url = style("https://developers.cloudflare.com/argo-tunnel/downloads/")
+            .blue()
+            .bold();
+        failure::bail!("You must install cloudflared to use wrangler tail.\n\nInstallation instructions can be found here:\n{}", install_url);
+    } else {
+        Ok(())
+    }
+}
+
+fn print_startup_message(worker_name: &str, tunnel_port: u16, metrics_port: u16) {
+    // Note that we use eprintln!() throughout this module; this is because we want any
+    // helpful output to not be mixed with actual log JSON output, so we use this macro
+    // to print messages to stderr instead of stdout (where log output is printed).
+    eprintln!(
+        "{} Setting up log streaming from Worker script \"{}\". Using ports {} and {}.",
+        emoji::TAIL,
+        worker_name,
+        tunnel_port,
+        metrics_port,
+    );
 }
