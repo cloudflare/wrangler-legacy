@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
-
 pub mod fixture;
 
 use fixture::WranglerToml;
@@ -232,7 +229,6 @@ fn it_previews_with_config_text() {
 }
 
 fn preview_succeeds_with(fixture: &Fixture, env: Option<&str>, expected: &str) {
-    let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
     env::remove_var("CF_ZONE_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
@@ -248,8 +244,8 @@ fn preview_succeeds_with(fixture: &Fixture, env: Option<&str>, expected: &str) {
 }
 
 fn preview_succeeds(fixture: &Fixture) {
-    let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
+    env::remove_var("CF_ZONE_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture.get_path());
     preview.arg("preview").arg("--headless");
@@ -257,8 +253,8 @@ fn preview_succeeds(fixture: &Fixture) {
 }
 
 fn preview_matches_url(fixture: &Fixture, url: &str, expected: &str) {
-    let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
+    env::remove_var("CF_ZONE_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture.get_path());
     preview.arg("preview").arg("--headless");
@@ -267,8 +263,8 @@ fn preview_matches_url(fixture: &Fixture, url: &str, expected: &str) {
 }
 
 fn preview_not_matches_url(fixture: &Fixture, url: &str, expected: &str) {
-    let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
+    env::remove_var("CF_ZONE_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture.get_path());
     preview.arg("preview").arg("--headless");
