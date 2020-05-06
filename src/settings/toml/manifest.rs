@@ -16,8 +16,7 @@ use crate::settings::toml::kv_namespace::KvNamespace;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
 use crate::settings::toml::Target;
-use crate::terminal::emoji;
-use crate::terminal::message;
+use crate::terminal::{emoji, message, styles};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Manifest {
@@ -306,12 +305,17 @@ impl Manifest {
         let has_env_fields = !env_fields.is_empty();
         let mut needs_new_line = false;
         if has_top_level_fields || has_env_fields {
+            let toml_msg = styles::highlight("wrangler.toml");
+            let account_id_msg = styles::highlight("account_id");
+            let zone_id_msg = styles::highlight("zone_id");
+            let dash_url = styles::url("https://dash.cloudflare.com");
             message::help(
-                "You will need to update the following fields in the created wrangler.toml file before continuing:"
+                &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
             );
-            message::help(
-                "You can find your account_id and zone_id in the right sidebar of the zone overview tab at https://dash.cloudflare.com"
-            );
+            message::help(&format!(
+                "You can find your {} and {} in the right sidebar of the zone overview tab at {}",
+                account_id_msg, zone_id_msg, dash_url
+            ));
             if has_top_level_fields {
                 needs_new_line = true;
                 for top_level_field in top_level_fields {

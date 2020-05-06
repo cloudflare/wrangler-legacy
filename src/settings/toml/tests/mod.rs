@@ -91,7 +91,6 @@ fn parses_same_from_config_path_as_string() {
     env::remove_var("CF_ACCOUNT_ID");
     env::remove_var("CF_ZONE_ID");
     let config_path = toml_fixture_path("environments.toml");
-    eprintln!("{:#?}", &config_path);
     let string_toml = fs::read_to_string(&config_path).unwrap();
 
     let manifest_from_string = Manifest::from_str(&string_toml).unwrap();
