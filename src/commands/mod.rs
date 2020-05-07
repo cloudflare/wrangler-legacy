@@ -11,6 +11,7 @@ pub mod publish;
 pub mod route;
 pub mod secret;
 pub mod subdomain;
+pub mod tail;
 pub mod whoami;
 
 pub use self::config::global_config;

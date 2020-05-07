@@ -84,6 +84,7 @@ fn tool_needs_update(tool_name: &str, path: &Path) -> Result<bool, failure::Erro
         Some(v) => v,
     };
     let latest_tool_version = get_latest_version(tool_name)?;
+    // TODO: If latest_tool_version is error, try getting latest version via a github api call.
     if installed_tool_version == latest_tool_version {
         log::debug!(
             "installed {} version {} is up to date",
@@ -159,6 +160,8 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
 }
 
 fn get_latest_version(tool_name: &str) -> Result<String, failure::Error> {
+    // TODO: return the latest version pulled from github api, not via Krate.
+    // TODO(argo tunnel team): make cloudflared binary available on github.
     Ok(Krate::new(tool_name)?.max_version)
 }
 
