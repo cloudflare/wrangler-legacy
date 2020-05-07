@@ -7,7 +7,7 @@ use config;
 use serde::{Deserialize, Serialize};
 
 use crate::settings::{Environment, QueryEnvironment};
-use crate::terminal::emoji;
+use crate::terminal::{emoji, styles};
 
 const DEFAULT_CONFIG_FILE_NAME: &str = "default.toml";
 
@@ -107,9 +107,13 @@ impl GlobalUser {
         match global_user {
             Ok(user) => Ok(user),
             Err(_) => {
+                let wrangler_config_msg = styles::highlight("`wrangler config`");
+                let vars_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
                 let msg = format!(
-                    "{} Your authentication details are improperly configured.\nPlease run `wrangler config` or visit\nhttps://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables\nfor info on configuring with environment variables",
+                    "{} Your authentication details are improperly configured.\nPlease run {} or visit\n{}\nfor info on configuring with environment variables",
                     emoji::WARN,
+                    wrangler_config_msg,
+                    vars_msg
                 );
                 log::info!("{:?}", config);
                 failure::bail!(msg)
