@@ -7,5 +7,6 @@ pub mod http;
 pub mod install;
 pub mod installer;
 pub mod settings;
+pub mod tail;
 pub mod terminal;
 pub mod upload;

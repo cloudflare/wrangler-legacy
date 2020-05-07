@@ -30,6 +30,7 @@ pub static SHEEP: Emoji = Emoji("🐑 ", "");
 pub static SLEUTH: Emoji = Emoji("🕵️ ", "");
 pub static SPARKLES: Emoji = Emoji("✨ ", "");
 pub static SWIRL: Emoji = Emoji("🌀 ", "");
+pub static TAIL: Emoji = Emoji("🦚 ", "");
 pub static UP: Emoji = Emoji("🆙 ", "");
 pub static WARN: Emoji = Emoji("⚠️ ", "");
 pub static WAVING: Emoji = Emoji("👋 ", "");
