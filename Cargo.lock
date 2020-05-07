@@ -2800,7 +2800,6 @@ dependencies = [
  "hyper-tls",
  "ignore",
  "indicatif",
- "lazy_static",
  "log 0.4.8",
  "notify",
  "number_prefix",

@@ -12,12 +12,6 @@ use std::env;
 use std::path::Path;
 use std::process::Command;
 
-use lazy_static::lazy_static;
-
-lazy_static! {
-    static ref CACHE: Cache = get_wrangler_cache().expect("creating binary dependency cache");
-}
-
 pub fn install(tool_name: &str, owner: &str) -> Result<Download, failure::Error> {
     if let Some(download) = tool_exists(tool_name)? {
         return Ok(download);
@@ -116,12 +110,12 @@ fn download_prebuilt(
     };
 
     info!("prebuilt artifact {}", url);
-
+    let cache = get_wrangler_cache()?;
     // no binaries are expected; downloading it as an artifact
     let res = if !binaries.is_empty() {
-        CACHE.download(true, tool_name, binaries, &url)?
+        cache.download(true, tool_name, binaries, &url)?
     } else {
-        CACHE.download_artifact(tool_name, &url)?
+        cache.download_artifact(tool_name, &url)?
     };
 
     match res {
