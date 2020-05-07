@@ -3,11 +3,10 @@ use std::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use regex::Regex;
-use reqwest;
 use tokio::sync::oneshot::{Receiver, Sender};
 use tokio::time::{delay_for, Delay};
 
-use cloudflare::endpoints::workers::{CreateTail, CreateTailParams, SendTailHeartbeat};
+use cloudflare::endpoints::workers::{CreateTail, CreateTailParams, DeleteTail, SendTailHeartbeat};
 use cloudflare::framework::HttpApiClientConfig;
 use cloudflare::framework::{async_api, async_api::ApiClient};
 
@@ -17,7 +16,9 @@ use crate::settings::toml::Target;
 
 const KEEP_ALIVE_INTERVAL: u64 = 60;
 
-pub struct Session;
+pub struct Session {
+    tail_id: Option<String>,
+}
 
 /// Session is responsible for interacting with the Workers API to establish and maintain the tail
 /// connection; once the tail session is established, it uses the returned tail_id to send periodic
@@ -32,16 +33,37 @@ impl Session {
         metrics_port: u16,
         verbose: bool,
     ) -> Result<(), failure::Error> {
+        // During the start process we'll populate the tail with the response from the API.
+        let mut session = Session { tail_id: None };
         // We need to exit on a shutdown command without waiting for API calls to complete.
         tokio::select! {
-            _ = shutdown_rx => { Ok(()) }
-            result = Session::start(target, user, tx, metrics_port, verbose) => { result }
+            _ = shutdown_rx => { session.close(&user, &target).await }
+            result = session.start(&target, &user, tx, metrics_port, verbose) => { result }
         }
     }
 
+    async fn close(&self, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+        // The API will clean up tails after about 10 minutes of inactivity, or 24 hours of
+        // activity but since we limit the number of tails allowed on a single script we should at
+        // least try to delete them as we go.
+        if let Some(tail_id) = &self.tail_id {
+            let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
+            client
+                .request(&DeleteTail {
+                    account_identifier: &target.account_id,
+                    script_name: &target.name,
+                    tail_id: &tail_id,
+                })
+                .await?;
+        }
+
+        Ok(())
+    }
+
     async fn start(
-        target: Target,
-        user: GlobalUser,
+        &mut self,
+        target: &Target,
+        user: &GlobalUser,
         tx: Sender<()>,
         metrics_port: u16,
         verbose: bool,
@@ -57,7 +79,7 @@ impl Session {
             spinner.enable_steady_tick(20);
         }
 
-        let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
+        let client = http::cf_v4_api_client_async(user, HttpApiClientConfig::default())?;
 
         // TODO: make Tunnel struct responsible for getting its own port!
         let url = get_tunnel_url(metrics_port).await?;
@@ -74,6 +96,7 @@ impl Session {
                 spinner.abandon_with_message("Now prepared to stream logs.");
 
                 let tail_id = success.result.id;
+                self.tail_id = Some(tail_id.clone());
 
                 // Loop indefinitely to send "heartbeat" to API and keep log streaming alive.
                 // This should loop forever until SIGINT is issued or Wrangler process is killed
