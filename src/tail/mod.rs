@@ -21,7 +21,6 @@ use shutdown::ShutdownHandler;
 use tunnel::Tunnel;
 
 use console::style;
-use tokio;
 use tokio::runtime::Runtime as TokioRuntime;
 use which::which;
 
