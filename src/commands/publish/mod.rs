@@ -1,8 +1,6 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-use console::style;
-
 use crate::commands;
 use crate::commands::kv;
 use crate::commands::kv::bucket::{sync, upload_files};
@@ -11,7 +9,7 @@ use crate::deploy;
 use crate::http::{self, Feature};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, KvNamespace, Target};
-use crate::terminal::{emoji, message};
+use crate::terminal::{emoji, message, styles};
 use crate::upload;
 
 pub fn publish(
@@ -59,10 +57,8 @@ pub fn publish(
         let uses_kv_bucket = sync_non_site_buckets(target, user, verbose)?;
 
         let upload_client = if uses_kv_bucket {
-            let wrangler_toml = style("`wrangler.toml`").yellow().bold();
-            let issue_link = style("https://github.com/cloudflare/wrangler/issues/1136")
-                .blue()
-                .bold();
+            let wrangler_toml = styles::highlight("`wrangler.toml`");
+            let issue_link = styles::url("https://github.com/cloudflare/wrangler/issues/1136");
             let msg = format!("As of 1.9.0, you will no longer be able to specify a bucket for a kv namespace in your {}.\nIf your application depends on this feature, please file an issue with your use case here:\n{}", wrangler_toml, issue_link);
             message::deprecation_warning(&msg);
 

@@ -1,13 +1,12 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::terminal::{emoji, message};
+use crate::terminal::{emoji, message, styles};
 
 use cloudflare::endpoints::account::{self, Account};
 use cloudflare::endpoints::user::GetUserDetails;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 
-use console::Style;
 use prettytable::{Cell, Row, Table};
 
 pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
@@ -36,19 +35,18 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
     let mut msg = format!("{} You are logged in with {}!\n", emoji::WAVING, auth);
     let num_permissions_missing = missing_permissions.len();
     if num_permissions_missing > 0 {
-        let bold_yellow = Style::new().bold().yellow();
-        let config_msg = bold_yellow.apply_to("`wrangler config`");
-        let whoami_msg = bold_yellow.apply_to("`wrangler whoami`");
+        let config_msg = styles::highlight("`wrangler config`");
+        let whoami_msg = styles::highlight("`wrangler whoami`");
         if missing_permissions.len() == 1 {
             msg.push_str(&format!(
                 "\nYour token is missing the '{}' permission.",
-                bold_yellow.apply_to(missing_permissions.get(0).unwrap())
+                styles::highlight(missing_permissions.get(0).unwrap())
             ));
         } else if missing_permissions.len() == 2 {
             msg.push_str(&format!(
                 "\nYour token is missing the '{}' and '{}' permissions.",
-                bold_yellow.apply_to(missing_permissions.get(0).unwrap()),
-                bold_yellow.apply_to(missing_permissions.get(1).unwrap())
+                styles::highlight(missing_permissions.get(0).unwrap()),
+                styles::highlight(missing_permissions.get(1).unwrap())
             ));
         }
         msg.push_str(&format!("\n\nPlease generate a new token and authenticate with {}\nfor more information when running {}", config_msg, whoami_msg));
