@@ -13,8 +13,8 @@ build = "build.rs"
 [dependencies]
 atty = "0.2.14"
 base64 = "0.10.1"
-binary-install = "0.0.3-alpha"
 billboard = "0.1.0"
+binary-install = "0.0.3-alpha"
 chrome-devtools-rs = { version = "0.0.0-alpha.0", features = ["color"] }
 chrono = "0.4.9"
 clap = "2.32.0"
@@ -53,11 +53,11 @@ text_io = "0.1.7"
 tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros"] }
 tokio-tungstenite = { version = "0.10.1", features = ["tls"] }
 toml = "0.5.5"
+twox-hash = "1.5.0"
 url = "2.1.0"
 uuid = { version = "0.8", features = ["v4"] }
 which = "2.0.1"
 ws = "0.9.0"
-twox-hash = "1.5.0"
 
 [dev-dependencies]
 assert_cmd = "0.11.1"
