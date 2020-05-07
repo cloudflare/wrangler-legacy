@@ -37,6 +37,7 @@ impl Tail {
         user: GlobalUser,
         tunnel_port: u16,
         metrics_port: u16,
+        verbose: bool,
     ) -> Result<(), failure::Error> {
         is_cloudflared_installed()?;
         print_startup_message(&target.name, tunnel_port, metrics_port);
@@ -60,11 +61,18 @@ impl Tail {
             let log_server = tokio::spawn(LogServer::new(tunnel_port, log_rx).run());
 
             // Spin up a new cloudflared tunnel to connect trace worker to local server
-            let tunnel_process = Tunnel::new(tunnel_port, metrics_port)?;
+            let tunnel_process = Tunnel::new(tunnel_port, metrics_port, verbose)?;
             let tunnel = tokio::spawn(tunnel_process.run(tunnel_rx));
 
             // Register the tail with the Workers API and send periodic heartbeats
-            let session = tokio::spawn(Session::run(target, user, session_rx, tx, metrics_port));
+            let session = tokio::spawn(Session::run(
+                target,
+                user,
+                session_rx,
+                tx,
+                metrics_port,
+                verbose,
+            ));
 
             let res = tokio::try_join!(
                 async { listener.await? },
