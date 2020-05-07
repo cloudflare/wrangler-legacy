@@ -537,6 +537,12 @@ fn run() -> Result<(), failure::Error> {
                         .long("metrics")
                         .takes_value(true)
                 )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("Toggle verbose output"),
+                )
         )
         .get_matches();
 
@@ -919,7 +925,9 @@ fn run() -> Result<(), failure::Error> {
             .value_of("metrics_port")
             .map(|p| p.parse().expect("--metrics expects a number"));
 
-        commands::tail::start(&target, &user, tunnel_port, metrics_port)?;
+        let verbose = matches.is_present("verbose");
+
+        commands::tail::start(&target, &user, tunnel_port, metrics_port, verbose)?;
     }
     Ok(())
 }

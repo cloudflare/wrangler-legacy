@@ -30,11 +30,12 @@ impl Session {
         shutdown_rx: Receiver<()>,
         tx: Sender<()>,
         metrics_port: u16,
+        verbose: bool,
     ) -> Result<(), failure::Error> {
         // We need to exit on a shutdown command without waiting for API calls to complete.
         tokio::select! {
             _ = shutdown_rx => { Ok(()) }
-            result = Session::start(target, user, tx, metrics_port) => { result }
+            result = Session::start(target, user, tx, metrics_port, verbose) => { result }
         }
     }
 
@@ -43,11 +44,19 @@ impl Session {
         user: GlobalUser,
         tx: Sender<()>,
         metrics_port: u16,
+        verbose: bool,
     ) -> Result<(), failure::Error> {
         let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
         let spinner = ProgressBar::new_spinner().with_style(style);
-        spinner.set_message("This may take a few seconds...");
-        spinner.enable_steady_tick(20);
+
+        // Verbose output and the spinner don't play well together.
+        if verbose {
+            eprintln!("This may take a few seconds...");
+        } else {
+            spinner.set_message("This may take a few seconds...");
+            spinner.enable_steady_tick(20);
+        }
+
         let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
 
         // TODO: make Tunnel struct responsible for getting its own port!

@@ -2,8 +2,6 @@ use std::path::PathBuf;
 use std::process::Stdio;
 use std::str;
 
-use log::log_enabled;
-use log::Level::Info;
 use tokio::process::Child;
 use tokio::process::Command;
 use tokio::sync::oneshot::Receiver;
@@ -18,7 +16,11 @@ pub struct Tunnel {
 /// and wait on its output; otherwise we leave an orphaned process when wrangler exits and this
 /// causes problems if it still exists the next time we start up a tail.
 impl Tunnel {
-    pub fn new(tunnel_port: u16, metrics_port: u16) -> Result<Tunnel, failure::Error> {
+    pub fn new(
+        tunnel_port: u16,
+        metrics_port: u16,
+        verbose: bool,
+    ) -> Result<Tunnel, failure::Error> {
         let tool_name = PathBuf::from("cloudflared");
         // TODO: Finally get cloudflared release binaries distributed on GitHub so we could
         // simply uncomment the line below.
@@ -28,7 +30,7 @@ impl Tunnel {
         let metrics_url = format!("localhost:{}", metrics_port);
         let args = ["tunnel", "--url", &tunnel_url, "--metrics", &metrics_url];
 
-        let mut command = command(&args, &tool_name);
+        let mut command = command(&args, &tool_name, verbose);
         let command_name = format!("{:?}", command);
 
         let child = command
@@ -61,7 +63,7 @@ impl Tunnel {
 // TODO: let's not clumsily copy this from commands/build/mod.rs
 // We definitely want to keep the check for RUST_LOG=info below so we avoid
 // spamming user terminal with default cloudflared output (which is pretty darn sizable.)
-pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
+pub fn command(args: &[&str], binary_path: &PathBuf, verbose: bool) -> Command {
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
         c.arg("/C");
@@ -73,7 +75,7 @@ pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
 
     c.args(args);
     // Let user read cloudflared process logs iff RUST_LOG=info.
-    if !log_enabled!(Info) {
+    if !verbose {
         c.stderr(Stdio::null());
     }
 

@@ -12,11 +12,18 @@ pub fn start(
     user: &GlobalUser,
     tunnel_port: Option<u16>,
     metrics_port: Option<u16>,
+    verbose: bool,
 ) -> Result<(), failure::Error> {
     let tunnel_port = find_open_port(tunnel_port, DEFAULT_TUNNEL_PORT)?;
     let metrics_port = find_open_port(metrics_port, DEFAULT_METRICS_PORT)?;
 
-    Tail::run(target.clone(), user.clone(), tunnel_port, metrics_port)
+    Tail::run(
+        target.clone(),
+        user.clone(),
+        tunnel_port,
+        metrics_port,
+        verbose,
+    )
 }
 
 /// Find open port takes two arguments: an Optional requested port, and a default port.
