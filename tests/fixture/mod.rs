@@ -19,6 +19,7 @@ pub struct Fixture {
     // fails, its directory isn't deleted, and we have a chance to manually
     // inspect its state and figure out what is going on.
     dir: ManuallyDrop<TempDir>,
+    cache_dir: ManuallyDrop<TempDir>,
     output_path: &'static str,
 }
 
@@ -31,8 +32,13 @@ impl Default for Fixture {
 impl Fixture {
     pub fn new() -> Fixture {
         let dir = TempDir::new().unwrap();
+        let cache_dir = TempDir::new().unwrap();
+        let cache_path = cache_dir.path();
+        fs::create_dir_all(cache_path).unwrap();
+        env::set_var("WRANGLER_CACHE", cache_path);
         eprintln!("Created fixture at {}", dir.path().display());
         Fixture {
+            cache_dir: ManuallyDrop::new(cache_dir),
             dir: ManuallyDrop::new(dir),
             output_path: BUNDLE_OUT,
         }
@@ -112,7 +118,10 @@ impl Fixture {
 impl Drop for Fixture {
     fn drop(&mut self) {
         if !thread::panicking() {
-            unsafe { ManuallyDrop::drop(&mut self.dir) }
+            unsafe {
+                ManuallyDrop::drop(&mut self.dir);
+                ManuallyDrop::drop(&mut self.cache_dir);
+            }
         }
     }
 }

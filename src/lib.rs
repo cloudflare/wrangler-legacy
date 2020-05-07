@@ -9,4 +9,3 @@ pub mod installer;
 pub mod settings;
 pub mod terminal;
 pub mod upload;
-pub mod util;
