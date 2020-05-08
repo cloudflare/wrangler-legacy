@@ -77,10 +77,10 @@ After CI builds the release binaries and they appear on the [releases page](http
 
    The new release candidate should then include updated testing instructions with a small changelog at the top to get folks who installed the old release candidate up to speed.
 
+## Publish
+
 1. Hit the big green Merge button on the release PR.
 1. `git checkout master` and `git pull --rebase origin master`
-
-## Publish
 
 ### Publish to crates.io (full release only)
 
