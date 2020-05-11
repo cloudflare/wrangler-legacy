@@ -3,7 +3,7 @@ use ignore::overrides::OverrideBuilder;
 use ignore::WalkBuilder;
 pub use watcher::wait_for_changes;
 
-use crate::commands::build::{command, wranglerjs};
+use crate::build::{command, wranglerjs};
 use crate::settings::toml::{Target, TargetType};
 use crate::terminal::message;
 use crate::{commands, install};

@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate text_io;
 
+mod build;
+pub use build::build;
 pub mod commands;
 pub mod deploy;
 pub mod http;
