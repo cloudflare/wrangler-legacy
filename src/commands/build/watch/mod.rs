@@ -45,7 +45,10 @@ pub fn watch_and_build(
                                 tx.send(()).expect("--watch change message failed to send");
                             }
                         }
-                        Err(_) => message::user_error("Something went wrong while watching."),
+                        Err(e) => {
+                            log::debug!("{:?}", e);
+                            message::user_error("Something went wrong while watching.")
+                        }
                     }
                 }
             });
