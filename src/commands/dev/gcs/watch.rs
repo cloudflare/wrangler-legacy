@@ -6,6 +6,7 @@ use crate::commands::dev::server_config::ServerConfig;
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
+use crate::watch::watch_and_build;
 
 pub fn watch_for_changes(
     target: Target,
@@ -16,7 +17,7 @@ pub fn watch_for_changes(
     verbose: bool,
 ) -> Result<(), failure::Error> {
     let (sender, receiver) = mpsc::channel();
-    commands::watch_and_build(&target, Some(sender))?;
+    watch_and_build(&target, Some(sender))?;
 
     while let Ok(_) = receiver.recv() {
         let user = user.clone();

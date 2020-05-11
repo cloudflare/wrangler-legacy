@@ -1,8 +1,5 @@
 pub mod wranglerjs;
 
-mod watch;
-pub use watch::watch_and_build;
-
 use crate::settings::toml::{Target, TargetType};
 use crate::terminal::message;
 use crate::{commands, install};
