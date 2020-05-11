@@ -20,12 +20,11 @@ use output::WranglerjsOutput;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
-use crate::commands::build::watch::wait_for_changes;
-use crate::commands::build::watch::COOLDOWN_PERIOD;
 use crate::install;
 use crate::settings::toml::Target;
 use crate::terminal::message;
 use crate::upload::package::Package;
+use crate::watch::{wait_for_changes, COOLDOWN_PERIOD};
 
 use guarded_command::GuardedCommand;
 
