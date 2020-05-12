@@ -19,6 +19,7 @@ use notify::{self, RecursiveMode, Watcher};
 use output::WranglerjsOutput;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+use semver::Version;
 
 use crate::install;
 use crate::settings::toml::Target;
@@ -168,7 +169,11 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     // export WASM_PACK_PATH for use by wasm-pack-plugin
     // https://github.com/wasm-tool/wasm-pack-plugin/blob/caca20df84782223f002735a8a2e99b2291f957c/plugin.js#L13
-    let wasm_pack_path = install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
+    let tool_name = "wasm-pack";
+    let tool_author = "rustwasm";
+    let version = install::get_latest_version(tool_name)?;
+    let wasm_pack_path =
+        install::install(tool_name, tool_author, true, version)?.binary("wasm-pack")?;
     command.env("WASM_PACK_PATH", wasm_pack_path);
 
     // create a temp file for IPC with the wranglerjs process
@@ -303,8 +308,10 @@ fn install() -> Result<PathBuf, failure::Error> {
         wranglerjs_path
     } else {
         let tool_name = "wranglerjs";
-        let version = env!("CARGO_PKG_VERSION");
-        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", version)?;
+        let tool_author = "cloudflare";
+        let is_binary = false;
+        let version = Version::parse(env!("CARGO_PKG_VERSION"))?;
+        let wranglerjs_path = install::install(tool_name, tool_author, is_binary, version)?;
         log::info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
         wranglerjs_path.path()
     };
