@@ -513,6 +513,36 @@ fn run() -> Result<(), failure::Error> {
             "{} Retrieve your user info and test your auth config",
             emoji::SLEUTH
         )))
+        .subcommand(
+            SubCommand::with_name("tail")
+                .about(&*format!("{} Aggregate logs from production worker", emoji::TAIL))
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to tail logs from")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("tunnel_port")
+                        .help("port to accept tail log requests")
+                        .short("p")
+                        .long("port")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("metrics_port")
+                        .help("provides endpoint for cloudflared metrics. used to retrieve tunnel url")
+                        .long("metrics")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("Toggle verbose output"),
+                )
+        )
         .get_matches();
 
     let config_path = Path::new("./wrangler.toml");
@@ -592,11 +622,7 @@ fn run() -> Result<(), failure::Error> {
 
         commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
-        log::info!("Getting project settings");
-        let manifest = settings::toml::Manifest::new(config_path)?;
-        let env = matches.value_of("env");
-        let target = &manifest.get_target(env)?;
-        commands::build(&target)?;
+        commands::build(matches)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
@@ -883,6 +909,22 @@ fn run() -> Result<(), failure::Error> {
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
         }
+    } else if let Some(matches) = matches.subcommand_matches("tail") {
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+        let user = settings::global_user::GlobalUser::new()?;
+
+        let tunnel_port: Option<u16> = matches
+            .value_of("tunnel_port")
+            .map(|p| p.parse().expect("--port expects a number"));
+        let metrics_port: Option<u16> = matches
+            .value_of("metrics_port")
+            .map(|p| p.parse().expect("--metrics expects a number"));
+
+        let verbose = matches.is_present("verbose");
+
+        commands::tail::start(&target, &user, tunnel_port, metrics_port, verbose)?;
     }
     Ok(())
 }

@@ -29,7 +29,7 @@ pub fn install(
     is_binary: bool,
     version: Version,
 ) -> Result<Download, failure::Error> {
-    match tool_needs_update(tool_name, version)? {
+    let download = match tool_needs_update(tool_name, version)? {
         ToolDownload::NeedsInstall(version) => {
             println!("{}  Installing {} v{}...", emoji::DOWN, tool_name, version);
             let binaries: Vec<&str> = if is_binary { vec![tool_name] } else { vec![] };
@@ -37,11 +37,17 @@ pub fn install(
                 download_prebuilt(tool_name, owner, &version.to_string(), binaries.as_ref());
             match download {
                 Ok(download) => Ok(download),
-                Err(e) => failure::bail!("could not download `{}`\n{}", tool_name, e),
+                Err(e) => Err(failure::format_err!(
+                    "could not download `{}`\n{}",
+                    tool_name,
+                    e
+                )),
             }
         }
         ToolDownload::InstalledAt(download) => Ok(download),
-    }
+    }?;
+    log::debug!("tool {} located at {:?}", tool_name, download);
+    Ok(download)
 }
 
 fn tool_needs_update(
@@ -141,6 +147,7 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
 }
 
 pub fn get_latest_version(tool_name: &str) -> Result<Version, failure::Error> {
+    // TODO: return the latest version pulled from github api, not via Krate.
     let latest_version = Krate::new(tool_name)?.max_version;
     Version::parse(&latest_version)
         .map_err(|e| failure::format_err!("could not parse latest version\n{}", e))
