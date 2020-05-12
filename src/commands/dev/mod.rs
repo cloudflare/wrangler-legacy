@@ -16,9 +16,10 @@ pub fn dev(
     host: Option<&str>,
     port: Option<&str>,
     ip: Option<&str>,
+    allowed_origins: &[&str],
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let server_config = ServerConfig::new(host, ip, port)?;
+    let server_config = ServerConfig::new(host, ip, port, allowed_origins)?;
 
     // we can remove this once the feature has stabilized
     print_alpha_warning_message();

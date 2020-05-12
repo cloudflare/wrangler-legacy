@@ -446,6 +446,13 @@ fn run() -> Result<(), failure::Error> {
                         .takes_value(true)
                 )
                 .arg(
+                    Arg::with_name("cors")
+                        .long("cors")
+                        .takes_value(true)
+                        .multiple(true)
+                        .help("turns on CORS for your local development server, pass the origins you want to allow requests from")
+                )
+                .arg(
                     Arg::with_name("verbose")
                         .long("verbose")
                         .takes_value(false)
@@ -666,8 +673,9 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let target = manifest.get_target(env)?;
         let user = settings::global_user::GlobalUser::new().ok();
+        let allowed_origins: Vec<&str> = matches.values_of("cors").unwrap().collect();
         let verbose = matches.is_present("verbose");
-        commands::dev::dev(target, user, host, port, ip, verbose)?;
+        commands::dev::dev(target, user, host, port, ip, &allowed_origins, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

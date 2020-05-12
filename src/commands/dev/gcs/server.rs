@@ -8,7 +8,7 @@ use chrono::prelude::*;
 
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
-use hyper::http::uri::InvalidUri;
+use hyper::http::{uri::InvalidUri, Method};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
 
@@ -48,6 +48,23 @@ pub(super) async fn serve(
                 // split the request into parts so we can read
                 // what it contains and display in logs
                 let (parts, body) = req.into_parts();
+
+                if parts.method == Method::OPTIONS && server_config.allowed_origins.len() > 0 {
+                    return async move {
+                        let response_builder = Response::builder()
+                            .header("Access-Control-Allow-Credentials", "true")
+                            .header(
+                                "Access-Control-Allow-Methods",
+                                "GET, HEAD, POST, PUT, DELETE, OPTIONS",
+                            )
+                            .header("Access-Control-Allow-Headers", "Content-Type");
+                        for allowed_origin in server_config.allowed_origins {
+                            response_builder
+                                .header("Access-Control-Allow-Origin", allowed_origin.to_string());
+                        }
+                        Ok::<_, failure::Error>(response_builder.body(()))
+                    };
+                }
 
                 let req_method = parts.method.to_string();
 
