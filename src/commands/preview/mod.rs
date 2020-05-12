@@ -18,7 +18,7 @@ use log::info;
 use url::Url;
 use ws::{Sender, WebSocket};
 
-use crate::commands;
+use crate::build;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -35,7 +35,7 @@ pub fn preview(
     verbose: bool,
     headless: bool,
 ) -> Result<(), failure::Error> {
-    commands::build(&target)?;
+    build(&target)?;
 
     let sites_preview: bool = target.site.is_some();
 
@@ -168,7 +168,7 @@ fn watch_for_changes(
     watch_and_build(&target, Some(tx))?;
 
     while let Ok(_e) = rx.recv() {
-        commands::build(&target)?;
+        build(&target)?;
 
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {
             let script_id = format!("{}", new_id);

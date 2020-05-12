@@ -622,11 +622,7 @@ fn run() -> Result<(), failure::Error> {
 
         commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
-        log::info!("Getting project settings");
-        let manifest = settings::toml::Manifest::new(config_path)?;
-        let env = matches.value_of("env");
-        let target = &manifest.get_target(env)?;
-        commands::build(&target)?;
+        commands::build(matches)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
