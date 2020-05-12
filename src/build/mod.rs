@@ -1,7 +1,6 @@
-pub mod wranglerjs;
-
 use crate::settings::toml::{Target, TargetType};
 use crate::terminal::message;
+use crate::wranglerjs;
 use crate::{commands, install};
 
 use std::path::PathBuf;

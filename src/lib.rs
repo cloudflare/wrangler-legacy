@@ -13,3 +13,4 @@ pub mod tail;
 pub mod terminal;
 pub mod upload;
 pub mod watch;
+pub mod wranglerjs;

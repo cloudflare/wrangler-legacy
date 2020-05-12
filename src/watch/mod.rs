@@ -3,9 +3,10 @@ use ignore::overrides::OverrideBuilder;
 use ignore::WalkBuilder;
 pub use watcher::wait_for_changes;
 
-use crate::build::{command, wranglerjs};
+use crate::build::command;
 use crate::settings::toml::{Target, TargetType};
 use crate::terminal::message;
+use crate::wranglerjs;
 use crate::{commands, install};
 
 use notify::{self, RecursiveMode, Watcher};

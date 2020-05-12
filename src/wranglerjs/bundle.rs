@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
-use crate::build::wranglerjs::output::WranglerjsOutput;
+use super::output::WranglerjsOutput;
 
 // Directory where we should write the {Bundle}. It represents the built
 // artifact.
