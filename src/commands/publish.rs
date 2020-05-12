@@ -1,7 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-use crate::commands;
+use crate::build;
 use crate::commands::kv;
 use crate::commands::kv::bucket::{sync, upload_files};
 use crate::commands::kv::bulk::delete::delete_bulk;
@@ -21,7 +21,7 @@ pub fn publish(
     validate_target_required_fields_present(target)?;
 
     // Build the script before uploading.
-    commands::build(&target)?;
+    build(&target)?;
 
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();

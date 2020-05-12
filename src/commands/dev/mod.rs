@@ -3,7 +3,7 @@ mod server_config;
 mod socket;
 use server_config::ServerConfig;
 
-use crate::commands;
+use crate::build;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::{message, styles};
@@ -24,7 +24,7 @@ pub fn dev(
     print_alpha_warning_message();
 
     // before serving requests we must first build the Worker
-    commands::build(&target)?;
+    build(&target)?;
 
     // eventually we will have two modes - edge and gcs
     // edge for authenticated users and gcs for unauthenticated
