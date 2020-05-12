@@ -27,7 +27,7 @@ pub fn get_preview_id(
     // directing the user to open the browser to view the output
     // this message makes sense for `wrangler preview` but not `wrangler dev`
     let sites_preview = false;
-    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose).map_err(|_| failure::format_err!("Could not upload your script. Check your internet connection or https://www.cloudflarestatus.com/ for rare incidents impacting the Cloudflare Workers API."))?;
+    let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
     Ok(format!(
         "{}{}{}{}",
         &script_id,

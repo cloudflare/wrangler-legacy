@@ -34,7 +34,6 @@ pub fn upload_files(
         } else {
             None
         };
-
         while !(pairs.is_empty() && key_value_batch.is_empty()) {
             if pairs.is_empty() {
                 // Last batch to upload
