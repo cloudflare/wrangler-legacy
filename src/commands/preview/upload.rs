@@ -9,10 +9,8 @@ use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::message;
+use crate::terminal::{message, styles};
 use crate::upload;
-
-use console::style;
 
 #[derive(Debug, Deserialize)]
 struct Preview {
@@ -101,10 +99,10 @@ pub fn upload(
             }
         }
         None => {
-            let wrangler_config_msg = style("`wrangler config`").yellow().bold();
-            let docs_url_msg = style("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables").blue().bold();
+            let wrangler_config_msg = styles::highlight("`wrangler config`");
+            let docs_url_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
             message::billboard(
-                &format!("You have not provided your Cloudflare credentials.\n\nPlease run {} or visit\n{}\nfor info on authenticating with environment variables.", wrangler_config_msg, docs_url_msg)
+            &format!("You have not provided your Cloudflare credentials.\n\nPlease run {} or visit\n{}\nfor info on authenticating with environment variables.", wrangler_config_msg, docs_url_msg)
             );
 
             message::info("Running preview without authentication.");

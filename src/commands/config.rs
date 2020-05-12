@@ -10,7 +10,7 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use crate::http;
 use crate::settings::global_user::{get_global_config_path, GlobalUser};
-use crate::terminal::message;
+use crate::terminal::{message, styles};
 
 // set the permissions on the dir, we want to avoid that other user reads to file
 #[cfg(not(target_os = "windows"))]
@@ -48,23 +48,27 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
     let client = http::cf_v4_client(user)?;
 
     match user {
-        GlobalUser::TokenAuth { .. } => {
-            match client.request(&GetUserTokenStatus {}) {
-                Ok(success) => {
-                    if success.result.status == "active" {
-                        Ok(())
-                    } else {
-                        failure::bail!("Authentication check failed. Your token has status \"{}\", not \"active\".\nTry rolling your token on the Cloudflare dashboard.")
-                    }
-                },
-                Err(e) => failure::bail!("Authentication check failed. Please make sure your API token is correct.\n{}", http::format_error(e, None))
+        GlobalUser::TokenAuth { .. } => match client.request(&GetUserTokenStatus {}) {
+            Ok(success) => {
+                if success.result.status == "active" {
+                    Ok(())
+                } else {
+                    failure::bail!("Authentication check failed. Your token has status \"{}\", not \"active\".\nTry rolling your token on the Cloudflare dashboard.")
+                }
             }
-        }
-        GlobalUser::GlobalKeyAuth { .. } => {
-            match client.request(&GetUserDetails {}) {
-                Ok(_) => Ok(()),
-                Err(e) => failure::bail!("Authentication check failed. Please make sure your email and global API key pair are correct. (https://developers.cloudflare.com/workers/quickstart/#global-api-key)\n{}", http::format_error(e, None)),
+            Err(e) => failure::bail!(
+                "Authentication check failed. Please make sure your API token is correct.\n{}",
+                http::format_error(e, None)
+            ),
+        },
+        GlobalUser::GlobalKeyAuth { .. } => match client.request(&GetUserDetails {}) {
+            Ok(_) => Ok(()),
+            Err(_) => {
+                let api_docs_url = styles::url(
+                    "https://developers.cloudflare.com/workers/quickstart/#global-api-key",
+                );
+                failure::bail!("Authentication check failed. Please make sure your email and global API key pair are correct.\nSee {}", api_docs_url)
             }
-        }
+        },
     }
 }

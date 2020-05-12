@@ -1,4 +1,5 @@
 mod bundle;
+mod guarded_command;
 pub mod output;
 
 pub use bundle::Bundle;
@@ -19,13 +20,13 @@ use output::WranglerjsOutput;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
-use crate::commands::build::watch::wait_for_changes;
-use crate::commands::build::watch::COOLDOWN_PERIOD;
 use crate::install;
 use crate::settings::toml::Target;
 use crate::terminal::message;
 use crate::upload::package::Package;
-use crate::util;
+use crate::watch::{wait_for_changes, COOLDOWN_PERIOD};
+
+use guarded_command::GuardedCommand;
 
 // Run the underlying {wranglerjs} executable.
 
@@ -64,7 +65,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
 
     // Turbofish the result of the closure so we can use ?
     thread::spawn::<_, Result<(), failure::Error>>(move || {
-        let _command_guard = util::GuardedCommand::spawn(command);
+        let _command_guard = GuardedCommand::spawn(command);
 
         let (watcher_tx, watcher_rx) = channel();
         let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;

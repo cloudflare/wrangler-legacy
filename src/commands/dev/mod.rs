@@ -6,12 +6,10 @@ mod utils;
 
 use server_config::ServerConfig;
 
-use crate::commands;
+use crate::build;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
-use crate::terminal::message;
-
-use console::style;
+use crate::terminal::{message, styles};
 
 /// `wrangler dev` starts a server on a dev machine that routes incoming HTTP requests
 /// to a Cloudflare Workers runtime and returns HTTP responses
@@ -30,7 +28,7 @@ pub fn dev(
     print_alpha_warning_message();
 
     // before serving requests we must first build the Worker
-    commands::build(&target)?;
+    build(&target)?;
 
     match user {
         // authenticated users connect to the edge
@@ -42,9 +40,7 @@ pub fn dev(
 }
 
 fn print_alpha_warning_message() {
-    let wrangler_dev_msg = style("`wrangler dev`").yellow().bold();
-    let feedback_url = style("https://github.com/cloudflare/wrangler/issues/1047")
-        .blue()
-        .bold();
+    let wrangler_dev_msg = styles::highlight("`wrangler dev`");
+    let feedback_url = styles::url("https://github.com/cloudflare/wrangler/issues/1047");
     message::billboard(&format!("{0} is currently unstable and there are likely to be breaking changes!\nFor this reason, we cannot yet recommend using {0} for integration testing.\n\nPlease submit any feedback here: {1}", wrangler_dev_msg, feedback_url));
 }

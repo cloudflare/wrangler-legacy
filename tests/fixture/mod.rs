@@ -6,7 +6,6 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::mem::ManuallyDrop;
 use std::path::PathBuf;
-use std::sync::MutexGuard;
 use std::thread;
 
 use tempfile::TempDir;
@@ -106,16 +105,6 @@ impl Fixture {
         "#,
         );
         self.create_file("workers-site/index.js", "");
-    }
-
-    pub fn lock(&self) -> MutexGuard<'static, ()> {
-        use std::sync::Mutex;
-
-        lazy_static! {
-            static ref ONE_TEST_AT_A_TIME: Mutex<()> = Mutex::new(());
-        }
-
-        ONE_TEST_AT_A_TIME.lock().unwrap_or_else(|e| e.into_inner())
     }
 }
 

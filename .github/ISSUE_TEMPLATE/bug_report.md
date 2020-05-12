@@ -21,6 +21,7 @@ labels: user report
 * output of `rustc -V`:
 * output of `node -v`:
 * output of `wrangler -V`:
+* contents of `wrangler.toml`
 
 #### Steps to reproduce
 
