@@ -2,7 +2,9 @@
 extern crate text_io;
 
 mod build;
+mod preview;
 pub use build::build;
+pub use preview::preview;
 pub mod commands;
 pub mod deploy;
 pub mod http;
