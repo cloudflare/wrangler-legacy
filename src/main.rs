@@ -646,7 +646,9 @@ fn run() -> Result<(), failure::Error> {
         commands::preview(target, user, method, url, body, watch, verbose, headless)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
-        let port = matches.value_of("port");
+        let port: Option<u16> = matches
+            .value_of("port")
+            .map(|p| p.parse().expect("--port expects a number"));
         let host = matches.value_of("host");
         let ip = matches.value_of("ip");
         let manifest = settings::toml::Manifest::new(config_path)?;
