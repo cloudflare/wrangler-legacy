@@ -147,12 +147,12 @@ dependencies = [
 
 [[package]]
 name = "binary-install"
-version = "0.0.3-alpha"
+version = "0.0.3-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a81dda17f2dbba8271cf61f2ea3e48e3da8aef31665731bce48818cc07863f06"
+checksum = "f5b3d4bb3a35edf5f87a1e7621a7a1aa9e3278346baa2b34a548869727c80570"
 dependencies = [
  "curl",
- "dirs 1.0.5",
+ "dirs 2.0.2",
  "failure",
  "flate2",
  "fs2",
@@ -936,9 +936,9 @@ dependencies = [
 
 [[package]]
 name = "hex"
-version = "0.3.2"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "805026a5d0141ffc30abb3be3173848ad46a1b1664fe632428479619a3644d77"
+checksum = "644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35"
 
 [[package]]
 name = "http"
@@ -2129,9 +2129,9 @@ dependencies = [
 
 [[package]]
 name = "siphasher"
-version = "0.2.3"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b8de496cf83d4ed58b6be86c3a275b8602f6ffe98d3024a869e124147a9a3ac"
+checksum = "fa8f3741c7372e75519bd9346068370c9cdaabcc1f9599cbcf2a2719352286b7"
 
 [[package]]
 name = "slab"
@@ -2866,6 +2866,7 @@ dependencies = [
  "rand 0.6.5",
  "regex",
  "reqwest",
+ "semver",
  "serde 1.0.106",
  "serde_json",
  "serde_with",
