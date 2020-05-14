@@ -101,7 +101,13 @@ pub fn add_site_namespace(
     target: &mut Target,
     preview: bool,
 ) -> Result<KvNamespace, failure::Error> {
-    let site_namespace = kv::namespace::site(target, &user, preview)?;
+    let title = if preview {
+        format!("__{}-{}", target.name, "workers_sites_assets_preview")
+    } else {
+        format!("__{}-{}", target.name, "workers_sites_assets")
+    };
+
+    let site_namespace = kv::namespace::upsert(target, &user, title)?;
 
     // Check if namespace already is in namespace list
     for namespace in target.kv_namespaces() {
