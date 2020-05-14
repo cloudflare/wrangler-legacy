@@ -2848,7 +2848,6 @@ dependencies = [
  "flate2",
  "fs2",
  "fs_extra",
- "futures",
  "futures-util",
  "http",
  "hyper",
