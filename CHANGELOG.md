@@ -1,5 +1,106 @@
 # Changelog
 
+## 🦚 1.9.0
+
+- ### Features
+
+  - **Wrangler Tail - [ashleymichal], [gabbifish], [EverlastingBugstopper], [pull/1182]**
+
+    Wrangler Tail introduces a way to view console statements and exceptions live as they occur in your Worker. Simply run `wrangler tail` against any deployed Worker and pipe the output through `jq` or to a file to stream trace events per request.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [gabbifish]: https://github.com/gabbifish
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1182]: https://github.com/cloudflare/wrangler/pull/1182
+
+  - **Much faster build times for Workers Sites projects - [EverlastingBugstopper], [pull/1221]**
+
+    When you deploy a Workers Site, Wrangler generates a unique hash for each file. It does this so that your Worker does not serve stale files from Cloudflare's edge cache to end users. Unfortunately, generating these hashes took a really really long time since we were using a cryptographically strong hash. Since we're just using this hash for cache invalidation, we decided it's not necessary to use such a complicated algorithm. We switched to using [xxhash](https://github.com/Cyan4973/xxHash) and have seen noticeable speed improvements.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1221]: https://github.com/cloudflare/wrangler/pull/1221
+
+  - **Add --url to wrangler preview - [larkin-nz], [issue/351] [pull/1001]**
+
+    `wrangler preview` now has the ability to open any URL! Before, `wrangler preview` would always open `example.com`, and you would be able to change the URL in the browser only. Now, you can use `wrangler preview --url https://mysite.com/my-amazing-endpoint` and your preview session will get started off on the right foot.
+
+    [larkin-nz]: https://github.com/larkin-nz
+    [pull/1001]: https://github.com/cloudflare/wrangler/pull/1001
+    [issue/351]: https://github.com/cloudflare/wrangler/issues/351
+
+  - **Print email addresses for API token users on `wrangler whoami` - [dhaynespls], [issue/863] [pull/1212]**
+
+    Before, if you ran `wrangler whoami` as an API token user, you didn't get much info. Due to some heavy lifting by folks working on the Cloudflare API, API token users with the correct permissions can now see what email address they are authenticated with when they run `wrangler whoami`. Nifty!
+
+    [dhaynespls]: https://github.com/dhaynespls
+    [pull/1212]: https://github.com/cloudflare/wrangler/pull/1212
+    [issue/863]: https://github.com/cloudflare/wrangler/issues/863
+
+  - **`wrangler generate` auto increments default worker name - [xprazak2], [issue/58] [pull/469]**
+
+    When `wrangler generate` is run without a name for the worker, it will find a name for the worker that does not already exist in that directory.
+
+    [xprazak2]: https://github.com/xprazak2
+    [pull/469]: https://github.com/cloudflare/wrangler/pull/469
+    [issue/58]: https://github.com/cloudflare/wrangler/issues/58
+
+  - **Standardize colors in `stdout` - [EverlastingBugstopper], [pull/1248]**
+
+    Wrangler likes to print colors where appropriate, and now there is a standard module for printing different colors that is used across the codebase.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1248]: https://github.com/cloudflare/wrangler/pull/1248
+
+  - **Suggests `wrangler init` if `wrangler.toml` does not exist - [ashleymichal], [issue/827] [pull/1239]**
+
+    When there is no `wrangler.toml` in a directory you're trying to run Wrangler in, it doesn't know what to do. The way to fix this is to make a `wrangler.toml`, and the way to do that is to run `wrangler init`.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1239]: https://github.com/cloudflare/wrangler/pull/1239
+    [issue/827]: https://github.com/cloudflare/wrangler/issues/827
+
+- ### Fixes
+
+  - **Allow kv-namespaces and kv_namespaces - [EverlastingBugstopper], [issue/1158] [pull/1169]**
+
+    Most fields defined in `wrangler.toml` are one word, but some of them are two! In the past, we usually use `_` to separate words, but somehow we used a `-` for `kv-namespaces`. This was inconsistent and a bit confusing. Now we allow both for the sake of backwards compatibility, but in the future we'll try to stick to `snake_case`.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1169]: https://github.com/cloudflare/wrangler/pull/1169
+    [issue/1158]: https://github.com/cloudflare/wrangler/issues/1158
+
+  - **Typo fix in `wrangler init` - [jplhomer], [pull/1210]**
+
+    A successful `wrangler init` execution used to output "Succesfully" instead of "Successfully", but not anymore!
+
+    [jplhomer]: https://github.com/jplhomer
+    [pull/1210]: https://github.com/cloudflare/wrangler/pull/1210
+
+  - **More granular errors in `wrangler dev` - [EverlastingBugstopper], [pull/1251]**
+
+    In the last release we added an error message in `wrangler dev` for failed uploads. Unfortunately it was a bit overeager and some information about different types of errors were lost. This behavior has been fixed!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1251]: https://github.com/cloudflare/wrangler/pull/1251
+
+- ### Maintenance
+
+  - **Unify wrangler's user agent - [EverlastingBugstopper], [issue/731] [pull/1070]**
+
+    Wrangler sure does send a lot of API requests! Before, about half of the API requests Wrangler sent would send them with the HTTP header `User-Agent: wrangler`. Now, all requests sent by Wrangler include that User Agent. This lets the APIs we use know that the request is coming from this tool. Yay for being good [netizens](https://www.merriam-webster.com/dictionary/netizen)!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1070]: https://github.com/cloudflare/wrangler/pull/1070
+    [issue/731]: https://github.com/cloudflare/wrangler/issues/731
+
+  - **Refactors and documentation of `wrangler dev` - [EverlastingBugstopper], [pull/1220]**
+
+    No behavior changes with this one, just some improvements to code layout and some extra documentation comments. Check it out if you're interested!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1220]: https://github.com/cloudflare/wrangler/pull/1220
+
+
 ## 🎭 1.8.4
 
 - ### Fixes
@@ -496,7 +597,7 @@
     [pull/471]: https://github.com/cloudflare/wrangler/pull/471
     [pull/879]: https://github.com/cloudflare/wrangler/pull/879
     [issue/354]: https://github.com/cloudflare/wrangler/issues/354
-  
+
   - **Add the ability to preview without opening the browser - [EverlastingBugstopper], [issue/256] [pull/816]**
 
     `wrangler preview` can now be called with a `--headless` flag that will not open the browser.
@@ -512,7 +613,7 @@
     [gabbifish]: https://github.com/gabbifish
     [pull/842]: https://github.com/cloudflare/wrangler/pull/842
     [issue/439]: https://github.com/cloudflare/wrangler/issues/439
-  
+
   - **Add a warning when publishing a Workers Site to a route without a trailing asterisk - [EverlastingBugstopper], [issue/814] [pull/839]**
 
     When publishing a Workers Site to your own domain, it's important that the Worker code runs on every path on your domain. This isn't particularly clear, so now when attempting to publish a Workers Site to a route without a trailing asterisk, Wrangler will print a warning message.
@@ -648,7 +749,7 @@
 
     [victoriabernard92]: https://github.com/victoriabernard92
     [pull/823]: https://github.com/cloudflare/wrangler/pull/823
-  
+
   - **Update the demo gif in the README - [EverlastingBugstopper], [issue/843] [pull/868]**
 
     The demo gif at the top of the README now accurately reflects the behavior of the latest Wrangler release.
@@ -727,7 +828,7 @@
   - **Disallow `node_modules` as a bucket for Workers Sites - [gabbifish], [issue/723] [pull/792]**
 
     `node_modules` is no longer allowed to be a bucket for Workers Sites. It is notoriously very large and if it were specified as a bucket it would probably be a very expensive mistake.
-  
+
     [issue/723]: https://github.com/cloudflare/wrangler/pull/792
     [pull/792]: https://github.com/cloudflare/wrangler/issues/723
 
@@ -743,7 +844,7 @@
 
     [issue/320]: https://github.com/cloudflare/wrangler/issues/320
     [pull/795]: https://github.com/cloudflare/wrangler/pull/795
-  
+
 - ### Fixes
 
   - **Fix Rust live preview - [gabbifish], [issue/618] [pull/699]**
@@ -855,7 +956,7 @@
 
     For more details on how Workers Sites works with Wrangler, check out [the documentation](https://developers.cloudflare.com/workers/sites/reference). We also have a brand new [tutorial](https://developers.cloudflare.com/workers/tutorials/deploy-a-react-app) to help you learn the Workers Sites workflow, by deploying a React application!
 
-    Workers Sites has been a heroic effort by the entire Workers Developer Experience team, comprising of Wrangler updates, new [project templates](https://github.com/cloudflare/worker-sites-template), and [open-source packages](https://github.com/cloudflare/kv-asset-handler). We're super excited about the future that Workers Sites represents, where static sites and serverless functions can work together to build powerful, cutting-edge applications. 
+    Workers Sites has been a heroic effort by the entire Workers Developer Experience team, comprising of Wrangler updates, new [project templates](https://github.com/cloudflare/worker-sites-template), and [open-source packages](https://github.com/cloudflare/kv-asset-handler). We're super excited about the future that Workers Sites represents, where static sites and serverless functions can work together to build powerful, cutting-edge applications.
 
     Make sure to try out Workers Sites to build your next app! 🎉🎉🎉
 
@@ -947,7 +1048,7 @@
     [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
     [issue/721]: https://github.com/cloudflare/wrangler/issues/721
     [pull/724]: https://github.com/cloudflare/wrangler/pull/724
-    
+
 
 ## 🐛 1.3.1
 

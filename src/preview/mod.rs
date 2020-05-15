@@ -1,10 +1,8 @@
-use std::process::Command;
-
 mod fiddle_messenger;
 use fiddle_messenger::*;
 
 mod http_method;
-pub use http_method::HTTPMethod;
+pub use http_method::HttpMethod;
 
 mod request_payload;
 pub use request_payload::RequestPayload;
@@ -12,32 +10,46 @@ pub use request_payload::RequestPayload;
 mod upload;
 pub use upload::upload;
 
-use crate::commands;
+use std::process::Command;
+use std::str::FromStr;
+use std::sync::mpsc::channel;
+use std::thread;
 
 use log::info;
+use url::Url;
+use ws::{Sender, WebSocket};
 
+use crate::build;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
-
-use std::sync::mpsc::channel;
-use std::thread;
-use ws::{Sender, WebSocket};
-
-use url::Url;
+use crate::watch::watch_and_build;
 
 pub fn preview(
     mut target: Target,
     user: Option<GlobalUser>,
-    method: HTTPMethod,
-    url: Url,
+    method: &str,
+    url: &str,
     body: Option<String>,
     livereload: bool,
     verbose: bool,
     headless: bool,
 ) -> Result<(), failure::Error> {
-    commands::build(&target)?;
+    let method = HttpMethod::from_str(method)?;
+    let url = Url::parse(url)?;
+
+    // Validate the URL scheme
+    failure::ensure!(
+        match url.scheme() {
+            "http" => true,
+            "https" => true,
+            _ => false,
+        },
+        "Invalid URL scheme (use either \"https\" or \"http\")"
+    );
+
+    build(&target)?;
 
     let sites_preview: bool = target.site.is_some();
 
@@ -116,8 +128,8 @@ fn client_request(payload: &RequestPayload, script_id: &String, sites_preview: &
     let cookie = payload.cookie(script_id);
 
     let worker_res = match method {
-        HTTPMethod::Get => get(&url, &cookie, &client).unwrap(),
-        HTTPMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
+        HttpMethod::Get => get(&url, &cookie, &client).unwrap(),
+        HttpMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
     };
 
     let msg = if *sites_preview {
@@ -167,11 +179,9 @@ fn watch_for_changes(
     let sites_preview: bool = target.site.is_some();
 
     let (tx, rx) = channel();
-    commands::watch_and_build(&target, Some(tx))?;
+    watch_and_build(&target, Some(tx))?;
 
-    while let Ok(_e) = rx.recv() {
-        commands::build(&target)?;
-
+    while let Ok(_) = rx.recv() {
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {
             let script_id = format!("{}", new_id);
 

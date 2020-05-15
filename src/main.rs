@@ -8,11 +8,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
-use commands::HTTPMethod;
-use console::style;
 use exitfailure::ExitFailure;
-
-use url::Url;
 
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
@@ -20,8 +16,8 @@ use wrangler::installer;
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
-use wrangler::terminal::{emoji, interactive, message};
-use wrangler::util::background_check_for_updates;
+use wrangler::terminal::{emoji, interactive, message, styles};
+use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -40,18 +36,19 @@ fn main() -> Result<(), ExitFailure> {
     }
     run()?;
     if let Ok(latest_version) = latest_version_receiver.try_recv() {
-        let latest_version = style(latest_version).green().bold();
+        let latest_version = styles::highlight(latest_version.to_string());
         let new_version_available = format!(
             "A new version of Wrangler ({}) is available!",
             latest_version
         );
         let update_message = "You can learn more about updating here:".to_string();
         let update_docs_url =
-            style("https://developers.cloudflare.com/workers/quickstart#updating-the-cli")
-                .blue()
-                .bold()
-                .to_string();
-        message::billboard(&[new_version_available, update_message, update_docs_url].join("\n"));
+            styles::url("https://developers.cloudflare.com/workers/quickstart#updating-the-cli");
+
+        message::billboard(&format!(
+            "{}\n{}\n{}",
+            new_version_available, update_message, update_docs_url
+        ));
     }
     Ok(())
 }
@@ -531,20 +528,46 @@ fn run() -> Result<(), failure::Error> {
             "{} Retrieve your user info and test your auth config",
             emoji::SLEUTH
         )))
+        .subcommand(
+            SubCommand::with_name("tail")
+                .about(&*format!("{} Aggregate logs from production worker", emoji::TAIL))
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to tail logs from")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("tunnel_port")
+                        .help("port to accept tail log requests")
+                        .short("p")
+                        .long("port")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("metrics_port")
+                        .help("provides endpoint for cloudflared metrics. used to retrieve tunnel url")
+                        .long("metrics")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("Toggle verbose output"),
+                )
+        )
         .get_matches();
 
     let config_path = Path::new("./wrangler.toml");
 
-    let not_recommended_msg = style("(Not Recommended)").red().bold();
-    let recommended_cmd_msg = style("`wrangler config --api-key`").yellow().bold();
-    let api_token_url = style("https://dash.cloudflare.com/profile/api-tokens")
-        .blue()
-        .bold();
-    let token_support_url = style(
+    let not_recommended_msg = styles::warning("(Not Recommended)");
+    let recommended_cmd_msg = styles::highlight("`wrangler config --api-key`");
+    let api_token_url = styles::url("https://dash.cloudflare.com/profile/api-tokens");
+    let token_support_url = styles::url(
         "https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys",
-    )
-    .blue()
-    .bold();
+    );
 
     if let Some(matches) = matches.subcommand_matches("config") {
         // If api-key flag isn't present, use the default auth option (API token)
@@ -614,11 +637,7 @@ fn run() -> Result<(), failure::Error> {
 
         commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
-        log::info!("Getting project settings");
-        let manifest = settings::toml::Manifest::new(config_path)?;
-        let env = matches.value_of("env");
-        let target = &manifest.get_target(env)?;
-        commands::build(&target)?;
+        commands::build(matches)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
@@ -629,19 +648,9 @@ fn run() -> Result<(), failure::Error> {
         // so we convert this Result into an Option
         let user = settings::global_user::GlobalUser::new().ok();
 
-        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
+        let method = matches.value_of("method").unwrap_or("get");
 
-        let url = Url::parse(matches.value_of("url").unwrap_or("https://example.com"))?;
-
-        // Validate the URL scheme
-        failure::ensure!(
-            match url.scheme() {
-                "http" => true,
-                "https" => true,
-                _ => false,
-            },
-            "Invalid URL scheme (use either \"https\" or \"http\")"
-        );
+        let url = matches.value_of("url").unwrap_or("https://example.com");
 
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
@@ -655,7 +664,9 @@ fn run() -> Result<(), failure::Error> {
         commands::preview(target, user, method, url, body, watch, verbose, headless)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
-        let port = matches.value_of("port");
+        let port: Option<u16> = matches
+            .value_of("port")
+            .map(|p| p.parse().expect("--port expects a number"));
         let host = matches.value_of("host");
         let ip = matches.value_of("ip");
         let manifest = settings::toml::Manifest::new(config_path)?;
@@ -675,8 +686,14 @@ fn run() -> Result<(), failure::Error> {
 
         let release = matches.is_present("release");
         if release {
-            message::warn("wrangler publish --release is deprecated and behaves exactly the same as wrangler publish.");
-            message::warn("See https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments for more information.");
+            let publish_release_msg = styles::highlight("`wrangler publish --release`");
+            let publish_msg = styles::highlight("`wrangler publish`");
+            let environments_url = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments");
+            message::warn(&format!(
+                "{} is deprecated and behaves exactly the same as {}.",
+                publish_release_msg, publish_msg
+            ));
+            message::warn(&format!("See {} for more information.", environments_url));
         }
 
         log::info!("Getting project settings");
@@ -899,6 +916,22 @@ fn run() -> Result<(), failure::Error> {
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
         }
+    } else if let Some(matches) = matches.subcommand_matches("tail") {
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+        let user = settings::global_user::GlobalUser::new()?;
+
+        let tunnel_port: Option<u16> = matches
+            .value_of("tunnel_port")
+            .map(|p| p.parse().expect("--port expects a number"));
+        let metrics_port: Option<u16> = matches
+            .value_of("metrics_port")
+            .map(|p| p.parse().expect("--metrics expects a number"));
+
+        let verbose = matches.is_present("verbose");
+
+        commands::tail::start(&target, &user, tunnel_port, metrics_port, verbose)?;
     }
     Ok(())
 }
