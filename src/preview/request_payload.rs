@@ -1,10 +1,10 @@
 use url::Url;
 use uuid::Uuid;
 
-use super::http_method::HTTPMethod;
+use super::http_method::HttpMethod;
 
 pub struct RequestPayload {
-    pub method: HTTPMethod,
+    pub method: HttpMethod,
     pub https: u8,
     pub session: String,
     pub protocol: String,
@@ -17,7 +17,7 @@ pub struct RequestPayload {
 }
 
 impl RequestPayload {
-    pub fn create(method: HTTPMethod, url: Url, body: Option<String>) -> RequestPayload {
+    pub fn create(method: HttpMethod, url: Url, body: Option<String>) -> RequestPayload {
         let session = Uuid::new_v4().to_simple().to_string();
 
         let https = if url.scheme() == "https" { 1 } else { 0 };
