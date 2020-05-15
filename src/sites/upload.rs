@@ -76,12 +76,8 @@ fn upload_batch(
     key_value_batch: &mut Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {
     // If partial upload fails (e.g. server error), return that error message
-    match kv::bulk::put::call_api(client, target, namespace_id, &key_value_batch) {
-        Ok(_) => {
-            // Can clear batch now that we've uploaded it
-            key_value_batch.clear();
-            Ok(())
-        }
-        Err(e) => failure::bail!("Failed to upload file batch. {}", kv::format_error(e)), // TODO: handle bulk put errors
-    }
+    kv::bulk::put::call_api(client, target, namespace_id, &key_value_batch)?;
+    // Can clear batch now that we've uploaded it
+    key_value_batch.clear();
+    Ok(())
 }
