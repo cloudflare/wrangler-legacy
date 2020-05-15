@@ -3,9 +3,9 @@ use std::path::Path;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
-use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::commands::publish;
 use crate::http;
+use crate::kv::bulk::delete;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::sites::{sync, upload_files, AssetManifest};
@@ -78,7 +78,7 @@ pub fn upload(
                             message::info("Deleting stale files...");
                         }
 
-                        delete_bulk(target, user, &site_namespace.id, to_delete)?;
+                        delete(target, user, &site_namespace.id, to_delete)?;
                     }
 
                     preview

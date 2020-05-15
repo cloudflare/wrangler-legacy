@@ -3,8 +3,8 @@ use indicatif::ProgressBar;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::framework::apiclient::ApiClient;
 
-use crate::commands::kv;
 use crate::http;
+use crate::kv::bulk::put;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
@@ -76,7 +76,7 @@ fn upload_batch(
     key_value_batch: &mut Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {
     // If partial upload fails (e.g. server error), return that error message
-    kv::bulk::put::call_api(client, target, namespace_id, &key_value_batch)?;
+    put(client, target, namespace_id, &key_value_batch)?;
     // Can clear batch now that we've uploaded it
     key_value_batch.clear();
     Ok(())

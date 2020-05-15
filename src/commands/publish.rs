@@ -2,9 +2,9 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use crate::build;
-use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::deploy;
 use crate::http::{self, Feature};
+use crate::kv::bulk::delete;
 use crate::kv::namespace::{upsert, UpsertedNamespace};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, KvNamespace, Target};
@@ -52,7 +52,7 @@ pub fn publish(
                 message::info("Deleting stale files...");
             }
 
-            delete_bulk(target, user, &site_namespace.id, to_delete)?;
+            delete(target, user, &site_namespace.id, to_delete)?;
         }
     } else {
         let uses_kv_bucket = sync_non_site_buckets(target, user, verbose)?;
@@ -204,7 +204,7 @@ pub fn sync_non_site_buckets(
                     message::info("Deleting stale files...");
                 }
 
-                delete_bulk(target, user, &namespace.id, to_delete)?;
+                delete(target, user, &namespace.id, to_delete)?;
             }
         }
     }

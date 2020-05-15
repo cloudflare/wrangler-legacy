@@ -5,16 +5,14 @@ use std::fs::metadata;
 use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
-use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
-use cloudflare::framework::apiclient::ApiClient;
 
 use crate::commands::kv;
-use crate::commands::kv::bulk::MAX_PAIRS;
+use crate::kv::bulk::put;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
 
-pub fn put(
+pub fn run(
     target: &Target,
     user: &GlobalUser,
     namespace_id: &str,
@@ -39,33 +37,8 @@ pub fn put(
     }?;
 
     let client = kv::api_client(user)?;
-    call_api(&client, target, namespace_id, &pairs)?;
+    put(&client, target, namespace_id, &pairs)?;
     message::success("Success");
 
     Ok(())
-}
-
-pub fn call_api(
-    client: &impl ApiClient,
-    target: &Target,
-    namespace_id: &str,
-    pairs: &[KeyValuePair],
-) -> Result<(), failure::Error> {
-    // Validate that bulk upload is within size constraints
-    if pairs.len() > MAX_PAIRS {
-        failure::bail!(
-            "Number of key-value pairs to upload ({}) exceeds max of {}",
-            pairs.len(),
-            MAX_PAIRS
-        );
-    }
-
-    match client.request(&WriteBulk {
-        account_identifier: &target.account_id,
-        namespace_identifier: namespace_id,
-        bulk_key_value_pairs: pairs.to_owned(),
-    }) {
-        Ok(_) => Ok(()),
-        Err(e) => failure::bail!("{}", kv::format_error(e)),
-    }
 }
