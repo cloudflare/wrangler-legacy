@@ -8,10 +8,7 @@ use std::path::Path;
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
-use commands::HTTPMethod;
 use exitfailure::ExitFailure;
-
-use url::Url;
 
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
@@ -633,19 +630,9 @@ fn run() -> Result<(), failure::Error> {
         // so we convert this Result into an Option
         let user = settings::global_user::GlobalUser::new().ok();
 
-        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
+        let method = matches.value_of("method").unwrap_or("get");
 
-        let url = Url::parse(matches.value_of("url").unwrap_or("https://example.com"))?;
-
-        // Validate the URL scheme
-        failure::ensure!(
-            match url.scheme() {
-                "http" => true,
-                "https" => true,
-                _ => false,
-            },
-            "Invalid URL scheme (use either \"https\" or \"http\")"
-        );
+        let url = matches.value_of("url").unwrap_or("https://example.com");
 
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
@@ -659,7 +646,9 @@ fn run() -> Result<(), failure::Error> {
         commands::preview(target, user, method, url, body, watch, verbose, headless)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
-        let port = matches.value_of("port");
+        let port: Option<u16> = matches
+            .value_of("port")
+            .map(|p| p.parse().expect("--port expects a number"));
         let host = matches.value_of("host");
         let ip = matches.value_of("ip");
         let manifest = settings::toml::Manifest::new(config_path)?;
