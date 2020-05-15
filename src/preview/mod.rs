@@ -181,9 +181,7 @@ fn watch_for_changes(
     let (tx, rx) = channel();
     watch_and_build(&target, Some(tx))?;
 
-    while let Ok(_e) = rx.recv() {
-        build(&target)?;
-
+    while let Ok(_) = rx.recv() {
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {
             let script_id = format!("{}", new_id);
 
