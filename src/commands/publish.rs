@@ -7,6 +7,7 @@ use crate::commands::kv::bucket::{sync, upload_files};
 use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::deploy;
 use crate::http::{self, Feature};
+use crate::kv::namespace::{upsert, UpsertedNamespace};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, KvNamespace, Target};
 use crate::terminal::{emoji, message, styles};
@@ -107,7 +108,20 @@ pub fn add_site_namespace(
         format!("__{}-{}", target.name, "workers_sites_assets")
     };
 
-    let site_namespace = kv::namespace::upsert(target, &user, title)?;
+    let site_namespace = match upsert(target, &user, title)? {
+        UpsertedNamespace::Created(namespace) => {
+            let msg = format!("Created namespace for Workers Site \"{}\"", namespace.title);
+            message::working(&msg);
+
+            namespace
+        }
+        UpsertedNamespace::Reused(namespace) => {
+            let msg = format!("Using namespace for Workers Site \"{}\"", namespace.title);
+            message::working(&msg);
+
+            namespace
+        }
+    };
 
     // Check if namespace already is in namespace list
     for namespace in target.kv_namespaces() {

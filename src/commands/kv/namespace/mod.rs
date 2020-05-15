@@ -1,9 +1,7 @@
 mod create;
 mod delete;
 mod list;
-mod upsert;
 
-pub use create::create;
-pub use delete::delete;
-pub use list::list;
-pub use upsert::upsert;
+pub use create::run as create;
+pub use delete::run as delete;
+pub use list::run as list;
