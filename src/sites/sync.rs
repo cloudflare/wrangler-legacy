@@ -4,12 +4,12 @@ use std::path::Path;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use crate::commands::kv;
-use crate::commands::kv::bucket::directory_keys_values;
 use crate::commands::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
 
+use super::directory_keys_values;
 use super::manifest::AssetManifest;
 
 pub fn sync(
@@ -76,8 +76,8 @@ mod tests {
     use std::collections::HashSet;
     use std::path::Path;
 
-    use crate::commands::kv::bucket::generate_path_and_key;
-    use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
+    // use crate::kv::bucket::generate_path_and_key;
+    // use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
     #[test]
     fn it_can_filter_preexisting_files() {

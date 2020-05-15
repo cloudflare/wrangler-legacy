@@ -12,7 +12,6 @@ use crate::settings::toml::Target;
 
 use crate::http::{self, feature::headers};
 
-pub mod bucket;
 pub mod bulk;
 pub mod key;
 pub mod namespace;
@@ -32,7 +31,7 @@ fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
     )
 }
 
-fn format_error(e: ApiFailure) -> String {
+pub fn format_error(e: ApiFailure) -> String {
     http::format_error(e, Some(&kv_help))
 }
 

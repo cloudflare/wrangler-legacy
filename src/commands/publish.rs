@@ -2,14 +2,13 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use crate::build;
-use crate::commands::kv;
-use crate::commands::kv::bucket::{sync, upload_files};
 use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::deploy;
 use crate::http::{self, Feature};
 use crate::kv::namespace::{upsert, UpsertedNamespace};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, KvNamespace, Target};
+use crate::sites;
 use crate::terminal::{emoji, message, styles};
 use crate::upload;
 
@@ -31,13 +30,14 @@ pub fn publish(
 
         let site_namespace = add_site_namespace(user, target, false)?;
 
-        let (to_upload, to_delete, asset_manifest) = sync(target, user, &site_namespace.id, &path)?;
+        let (to_upload, to_delete, asset_manifest) =
+            sites::sync(target, user, &site_namespace.id, &path)?;
 
         // First, upload all existing files in bucket directory
         if verbose {
             message::info("Preparing to upload updated files...");
         }
-        upload_files(target, user, &site_namespace.id, to_upload)?;
+        sites::upload_files(target, user, &site_namespace.id, to_upload)?;
 
         let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
 
@@ -191,12 +191,12 @@ pub fn sync_non_site_buckets(
         if let Some(path) = &namespace.bucket {
             is_using_non_site_bucket = true;
             validate_bucket_location(path)?;
-            let (to_upload, to_delete, _) = kv::bucket::sync(target, user, &namespace.id, path)?;
+            let (to_upload, to_delete, _) = sites::sync(target, user, &namespace.id, path)?;
             // First, upload all existing files in bucket directory
             if verbose {
                 message::info("Preparing to upload updated files...");
             }
-            upload_files(target, user, &namespace.id, to_upload)?;
+            sites::upload_files(target, user, &namespace.id, to_upload)?;
 
             // Finally, remove any stale files
             if !to_delete.is_empty() {

@@ -12,6 +12,7 @@ pub mod install;
 pub mod installer;
 pub mod kv;
 pub mod settings;
+pub mod sites;
 pub mod tail;
 pub mod terminal;
 pub mod upload;

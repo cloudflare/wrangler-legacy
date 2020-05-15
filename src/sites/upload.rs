@@ -4,6 +4,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::framework::apiclient::ApiClient;
 
 use crate::commands::kv;
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
@@ -20,7 +21,7 @@ pub fn upload_files(
     mut pairs: Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {
     if !pairs.is_empty() {
-        let client = kv::api_client(user)?;
+        let client = http::cf_v4_client(user)?;
         // Iterate over all key-value pairs and create batches of uploads, each of which are
         // maximum 5K key-value pairs in size OR maximum ~50MB in size. Upload each batch
         // as it is created.
@@ -81,6 +82,6 @@ fn upload_batch(
             key_value_batch.clear();
             Ok(())
         }
-        Err(e) => failure::bail!("Failed to upload file batch. {}", kv::format_error(e)),
+        Err(e) => failure::bail!("Failed to upload file batch. {}", kv::format_error(e)), // TODO: handle bulk put errors
     }
 }

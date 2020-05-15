@@ -8,10 +8,10 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
-use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
 use crate::settings::toml::{Target, TargetType};
+use crate::sites::AssetManifest;
 use crate::wranglerjs;
 
 use plain_text::PlainText;

@@ -3,12 +3,12 @@ use std::path::Path;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
-use crate::commands::kv::bucket::{sync, upload_files, AssetManifest};
 use crate::commands::kv::bulk::delete::delete_bulk;
 use crate::commands::publish;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
+use crate::sites::{sync, upload_files, AssetManifest};
 use crate::terminal::{message, styles};
 use crate::upload;
 
