@@ -4,7 +4,8 @@ use std::path::Path;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use crate::commands::kv;
-use crate::commands::kv::key::KeyList;
+use crate::http;
+use crate::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
@@ -26,7 +27,8 @@ pub fn sync(
     // Turn it into a HashSet. This will be used by upload() to figure out which
     // files to exclude from upload (because their current version already exists in
     // the Workers KV remote).
-    let remote_keys_iter = KeyList::new(target, &user, namespace_id, None)?;
+    let client = http::cf_v4_client(&user)?;
+    let remote_keys_iter = KeyList::new(target, client, namespace_id, None)?;
     let mut remote_keys: HashSet<String> = HashSet::new();
     for remote_key in remote_keys_iter {
         match remote_key {
