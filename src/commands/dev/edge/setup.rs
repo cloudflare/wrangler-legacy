@@ -1,14 +1,12 @@
 use crate::commands::kv::bucket::AssetManifest;
 use crate::commands::publish;
-use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 use crate::upload;
 
-use failure::format_err;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use url::Url;
 
 pub(super) fn upload(
     target: &mut Target,
@@ -17,7 +15,7 @@ pub(super) fn upload(
     user: &GlobalUser,
     preview_token: String,
 ) -> Result<String, failure::Error> {
-    let client = http::legacy_auth_client(&user);
+    let client = crate::http::legacy_auth_client(&user);
     if target.site.is_some() {
         publish::add_site_namespace(user, target, true)?;
     }
@@ -41,21 +39,47 @@ pub(super) fn upload(
     Ok(response.result.preview_token)
 }
 
-pub(super) fn init(
-    deploy_config: &DeployConfig,
-    user: &GlobalUser,
-) -> Result<(String, String), failure::Error> {
-    let exchange_url = get_exchange_url(deploy_config, user)?;
-    let client = http::legacy_auth_client(&user);
-    let response = client
-        .get(exchange_url.clone())
-        .send()?
-        .error_for_status()?;
-    let headers = response.headers();
-    let token = headers.get("cf-workers-preview-token");
-    match token {
-        Some(token) => Ok((token.to_str()?.to_string(), exchange_url.host_str().expect("Could not get host string, please file an issue at https://github.com/cloudflare/wrangler").to_string())),
-        None => failure::bail!("Could not get token to initialize preview session"),
+pub struct Init {
+    pub host: String,
+    pub websocket_url: Url,
+    pub preview_token: String,
+}
+
+impl Init {
+    pub fn new(
+        target: &Target,
+        deploy_config: &DeployConfig,
+        user: &GlobalUser,
+    ) -> Result<Init, failure::Error> {
+        let exchange_url = get_exchange_url(deploy_config, user)?;
+        let host = match exchange_url.host_str() {
+            Some(host) => Ok(host.to_string()),
+            None => Err(failure::format_err!(
+                "Could not parse host from exchange url"
+            )),
+        }?;
+
+        let host = match deploy_config {
+            DeployConfig::Zoned(_) => host.to_owned(),
+            DeployConfig::Zoneless(_) => {
+                let namespaces: Vec<&str> = host.as_str().split('.').collect();
+                let subdomain = namespaces[1];
+                format!("{}.{}.workers.dev", target.name, subdomain)
+            }
+        };
+
+        let client = crate::http::legacy_auth_client(&user);
+        let response = client.get(exchange_url).send()?.error_for_status()?;
+        let text = &response.text()?;
+        let response: InspectorV4ApiResponse = serde_json::from_str(text)?;
+        let websocket_url = Url::parse(&response.inspector_websocket)?;
+        let preview_token = response.token;
+
+        Ok(Init {
+            host,
+            websocket_url,
+            preview_token,
+        })
     }
 }
 
@@ -97,24 +121,31 @@ fn get_exchange_url(
     deploy_config: &DeployConfig,
     user: &GlobalUser,
 ) -> Result<Url, failure::Error> {
-    let client = http::legacy_auth_client(&user);
+    let client = crate::http::legacy_auth_client(&user);
     let address = get_initialize_address(deploy_config);
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;
     let text = &response.text()?;
     let response: InitV4ApiResponse = serde_json::from_str(text)?;
-    Url::parse(&response.result.exchange_url).map_err(|e| format_err!("{}", e))
+    let url = Url::parse(&response.result.exchange_url)?;
+    Ok(url)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Init {
+struct InitResponse {
     pub exchange_url: String,
     pub token: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct InitV4ApiResponse {
-    pub result: Init,
+    pub result: InitResponse,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct InspectorV4ApiResponse {
+    pub inspector_websocket: String,
+    pub token: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

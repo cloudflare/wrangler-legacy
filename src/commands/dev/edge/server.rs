@@ -60,7 +60,7 @@ pub(super) async fn serve(
         }
     });
 
-    let server = Server::bind(&listening_address.address).serve(make_service);
+    let server = Server::bind(&listening_address).serve(make_service);
     println!("{} Listening on http://{}", emoji::EAR, listening_address);
     if let Err(e) = server.await {
         eprintln!("server error: {}", e)

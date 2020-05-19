@@ -2,6 +2,7 @@ mod server;
 mod setup;
 
 use server::serve;
+use setup::Init;
 
 use crate::commands::dev::ServerConfig;
 use crate::settings::global_user::GlobalUser;
@@ -15,20 +16,13 @@ pub fn dev(
     user: GlobalUser,
     server_config: ServerConfig,
 ) -> Result<(), failure::Error> {
-    let (preview_token, host) = setup::init(&deploy_config, &user)?;
+    let init = Init::new(&target, &deploy_config, &user)?;
     let mut target = target.clone();
-    let host = match deploy_config {
-        DeployConfig::Zoned(_) => host,
-        DeployConfig::Zoneless(_) => {
-            let namespaces: Vec<&str> = host.split('.').collect();
-            let subdomain = namespaces[1];
-            format!("{}.{}.workers.dev", target.name, subdomain)
-        }
-    };
 
     // TODO: replace asset manifest parameter
-    let preview_token = setup::upload(&mut target, None, &deploy_config, &user, preview_token)?;
-    let server = serve(server_config, preview_token, host);
+    let preview_token =
+        setup::upload(&mut target, None, &deploy_config, &user, init.preview_token)?;
+    let server = serve(server_config, preview_token, init.host);
     let mut runtime = TokioRuntime::new()?;
     runtime.block_on(server)
 }
