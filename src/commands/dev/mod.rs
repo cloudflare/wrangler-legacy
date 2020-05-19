@@ -16,7 +16,7 @@ pub fn dev(
     target: Target,
     user: Option<GlobalUser>,
     host: Option<&str>,
-    port: Option<&str>,
+    port: Option<u16>,
     ip: Option<&str>,
     verbose: bool,
 ) -> Result<(), failure::Error> {

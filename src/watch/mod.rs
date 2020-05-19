@@ -46,14 +46,21 @@ pub fn watch_and_build(
                                 tx.send(()).expect("--watch change message failed to send");
                             }
                         }
-                        Err(_) => message::user_error("Something went wrong while watching."),
+                        Err(e) => {
+                            log::debug!("{:?}", e);
+                            message::user_error("Something went wrong while watching.")
+                        }
                     }
                 }
             });
         }
         TargetType::Rust => {
             let tool_name = "wasm-pack";
-            let binary_path = install::install(tool_name, "rustwasm")?.binary(tool_name)?;
+            let tool_author = "rustwasm";
+            let is_binary = true;
+            let version = install::get_latest_version(tool_name)?;
+            let binary_path =
+                install::install(tool_name, tool_author, is_binary, version)?.binary(tool_name)?;
             let args = ["build", "--target", "no-modules"];
 
             thread::spawn(move || {
