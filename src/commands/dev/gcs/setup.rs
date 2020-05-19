@@ -1,5 +1,5 @@
 use crate::commands::dev::ServerConfig;
-use crate::commands::preview::upload;
+use crate::preview::upload;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 

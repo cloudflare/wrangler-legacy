@@ -18,7 +18,7 @@ pub fn dev(
     deploy_config: DeployConfig,
     user: Option<GlobalUser>,
     host: Option<&str>,
-    port: Option<&str>,
+    port: Option<u16>,
     ip: Option<&str>,
     verbose: bool,
 ) -> Result<(), failure::Error> {
