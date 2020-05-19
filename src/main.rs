@@ -484,6 +484,7 @@ fn run() -> Result<(), failure::Error> {
                 .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("release")
+                        .hidden(true)
                         .long("release")
                         .takes_value(false)
                         .help("[deprecated] alias of wrangler publish")
