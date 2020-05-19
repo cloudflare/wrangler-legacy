@@ -4,7 +4,7 @@ mod setup;
 use server::serve;
 use setup::Init;
 
-use crate::commands::dev::ServerConfig;
+use crate::commands::dev::{socket, ServerConfig};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 
@@ -20,9 +20,22 @@ pub fn dev(
     let mut target = target.clone();
 
     // TODO: replace asset manifest parameter
-    let preview_token =
-        setup::upload(&mut target, None, &deploy_config, &user, init.preview_token)?;
-    let server = serve(server_config, preview_token, init.host);
+    let preview_token = setup::upload(
+        &mut target,
+        None,
+        &deploy_config,
+        &user,
+        init.preview_token.clone(),
+    )?;
     let mut runtime = TokioRuntime::new()?;
-    runtime.block_on(server)
+    runtime.block_on(async {
+        let devtools_listener = tokio::spawn(socket::listen(init.websocket_url));
+        let server = tokio::spawn(serve(server_config, preview_token, init.host));
+        let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
+
+        match res {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        }
+    })
 }
