@@ -39,39 +39,38 @@ jobs:
             rust: nightly
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
 
       - name: Cache Cargo registry
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: ${{ matrix.build }}-${{ matrix.rust }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.build }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.build }}-${{ matrix.rust }}-cargo-registry-
+            ${{ matrix.build }}-cargo-registry-
 
       - name: Cache Cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
-          key: ${{ matrix.build }}-${{ matrix.rust }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.build }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.build }}-${{ matrix.rust }}-cargo-index-
+            ${{ matrix.build }}-cargo-index-
 
       - name: Cache Cargo build
         uses: actions/cache@v1
         with:
-          path: target/debug
-          key: ${{ matrix.build }}-${{ matrix.rust }}-debug-target-${{ hashFiles('**/Cargo.lock') }}
+          path: target
+          key: ${{ matrix.build }}-target-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.build }}-${{ matrix.rust }}-debug-target-
+            ${{ matrix.build }}-target-
 
       - name: Install Rust
         run: |
-          rustup update ${{ matrix.rust }} --no-self-update 
+          rustup update ${{ matrix.rust }} --no-self-update
           rustup default ${{ matrix.rust }}
 
       - name: Run Tests
         run: cargo test
         env:
-          RUST_LOG: warn,wrangler=info
           RUST_BACKTRACE: 1

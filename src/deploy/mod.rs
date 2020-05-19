@@ -55,7 +55,7 @@ fn publish_zoneless(
         zoneless_config.account_id, zoneless_config.script_name,
     );
 
-    let client = http::auth_client(None, user);
+    let client = http::legacy_auth_client(user);
 
     log::info!("Making public on subdomain...");
     let res = client

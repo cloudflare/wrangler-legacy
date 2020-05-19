@@ -1,6 +1,5 @@
 #![allow(clippy::redundant_closure)]
 
-#[macro_use]
 extern crate text_io;
 extern crate tokio;
 
@@ -9,7 +8,6 @@ use std::path::Path;
 use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
-use commands::HTTPMethod;
 use exitfailure::ExitFailure;
 
 use wrangler::commands;
@@ -18,7 +16,7 @@ use wrangler::installer;
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
-use wrangler::terminal::{emoji, interactive, message};
+use wrangler::terminal::{emoji, interactive, message, styles};
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -73,11 +71,6 @@ fn run() -> Result<(), failure::Error> {
         .index(1)
         .value_name("VAR_NAME");
 
-    let verbose_arg = Arg::with_name("verbose")
-        .long("verbose")
-        .takes_value(false)
-        .help("toggle verbose output");
-
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("The Wrangler Team <wrangler@cloudflare.com>")
@@ -101,7 +94,6 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
-                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -110,12 +102,10 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all namespaces on your Cloudflare account")
-                        .arg(verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -132,7 +122,6 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("key")
                             .help("Key to write value to")
@@ -176,7 +165,6 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to get")
@@ -191,7 +179,6 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("key")
                             .help("Key whose value to delete")
@@ -206,7 +193,6 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("prefix")
                             .help("The prefix for filtering listed keys")
@@ -231,7 +217,6 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                         .arg(
                             Arg::with_name("path")
                             .help("the JSON file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...]")
@@ -245,7 +230,6 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                         .about("Delete multiple keys and their values from a namespace")
                         .arg(
                             Arg::with_name("path")
@@ -266,12 +250,10 @@ fn run() -> Result<(), failure::Error> {
                     SubCommand::with_name("list")
                         .about("List all routes associated with a zone (outputs json)")
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                         .about("Delete a route by id")
                         .arg(
                             Arg::with_name("route_id")
@@ -293,20 +275,17 @@ fn run() -> Result<(), failure::Error> {
                         .about("Create or update a secret variable for a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete a secret variable from a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all secrets for a script")
                         .arg(environment_arg.clone())
-                        .arg(verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -315,7 +294,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a new worker project",
                     emoji::DANCERS
                 ))
-                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("name")
                         .help("the name of your worker! defaults to 'worker'")
@@ -347,7 +325,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Create a wrangler.toml for an existing project",
                     emoji::INBOX
                 ))
-                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("name")
                         .help("the name of your worker! defaults to 'worker'")
@@ -374,7 +351,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Build your worker",
                     emoji::CRAB
                 ))
-                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environment to build")
@@ -389,7 +365,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Preview your code temporarily on cloudflareworkers.com",
                     emoji::MICROSCOPE
                 ))
-                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("headless")
                         .help("Don't open the browser on preview")
@@ -407,17 +382,30 @@ fn run() -> Result<(), failure::Error> {
                         .index(2),
                 )
                 .arg(
+                    Arg::with_name("url")
+                        .help("URL to open in the worker preview")
+                        .short("u")
+                        .long("url")
+                        .takes_value(true)
+                )
+                .arg(
                     Arg::with_name("env")
-                        .help("environment to preview")
+                        .help("Environment to preview")
                         .short("e")
                         .long("env")
                         .takes_value(true)
                 )
                 .arg(
                     Arg::with_name("watch")
-                        .help("watch your project for changes and update the preview automagically")
+                        .help("Watch your project for changes and update the preview automagically")
                         .long("watch")
                         .takes_value(false),
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("Toggle verbose output"),
                 ),
         )
         .subcommand(
@@ -426,7 +414,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Start a local server for developing your worker",
                     emoji::EAR
                 ))
-                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environment to build")
@@ -454,6 +441,12 @@ fn run() -> Result<(), failure::Error> {
                         .short("i")
                         .long("ip")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output")
                 ),
         )
         .subcommand(
@@ -462,13 +455,18 @@ fn run() -> Result<(), failure::Error> {
                     "{} Publish your worker to the orange cloud",
                     emoji::UP
                 ))
-                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environments to publish to")
                         .short("e")
                         .long("env")
                         .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("toggle verbose output")
                 )
                 .arg(
                     Arg::with_name("release")
@@ -483,7 +481,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Set up wrangler with your Cloudflare account",
                     emoji::SLEUTH
                 ))
-                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("api-key")
                         .help("use an email and global API key for authentication. This is not recommended; use API tokens (the default) if possible")
@@ -503,7 +500,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Configure your workers.dev subdomain",
                     emoji::WORKER
                 ))
-                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("name")
                         .help("the subdomain on workers.dev you'd like to reserve")
@@ -514,9 +510,46 @@ fn run() -> Result<(), failure::Error> {
             "{} Retrieve your user info and test your auth config",
             emoji::SLEUTH
         )))
+        .subcommand(
+            SubCommand::with_name("tail")
+                .about(&*format!("{} Aggregate logs from production worker", emoji::TAIL))
+                .arg(
+                    Arg::with_name("env")
+                        .help("environment to tail logs from")
+                        .short("e")
+                        .long("env")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("tunnel_port")
+                        .help("port to accept tail log requests")
+                        .short("p")
+                        .long("port")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("metrics_port")
+                        .help("provides endpoint for cloudflared metrics. used to retrieve tunnel url")
+                        .long("metrics")
+                        .takes_value(true)
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("Toggle verbose output"),
+                )
+        )
         .get_matches();
 
     let config_path = Path::new("./wrangler.toml");
+
+    let not_recommended_msg = styles::warning("(Not Recommended)");
+    let recommended_cmd_msg = styles::highlight("`wrangler config --api-key`");
+    let api_token_url = styles::url("https://dash.cloudflare.com/profile/api-tokens");
+    let token_support_url = styles::url(
+        "https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys",
+    );
 
     if let Some(matches) = matches.subcommand_matches("config") {
         // If api-key flag isn't present, use the default auth option (API token)
@@ -524,14 +557,13 @@ fn run() -> Result<(), failure::Error> {
 
         let user: GlobalUser = if default {
             // API Tokens are the default
-            message::big_info("To find your API token, go to https://dash.cloudflare.com/profile/api-tokens\n\tand create it using the \"Edit Cloudflare Workers\" template");
-            message::big_info("If you are trying to use your Global API Key instead of an API Token\n\t(Not Recommended), run \"wrangler config --api-key\".\n");
-            let api_token: String = interactive::get_user_input("Enter API token: ");
+            message::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", api_token_url, not_recommended_msg, recommended_cmd_msg));
+            let api_token: String = interactive::get_user_input("Enter API Token: ");
             GlobalUser::TokenAuth { api_token }
         } else {
-            message::big_info("We don't recommend using your Global API Key! Please consider using an\n\tAPI Token instead.\n\thttps://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys\n");
-            let email: String = interactive::get_user_input("Enter email: ");
-            let api_key: String = interactive::get_user_input("Enter global API key: ");
+            message::billboard(&format!("We don't recommend using your Global API Key!\nPlease consider using an API Token instead.\n\n{}", token_support_url));
+            let email: String = interactive::get_user_input("Enter Email: ");
+            let api_key: String = interactive::get_user_input("Enter Global API Key: ");
 
             GlobalUser::GlobalKeyAuth { email, api_key }
         };
@@ -587,11 +619,7 @@ fn run() -> Result<(), failure::Error> {
 
         commands::init(name, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("build") {
-        log::info!("Getting project settings");
-        let manifest = settings::toml::Manifest::new(config_path)?;
-        let env = matches.value_of("env");
-        let target = &manifest.get_target(env)?;
-        commands::build(&target)?;
+        commands::build(matches)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
@@ -602,7 +630,9 @@ fn run() -> Result<(), failure::Error> {
         // so we convert this Result into an Option
         let user = settings::global_user::GlobalUser::new().ok();
 
-        let method = HTTPMethod::from_str(matches.value_of("method").unwrap_or("get"))?;
+        let method = matches.value_of("method").unwrap_or("get");
+
+        let url = matches.value_of("url").unwrap_or("https://example.com");
 
         let body = match matches.value_of("body") {
             Some(s) => Some(s.to_string()),
@@ -613,10 +643,12 @@ fn run() -> Result<(), failure::Error> {
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, body, watch, verbose, headless)?;
+        commands::preview(target, user, method, url, body, watch, verbose, headless)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
-        let port = matches.value_of("port");
+        let port: Option<u16> = matches
+            .value_of("port")
+            .map(|p| p.parse().expect("--port expects a number"));
         let host = matches.value_of("host");
         let ip = matches.value_of("ip");
         let manifest = settings::toml::Manifest::new(config_path)?;
@@ -636,8 +668,14 @@ fn run() -> Result<(), failure::Error> {
 
         let release = matches.is_present("release");
         if release {
-            message::warn("wrangler publish --release is deprecated and behaves exactly the same as wrangler publish.");
-            message::warn("See https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments for more information.");
+            let publish_release_msg = styles::highlight("`wrangler publish --release`");
+            let publish_msg = styles::highlight("`wrangler publish`");
+            let environments_url = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments");
+            message::warn(&format!(
+                "{} is deprecated and behaves exactly the same as {}.",
+                publish_release_msg, publish_msg
+            ));
+            message::warn(&format!("See {} for more information.", environments_url));
         }
 
         log::info!("Getting project settings");
@@ -860,6 +898,22 @@ fn run() -> Result<(), failure::Error> {
             ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
         }
+    } else if let Some(matches) = matches.subcommand_matches("tail") {
+        let manifest = settings::toml::Manifest::new(config_path)?;
+        let env = matches.value_of("env");
+        let target = manifest.get_target(env)?;
+        let user = settings::global_user::GlobalUser::new()?;
+
+        let tunnel_port: Option<u16> = matches
+            .value_of("tunnel_port")
+            .map(|p| p.parse().expect("--port expects a number"));
+        let metrics_port: Option<u16> = matches
+            .value_of("metrics_port")
+            .map(|p| p.parse().expect("--metrics expects a number"));
+
+        let verbose = matches.is_present("verbose");
+
+        commands::tail::start(&target, &user, tunnel_port, metrics_port, verbose)?;
     }
     Ok(())
 }

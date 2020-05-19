@@ -4,9 +4,8 @@ use serde::Serialize;
 
 use cloudflare::endpoints::workers::{CreateRoute, CreateRouteParams, ListRoutes};
 use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::HttpApiClientConfig;
 
-use crate::http::{cf_v4_api_client, format_error};
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{Route, Zoned};
 
@@ -29,11 +28,11 @@ pub fn publish_routes(
 }
 
 fn fetch_all(user: &GlobalUser, zone_identifier: &str) -> Result<Vec<Route>, failure::Error> {
-    let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     let routes: Vec<Route> = match client.request(&ListRoutes { zone_identifier }) {
         Ok(success) => success.result.iter().map(Route::from).collect(),
-        Err(e) => failure::bail!("{}", format_error(e, None)), // TODO: add suggestion fn
+        Err(e) => failure::bail!("{}", http::format_error(e, None)), // TODO: add suggestion fn
     };
 
     Ok(routes)
@@ -44,7 +43,7 @@ fn create(
     zone_identifier: &str,
     route: &Route,
 ) -> Result<Route, failure::Error> {
-    let client = cf_v4_api_client(user, HttpApiClientConfig::default())?;
+    let client = http::cf_v4_client(user)?;
 
     log::info!("Creating your route {:#?}", &route.pattern,);
     match client.request(&CreateRoute {
@@ -59,7 +58,7 @@ fn create(
             pattern: route.pattern.clone(),
             script: route.script.clone(),
         }),
-        Err(e) => failure::bail!("{}", format_error(e, Some(&routes_error_help))),
+        Err(e) => failure::bail!("{}", http::format_error(e, Some(&routes_error_help))),
     }
 }
 

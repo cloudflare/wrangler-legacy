@@ -37,34 +37,34 @@ jobs:
             os: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
 
       - name: Cache Cargo registry
         uses: actions/cache@v1
         if: matrix.rust
         with:
           path: ~/.cargo/registry
-          key: ${{ matrix.build }}-stable-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.build }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.build }}-stable-cargo-registry-
+            ${{ matrix.build }}-cargo-registry-
 
       - name: Cache Cargo index
         uses: actions/cache@v1
         if: matrix.rust
         with:
           path: ~/.cargo/git
-          key: ${{ matrix.build }}-stable-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.build }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.build }}-stable-cargo-index-
+            ${{ matrix.build }}-cargo-index-
 
       - name: Cache Cargo build
         uses: actions/cache@v1
         if: matrix.rust
         with:
-          path: target/release
-          key: ${{ matrix.build }}-stable-release-target-${{ hashFiles('**/Cargo.lock') }}
+          path: target
+          key: ${{ matrix.build }}-target-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.build }}-stable-release-target-
+            ${{ matrix.build }}-target-
 
       - name: Query version number
         id: get_version

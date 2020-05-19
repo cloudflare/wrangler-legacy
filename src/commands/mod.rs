@@ -1,25 +1,25 @@
 use std::process::Command;
 
-pub mod build;
+mod build;
 pub mod config;
 pub mod dev;
 pub mod generate;
 pub mod init;
 pub mod kv;
-pub mod preview;
+mod preview;
 pub mod publish;
 pub mod route;
 pub mod secret;
 pub mod subdomain;
+pub mod tail;
 pub mod whoami;
 
+pub use self::build::run as build;
 pub use self::config::global_config;
-pub use build::build;
-pub use build::watch_and_build;
+pub use self::preview::run as preview;
 pub use dev::dev;
 pub use generate::generate;
 pub use init::init;
-pub use preview::{preview, HTTPMethod};
 pub use publish::publish;
 pub use secret::{create_secret, delete_secret, list_secrets};
 pub use subdomain::get_subdomain;
@@ -27,6 +27,8 @@ pub use subdomain::set_subdomain;
 pub use whoami::whoami;
 
 use regex::Regex;
+
+const DEFAULT_CONFIG_PATH: &str = "./wrangler.toml";
 
 // Run the given command and return its stdout.
 pub fn run(mut command: Command, command_name: &str) -> Result<(), failure::Error> {

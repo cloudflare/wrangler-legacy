@@ -1,15 +1,14 @@
-#[macro_use]
-extern crate lazy_static;
-
 pub mod fixture;
 
-use fixture::{EnvConfig, WranglerToml, TEST_ENV_NAME};
+use fixture::WranglerToml;
 
 use std::collections::HashMap;
 use std::env;
 use std::process::Command;
 
 use assert_cmd::prelude::*;
+use predicates::prelude::*;
+
 use fixture::Fixture;
 
 #[test]
@@ -175,6 +174,33 @@ fn it_can_preview_rust_project() {
 }
 
 #[test]
+fn it_can_preview_using_url_flag() {
+    let fixture = Fixture::new();
+    fixture.create_file(
+        "index.js",
+        r#"
+        addEventListener('fetch', event => {
+            event.respondWith(handleRequest(event.request))
+        })
+
+        async function handleRequest(request) {
+            return new Response(request.url, { status: 200 })
+        }
+    "#,
+    );
+    fixture.create_default_package_json();
+
+    let wrangler_toml = WranglerToml::javascript("test-preview-javascript");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    // URLs should match as expected
+    preview_matches_url(&fixture, "https://example.com/a", "https://example.com/a");
+
+    // URLs should not match as expected
+    preview_not_matches_url(&fixture, "https://example.com/a", "https://example.com/b");
+}
+
+#[test]
 fn it_previews_with_config_text() {
     let fixture = Fixture::new();
     fixture.create_file(
@@ -203,7 +229,6 @@ fn it_previews_with_config_text() {
 }
 
 fn preview_succeeds_with(fixture: &Fixture, env: Option<&str>, expected: &str) {
-    let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
     env::remove_var("CF_ZONE_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
@@ -219,9 +244,32 @@ fn preview_succeeds_with(fixture: &Fixture, env: Option<&str>, expected: &str) {
 }
 
 fn preview_succeeds(fixture: &Fixture) {
-    let _lock = fixture.lock();
     env::remove_var("CF_ACCOUNT_ID");
+    env::remove_var("CF_ZONE_ID");
     let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     preview.current_dir(fixture.get_path());
-    preview.arg("preview").arg("--headless").assert().success();
+    preview.arg("preview").arg("--headless");
+    preview.assert().success();
+}
+
+fn preview_matches_url(fixture: &Fixture, url: &str, expected: &str) {
+    env::remove_var("CF_ACCOUNT_ID");
+    env::remove_var("CF_ZONE_ID");
+    let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    preview.current_dir(fixture.get_path());
+    preview.arg("preview").arg("--headless");
+    preview.arg("--url").arg(url);
+    preview.assert().stdout(predicate::str::contains(expected));
+}
+
+fn preview_not_matches_url(fixture: &Fixture, url: &str, expected: &str) {
+    env::remove_var("CF_ACCOUNT_ID");
+    env::remove_var("CF_ZONE_ID");
+    let mut preview = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    preview.current_dir(fixture.get_path());
+    preview.arg("preview").arg("--headless");
+    preview.arg("--url").arg(url);
+    preview
+        .assert()
+        .stdout(predicate::str::contains(expected).not());
 }

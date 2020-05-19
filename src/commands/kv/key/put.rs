@@ -1,4 +1,4 @@
-// TODO: (gabbi) This file should use cloudflare-rs instead of our http::auth_client
+// TODO: (gabbi) This file should use cloudflare-rs instead of our http::legacy_auth_client
 // when https://github.com/cloudflare/cloudflare-rs/issues/26 is handled (this is
 // because the SET key request body is not json--it is the raw value).
 
@@ -44,7 +44,7 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
     };
     let url = Url::parse_with_params(&api_endpoint, query_params);
 
-    let client = http::auth_client(None, &user);
+    let client = http::legacy_auth_client(&user);
 
     let url_into_str = url?.into_string();
 
