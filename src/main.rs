@@ -71,6 +71,13 @@ fn run() -> Result<(), failure::Error> {
         .index(1)
         .value_name("VAR_NAME");
 
+    let verbose_arg = Arg::with_name("verbose")
+        .long("verbose")
+        .takes_value(false)
+        .help("toggle verbose output");
+
+    let silent_verbose_arg = verbose_arg.clone().hidden(true);
+
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
         .author("The Wrangler Team <wrangler@cloudflare.com>")
@@ -94,6 +101,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -102,11 +110,14 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all namespaces on your Cloudflare account")
+                        .arg(silent_verbose_arg.clone())
                 )
+                .arg(silent_verbose_arg.clone())
         )
         .subcommand(
             SubCommand::with_name("kv:key")
@@ -115,6 +126,7 @@ fn run() -> Result<(), failure::Error> {
                     emoji::KEY
                 ))
                 .setting(AppSettings::SubcommandRequiredElseHelp)
+                .arg(silent_verbose_arg.clone())
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Put a key-value pair into a namespace")
@@ -157,6 +169,7 @@ fn run() -> Result<(), failure::Error> {
                             .long("path")
                             .takes_value(false)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("get")
@@ -171,6 +184,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -185,6 +199,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
@@ -201,6 +216,7 @@ fn run() -> Result<(), failure::Error> {
                             .value_name("STRING")
                             .takes_value(true),
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -209,6 +225,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Interact with multiple Workers KV key-value pairs at once",
                     emoji::BICEP
                 ))
+                .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
@@ -223,6 +240,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -237,6 +255,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -245,11 +264,13 @@ fn run() -> Result<(), failure::Error> {
                     "{} List or delete worker routes.",
                     emoji::ROUTE
                 ))
+                .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all routes associated with a zone (outputs json)")
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -261,6 +282,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -269,23 +291,27 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a secret that can be referenced in the worker script",
                     emoji::SECRET
                 ))
+                .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Create or update a secret variable for a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete a secret variable from a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all secrets for a script")
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -317,7 +343,8 @@ fn run() -> Result<(), failure::Error> {
                         .long("site")
                         .takes_value(false)
                         .help("initializes a Workers Sites project. Overrides `type` and `template`"),
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("init")
@@ -343,7 +370,8 @@ fn run() -> Result<(), failure::Error> {
                         .long("site")
                         .takes_value(false)
                         .help("initializes a Workers Sites project. Overrides `type` and `template`"),
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("build")
@@ -357,7 +385,8 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("env")
                         .takes_value(true)
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("preview")
@@ -401,12 +430,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("watch")
                         .takes_value(false),
                 )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("Toggle verbose output"),
-                ),
+                .arg(verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("dev")
@@ -442,12 +466,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("ip")
                         .takes_value(true)
                 )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("toggle verbose output")
-                ),
+                .arg(verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("publish")
@@ -462,12 +481,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("env")
                         .takes_value(true)
                 )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("toggle verbose output")
-                )
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("release")
                         .hidden(true)
@@ -493,7 +507,8 @@ fn run() -> Result<(), failure::Error> {
                         .help("do not verify provided credentials before writing out Wrangler config file")
                         .long("no-verify")
                         .takes_value(false),
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("subdomain")
@@ -505,12 +520,17 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("name")
                         .help("the subdomain on workers.dev you'd like to reserve")
                         .index(1),
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
-        .subcommand(SubCommand::with_name("whoami").about(&*format!(
-            "{} Retrieve your user info and test your auth config",
-            emoji::SLEUTH
-        )))
+        .subcommand(
+            SubCommand::with_name("whoami")
+                .about(&*format!(
+                    "{} Retrieve your user info and test your auth config",
+                    emoji::SLEUTH
+                ))
+                .arg(silent_verbose_arg.clone()),
+        )
         .subcommand(
             SubCommand::with_name("tail")
                 .about(&*format!("{} Aggregate logs from production worker", emoji::TAIL))
@@ -534,12 +554,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("metrics")
                         .takes_value(true)
                 )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("Toggle verbose output"),
-                )
+                .arg(verbose_arg.clone())
         )
         .get_matches();
 
