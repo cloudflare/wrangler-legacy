@@ -3,7 +3,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use cloudflare::framework::auth::Credentials;
-use config;
 use serde::{Deserialize, Serialize};
 
 use crate::settings::{Environment, QueryEnvironment};

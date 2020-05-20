@@ -76,7 +76,7 @@ pub fn preview(
         }
 
         // Make a the initial request to the URL
-        client_request(&request_payload, &script_id, &sites_preview);
+        client_request(&request_payload, &script_id, sites_preview);
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
@@ -96,7 +96,7 @@ pub fn preview(
             ))?;
         }
 
-        client_request(&request_payload, &script_id, &sites_preview);
+        client_request(&request_payload, &script_id, sites_preview);
     }
 
     Ok(())
@@ -118,7 +118,7 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn client_request(payload: &RequestPayload, script_id: &String, sites_preview: &bool) {
+fn client_request(payload: &RequestPayload, script_id: &str, sites_preview: bool) {
     let client = http::client();
 
     let method = &payload.method;
@@ -132,7 +132,7 @@ fn client_request(payload: &RequestPayload, script_id: &String, sites_preview: &
         HttpMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
     };
 
-    let msg = if *sites_preview {
+    let msg = if sites_preview {
         "Your Worker is a Workers Site, please preview it in browser window.".to_string()
     } else {
         format!("Your Worker responded with: {}", worker_res)
@@ -141,8 +141,8 @@ fn client_request(payload: &RequestPayload, script_id: &String, sites_preview: &
 }
 
 fn get(
-    url: &String,
-    cookie: &String,
+    url: &str,
+    cookie: &str,
     client: &reqwest::blocking::Client,
 ) -> Result<String, failure::Error> {
     let res = client.get(url).header("Cookie", cookie).send();
@@ -150,8 +150,8 @@ fn get(
 }
 
 fn post(
-    url: &String,
-    cookie: &String,
+    url: &str,
+    cookie: &str,
     body: &Option<String>,
     client: &reqwest::blocking::Client,
 ) -> Result<String, failure::Error> {
@@ -159,7 +159,7 @@ fn post(
         Some(s) => client
             .post(url)
             .header("Cookie", cookie)
-            .body(format!("{}", s))
+            .body(s.to_string())
             .send(),
         None => client.post(url).header("Cookie", cookie).send(),
     };
@@ -183,7 +183,7 @@ fn watch_for_changes(
 
     while let Ok(_) = rx.recv() {
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {
-            let script_id = format!("{}", new_id);
+            let script_id = new_id.to_string();
 
             let msg = FiddleMessage {
                 session_id: request_payload.session.clone(),
@@ -201,7 +201,7 @@ fn watch_for_changes(
                 }
             }
 
-            client_request(&request_payload, &script_id, &sites_preview);
+            client_request(&request_payload, &script_id, sites_preview);
         }
     }
 

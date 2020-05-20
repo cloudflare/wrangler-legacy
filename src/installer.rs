@@ -22,9 +22,7 @@ use std::io;
 use std::path::Path;
 use std::process;
 
-use atty;
 use failure::{self, bail, ResultExt};
-use which;
 
 pub fn install() -> ! {
     if let Err(e) = do_install() {
