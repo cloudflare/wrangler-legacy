@@ -75,11 +75,9 @@ fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::sites::generate_path_and_key;
     use std::collections::HashSet;
     use std::path::Path;
-
-    // use crate::kv::bucket::generate_path_and_key;
-    // use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
     #[test]
     fn it_can_filter_preexisting_files() {
