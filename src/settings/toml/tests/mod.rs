@@ -58,7 +58,7 @@ fn it_builds_from_environments_config_with_kv() {
             assert!(kv_namespaces.contains(&kv_1));
             assert!(kv_namespaces.contains(&kv_2));
         }
-        None => assert!(false),
+        None => panic!("found no kv namespaces"),
     }
 
     let target = manifest.get_target(Some("staging")).unwrap();
@@ -78,7 +78,7 @@ fn it_builds_from_environments_config_with_kv() {
             assert!(kv_namespaces.contains(&kv_1));
             assert!(kv_namespaces.contains(&kv_2));
         }
-        None => assert!(false),
+        None => panic!("found no kv namespaces"),
     }
 }
 
