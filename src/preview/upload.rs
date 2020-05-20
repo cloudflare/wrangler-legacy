@@ -3,7 +3,7 @@ use std::path::Path;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
-use crate::commands::publish;
+use crate::sites;
 use crate::http;
 use crate::kv::bulk::delete;
 use crate::settings::global_user::GlobalUser;
@@ -59,7 +59,7 @@ pub fn upload(
                 let client = http::legacy_auth_client(&user);
 
                 if let Some(site_config) = target.site.clone() {
-                    let site_namespace = publish::add_site_namespace(user, target, true)?;
+                    let site_namespace = sites::add_namespace(user, target, true)?;
 
                     let path = Path::new(&site_config.bucket);
                     let (to_upload, to_delete, asset_manifest) =

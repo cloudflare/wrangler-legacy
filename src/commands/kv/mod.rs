@@ -31,6 +31,7 @@ fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
     )
 }
 
+// TODO: callers outside this module should write their own error handling (lookin at you sites)
 pub fn format_error(e: ApiFailure) -> String {
     http::format_error(e, Some(&kv_help))
 }

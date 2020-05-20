@@ -5,9 +5,8 @@ use crate::build;
 use crate::deploy;
 use crate::http::{self, Feature};
 use crate::kv::bulk::delete;
-use crate::kv::namespace::{upsert, UpsertedNamespace};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, KvNamespace, Target};
+use crate::settings::toml::{DeployConfig, Target};
 use crate::sites;
 use crate::terminal::{emoji, message, styles};
 use crate::upload;
@@ -28,7 +27,7 @@ pub fn publish(
         validate_bucket_location(path)?;
         warn_site_incompatible_route(&deploy_config);
 
-        let site_namespace = add_site_namespace(user, target, false)?;
+        let site_namespace = sites::add_namespace(user, target, false)?;
 
         let (to_upload, to_delete, asset_manifest) =
             sites::sync(target, user, &site_namespace.id, &path)?;
@@ -94,53 +93,6 @@ fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
             );
         }
     }
-}
-
-// Updates given Target with kv_namespace binding for a static site assets KV namespace.
-pub fn add_site_namespace(
-    user: &GlobalUser,
-    target: &mut Target,
-    preview: bool,
-) -> Result<KvNamespace, failure::Error> {
-    let title = if preview {
-        format!("__{}-{}", target.name, "workers_sites_assets_preview")
-    } else {
-        format!("__{}-{}", target.name, "workers_sites_assets")
-    };
-
-    let site_namespace = match upsert(target, &user, title)? {
-        UpsertedNamespace::Created(namespace) => {
-            let msg = format!("Created namespace for Workers Site \"{}\"", namespace.title);
-            message::working(&msg);
-
-            namespace
-        }
-        UpsertedNamespace::Reused(namespace) => {
-            let msg = format!("Using namespace for Workers Site \"{}\"", namespace.title);
-            message::working(&msg);
-
-            namespace
-        }
-    };
-
-    // Check if namespace already is in namespace list
-    for namespace in target.kv_namespaces() {
-        if namespace.id == site_namespace.id {
-            return Ok(namespace); // Sites binding already exists; ignore
-        } else if namespace.bucket.is_some() {
-            failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
-        }
-    }
-
-    let site_namespace = KvNamespace {
-        binding: "__STATIC_CONTENT".to_string(),
-        id: site_namespace.id,
-        bucket: Some(target.site.clone().unwrap().bucket),
-    };
-
-    target.add_kv_namespace(site_namespace.clone());
-
-    Ok(site_namespace)
 }
 
 // We don't want folks setting their bucket to the top level directory,
