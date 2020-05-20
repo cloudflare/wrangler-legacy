@@ -183,7 +183,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     command.arg(format!(
         "--output-file={}",
-        temp_file.clone().to_str().unwrap().to_string()
+        temp_file.to_str().unwrap().to_string()
     ));
 
     let bundle = Bundle::new(&build_dir);
@@ -316,7 +316,7 @@ fn install() -> Result<PathBuf, failure::Error> {
         wranglerjs_path.path()
     };
 
-    run_npm_install(&wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
+    run_npm_install(&wranglerjs_path).expect("could not install wranglerjs dependencies");
     Ok(wranglerjs_path)
 }
 

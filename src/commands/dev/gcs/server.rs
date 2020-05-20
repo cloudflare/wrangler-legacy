@@ -26,7 +26,7 @@ pub(super) async fn serve(
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
 
-    let listening_address = server_config.listening_address.clone();
+    let listening_address = server_config.listening_address;
 
     // create a closure that hyper will use later to handle HTTP requests
     // this takes care of sending an incoming request along to

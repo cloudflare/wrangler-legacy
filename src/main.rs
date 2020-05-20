@@ -9,10 +9,12 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use exitfailure::ExitFailure;
+use url::Url;
 
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
+use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
@@ -655,11 +657,32 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        let watch = matches.is_present("watch");
+        let livereload = matches.is_present("watch");
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, url, body, watch, verbose, headless)?;
+        let method = HttpMethod::from_str(method)?;
+        let url = Url::parse(url)?;
+
+        // Validate the URL scheme
+        failure::ensure!(
+            match url.scheme() {
+                "http" => true,
+                "https" => true,
+                _ => false,
+            },
+            "Invalid URL scheme (use either \"https\" or \"http\")"
+        );
+
+        let options = PreviewOpt {
+            method,
+            url,
+            body,
+            livereload,
+            headless,
+        };
+
+        commands::preview(target, user, options, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
         let port: Option<u16> = matches
