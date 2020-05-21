@@ -17,7 +17,7 @@ billboard = "0.1.0"
 binary-install = "0.0.3-alpha.1"
 chrome-devtools-rs = { version = "0.0.0-alpha.0", features = ["color"] }
 chrono = "0.4.9"
-clap = "2.32.0"
+clap = "2.33.1"
 cloudflare = "0.6.6"
 config = "0.10.1"
 console = "0.11.2"
