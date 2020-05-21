@@ -1,10 +1,10 @@
 [package]
 name = "wrangler"
 version = "1.9.1"
-authors = ["Ashley Williams <ashley666ashley@gmail.com>"]
+authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
-description = "wrangle your workers, CLI for rustwasm Cloudflare workers!"
+description = "Command-line interface for all things Cloudflare Workers"
 readme = "README.md"
 repository = "https://github.com/cloudflare/wrangler"
 categories = ["wasm", "development-tools", "command-line-utilities", "web-programming"]
