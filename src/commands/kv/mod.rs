@@ -5,7 +5,7 @@ use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
 
-use percent_encoding::{percent_encode, PATH_SEGMENT_ENCODE_SET};
+use percent_encoding::{utf8_percent_encode, CONTROLS};
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -119,7 +119,7 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
 }
 
 fn url_encode_key(key: &str) -> String {
-    percent_encode(key.as_bytes(), PATH_SEGMENT_ENCODE_SET).to_string()
+    utf8_percent_encode(key, CONTROLS).to_string()
 }
 
 #[cfg(test)]
