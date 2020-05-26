@@ -45,29 +45,28 @@ fn get_installed_version() -> Result<Version, failure::Error> {
     Ok(parsed_version)
 }
 
-fn check_wrangler_versions() -> Result<WranglerVersion, failure::Error> {
+fn check_wrangler_versions() -> Result<(WranglerVersion, bool), failure::Error> {
     let config_dir = get_wrangler_home_dir()?;
     let version_file = config_dir.join("version.toml");
     let current_time = SystemTime::now();
 
+    let mut checked = false;
     let current = get_installed_version()?;
 
     let latest = match get_version_disk(&version_file)? {
-        // If version.toml doesn't exist, fetch latest version
         Some(last_checked_version) => {
             let time_since_last_checked =
                 current_time.duration_since(last_checked_version.last_checked)?;
             if time_since_last_checked.as_secs() < ONE_DAY {
-                // If checked version within last day, current and latest will be the same
-                current.clone()
-            } else {
-                Version::parse(&last_checked_version.latest_version)?
+                checked = true;
             }
+            Version::parse(&last_checked_version.latest_version)?
         }
+        // If version.toml doesn't exist, fetch latest version
         None => get_latest_version(&current.to_string(), &version_file, current_time)?,
     };
 
-    Ok(WranglerVersion { current, latest })
+    Ok((WranglerVersion { current, latest }, checked))
 }
 
 fn get_version_disk(version_file: &PathBuf) -> Result<Option<LastCheckedVersion>, failure::Error> {
@@ -130,8 +129,9 @@ pub fn background_check_for_updates() -> mpsc::Receiver<Version> {
     let (sender, receiver) = mpsc::channel();
 
     let _detached_thread = thread::spawn(move || match check_wrangler_versions() {
-        Ok(wrangler_versions) => {
-            if wrangler_versions.current != wrangler_versions.latest {
+        Ok(version) => {
+            let (wrangler_versions, checked) = version;
+            if !checked && (wrangler_versions.current != wrangler_versions.latest) {
                 let _ = sender.send(wrangler_versions.latest);
             }
         }
