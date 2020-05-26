@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::mpsc;
 use std::thread;
@@ -45,41 +46,53 @@ fn get_installed_version() -> Result<Version, failure::Error> {
 }
 
 fn check_wrangler_versions() -> Result<WranglerVersion, failure::Error> {
-    let current = get_installed_version()?;
-    let latest = get_latest_version(&current.to_string())?;
-    Ok(WranglerVersion { current, latest })
-}
-
-fn get_latest_version(installed_version: &str) -> Result<Version, failure::Error> {
     let config_dir = get_wrangler_home_dir()?;
     let version_file = config_dir.join("version.toml");
     let current_time = SystemTime::now();
-    let latest_version = match fs::read_to_string(&version_file) {
-        Ok(contents) => {
-            let last_checked_version = LastCheckedVersion::from_str(&contents)?;
+
+    let current = get_installed_version()?;
+
+    let latest = match get_version_disk(&version_file)? {
+        Some(last_checked_version) => {
             let time_since_last_checked =
                 current_time.duration_since(last_checked_version.last_checked)?;
             if time_since_last_checked.as_secs() < ONE_DAY {
-                let version = Version::parse(&last_checked_version.latest_version)?;
-                Some(version)
+                current.clone()
             } else {
-                None
+                Version::parse(&last_checked_version.latest_version)?
             }
+        }
+        None => get_latest_version(&current.to_string(), &version_file, current_time)?,
+    };
+
+    Ok(WranglerVersion { current, latest })
+}
+
+fn get_version_disk(version_file: &PathBuf) -> Result<Option<LastCheckedVersion>, failure::Error> {
+    let local_version = match fs::read_to_string(&version_file) {
+        Ok(contents) => {
+            let last_checked_version = LastCheckedVersion::from_str(&contents)?;
+
+            Some(last_checked_version)
         }
         Err(_) => None,
     };
-    match latest_version {
-        Some(latest_version) => Ok(latest_version),
-        None => {
-            let latest_version = get_latest_version_from_api(installed_version)?;
-            let updated_file_contents = toml::to_string(&LastCheckedVersion {
-                latest_version: latest_version.to_string(),
-                last_checked: current_time,
-            })?;
-            fs::write(&version_file, updated_file_contents)?;
-            Ok(latest_version)
-        }
-    }
+
+    Ok(local_version)
+}
+
+fn get_latest_version(
+    installed_version: &str,
+    version_file: &PathBuf,
+    current_time: SystemTime,
+) -> Result<Version, failure::Error> {
+    let latest_version = get_latest_version_from_api(installed_version)?;
+    let updated_file_contents = toml::to_string(&LastCheckedVersion {
+        latest_version: latest_version.to_string(),
+        last_checked: current_time,
+    })?;
+    fs::write(&version_file, updated_file_contents)?;
+    Ok(latest_version)
 }
 
 fn get_latest_version_from_api(installed_version: &str) -> Result<Version, failure::Error> {
