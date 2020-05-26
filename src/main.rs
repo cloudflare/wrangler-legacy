@@ -37,6 +37,7 @@ fn main() -> Result<(), ExitFailure> {
     Ok(run()?)
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn run() -> Result<(), failure::Error> {
     // Define commonly used arguments and arg groups up front for consistency
     // The args below are for KV Subcommands
