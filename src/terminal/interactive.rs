@@ -10,14 +10,13 @@ pub fn get_user_input(prompt_string: &str) -> String {
 
 pub fn get_user_input_multi_line(prompt_string: &str) -> String {
     println!("{}", prompt_string);
-    let mut input = String::new();
     // are we reading from user input?
     let mut input = if atty::is(Stream::Stdin) {
         read!("{}\n")
     } else {
         // or is this data from a pipe? (support newlines)
-        let tmp = String::new();
-        let _ = io::stdin().read_to_string(&mut input);
+        let mut tmp = String::new();
+        let _ = io::stdin().read_to_string(&mut tmp);
         tmp
     };
     input = strip_trailing_whitespace(input);
