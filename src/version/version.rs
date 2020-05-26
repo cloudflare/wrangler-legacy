@@ -53,10 +53,12 @@ fn check_wrangler_versions() -> Result<WranglerVersion, failure::Error> {
     let current = get_installed_version()?;
 
     let latest = match get_version_disk(&version_file)? {
+        // If version.toml doesn't exist, fetch latest version
         Some(last_checked_version) => {
             let time_since_last_checked =
                 current_time.duration_since(last_checked_version.last_checked)?;
             if time_since_last_checked.as_secs() < ONE_DAY {
+                // If checked version within last day, current and latest will be the same
                 current.clone()
             } else {
                 Version::parse(&last_checked_version.latest_version)?
