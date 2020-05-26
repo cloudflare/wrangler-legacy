@@ -1,11 +1,9 @@
-pub mod fixture;
-
 use std::fs;
 use std::process::Command;
 use std::str;
 
 use assert_cmd::prelude::*;
-use fixture::{Fixture, WranglerToml};
+use wrangler::fixtures::{Fixture, WranglerToml};
 
 #[test]
 fn it_builds_webpack() {

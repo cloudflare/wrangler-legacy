@@ -1,6 +1,5 @@
 use std::sync::{mpsc, Arc, Mutex};
 
-use crate::build;
 use crate::commands::dev::gcs::setup::get_preview_id;
 use crate::commands::dev::server_config::ServerConfig;
 
@@ -19,7 +18,7 @@ pub fn watch_for_changes(
     let (sender, receiver) = mpsc::channel();
     watch_and_build(&target, Some(sender))?;
 
-    while let Ok(_) = receiver.recv() {
+    while receiver.recv().is_ok() {
         let user = user.clone();
         let target = target.clone();
 

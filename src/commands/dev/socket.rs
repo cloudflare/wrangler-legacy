@@ -56,9 +56,9 @@ pub async fn listen(session_id: String) -> Result<(), failure::Error> {
         let printer = print_ws_messages(read);
 
         // run the heartbeat and message printer in parallel
-        match tokio::try_join!(heartbeat, keep_alive_to_ws, printer) {
-            Ok(_) => break Ok(()),
-            Err(_) => {}
+        if tokio::try_join!(heartbeat, keep_alive_to_ws, printer).is_ok() {
+            break Ok(());
+        } else {
         }
     }
 }

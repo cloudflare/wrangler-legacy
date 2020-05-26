@@ -51,7 +51,7 @@ impl RequestPayload {
         }
     }
 
-    pub fn cookie(&self, script_id: &String) -> String {
+    pub fn cookie(&self, script_id: &str) -> String {
         format!(
             "__ew_fiddle_preview={}{}{}{}",
             script_id, self.session, self.https, self.domain

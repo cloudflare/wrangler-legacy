@@ -1,7 +1,3 @@
-#[path = "../../../../tests/fixture/wrangler_toml.rs"]
-#[cfg(test)]
-mod wrangler_toml;
-
 mod deploy_config;
 
 use super::*;
@@ -11,7 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use wrangler_toml::{EnvConfig, WranglerToml, TEST_ENV_NAME};
+use crate::fixtures::{EnvConfig, WranglerToml, TEST_ENV_NAME};
 
 #[test]
 fn it_builds_from_config() {
@@ -62,7 +58,7 @@ fn it_builds_from_environments_config_with_kv() {
             assert!(kv_namespaces.contains(&kv_1));
             assert!(kv_namespaces.contains(&kv_2));
         }
-        None => assert!(false),
+        None => panic!("found no kv namespaces"),
     }
 
     let target = manifest.get_target(Some("staging")).unwrap();
@@ -82,7 +78,7 @@ fn it_builds_from_environments_config_with_kv() {
             assert!(kv_namespaces.contains(&kv_1));
             assert!(kv_namespaces.contains(&kv_2));
         }
-        None => assert!(false),
+        None => panic!("found no kv namespaces"),
     }
 }
 

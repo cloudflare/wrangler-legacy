@@ -20,10 +20,8 @@ pub fn generate(
         Err(_) => true,
     };
 
-    let new_name: String;
-
-    if dirname_exists {
-        new_name = match generate_name(name) {
+    let new_name = if dirname_exists {
+        match generate_name(name) {
             Ok(val) => val,
             Err(_) => {
                 log::debug!(
@@ -32,10 +30,10 @@ pub fn generate(
                 );
                 String::from(name)
             }
-        };
+        }
     } else {
-        new_name = String::from(name);
-    }
+        String::from(name)
+    };
 
     log::info!("Generating a new worker project with name '{}'", new_name);
     run_generate(&new_name, template)?;
@@ -74,7 +72,7 @@ fn generate_name(name: &str) -> Result<String, failure::Error> {
     let mut new_name = construct_name(&name, num);
 
     while entry_names.contains(&OsString::from(&new_name)) {
-        num = num + 1;
+        num += 1;
         new_name = construct_name(&name, num);
     }
     Ok(new_name)

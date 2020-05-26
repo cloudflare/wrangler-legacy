@@ -1,6 +1,4 @@
-pub mod fixture;
-
-use fixture::WranglerToml;
+use wrangler::fixtures::{Fixture, WranglerToml};
 
 use std::collections::HashMap;
 use std::env;
@@ -8,8 +6,6 @@ use std::process::Command;
 
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
-
-use fixture::Fixture;
 
 #[test]
 fn it_can_preview_js_project() {
@@ -20,7 +16,7 @@ fn it_can_preview_js_project() {
         addEventListener('fetch', event => {
             event.respondWith(handleRequest(event.request))
         })
-        
+
         /**
         * Fetch and log a request
         * @param {Request} request
@@ -209,7 +205,7 @@ fn it_previews_with_config_text() {
         addEventListener('fetch', event => {
             event.respondWith(handleRequest(event.request))
         })
-        
+
         async function handleRequest(request) {
             return new Response(CONFIG_TEST)
         }
