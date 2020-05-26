@@ -1,5 +1,17 @@
 # Changelog
 
+## 🐼 1.9.2
+
+- ### Fixes
+
+  - **Fix piping secret values to `wrangler secret put <VAR_NAME>` - [dmcgowan], [issue/1322] [pull/1316]**
+
+    In 1.9.1, we introduced a bug where piping values to `wrangler secret put` no longer worked. In 1.9.2, that bug is squashed, and the command works as expected.
+
+    [dmcgowan]: https://github.com/dmcgowan
+    [pull/1316]: https://github.com/cloudflare/wrangler/pull/1316
+    [issue/1322]: https://github.com/cloudflare/wrangler/issues/1322
+
 ## 🐎 1.9.1
 
 - ### Features
