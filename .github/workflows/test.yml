@@ -71,6 +71,6 @@ jobs:
           rustup default ${{ matrix.rust }}
 
       - name: Run Tests
-        run: cargo test
+        run: cargo test --features "strict"
         env:
           RUST_BACKTRACE: 1

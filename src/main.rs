@@ -1,4 +1,4 @@
-#![allow(clippy::redundant_closure)]
+#![cfg_attr(feature = "strict", deny(warnings))]
 
 extern crate text_io;
 extern crate tokio;
@@ -55,6 +55,7 @@ fn main() -> Result<(), ExitFailure> {
     Ok(())
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn run() -> Result<(), failure::Error> {
     // Define commonly used arguments and arg groups up front for consistency
     // The args below are for KV Subcommands

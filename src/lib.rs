@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "strict", deny(warnings))]
+
 #[macro_use]
 extern crate text_io;
 
