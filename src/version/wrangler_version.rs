@@ -27,7 +27,7 @@ pub struct WranglerVersion {
 
 impl WranglerVersion {
     pub fn is_outdated(&self) -> bool {
-        return !self.checked && (self.current != self.latest);
+        !self.checked && (self.current != self.latest)
     }
 }
 
