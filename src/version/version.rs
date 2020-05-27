@@ -27,7 +27,7 @@ pub struct WranglerVersion {
 
 impl WranglerVersion {
     pub fn is_outdated(&self) -> bool {
-        return self.checked;
+        return !self.checked && (self.current != self.latest);
     }
 }
 
@@ -86,10 +86,12 @@ fn check_wrangler_versions() -> Result<WranglerVersion, failure::Error> {
 /// Reads version out of version file, is `None` if file does not exist
 fn get_version_disk(version_file: &PathBuf) -> Option<LastCheckedVersion> {
     match fs::read_to_string(&version_file) {
-        Ok(contents) => match LastCheckedVersion::from_str(&contents) {
-            Ok(last_checked_version) => Some(last_checked_version),
-            Err(_) => None,
-        },
+        Ok(contents) => {
+            match LastCheckedVersion::from_str(&contents) {
+                Ok(last_checked_version) => Some(last_checked_version),
+                Err(_) => None,
+            }
+        }
         Err(_) => None,
     }
 }
@@ -144,8 +146,7 @@ pub fn background_check_for_updates() -> mpsc::Receiver<Version> {
         Ok(wrangler_versions) => {
             // If the wrangler version has not been checked within the last day and the versions
             // are different, print out an update message
-            if !wrangler_versions.is_outdated()
-                && (wrangler_versions.current != wrangler_versions.latest)
+            if wrangler_versions.is_outdated()
             {
                 let _ = sender.send(wrangler_versions.latest);
             }
