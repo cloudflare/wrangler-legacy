@@ -41,7 +41,12 @@ pub fn site(
 
                     get_id_from_namespace_list(&client, target, &title)
                 } else {
-                    failure::bail!("{:?}", api_errors.errors)
+                    let error_messages: Vec<String> = api_errors
+                        .errors
+                        .iter()
+                        .map(|e| e.message.clone())
+                        .collect();
+                    failure::bail!("ApiError {:?}", error_messages);
                 }
             }
             ApiFailure::Invalid(reqwest_err) => failure::bail!("Error: {}", reqwest_err),
