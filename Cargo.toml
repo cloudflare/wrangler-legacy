@@ -67,4 +67,10 @@ fs_extra = "1.1.0"
 predicates = "1.0.2"
 
 [features]
+# We build Linux binaries with vendored openssl
+# to avoid SSL issues
 vendored-openssl = ['openssl/vendored']
+
+# Treat compiler warnings as a build error.
+# This only runs in CI by default
+strict = []
