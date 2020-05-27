@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::mpsc;
 use std::thread;
@@ -19,6 +20,15 @@ pub struct WranglerVersion {
 
     /// latest version of wrangler on crates.io
     pub latest: Version,
+
+    /// set to true if wrangler version has been checked within a day
+    pub checked: bool,
+}
+
+impl WranglerVersion {
+    pub fn is_outdated(&self) -> bool {
+        return !self.checked && (self.current != self.latest);
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -45,41 +55,57 @@ fn get_installed_version() -> Result<Version, failure::Error> {
 }
 
 fn check_wrangler_versions() -> Result<WranglerVersion, failure::Error> {
-    let current = get_installed_version()?;
-    let latest = get_latest_version(&current.to_string())?;
-    Ok(WranglerVersion { current, latest })
-}
-
-fn get_latest_version(installed_version: &str) -> Result<Version, failure::Error> {
     let config_dir = get_wrangler_home_dir()?;
     let version_file = config_dir.join("version.toml");
     let current_time = SystemTime::now();
-    let latest_version = match fs::read_to_string(&version_file) {
-        Ok(contents) => {
-            let last_checked_version = LastCheckedVersion::from_str(&contents)?;
+
+    let mut checked = false;
+    let current = get_installed_version()?;
+
+    let latest = match get_version_disk(&version_file) {
+        Some(last_checked_version) => {
             let time_since_last_checked =
                 current_time.duration_since(last_checked_version.last_checked)?;
+
             if time_since_last_checked.as_secs() < ONE_DAY {
-                let version = Version::parse(&last_checked_version.latest_version)?;
-                Some(version)
-            } else {
-                None
+                checked = true;
             }
+            Version::parse(&last_checked_version.latest_version)?
         }
-        Err(_) => None,
+        // If version.toml doesn't exist, fetch latest version
+        None => get_latest_version(&current.to_string(), &version_file, current_time)?,
     };
-    match latest_version {
-        Some(latest_version) => Ok(latest_version),
-        None => {
-            let latest_version = get_latest_version_from_api(installed_version)?;
-            let updated_file_contents = toml::to_string(&LastCheckedVersion {
-                latest_version: latest_version.to_string(),
-                last_checked: current_time,
-            })?;
-            fs::write(&version_file, updated_file_contents)?;
-            Ok(latest_version)
-        }
+
+    Ok(WranglerVersion {
+        current,
+        latest,
+        checked,
+    })
+}
+
+/// Reads version out of version file, is `None` if file does not exist
+fn get_version_disk(version_file: &PathBuf) -> Option<LastCheckedVersion> {
+    match fs::read_to_string(&version_file) {
+        Ok(contents) => match LastCheckedVersion::from_str(&contents) {
+            Ok(last_checked_version) => Some(last_checked_version),
+            Err(_) => None,
+        },
+        Err(_) => None,
     }
+}
+
+fn get_latest_version(
+    installed_version: &str,
+    version_file: &PathBuf,
+    current_time: SystemTime,
+) -> Result<Version, failure::Error> {
+    let latest_version = get_latest_version_from_api(installed_version)?;
+    let updated_file_contents = toml::to_string(&LastCheckedVersion {
+        latest_version: latest_version.to_string(),
+        last_checked: current_time,
+    })?;
+    fs::write(&version_file, updated_file_contents)?;
+    Ok(latest_version)
 }
 
 fn get_latest_version_from_api(installed_version: &str) -> Result<Version, failure::Error> {
@@ -116,7 +142,9 @@ pub fn background_check_for_updates() -> mpsc::Receiver<Version> {
 
     let _detached_thread = thread::spawn(move || match check_wrangler_versions() {
         Ok(wrangler_versions) => {
-            if wrangler_versions.current != wrangler_versions.latest {
+            // If the wrangler version has not been checked within the last day and the versions
+            // are different, print out an update message
+            if wrangler_versions.is_outdated() {
                 let _ = sender.send(wrangler_versions.latest);
             }
         }
