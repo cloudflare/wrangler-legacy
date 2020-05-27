@@ -1,5 +1,4 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
-#![allow(clippy::redundant_closure)]
 
 extern crate text_io;
 extern crate tokio;
