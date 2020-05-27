@@ -69,8 +69,10 @@ fn check_wrangler_versions() -> Result<WranglerVersion, failure::Error> {
 
             if time_since_last_checked.as_secs() < ONE_DAY {
                 checked = true;
+                Version::parse(&last_checked_version.latest_version)?
+            } else {
+                get_latest_version(&current.to_string(), &version_file, current_time)?
             }
-            Version::parse(&last_checked_version.latest_version)?
         }
         // If version.toml doesn't exist, fetch latest version
         None => get_latest_version(&current.to_string(), &version_file, current_time)?,
