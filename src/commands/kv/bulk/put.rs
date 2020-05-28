@@ -8,6 +8,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::{ApiFailure, ApiSuccess};
+use indicatif::ProgressBar;
 
 use crate::commands::kv;
 use crate::commands::kv::bulk::MAX_PAIRS;
@@ -39,6 +40,13 @@ pub fn put(
         Err(e) => Err(failure::format_err!("{}", e)),
     }?;
 
+    message::working("Starting KV Bulk Put");
+    let progress_bar = if pairs.len() > MAX_PAIRS {
+        Some(ProgressBar::new(pairs.len() as u64))
+    } else {
+        None
+    };
+
     let client = kv::api_client(user)?;
     while !pairs.is_empty() {
         let p: Vec<KeyValuePair> = if pairs.len() > MAX_PAIRS {
@@ -50,6 +58,14 @@ pub fn put(
         if let Err(e) = call_api(&client, target, namespace_id, &p) {
             failure::bail!("{}", kv::format_error(e));
         }
+
+        if let Some(pb) = &progress_bar {
+            pb.inc(p.len() as u64);
+        }
+    }
+
+    if let Some(pb) = &progress_bar {
+        pb.finish_with_message("Done KV Bulk Put");
     }
 
     message::success("Success");
