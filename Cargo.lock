@@ -1044,7 +1044,7 @@ checksum = "49a68371cf417889c9d7f98235b7102ea7c54fc59bcbd22f3dea785be9d27e40"
 dependencies = [
  "console 0.11.3",
  "lazy_static",
- "number_prefix",
+ "number_prefix 0.3.0",
  "regex",
 ]
 
@@ -1441,6 +1441,12 @@ name = "number_prefix"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17b02fc0ff9a9e4b35b3342880f48e896ebf69f2967921fe8646bf5b7125956a"
+
+[[package]]
+name = "number_prefix"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "object"
@@ -2732,7 +2738,7 @@ dependencies = [
  "lazy_static",
  "log 0.4.8",
  "notify",
- "number_prefix",
+ "number_prefix 0.4.0",
  "openssl",
  "percent-encoding 1.0.1",
  "predicates",
