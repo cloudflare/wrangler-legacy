@@ -1,4 +1,6 @@
 use cloudflare::endpoints::workerskv::WorkersKvNamespace;
+use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::response::ApiFailure;
 
 use crate::commands::kv;
 use crate::http;
@@ -28,7 +30,39 @@ pub fn site(
             message::working(&msg);
             Ok(success.result)
         }
-        Err(e) => failure::bail!("{}", http::format_error(e, Some(&error_suggestions))),
+        Err(e) => match &e {
+            ApiFailure::Error(_status, api_errors) => {
+                if api_errors.errors.iter().any(|e| e.code == 10014) {
+                    log::info!("Namespace {} already exists.", title);
+
+                    let msg = format!("Using namespace for Workers Site \"{}\"", title);
+                    message::working(&msg);
+
+                    get_id_from_namespace_list(&client, target, &title)
+                } else {
+                    failure::bail!("{}", http::format_error(e, Some(&error_suggestions)))
+                }
+            }
+            _ => failure::bail!("{}", http::format_error(e, Some(&error_suggestions))),
+        },
+    }
+}
+
+fn get_id_from_namespace_list(
+    client: &impl ApiClient,
+    target: &Target,
+    title: &str,
+) -> Result<WorkersKvNamespace, failure::Error> {
+    let result = kv::namespace::list::call_api(client, target);
+
+    match result {
+        Ok(success) => Ok(success
+            .result
+            .iter()
+            .find(|ns| ns.title == title)
+            .unwrap()
+            .to_owned()),
+        Err(e) => failure::bail!(kv::format_error(e)),
     }
 }
 

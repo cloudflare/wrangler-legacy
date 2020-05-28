@@ -1,14 +1,11 @@
-use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use cloudflare::framework::auth::Credentials;
 use serde::{Deserialize, Serialize};
 
-use crate::settings::{Environment, QueryEnvironment};
+use crate::settings::{get_global_config_path, Environment, QueryEnvironment};
 use crate::terminal::{emoji, styles};
-
-const DEFAULT_CONFIG_FILE_NAME: &str = "default.toml";
 
 const CF_API_TOKEN: &str = "CF_API_TOKEN";
 const CF_API_KEY: &str = "CF_API_KEY";
@@ -133,28 +130,13 @@ impl From<GlobalUser> for Credentials {
     }
 }
 
-pub fn get_global_config_path() -> Result<PathBuf, failure::Error> {
-    let home_dir = if let Ok(value) = env::var("WRANGLER_HOME") {
-        log::info!("Using $WRANGLER_HOME: {}", value);
-        Path::new(&value).to_path_buf()
-    } else {
-        log::info!("No $WRANGLER_HOME detected, using $HOME");
-        dirs::home_dir()
-            .expect("Could not find home directory")
-            .join(".wrangler")
-    };
-    let global_config_file = home_dir.join("config").join(DEFAULT_CONFIG_FILE_NAME);
-    log::info!("Using global config file: {}", global_config_file.display());
-    Ok(global_config_file)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::fs::File;
     use tempfile::tempdir;
 
-    use crate::settings::environment::MockEnvironment;
+    use crate::settings::{environment::MockEnvironment, DEFAULT_CONFIG_FILE_NAME};
 
     #[test]
     fn it_can_prioritize_token_input() {
