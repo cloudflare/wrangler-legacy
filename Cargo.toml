@@ -38,7 +38,7 @@ log = "0.4.6"
 notify = "4.0.12"
 number_prefix = "0.3.0"
 openssl = { version = '0.10.26', optional = true }
-percent-encoding = "1.0.1"
+percent-encoding = "2.1.0"
 predicates = "1.0.2"
 prettytable-rs = "0.8.0"
 rand = "0.7.3"

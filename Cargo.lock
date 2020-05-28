@@ -2734,7 +2734,7 @@ dependencies = [
  "notify",
  "number_prefix",
  "openssl",
- "percent-encoding 1.0.1",
+ "percent-encoding 2.1.0",
  "predicates",
  "prettytable-rs",
  "rand",
