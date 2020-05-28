@@ -5,7 +5,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::SystemTime;
 
-use crate::settings::global_user::get_wrangler_home_dir;
+use crate::settings::get_wrangler_home_dir;
 
 use reqwest::header::USER_AGENT;
 use semver::Version;
