@@ -62,7 +62,7 @@ fn get_id_from_namespace_list(
             .find(|ns| ns.title == title)
             .unwrap()
             .to_owned()),
-        Err(e) => failure::bail!("{}", http::format_error(e, Some(&error_suggestions))),
+        Err(e) => failure::bail!(kv::format_error(e)),
     }
 }
 
