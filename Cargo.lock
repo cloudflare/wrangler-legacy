@@ -2716,7 +2716,7 @@ dependencies = [
  "cloudflare",
  "config",
  "console 0.11.3",
- "dirs 1.0.5",
+ "dirs 2.0.2",
  "env_logger",
  "exitfailure",
  "failure",
