@@ -65,23 +65,25 @@ pub fn delete_bulk(
 ) -> Result<(), failure::Error> {
     let client = kv::api_client(user)?;
 
-    // Check number of pairs is under limit
-    if keys.len() > MAX_PAIRS {
-        failure::bail!(
-            "Number of keys to delete ({}) exceeds max of {}",
-            keys.len(),
-            MAX_PAIRS
-        );
+    let mut pairs = keys;
+
+    while !pairs.is_empty() {
+        let p = if pairs.len() > MAX_PAIRS {
+            pairs.drain(0..MAX_PAIRS).collect()
+        } else {
+            pairs.drain(0..).collect()
+        };
+
+        let response = client.request(&DeleteBulk {
+            account_identifier: &target.account_id,
+            namespace_identifier: namespace_id,
+            bulk_keys: p,
+        });
+
+        if let Err(e) = response {
+            failure::bail!("{}", kv::format_error(e))
+        }
     }
 
-    let response = client.request(&DeleteBulk {
-        account_identifier: &target.account_id,
-        namespace_identifier: namespace_id,
-        bulk_keys: keys,
-    });
-
-    match response {
-        Ok(_) => Ok(()),
-        Err(e) => failure::bail!("{}", kv::format_error(e)),
-    }
+    Ok(())
 }

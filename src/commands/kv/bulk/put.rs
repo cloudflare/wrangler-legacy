@@ -23,7 +23,7 @@ pub fn put(
 ) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
 
-    let pairs: Vec<KeyValuePair> = match &metadata(filename) {
+    let mut pairs: Vec<KeyValuePair> = match &metadata(filename) {
         Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
             let data_vec = serde_json::from_str(&data);
@@ -39,20 +39,20 @@ pub fn put(
         Err(e) => Err(failure::format_err!("{}", e)),
     }?;
 
-    // Validate that bulk upload is within size constraints
-    if pairs.len() > MAX_PAIRS {
-        failure::bail!(
-            "Number of key-value pairs to upload ({}) exceeds max of {}",
-            pairs.len(),
-            MAX_PAIRS
-        );
+    let client = kv::api_client(user)?;
+    while !pairs.is_empty() {
+        let p: Vec<KeyValuePair> = if pairs.len() > MAX_PAIRS {
+            pairs.drain(0..MAX_PAIRS).collect()
+        } else {
+            pairs.drain(0..).collect()
+        };
+
+        if let Err(e) = call_api(&client, target, namespace_id, &p) {
+            failure::bail!("{}", kv::format_error(e));
+        }
     }
 
-    let client = kv::api_client(user)?;
-    match call_api(&client, target, namespace_id, &pairs) {
-        Ok(_) => message::success("Success"),
-        Err(e) => failure::bail!("{}", kv::format_error(e)),
-    }
+    message::success("Success");
     Ok(())
 }
 
