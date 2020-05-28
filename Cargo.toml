@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.9.1"
+version = "1.9.2"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -67,4 +67,10 @@ fs_extra = "1.1.0"
 predicates = "1.0.4"
 
 [features]
+# We build Linux binaries with vendored openssl
+# to avoid SSL issues
 vendored-openssl = ['openssl/vendored']
+
+# Treat compiler warnings as a build error.
+# This only runs in CI by default
+strict = []
