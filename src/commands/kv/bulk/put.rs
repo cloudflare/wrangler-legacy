@@ -65,10 +65,9 @@ pub fn put(
     }
 
     if let Some(pb) = &progress_bar {
-        pb.finish_with_message("Done KV Bulk Put");
+        pb.finish_with_message(&format!("uploaded {} key value pairs", pairs.len()));
     }
 
-    message::success("Success");
     Ok(())
 }
 

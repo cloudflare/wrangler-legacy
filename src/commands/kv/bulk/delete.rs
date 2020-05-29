@@ -68,7 +68,7 @@ pub fn delete_bulk(
 
     let mut pairs = keys;
 
-    message::working("Starting KV Bulk Delete");
+    message::working(&format!("deleting {} key value pairs", pairs.len()));
     let progress_bar = if pairs.len() > MAX_PAIRS {
         Some(ProgressBar::new(pairs.len() as u64))
     } else {
@@ -97,7 +97,7 @@ pub fn delete_bulk(
     }
 
     if let Some(pb) = &progress_bar {
-        pb.finish_with_message("Done KV Bulk Delete");
+        pb.finish_with_message(&format!("deleted {} key value pairs", pairs.len()));
     }
 
     Ok(())
