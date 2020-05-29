@@ -1,4 +1,4 @@
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::framework::apiclient::ApiClient;
@@ -30,7 +30,9 @@ pub fn upload_files(
 
         message::working("Uploading site files");
         let pb = if pairs.len() > PAIRS_MAX_COUNT {
-            Some(ProgressBar::new(pairs.len() as u64))
+            let pb = ProgressBar::new(pairs.len() as u64);
+            pb.set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
+            Some(pb)
         } else {
             None
         };

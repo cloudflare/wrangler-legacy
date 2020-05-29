@@ -7,7 +7,7 @@ use std::path::Path;
 use cloudflare::endpoints::workerskv::delete_bulk::DeleteBulk;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::framework::apiclient::ApiClient;
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::commands::kv;
 use crate::commands::kv::bulk::MAX_PAIRS;
@@ -67,10 +67,13 @@ pub fn delete_bulk(
     let client = kv::api_client(user)?;
 
     let mut pairs = keys;
+    let len = pairs.len();
 
-    message::working(&format!("deleting {} key value pairs", pairs.len()));
-    let progress_bar = if pairs.len() > MAX_PAIRS {
-        Some(ProgressBar::new(pairs.len() as u64))
+    message::working(&format!("deleting {} key value pairs", len));
+    let progress_bar = if len > MAX_PAIRS {
+        let pb = ProgressBar::new(len as u64);
+        pb.set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
+        Some(pb)
     } else {
         None
     };
@@ -97,7 +100,7 @@ pub fn delete_bulk(
     }
 
     if let Some(pb) = &progress_bar {
-        pb.finish_with_message(&format!("deleted {} key value pairs", pairs.len()));
+        pb.finish_with_message(&format!("deleted {} key value pairs", len));
     }
 
     Ok(())

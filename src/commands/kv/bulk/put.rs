@@ -8,7 +8,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::{ApiFailure, ApiSuccess};
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::commands::kv;
 use crate::commands::kv::bulk::MAX_PAIRS;
@@ -40,9 +40,13 @@ pub fn put(
         Err(e) => Err(failure::format_err!("{}", e)),
     }?;
 
+    let len = pairs.len();
+
     message::working(&format!("uploading {} key value pairs", pairs.len()));
-    let progress_bar = if pairs.len() > MAX_PAIRS {
-        Some(ProgressBar::new(pairs.len() as u64))
+    let progress_bar = if len > MAX_PAIRS {
+        let pb = ProgressBar::new(len as u64);
+        pb.set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
+        Some(pb)
     } else {
         None
     };
@@ -65,7 +69,7 @@ pub fn put(
     }
 
     if let Some(pb) = &progress_bar {
-        pb.finish_with_message(&format!("uploaded {} key value pairs", pairs.len()));
+        pb.finish_with_message(&format!("uploaded {} key value pairs", len));
     }
 
     Ok(())
