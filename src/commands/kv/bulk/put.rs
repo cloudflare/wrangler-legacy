@@ -40,7 +40,7 @@ pub fn put(
         Err(e) => Err(failure::format_err!("{}", e)),
     }?;
 
-    message::working("Starting KV Bulk Put");
+    message::working(&format!("uploading {} key value pairs", pairs.len()));
     let progress_bar = if pairs.len() > MAX_PAIRS {
         Some(ProgressBar::new(pairs.len() as u64))
     } else {
