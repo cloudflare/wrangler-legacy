@@ -79,6 +79,13 @@ fn run() -> Result<(), failure::Error> {
         .takes_value(false)
         .help("toggle verbose output");
 
+    let wrangler_file = Arg::with_name("file")
+        .short("f")
+        .takes_value(true)
+        .long("file")
+        .help("File path to override the default wrangler.toml file ");
+
+
     let silent_verbose_arg = verbose_arg.clone().hidden(true);
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
@@ -121,6 +128,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(silent_verbose_arg.clone())
                 )
                 .arg(silent_verbose_arg.clone())
+                .arg(wrangler_file.clone())
         )
         .subcommand(
             SubCommand::with_name("kv:key")
@@ -130,6 +138,7 @@ fn run() -> Result<(), failure::Error> {
                 ))
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .arg(silent_verbose_arg.clone())
+                .arg(wrangler_file.clone())
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Put a key-value pair into a namespace")
@@ -229,6 +238,7 @@ fn run() -> Result<(), failure::Error> {
                     emoji::BICEP
                 ))
                 .arg(silent_verbose_arg.clone())
+                .arg(wrangler_file.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
@@ -267,6 +277,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} List or delete worker routes.",
                     emoji::ROUTE
                 ))
+                .arg(wrangler_file.clone())
                 .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -294,6 +305,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a secret that can be referenced in the worker script",
                     emoji::SECRET
                 ))
+                .arg(wrangler_file.clone())
                 .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -389,6 +401,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("env")
                         .takes_value(true)
                 )
+                .arg(wrangler_file.clone())
                 .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
@@ -397,6 +410,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Preview your code temporarily on cloudflareworkers.com",
                     emoji::MICROSCOPE
                 ))
+                .arg(wrangler_file.clone())
                 .arg(
                     Arg::with_name("headless")
                         .help("Don't open the browser on preview")
@@ -441,6 +455,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Start a local server for developing your worker",
                     emoji::EAR
                 ))
+                .arg(wrangler_file.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environment to build")
@@ -477,6 +492,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Publish your worker to the orange cloud",
                     emoji::UP
                 ))
+                .arg(wrangler_file.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environments to publish to")
@@ -519,6 +535,7 @@ fn run() -> Result<(), failure::Error> {
                     "{} Configure your workers.dev subdomain",
                     emoji::WORKER
                 ))
+                .arg(wrangler_file.clone())
                 .arg(
                     Arg::with_name("name")
                         .help("the subdomain on workers.dev you'd like to reserve")
@@ -537,6 +554,7 @@ fn run() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("tail")
                 .about(&*format!("{} Aggregate logs from production worker", emoji::TAIL))
+                .arg(wrangler_file.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environment to tail logs from")
@@ -561,7 +579,8 @@ fn run() -> Result<(), failure::Error> {
         )
         .get_matches();
 
-    let config_path = Path::new("./wrangler.toml");
+    let config_file = matches.value_of("file").unwrap_or(commands::DEFAULT_CONFIG_PATH);
+    let config_path = Path::new(config_file);
 
     let not_recommended_msg = styles::warning("(Not Recommended)");
     let recommended_cmd_msg = styles::highlight("`wrangler config --api-key`");
