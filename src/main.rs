@@ -103,7 +103,6 @@ fn run() -> Result<(), failure::Error> {
         .long("file")
         .help("File path to override the default wrangler.toml file ");
 
-
     let silent_verbose_arg = verbose_arg.clone().hidden(true);
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
@@ -597,7 +596,9 @@ fn run() -> Result<(), failure::Error> {
         )
         .get_matches();
 
-    let config_file = matches.value_of("file").unwrap_or(commands::DEFAULT_CONFIG_PATH);
+    let config_file = matches
+        .value_of("file")
+        .unwrap_or(commands::DEFAULT_CONFIG_PATH);
     let config_path = Path::new(config_file);
 
     let not_recommended_msg = styles::warning("(Not Recommended)");
