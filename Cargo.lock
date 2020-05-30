@@ -115,18 +115,15 @@ dependencies = [
 
 [[package]]
 name = "base64"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
-name = "base64"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b41b7ea54a0c9d92199de89e20e58d49f02f8e699814ef3fdf266f6f748d15c7"
+
+[[package]]
+name = "base64"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53d1ccbaf7d9ec9537465a97bf19edc1a4e158ecb49fc16178202238c569cc42"
 
 [[package]]
 name = "billboard"
@@ -1011,9 +1008,9 @@ dependencies = [
 
 [[package]]
 name = "ignore"
-version = "0.4.15"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "128b9e89d15a3faa642ee164c998fd4fae3d89d054463cddb2c25a7baad3a352"
+checksum = "22dcbf2a4a289528dbef21686354904e1c694ac642610a9bff9e7df730d9ec72"
 dependencies = [
  "crossbeam-utils",
  "globset",
@@ -1044,7 +1041,7 @@ checksum = "49a68371cf417889c9d7f98235b7102ea7c54fc59bcbd22f3dea785be9d27e40"
 dependencies = [
  "console 0.11.3",
  "lazy_static",
- "number_prefix",
+ "number_prefix 0.3.0",
  "regex",
 ]
 
@@ -1443,6 +1440,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17b02fc0ff9a9e4b35b3342880f48e896ebf69f2967921fe8646bf5b7125956a"
 
 [[package]]
+name = "number_prefix"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
+
+[[package]]
 name = "object"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1704,9 +1707,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.3.7"
+version = "1.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6020f034922e3194c711b82a627453881bc4682166cabb07134a10c26ba7692"
+checksum = "9c3780fcf44b193bc4d09f36d2a3c87b251da4a046c87795a0d35f4f927ad8e6"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1725,9 +1728,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.6.17"
+version = "0.6.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fe5bd57d1d7414c6b5ed48563a2c855d995ff777729dcd91c369ec7fea395ae"
+checksum = "26412eb97c6b088a6997e05f69403a802a92d520de2f8e63c2b65f9e0f47c4e8"
 
 [[package]]
 name = "remove_dir_all"
@@ -1740,11 +1743,11 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.10.4"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02b81e49ddec5109a9dcfc5f2a317ff53377c915e9ae9d4f2fb50914b85614e2"
+checksum = "4be79e8610ce0c2d646aa03bff67653f76d394c4e0a5e7bc255007008fcc6ba8"
 dependencies = [
- "base64 0.11.0",
+ "base64 0.12.1",
  "bytes 0.5.4",
  "encoding_rs",
  "futures-core",
@@ -1764,7 +1767,6 @@ dependencies = [
  "serde 1.0.110",
  "serde_json",
  "serde_urlencoded",
- "time",
  "tokio",
  "tokio-tls",
  "url",
@@ -1810,7 +1812,7 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 dependencies = [
- "semver",
+ "semver 0.9.0",
 ]
 
 [[package]]
@@ -1866,6 +1868,15 @@ name = "semver"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
+dependencies = [
+ "semver-parser",
+]
+
+[[package]]
+name = "semver"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "394cec28fa623e00903caf7ba4fa6fb9a0e260280bb8cdbbba029611108a0190"
 dependencies = [
  "semver-parser",
 ]
@@ -2694,9 +2705,9 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "winreg"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2986deb581c4fe11b621998a5e53361efe6b48a151178d0cd9eeffa4dc6acc9"
+checksum = "0120db82e8a1e0b9fb3345a539c478767c0048d842860994d96113d5b667bd69"
 dependencies = [
  "winapi 0.3.8",
 ]
@@ -2707,7 +2718,7 @@ version = "1.9.2"
 dependencies = [
  "assert_cmd",
  "atty",
- "base64 0.10.1",
+ "base64 0.12.1",
  "billboard",
  "binary-install",
  "chrome-devtools-rs",
@@ -2716,7 +2727,7 @@ dependencies = [
  "cloudflare",
  "config",
  "console 0.11.3",
- "dirs 1.0.5",
+ "dirs 2.0.2",
  "env_logger",
  "exitfailure",
  "failure",
@@ -2732,15 +2743,15 @@ dependencies = [
  "lazy_static",
  "log 0.4.8",
  "notify",
- "number_prefix",
+ "number_prefix 0.4.0",
  "openssl",
- "percent-encoding 1.0.1",
+ "percent-encoding 2.1.0",
  "predicates",
  "prettytable-rs",
  "rand",
  "regex",
  "reqwest",
- "semver",
+ "semver 0.10.0",
  "serde 1.0.110",
  "serde_json",
  "serde_with",
