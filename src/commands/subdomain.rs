@@ -1,7 +1,7 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::{emoji, message};
+use crate::terminal::{emoji, interactive, message};
 
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +26,7 @@ impl Subdomain {
                 response.text()?,
             )
         }
-        let response: Response = serde_json::from_str(&response.text()?)?;
+        let response: SubdomainResponse = serde_json::from_str(&response.text()?)?;
         Ok(response.result.map(|r| r.subdomain))
     }
 
@@ -39,25 +39,31 @@ impl Subdomain {
 
         let client = http::legacy_auth_client(user);
 
-        let response = client.put(&addr).body(subdomain_request).send()?;
+        let response = client
+            .put(&addr)
+            .header("allow-rename", "1")
+            .body(subdomain_request)
+            .send()?;
 
         let response_status = response.status();
         if !response_status.is_success() {
-            let response_text = response.text()?;
+            let response_text = &response.text()?;
+            let r: SubdomainResponse = serde_json::from_str(response_text)?;
+            let api_error = r.errors.first().unwrap();
             log::debug!("Status Code: {}", response_status);
             log::debug!("Status Message: {}", response_text);
-            let msg = if response_status == 409 {
+            let msg = if response_status == 403 && api_error.code == 10031 {
                 format!(
                     "{} Your requested subdomain is not available. Please pick another one.",
                     emoji::WARN
                 )
             } else {
                 format!(
-                "{} There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
-                emoji::WARN,
-                response_status,
-                response_text
-            )
+                    "{} There was an error creating your requested subdomain.\n Status Code: {}\n Msg: {}",
+                    emoji::WARN,
+                    response_status,
+                    response_text
+                )
             };
             failure::bail!(msg)
         }
@@ -67,13 +73,30 @@ impl Subdomain {
 }
 
 #[derive(Deserialize)]
-struct Response {
+struct SubdomainResponse {
     result: Option<SubdomainResult>,
+    errors: Vec<Error>,
 }
 
 #[derive(Deserialize)]
 struct SubdomainResult {
     subdomain: String,
+}
+
+#[derive(Deserialize)]
+struct ScriptResponse {
+    result: Vec<ScriptResult>,
+}
+
+#[derive(Deserialize)]
+struct ScriptResult {
+    id: String,
+    available_on_subdomain: bool,
+}
+
+#[derive(Deserialize)]
+struct Error {
+    code: i64,
 }
 
 fn subdomain_addr(account_id: &str) -> String {
@@ -105,15 +128,48 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     }
     let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {
-        let msg = if subdomain == name {
-            format!("You have previously registered {}.workers.dev", subdomain)
+        if subdomain == name {
+            let msg = format!("You have previously registered {}.workers.dev", subdomain);
+            message::success(&msg);
+            return Ok(());
         } else {
-            format!("This account already has a registered subdomain. You can only register one subdomain per account. Your subdomain is {}.workers.dev", subdomain)
-        };
-        failure::bail!(msg)
-    } else {
-        register_subdomain(&name, &user, &target)
+            // list all the effected scripts
+            let scripts = get_subdomain_scripts(&target.account_id, user)?;
+
+            let default_msg = format!("Are you sure you want to permanently move your subdomain from {}.workers.dev to {}.workers.dev?",
+                                      subdomain, name);
+            let prompt_msg = if scripts.is_empty() {
+                default_msg
+            } else {
+                let mut script_updates: Vec<String> = Vec::new();
+                for script in scripts {
+                    script_updates.push(format!(
+                        "{}.{}.workers.dev => {}.{}.workers.dev",
+                        script, subdomain, script, name
+                    ))
+                }
+                let msg = format!(
+                    "The following deployed Workers will be effected:\n{}\nIt may take a few minutes for these Workers to become available again.",
+                    script_updates.join("\n")
+                );
+                format!("{}\n{}", msg, default_msg)
+            };
+
+            match interactive::delete(&prompt_msg) {
+                Ok(true) => (),
+                Ok(false) => {
+                    message::info(&format!(
+                        "Not renaming subdomain: {}.workers.dev",
+                        subdomain
+                    ));
+                    return Ok(());
+                }
+                Err(e) => failure::bail!(e),
+            }
+        }
     }
+
+    register_subdomain(&name, &user, &target)
 }
 
 pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
@@ -127,4 +183,42 @@ pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::
         message::user_error(&msg);
     }
     Ok(())
+}
+
+fn get_subdomain_scripts(
+    account_id: &str,
+    user: &GlobalUser,
+) -> Result<Vec<String>, failure::Error> {
+    let addr = script_addr(account_id);
+
+    let client = http::legacy_auth_client(user);
+
+    let response = client
+        .get(&addr)
+        .query(&[("include_subdomain_availability", "1")])
+        .send()?;
+
+    if !response.status().is_success() {
+        failure::bail!(
+            "{} There was an error fetching scripts.\n Status Code: {}\n Msg: {}",
+            emoji::WARN,
+            response.status(),
+            response.text()?,
+        )
+    }
+    let response: ScriptResponse = serde_json::from_str(&response.text()?)?;
+    let mut scripts: Vec<String> = Vec::new();
+    for script in response.result {
+        if script.available_on_subdomain {
+            scripts.push(script.id)
+        }
+    }
+    Ok(scripts)
+}
+
+fn script_addr(account_id: &str) -> String {
+    format!(
+        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts",
+        account_id
+    )
 }
