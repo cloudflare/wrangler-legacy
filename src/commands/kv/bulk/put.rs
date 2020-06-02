@@ -6,11 +6,13 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
-use crate::commands::kv;
+use crate::commands::kv::validate_target;
 use crate::kv::bulk::put;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
+
+use super::bulk_api_client;
 
 pub fn run(
     target: &Target,
@@ -18,7 +20,7 @@ pub fn run(
     namespace_id: &str,
     filename: &Path,
 ) -> Result<(), failure::Error> {
-    kv::validate_target(target)?;
+    validate_target(target)?;
 
     let pairs: Vec<KeyValuePair> = match &metadata(filename) {
         Ok(file_type) if file_type.is_file() => {
@@ -36,7 +38,7 @@ pub fn run(
         Err(e) => Err(failure::format_err!("{}", e)),
     }?;
 
-    let client = kv::api_client(user)?;
+    let client = bulk_api_client(user)?;
     put(&client, target, namespace_id, &pairs)?;
     message::success("Success");
 
