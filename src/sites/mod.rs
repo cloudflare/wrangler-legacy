@@ -57,19 +57,9 @@ pub fn add_namespace(
         }
     };
 
-    // Check if namespace already is in namespace list
-    for namespace in target.kv_namespaces() {
-        if namespace.id == site_namespace.id {
-            return Ok(namespace); // Sites binding already exists; ignore
-        } else if namespace.bucket.is_some() {
-            failure::bail!("your wrangler.toml includes a `bucket` as part of a kv_namespace but also has a `[site]` specifed; did you mean to put this under `[site]`?");
-        }
-    }
-
     let site_namespace = KvNamespace {
         binding: "__STATIC_CONTENT".to_string(),
         id: site_namespace.id,
-        bucket: Some(target.site.clone().unwrap().bucket),
     };
 
     target.add_kv_namespace(site_namespace.clone());
