@@ -41,13 +41,15 @@ fn it_builds_from_environments_config_with_kv() {
     assert!(target.kv_namespaces.is_none());
 
     let target = manifest.get_target(Some("production")).unwrap();
-    let kv_1 = KvNamespace {
+    let kv_1 = ConfigKvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "prodKV-1".to_string(),
+        preview_id: None,
     };
-    let kv_2 = KvNamespace {
+    let kv_2 = ConfigKvNamespace {
         id: "anotherwaytoolongidstring".to_string(),
         binding: "prodKV-2".to_string(),
+        preview_id: None,
     };
 
     match target.kv_namespaces {
@@ -60,13 +62,15 @@ fn it_builds_from_environments_config_with_kv() {
     }
 
     let target = manifest.get_target(Some("staging")).unwrap();
-    let kv_1 = KvNamespace {
+    let kv_1 = ConfigKvNamespace {
         id: "somecrazylongidentifierstring".to_string(),
         binding: "stagingKV-1".to_string(),
+        preview_id: None,
     };
-    let kv_2 = KvNamespace {
+    let kv_2 = ConfigKvNamespace {
         id: "anotherwaytoolongidstring".to_string(),
         binding: "stagingKV-2".to_string(),
+        preview_id: None,
     };
     match target.kv_namespaces {
         Some(kv_namespaces) => {

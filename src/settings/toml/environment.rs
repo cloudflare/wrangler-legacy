@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use crate::settings::toml::deploy_config::RouteConfig;
-use crate::settings::toml::kv_namespace::KvNamespace;
+use crate::settings::toml::kv_namespace::ConfigKvNamespace;
 use crate::settings::toml::site::Site;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -22,7 +22,7 @@ pub struct Environment {
     pub private: Option<bool>,
     pub site: Option<Site>,
     #[serde(rename = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub vars: Option<HashMap<String, String>>,
 }
 

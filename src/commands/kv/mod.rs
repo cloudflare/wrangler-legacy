@@ -105,20 +105,22 @@ fn url_encode_key(key: &str) -> String {
 #[cfg(test)]
 mod tests {
     use crate::commands::kv;
-    use crate::settings::toml::{KvNamespace, Target, TargetType};
+    use crate::settings::toml::{ConfigKvNamespace, Target, TargetType};
 
     #[test]
     fn it_can_detect_duplicate_bindings() {
         let target_with_dup_kv_bindings = Target {
             account_id: "".to_string(),
             kv_namespaces: Some(vec![
-                KvNamespace {
+                ConfigKvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
+                    preview_id: None,
                 },
-                KvNamespace {
+                ConfigKvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
+                    preview_id: None,
                 },
             ]),
             name: "test-target".to_string(),

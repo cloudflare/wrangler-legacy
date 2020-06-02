@@ -22,12 +22,31 @@ use wasm_module::WasmModule;
 // TODO: https://github.com/cloudflare/wrangler/issues/1083
 use super::{krate, Package};
 
-pub fn build(
+pub fn build_preview(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Form, failure::Error> {
+    build(target, asset_manifest, true)
+}
+
+pub fn build_production(
+    target: &Target,
+    asset_manifest: Option<AssetManifest>,
+) -> Result<Form, failure::Error> {
+    build(target, asset_manifest, false)
+}
+
+fn build(
+    target: &Target,
+    asset_manifest: Option<AssetManifest>,
+    preview: bool,
+) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
-    let kv_namespaces = target.kv_namespaces();
+    let kv_namespaces = if preview {
+        target.preview_kv_namespaces()?
+    } else {
+        target.kv_namespaces()
+    };
     let mut text_blobs: Vec<TextBlob> = Vec::new();
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();

@@ -12,7 +12,7 @@ use serde_with::rust::string_empty_as_none;
 use crate::commands::validate_worker_name;
 use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
 use crate::settings::toml::environment::Environment;
-use crate::settings::toml::kv_namespace::KvNamespace;
+use crate::settings::toml::kv_namespace::ConfigKvNamespace;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
 use crate::settings::toml::Target;
@@ -38,7 +38,7 @@ pub struct Manifest {
     // as a TOML inline table (this would prevent confusion with environments too!)
     pub site: Option<Site>,
     #[serde(alias = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<KvNamespace>>,
+    pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
     pub vars: Option<HashMap<String, String>>,
 }
