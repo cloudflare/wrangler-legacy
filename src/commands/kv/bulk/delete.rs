@@ -6,8 +6,11 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
+use indicatif::{ProgressBar, ProgressStyle};
+
 use crate::commands::kv;
 use crate::kv::bulk::delete;
+use crate::kv::bulk::MAX_PAIRS;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
@@ -46,11 +49,38 @@ pub fn run(
         Err(e) => failure::bail!("{}", e),
     };
 
-    let keys: Vec<String> = pairs?.iter().map(|kv| kv.key.to_owned()).collect();
+    let mut keys: Vec<String> = pairs?.iter().map(|kv| kv.key.to_owned()).collect();
 
-    match delete(target, user, namespace_id, keys) {
-        Ok(_) => message::success("Success"),
-        Err(e) => print!("{}", e),
+    let len = keys.len();
+    message::working(&format!("deleting {} key value pairs", len));
+    let progress_bar = if len > MAX_PAIRS {
+        let pb = ProgressBar::new(len as u64);
+        pb.set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
+        Some(pb)
+    } else {
+        None
+    };
+
+    while !keys.is_empty() {
+        let p: Vec<String> = if keys.len() > MAX_PAIRS {
+            keys.drain(0..MAX_PAIRS).collect()
+        } else {
+            keys.drain(0..).collect()
+        };
+
+        if let Err(e) = delete(target, user, namespace_id, p) {
+            failure::bail!("{}", e);
+        }
+
+        if let Some(pb) = &progress_bar {
+            pb.inc(keys.len() as u64);
+        }
     }
+
+    if let Some(pb) = &progress_bar {
+        pb.finish_with_message(&format!("deleted {} key value pairs", len));
+    }
+
+    message::success("Success");
     Ok(())
 }

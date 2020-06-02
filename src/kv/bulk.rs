@@ -8,7 +8,7 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
-const MAX_PAIRS: usize = 10000;
+pub const MAX_PAIRS: usize = 10000;
 
 pub fn put(
     client: &impl ApiClient,
@@ -16,15 +16,6 @@ pub fn put(
     namespace_id: &str,
     pairs: &[KeyValuePair],
 ) -> Result<(), failure::Error> {
-    // Validate that bulk upload is within size constraints
-    if pairs.len() > MAX_PAIRS {
-        failure::bail!(
-            "Number of key-value pairs to upload ({}) exceeds max of {}",
-            pairs.len(),
-            MAX_PAIRS
-        );
-    }
-
     match client.request(&WriteBulk {
         account_identifier: &target.account_id,
         namespace_identifier: namespace_id,
@@ -42,15 +33,6 @@ pub fn delete(
     keys: Vec<String>,
 ) -> Result<(), failure::Error> {
     let client = http::cf_v4_client(user)?;
-
-    // Check number of pairs is under limit
-    if keys.len() > MAX_PAIRS {
-        failure::bail!(
-            "Number of keys to delete ({}) exceeds max of {}",
-            keys.len(),
-            MAX_PAIRS
-        );
-    }
 
     let response = client.request(&DeleteBulk {
         account_identifier: &target.account_id,
