@@ -3,11 +3,11 @@ use std::path::Path;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
-use crate::sites;
 use crate::http;
 use crate::kv::bulk::delete;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
+use crate::sites;
 use crate::sites::{sync, upload_files, AssetManifest};
 use crate::terminal::{message, styles};
 use crate::upload;
