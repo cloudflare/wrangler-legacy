@@ -1,14 +1,11 @@
+use serde_json::value::Value as JsonValue;
+
 use cloudflare::endpoints::workerskv::list_namespace_keys::ListNamespaceKeys;
 use cloudflare::endpoints::workerskv::list_namespace_keys::ListNamespaceKeysParams;
 use cloudflare::endpoints::workerskv::Key;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
-
-use crate::commands::kv;
-use crate::settings::global_user::GlobalUser;
-
-use serde_json::value::Value as JsonValue;
 
 use crate::settings::toml::Target;
 
@@ -25,14 +22,14 @@ pub struct KeyList {
 impl KeyList {
     pub fn new(
         target: &Target,
-        user: &GlobalUser,
+        client: HttpApiClient,
         namespace_id: &str,
         prefix: Option<&str>,
     ) -> Result<KeyList, failure::Error> {
         let iter = KeyList {
             keys_result: None,
             prefix: prefix.map(str::to_string),
-            client: kv::api_client(user)?,
+            client,
             account_id: target.account_id.to_owned(),
             namespace_id: namespace_id.to_string(),
             cursor: None,

@@ -1,7 +1,8 @@
 extern crate serde_json;
 
 use crate::commands::kv;
-use crate::commands::kv::key::KeyList;
+use crate::http;
+use crate::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
@@ -15,7 +16,8 @@ pub fn list(
     prefix: Option<&str>,
 ) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
-    let key_list = KeyList::new(target, user, namespace_id, prefix)?;
+    let client = http::cf_v4_client(&user)?;
+    let key_list = KeyList::new(target, client, namespace_id, prefix)?;
 
     print!("["); // Open json list bracket
 
