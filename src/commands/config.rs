@@ -9,7 +9,7 @@ use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
 use cloudflare::framework::apiclient::ApiClient;
 
 use crate::http;
-use crate::settings::global_user::{get_global_config_path, GlobalUser};
+use crate::settings::{get_global_config_path, global_user::GlobalUser};
 use crate::terminal::{message, styles};
 
 // set the permissions on the dir, we want to avoid that other user reads to file

@@ -1,5 +1,110 @@
 # Changelog
 
+## 🐼 1.9.2
+
+- ### Fixes
+
+  - **Fix piping secret values to `wrangler secret put <VAR_NAME>` - [dmcgowan], [issue/1322] [pull/1316]**
+
+    In 1.9.1, we introduced a bug where piping values to `wrangler secret put` no longer worked. In 1.9.2, that bug is squashed, and the command works as expected.
+
+    [dmcgowan]: https://github.com/dmcgowan
+    [pull/1316]: https://github.com/cloudflare/wrangler/pull/1316
+    [issue/1322]: https://github.com/cloudflare/wrangler/issues/1322
+
+## 🐎 1.9.1
+
+- ### Features
+
+  - **Accept --verbose for every command - [bradyjoslin], [issue/975] [pull/1110]**
+
+    Not every command outputs additional information when you pass `--verbose`, but none of them will fail to run if you pass `--verbose` after this change.
+
+    [bradyjoslin]: https://github.com/bradyjoslin
+    [pull/1110]: https://github.com/cloudflare/wrangler/pull/1110
+    [issue/975]: https://github.com/cloudflare/wrangler/issues/975
+
+  - **`wrangler dev` checks if the specified port is available - [EverlastingBugstopper], [issue/1122] [pull/1272]**
+
+    When starting up `wrangler dev`, it now checks to see if the requested port is already in use and returns a helpful error message if that's the case.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1272]: https://github.com/cloudflare/wrangler/pull/1272
+    [issue/1122]: https://github.com/cloudflare/wrangler/issues/1122
+
+- ### Fixes
+
+  - **Don't reinstall vendored binaries on every build - [EverlastingBugstopper], [issue/768] [pull/1003]**
+
+    You may have noticed some very verbose and over-eager installation output when running Wrangler. Every `webpack` type build would install `wranglerjs` and `wasm-pack`. This was... super annoying and not a great experience, especially when running `wrangler preview --watch` or `wrangler dev`. Each time you'd change a file, Wrangler would reinstall those external dependencies. This doesn't happen anymore! Wrangler will still download and install these external dependencies, but only if you have an outdated version.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1003]: https://github.com/cloudflare/wrangler/pull/1003
+    [issue/768]: https://github.com/cloudflare/wrangler/issues/768
+
+  - **Remove redundant builds - [EverlastingBugstopper], [issue/1219] [pull/1269]**
+
+    When running `wrangler preview --watch` or `wrangler dev` on a `webpack` type project, Wrangler will provide a new build artifact and upload it via the Cloudflare API. Before, we'd start a long-running `webpack --watch` command, _in addition to_ running `webpack` on every change. We were running two builds on every change! This was not great and has been removed. This, combined with the above fix removing redundant installations, should greatly improve your dev iteration cycles.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1269]: https://github.com/cloudflare/wrangler/pull/1269
+    [issue/1219]: https://github.com/cloudflare/wrangler/issues/1219
+
+  - **`wrangler dev` will reconnect to the devtools WebSocket after being disconnected - [EverlastingBugstopper], [issue/1241] [pull/1276]**
+
+    `wrangler dev` initiates a WebSocket connection via the Cloudflare API in order to stream `console.log` messages to your terminal. Over time, it's very likely that the WebSocket would be disconnected. When this happened, Wrangler would panic, requiring developers to restart the process. Now, if `wrangler dev` gets disconnected, it will issue a reconnect request, allowing developers to run `wrangler dev` as long as they are connected to the Internet.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1276]: https://github.com/cloudflare/wrangler/pull/1276
+    [issue/1241]: https://github.com/cloudflare/wrangler/issues/1241
+
+- ### Maintenance
+
+  - **Adds `Developing Wrangler` section to `CONTRIBUTING.md` - [EverlastingBugstopper], [issue/270] [pull/1288]**
+
+    We love external contributors, and what better way to help get folks kickstarted than to add some documentation on developing Wrangler? Check out [CONTRIBUTING.md](./CONTRIBUTING.md) if you're interested in helping out.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1288]: https://github.com/cloudflare/wrangler/pull/1288
+    [issue/270]: https://github.com/cloudflare/wrangler/issues/270
+
+  - **Remove `--release` from `wrangler publish --help` - [EverlastingBugstopper], [pull/1289]**
+
+    We deprecated `wrangler publish --release` a long time ago in favor of environments, but it's still an accepted argument to preserve backwards compatibility. Now, it no longer shows up in `wrangler publish --help` as an accepted argument, even though it's still an alias of `wrangler publish`.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1289]: https://github.com/cloudflare/wrangler/pull/1289
+
+  - **Updates license file to wrangler@cloudflare.com - [EverlastingBugstopper], [pull/1290]**
+
+    The copyright in our MIT license was outdated and pointed to the email address of @ashleygwilliams (who no longer works at Cloudflare 😢). Now it points to [wrangler@cloudflare.com](mailto:wrangler@cloudflare.com) :)
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1290]: https://github.com/cloudflare/wrangler/pull/1290
+
+  - **Add Dependabot to Wrangler - [ispivey], [pull/1294]**
+
+    Wrangler now uses [Dependabot](https://dependabot.com/) to automatically update dependencies. We had already been doing this on a sort of ad-hoc basis, but this should make it much easier to stay on top of updates!
+
+    [ispivey]: https://github.com/ispivey
+    [pull/1294]: https://github.com/cloudflare/wrangler/pull/1294
+
+  - **Remove unused code warnings - [ashleymichal], [pull/1304]**
+
+    For our integration tests we create fixtures containing sample Workers projects. When we ran `cargo test`, `cargo` would say that the code used to create said fixtures were unused (which was not true). This PR moves the fixture code to a place where `cargo` says "This is a Fine Place for This Code."
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1304]: https://github.com/cloudflare/wrangler/pull/1304
+
+  - **Handle clippy warnings - [ashleymichal] [EverlastingBugstopper], [pull/1305] [pull/1306]**
+
+    `cargo clippy` is a helpful little tool that helps you write more idiomatic Rust. Over time, we've developed an immunity to the warnings produced by this tool, and we took a stab at cleaning some of them up.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1305]: https://github.com/cloudflare/wrangler/pull/1305
+    [pull/1306]: https://github.com/cloudflare/wrangler/pull/1306
+
 ## 🦚 1.9.0
 
 - ### Features

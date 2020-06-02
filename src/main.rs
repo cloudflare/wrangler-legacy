@@ -1,4 +1,4 @@
-#![allow(clippy::redundant_closure)]
+#![cfg_attr(feature = "strict", deny(warnings))]
 
 extern crate text_io;
 extern crate tokio;
@@ -9,17 +9,21 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use exitfailure::ExitFailure;
+use url::Url;
 
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
+use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
 use wrangler::terminal::{emoji, interactive, message, styles};
+use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
+    let latest_version_receiver = background_check_for_updates();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
         // self-installation, otherwise just continue as usual.
@@ -32,9 +36,26 @@ fn main() -> Result<(), ExitFailure> {
             installer::install();
         }
     }
-    Ok(run()?)
+    run()?;
+    if let Ok(latest_version) = latest_version_receiver.try_recv() {
+        let latest_version = styles::highlight(latest_version.to_string());
+        let new_version_available = format!(
+            "A new version of Wrangler ({}) is available!",
+            latest_version
+        );
+        let update_message = "You can learn more about updating here:".to_string();
+        let update_docs_url =
+            styles::url("https://developers.cloudflare.com/workers/quickstart#updating-the-cli");
+
+        message::billboard(&format!(
+            "{}\n{}\n{}",
+            new_version_available, update_message, update_docs_url
+        ));
+    }
+    Ok(())
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn run() -> Result<(), failure::Error> {
     // Define commonly used arguments and arg groups up front for consistency
     // The args below are for KV Subcommands
@@ -655,11 +676,32 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        let watch = matches.is_present("watch");
+        let livereload = matches.is_present("watch");
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, url, body, watch, verbose, headless)?;
+        let method = HttpMethod::from_str(method)?;
+        let url = Url::parse(url)?;
+
+        // Validate the URL scheme
+        failure::ensure!(
+            match url.scheme() {
+                "http" => true,
+                "https" => true,
+                _ => false,
+            },
+            "Invalid URL scheme (use either \"https\" or \"http\")"
+        );
+
+        let options = PreviewOpt {
+            method,
+            url,
+            body,
+            livereload,
+            headless,
+        };
+
+        commands::preview(target, user, options, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
         let port: Option<u16> = matches

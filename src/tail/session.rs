@@ -173,9 +173,10 @@ async fn get_tunnel_url(metrics_port: u16) -> Result<String, failure::Error> {
             if let Ok(resp) = reqwest::get(&metrics_url).await {
                 let body = resp.text().await?;
 
-                for url_match in url_regex.captures_iter(&body) {
-                    let url = url_match[1].to_string();
-                    return Ok(url);
+                if let Some(capture) = url_regex.captures(&body) {
+                    if let Some(url) = capture.get(1) {
+                        return Ok(url.as_str().to_string());
+                    }
                 }
             }
 

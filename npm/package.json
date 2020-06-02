@@ -1,7 +1,7 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.9.0",
-  "description": "Wrangle your Cloudflare Workers",
+  "version": "1.9.2",
+  "description": "Command-line interface for all things Cloudflare Workers",
   "main": "binary.js",
   "scripts": {
     "postinstall": "node ./install-wrangler.js"
