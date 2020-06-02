@@ -1,16 +1,13 @@
-use cloudflare::endpoints::workerskv::create_namespace::CreateNamespace;
-use cloudflare::endpoints::workerskv::create_namespace::CreateNamespaceParams;
-use cloudflare::endpoints::workerskv::WorkersKvNamespace;
-use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::response::{ApiFailure, ApiSuccess};
+use regex::Regex;
 
 use crate::commands::kv;
+use crate::http;
+use crate::kv::namespace::create;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
-use regex::Regex;
 
-pub fn create(
+pub fn run(
     target: &Target,
     env: Option<&str>,
     user: &GlobalUser,
@@ -23,8 +20,8 @@ pub fn create(
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
 
-    let client = kv::api_client(user)?;
-    let result = call_api(&client, target, &title);
+    let client = http::cf_v4_client(user)?;
+    let result = create(&client, target, &title);
 
     match result {
         Ok(success) => {
@@ -62,19 +59,6 @@ pub fn create(
     }
 
     Ok(())
-}
-
-pub fn call_api(
-    client: &impl ApiClient,
-    target: &Target,
-    title: &str,
-) -> Result<ApiSuccess<WorkersKvNamespace>, ApiFailure> {
-    client.request(&CreateNamespace {
-        account_identifier: &target.account_id,
-        params: CreateNamespaceParams {
-            title: title.to_string(),
-        },
-    })
 }
 
 fn validate_binding(binding: &str) -> Result<(), failure::Error> {
