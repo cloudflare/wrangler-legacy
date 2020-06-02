@@ -162,8 +162,15 @@ fn authenticated_upload(
     let res = client
         .post(&create_address)
         .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
+        .send()?;
+
+    if !res.status().is_success() {
+        failure::bail!(
+            "Something went wrong! Status: {}, Details {}",
+            res.status(),
+            res.text()?
+        )
+    }
 
     let text = &res.text()?;
     log::info!("Response from preview: {:#?}", text);
@@ -195,8 +202,15 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
     let res = client
         .post(create_address)
         .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
+        .send()?;
+
+    if !res.status().is_success() {
+        failure::bail!(
+            "Something went wrong! Status: {}, Details {}",
+            res.status(),
+            res.text()?
+        )
+    }
 
     let text = &res.text()?;
     log::info!("Response from preview: {:#?}", text);
