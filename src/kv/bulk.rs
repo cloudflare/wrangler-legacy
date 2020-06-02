@@ -3,7 +3,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
 use cloudflare::framework::apiclient::ApiClient;
 
-use crate::commands::kv;
+use crate::commands::kv::format_error;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -31,7 +31,7 @@ pub fn put(
         bulk_key_value_pairs: pairs.to_owned(),
     }) {
         Ok(_) => Ok(()),
-        Err(e) => failure::bail!("{}", kv::format_error(e)),
+        Err(e) => failure::bail!("{}", format_error(e)),
     }
 }
 
@@ -60,6 +60,6 @@ pub fn delete(
 
     match response {
         Ok(_) => Ok(()),
-        Err(e) => failure::bail!("{}", kv::format_error(e)),
+        Err(e) => failure::bail!("{}", format_error(e)),
     }
 }
