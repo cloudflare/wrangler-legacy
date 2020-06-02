@@ -1,5 +1,4 @@
-use crate::preview;
-use crate::preview::PreviewOpt;
+use crate::preview::{preview, PreviewOpt};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
