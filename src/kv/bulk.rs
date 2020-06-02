@@ -1,5 +1,3 @@
-extern crate base64;
-
 use cloudflare::endpoints::workerskv::delete_bulk::DeleteBulk;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
