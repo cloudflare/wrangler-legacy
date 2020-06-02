@@ -5,23 +5,22 @@ use std::fs::metadata;
 use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
-use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
-use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::response::{ApiFailure, ApiSuccess};
 
-use crate::commands::kv;
-use crate::commands::kv::bulk::MAX_PAIRS;
+use crate::commands::kv::validate_target;
+use crate::kv::bulk::put;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
 
-pub fn put(
+use super::bulk_api_client;
+
+pub fn run(
     target: &Target,
     user: &GlobalUser,
     namespace_id: &str,
     filename: &Path,
 ) -> Result<(), failure::Error> {
-    kv::validate_target(target)?;
+    validate_target(target)?;
 
     let pairs: Vec<KeyValuePair> = match &metadata(filename) {
         Ok(file_type) if file_type.is_file() => {
@@ -39,32 +38,9 @@ pub fn put(
         Err(e) => Err(failure::format_err!("{}", e)),
     }?;
 
-    // Validate that bulk upload is within size constraints
-    if pairs.len() > MAX_PAIRS {
-        failure::bail!(
-            "Number of key-value pairs to upload ({}) exceeds max of {}",
-            pairs.len(),
-            MAX_PAIRS
-        );
-    }
+    let client = bulk_api_client(user)?;
+    put(&client, target, namespace_id, &pairs)?;
+    message::success("Success");
 
-    let client = kv::api_client(user)?;
-    match call_api(&client, target, namespace_id, &pairs) {
-        Ok(_) => message::success("Success"),
-        Err(e) => failure::bail!("{}", kv::format_error(e)),
-    }
     Ok(())
-}
-
-pub fn call_api(
-    client: &impl ApiClient,
-    target: &Target,
-    namespace_id: &str,
-    pairs: &[KeyValuePair],
-) -> Result<ApiSuccess<()>, ApiFailure> {
-    client.request(&WriteBulk {
-        account_identifier: &target.account_id,
-        namespace_identifier: namespace_id,
-        bulk_key_value_pairs: pairs.to_owned(),
-    })
 }
