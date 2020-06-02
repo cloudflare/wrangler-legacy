@@ -72,6 +72,8 @@ pub fn put(
         pb.finish_with_message(&format!("uploaded {} key value pairs", len));
     }
 
+    message::success("Success");
+
     Ok(())
 }
 

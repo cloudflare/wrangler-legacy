@@ -85,14 +85,17 @@ pub fn delete_bulk(
             pairs.drain(0..).collect()
         };
 
-        if let Some(pb) = &progress_bar {
-            pb.inc(p.len() as u64);
-        }
+        let inc = p.len() as u64;
+
         let response = client.request(&DeleteBulk {
             account_identifier: &target.account_id,
             namespace_identifier: namespace_id,
             bulk_keys: p,
         });
+
+        if let Some(pb) = &progress_bar {
+            pb.inc(inc);
+        }
 
         if let Err(e) = response {
             failure::bail!("{}", kv::format_error(e))
