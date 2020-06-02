@@ -55,12 +55,7 @@ pub fn watch_and_build(
             });
         }
         TargetType::Rust => {
-            let tool_name = "wasm-pack";
-            let tool_author = "rustwasm";
-            let is_binary = true;
-            let version = install::get_latest_version(tool_name)?;
-            let binary_path =
-                install::install(tool_name, tool_author, is_binary, version)?.binary(tool_name)?;
+            let binary_path = install::install_wasmpack()?;
             let args = ["build", "--target", "no-modules"];
 
             thread::spawn(move || {

@@ -1,3 +1,4 @@
+pub mod dependencies;
 mod krate;
 pub mod target;
 
@@ -21,6 +22,22 @@ lazy_static! {
 enum ToolDownload {
     NeedsInstall(Version),
     InstalledAt(Download),
+}
+
+pub fn install_cargo_generate() -> Result<PathBuf, failure::Error> {
+    let tool_name = "cargo-generate";
+    let tool_author = "ashleygwilliams";
+    let is_binary = true;
+    let version = Version::parse(dependencies::GENERATE_VERSION)?;
+    install(tool_name, tool_author, is_binary, version)?.binary(tool_name)
+}
+
+pub fn install_wasmpack() -> Result<PathBuf, failure::Error> {
+    let tool_name = "wasm-pack";
+    let tool_author = "rustwasm";
+    let is_binary = true;
+    let version = Version::parse(dependencies::WASMPACK_VERSION)?;
+    install(tool_name, tool_author, is_binary, version)?.binary(tool_name)
 }
 
 pub fn install(
@@ -59,7 +76,9 @@ fn tool_needs_update(
     // we shouldn't fail, we should just re-install for them
     if let Ok(current_installation) = current_installation {
         if let Some((installed_version, installed_location)) = current_installation {
-            if installed_version == target_version {
+            if installed_version.major == target_version.major
+                && installed_version >= target_version
+            {
                 return Ok(ToolDownload::InstalledAt(Download::at(&installed_location)));
             }
         }
