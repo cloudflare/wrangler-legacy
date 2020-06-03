@@ -1,38 +1,18 @@
 use std::collections::HashSet;
-use std::time::Duration;
 
-use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
-use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
 
 use percent_encoding::{utf8_percent_encode, CONTROLS};
 
-use crate::settings::global_user::GlobalUser;
+use crate::http;
 use crate::settings::toml::Target;
 
-use crate::http::{self, feature::headers};
-
-pub mod bucket;
 pub mod bulk;
 pub mod key;
 pub mod namespace;
 
-// Create a special API client that has a longer timeout than usual, given that KV operations
-// can be lengthy if payloads are large.
-fn api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
-    let config = HttpApiClientConfig {
-        http_timeout: Duration::from_secs(5 * 60),
-        default_headers: headers(None),
-    };
-
-    HttpApiClient::new(
-        Credentials::from(user.to_owned()),
-        config,
-        Environment::Production,
-    )
-}
-
-fn format_error(e: ApiFailure) -> String {
+// TODO: callers outside this module should write their own error handling (lookin at you sites)
+pub fn format_error(e: ApiFailure) -> String {
     http::format_error(e, Some(&kv_help))
 }
 
@@ -135,12 +115,10 @@ mod tests {
                 KvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
-                    bucket: None,
                 },
                 KvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
-                    bucket: None,
                 },
             ]),
             name: "test-target".to_string(),

@@ -1,7 +1,8 @@
 use cloudflare::endpoints::workerskv::delete_key::DeleteKey;
 use cloudflare::framework::apiclient::ApiClient;
 
-use crate::commands::kv;
+use crate::commands::kv::{format_error, validate_target};
+use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
@@ -13,8 +14,8 @@ pub fn delete(
     id: &str,
     key: &str,
 ) -> Result<(), failure::Error> {
-    kv::validate_target(target)?;
-    let client = kv::api_client(user)?;
+    validate_target(target)?;
+    let client = http::cf_v4_client(user)?;
 
     match interactive::delete(&format!("Are you sure you want to delete key \"{}\"?", key)) {
         Ok(true) => (),
@@ -36,7 +37,7 @@ pub fn delete(
 
     match response {
         Ok(_) => message::success("Success"),
-        Err(e) => print!("{}", kv::format_error(e)),
+        Err(e) => print!("{}", format_error(e)),
     }
 
     Ok(())

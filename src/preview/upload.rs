@@ -3,12 +3,12 @@ use std::path::Path;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
-use crate::commands::kv::bucket::{sync, upload_files, AssetManifest};
-use crate::commands::kv::bulk::delete::delete_bulk;
-use crate::commands::publish;
 use crate::http;
+use crate::kv::bulk::delete;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
+use crate::sites;
+use crate::sites::{sync, upload_files, AssetManifest};
 use crate::terminal::{message, styles};
 use crate::upload;
 
@@ -59,7 +59,7 @@ pub fn upload(
                 let client = http::legacy_auth_client(&user);
 
                 if let Some(site_config) = target.site.clone() {
-                    let site_namespace = publish::add_site_namespace(user, target, true)?;
+                    let site_namespace = sites::add_namespace(user, target, true)?;
 
                     let path = Path::new(&site_config.bucket);
                     let (to_upload, to_delete, asset_manifest) =
@@ -78,7 +78,7 @@ pub fn upload(
                             message::info("Deleting stale files...");
                         }
 
-                        delete_bulk(target, user, &site_namespace.id, to_delete)?;
+                        delete(target, user, &site_namespace.id, to_delete)?;
                     }
 
                     preview
@@ -162,8 +162,15 @@ fn authenticated_upload(
     let res = client
         .post(&create_address)
         .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
+        .send()?;
+
+    if !res.status().is_success() {
+        failure::bail!(
+            "Something went wrong! Status: {}, Details {}",
+            res.status(),
+            res.text()?
+        )
+    }
 
     let text = &res.text()?;
     log::info!("Response from preview: {:#?}", text);
@@ -195,8 +202,15 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
     let res = client
         .post(create_address)
         .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
+        .send()?;
+
+    if !res.status().is_success() {
+        failure::bail!(
+            "Something went wrong! Status: {}, Details {}",
+            res.status(),
+            res.text()?
+        )
+    }
 
     let text = &res.text()?;
     log::info!("Response from preview: {:#?}", text);
