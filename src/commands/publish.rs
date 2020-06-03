@@ -123,15 +123,13 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
         missing_fields.push("name")
     };
 
-    if !target.kv_namespaces.is_empty() {
-        for kv in &target.kv_namespaces {
-            if kv.binding.is_empty() {
-                missing_fields.push("kv-namespace binding")
-            }
+    for kv in &target.kv_namespaces {
+        if kv.binding.is_empty() {
+            missing_fields.push("kv-namespace binding")
+        }
 
-            if kv.id.is_empty() {
-                missing_fields.push("kv-namespace id")
-            }
+        if kv.id.is_empty() {
+            missing_fields.push("kv-namespace id")
         }
     }
 

@@ -180,19 +180,17 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
+    let mut target = target.clone();
     // KV namespaces are not supported by the preview service unless you authenticate
     // so we omit them and provide the user with a little guidance. We don't error out, though,
     // because there are valid workarounds for this for testing purposes.
-    let script_upload_form = if !target.kv_namespaces.is_empty() {
+    if !target.kv_namespaces.is_empty() {
         message::warn(
             "KV Namespaces are not supported in preview without setting API credentials and account_id",
         );
-        let mut target = target.clone();
         target.kv_namespaces = Vec::new();
-        upload::form::build(&target, None)?
-    } else {
-        upload::form::build(&target, None)?
-    };
+    }
+    let script_upload_form = upload::form::build(&target, None)?;
     let client = http::client();
     let res = client
         .post(create_address)

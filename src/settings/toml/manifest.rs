@@ -421,7 +421,7 @@ fn get_namespaces(
             } else {
                 Ok(KvNamespace {
                     id: ns.id.to_string(),
-                    binding: ns.binding.to_string(),
+                    binding: ns.binding,
                 })
             }
         }).collect()

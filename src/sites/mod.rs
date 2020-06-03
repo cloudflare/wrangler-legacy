@@ -63,7 +63,7 @@ pub fn add_namespace(
     // should probably refactor this at some point
     let site_namespace = KvNamespace {
         binding: "__STATIC_CONTENT".to_string(),
-        id: site_namespace.id.clone(),
+        id: site_namespace.id,
     };
 
     target.add_kv_namespace(site_namespace.clone());
