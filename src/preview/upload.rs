@@ -128,19 +128,14 @@ fn validate(target: &Target) -> Vec<&str> {
         missing_fields.push("name")
     };
 
-    match &target.kv_namespaces {
-        Some(kv_namespaces) => {
-            for kv in kv_namespaces {
-                if kv.binding.is_empty() {
-                    missing_fields.push("kv-namespace binding")
-                }
-
-                if kv.id.is_empty() {
-                    missing_fields.push("kv-namespace id")
-                }
-            }
+    for kv in &target.kv_namespaces {
+        if kv.binding.is_empty() {
+            missing_fields.push("kv-namespace binding")
         }
-        None => {}
+
+        if kv.id.is_empty() {
+            missing_fields.push("kv-namespace id")
+        }
     }
 
     missing_fields
@@ -157,7 +152,7 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = upload::form::build_preview(target, asset_manifest)?;
+    let script_upload_form = upload::form::build(target, asset_manifest)?;
 
     let res = client
         .post(&create_address)
@@ -185,19 +180,17 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
+    let mut target = target.clone();
     // KV namespaces are not supported by the preview service unless you authenticate
     // so we omit them and provide the user with a little guidance. We don't error out, though,
     // because there are valid workarounds for this for testing purposes.
-    let script_upload_form = if target.kv_namespaces.is_some() {
+    if !target.kv_namespaces.is_empty() {
         message::warn(
             "KV Namespaces are not supported in preview without setting API credentials and account_id",
         );
-        let mut target = target.clone();
-        target.kv_namespaces = None;
-        upload::form::build_preview(&target, None)?
-    } else {
-        upload::form::build_preview(&target, None)?
-    };
+        target.kv_namespaces = Vec::new();
+    }
+    let script_upload_form = upload::form::build(&target, None)?;
     let client = http::client();
     let res = client
         .post(create_address)
