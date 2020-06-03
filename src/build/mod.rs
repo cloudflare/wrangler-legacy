@@ -13,7 +13,7 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
             message::info("JavaScript project found. Skipping unnecessary build!")
         }
         TargetType::Rust => {
-            let binary_path = install::install_wasmpack()?;
+            let binary_path = install::install_wasm_pack()?;
             let args = ["build", "--target", "no-modules"];
 
             let command = command(&args, &binary_path);

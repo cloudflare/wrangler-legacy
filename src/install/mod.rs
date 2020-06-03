@@ -32,11 +32,11 @@ pub fn install_cargo_generate() -> Result<PathBuf, failure::Error> {
     install(tool_name, tool_author, is_binary, version)?.binary(tool_name)
 }
 
-pub fn install_wasmpack() -> Result<PathBuf, failure::Error> {
+pub fn install_wasm_pack() -> Result<PathBuf, failure::Error> {
     let tool_name = "wasm-pack";
     let tool_author = "rustwasm";
     let is_binary = true;
-    let version = Version::parse(dependencies::WASMPACK_VERSION)?;
+    let version = Version::parse(dependencies::WASM_PACK_VERSION)?;
     install(tool_name, tool_author, is_binary, version)?.binary(tool_name)
 }
 

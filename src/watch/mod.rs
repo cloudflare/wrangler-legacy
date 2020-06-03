@@ -55,7 +55,7 @@ pub fn watch_and_build(
             });
         }
         TargetType::Rust => {
-            let binary_path = install::install_wasmpack()?;
+            let binary_path = install::install_wasm_pack()?;
             let args = ["build", "--target", "no-modules"];
 
             thread::spawn(move || {
