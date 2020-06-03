@@ -27,32 +27,29 @@ pub fn run(
         Ok(success) => {
             let namespace = success.result;
             message::success(&format!("Success: {:#?}", namespace));
-            match target.kv_namespaces {
-                None => {
-                    match env {
-                        Some(env) => message::success(&format!(
-                            "Add the following to your wrangler.toml under [env.{}]:",
-                            env
-                        )),
-                        None => message::success("Add the following to your wrangler.toml:"),
-                    };
-                    println!(
-                        "kv-namespaces = [ \n\
+            if target.kv_namespaces.is_empty() {
+                match env {
+                    Some(env) => message::success(&format!(
+                        "Add the following to your wrangler.toml under [env.{}]:",
+                        env
+                    )),
+                    None => message::success("Add the following to your wrangler.toml:"),
+                };
+                println!(
+                    "kv-namespaces = [ \n\
                          \t {{ binding = \"{}\", id = \"{}\" }} \n\
                          ]",
-                        binding, namespace.id
-                    );
-                }
-                Some(_) => {
-                    match env {
+                    binding, namespace.id
+                );
+            } else {
+                match env {
                         Some(env) => message::success(&format!(
                             "Add the following to your wrangler.toml's \"kv-namespaces\" array in [env.{}]:",
                             env
                         )),
                         None => message::success("Add the following to your wrangler.toml's \"kv-namespaces\" array:"),
                     };
-                    println!("{{ binding = \"{}\", id = \"{}\" }}", binding, namespace.id);
-                }
+                println!("{{ binding = \"{}\", id = \"{}\" }}", binding, namespace.id);
             }
         }
         Err(e) => print!("{}", kv::format_error(e)),

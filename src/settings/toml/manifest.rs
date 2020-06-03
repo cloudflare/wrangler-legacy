@@ -12,7 +12,7 @@ use serde_with::rust::string_empty_as_none;
 use crate::commands::validate_worker_name;
 use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
 use crate::settings::toml::environment::Environment;
-use crate::settings::toml::kv_namespace::ConfigKvNamespace;
+use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
 use crate::settings::toml::Target;
@@ -177,7 +177,11 @@ impl Manifest {
         }
     }
 
-    pub fn get_target(&self, environment_name: Option<&str>) -> Result<Target, failure::Error> {
+    pub fn get_target(
+        &self,
+        environment_name: Option<&str>,
+        preview: bool,
+    ) -> Result<Target, failure::Error> {
         // Site projects are always webpack for now; don't let toml override this.
         let target_type = match self.site {
             Some(_) => TargetType::Webpack,
@@ -190,10 +194,10 @@ impl Manifest {
             webpack_config: self.webpack_config.clone(), // MAY inherit
             // importantly, the top level name will be modified
             // to include the name of the environment
-            name: self.name.clone(),                   // MAY inherit
-            kv_namespaces: self.kv_namespaces.clone(), // MUST NOT inherit
-            site: self.site.clone(),                   // MUST NOT inherit
-            vars: self.vars.clone(),                   // MAY inherit
+            name: self.name.clone(), // MAY inherit
+            kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // MUST NOT inherit
+            site: self.site.clone(), // MUST NOT inherit
+            vars: self.vars.clone(), // MAY inherit
         };
 
         let environment = self.get_environment(environment_name)?;
@@ -208,7 +212,7 @@ impl Manifest {
             }
 
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
-            target.kv_namespaces = environment.kv_namespaces.clone();
+            target.kv_namespaces = get_namespaces(environment.kv_namespaces.clone(), preview)?;
 
             // don't inherit vars
             target.vars = environment.vars.clone();
@@ -394,4 +398,34 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
         ))
     }
     Ok(())
+}
+
+fn get_namespaces(
+    kv_namespaces: Option<Vec<ConfigKvNamespace>>,
+    preview: bool,
+) -> Result<Vec<KvNamespace>, failure::Error> {
+    if let Some(namespaces) = kv_namespaces {
+        namespaces.into_iter().map(|ns| {
+            if preview {
+                if let Some(preview_id) = &ns.preview_id {
+                    if preview_id == &ns.id {
+                        message::warn("Specifying the same KV namespace ID for both preview and production sessions may cause bugs in your production worker! Proceed with caution.");
+                    }
+                    Ok(KvNamespace {
+                        id: preview_id.to_string(),
+                        binding: ns.binding.to_string(),
+                    })
+                } else {
+                    failure::bail!("In order to preview a worker with KV namespaces, you must designate a preview_id for each KV namespace you'd like to preview.")
+                }
+            } else {
+                Ok(KvNamespace {
+                    id: ns.id.to_string(),
+                    binding: ns.binding.to_string(),
+                })
+            }
+        }).collect()
+    } else {
+        Ok(Vec::new())
+    }
 }

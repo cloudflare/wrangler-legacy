@@ -580,6 +580,7 @@ fn run() -> Result<(), failure::Error> {
         .get_matches();
 
     let config_path = Path::new("./wrangler.toml");
+    let mut preview = false;
 
     let not_recommended_msg = styles::warning("(Not Recommended)");
     let recommended_cmd_msg = styles::highlight("`wrangler config --api-key`");
@@ -661,7 +662,8 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+        preview = true;
+        let target = manifest.get_target(env, preview)?;
 
         // the preview command can be called with or without a Global User having been config'd
         // so we convert this Result into an Option
@@ -711,7 +713,8 @@ fn run() -> Result<(), failure::Error> {
         let ip = matches.value_of("ip");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+        preview = true;
+        let target = manifest.get_target(env, preview)?;
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
         commands::dev::dev(target, user, host, port, ip, verbose)?;
@@ -739,7 +742,7 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let mut target = manifest.get_target(env)?;
+        let mut target = manifest.get_target(env, preview)?;
         let deploy_config = manifest.deploy_config(env)?;
 
         let verbose = matches.is_present("verbose");
@@ -749,7 +752,7 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+        let target = manifest.get_target(env, preview)?;
 
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -803,7 +806,7 @@ fn run() -> Result<(), failure::Error> {
             ("put", Some(create_matches)) => {
                 let name = create_matches.value_of("name");
                 let env = create_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, preview)?;
                 if let Some(name) = name {
                     commands::secret::create_secret(&name, &user, &target)?;
                 }
@@ -811,14 +814,14 @@ fn run() -> Result<(), failure::Error> {
             ("delete", Some(delete_matches)) => {
                 let name = delete_matches.value_of("name");
                 let env = delete_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, preview)?;
                 if let Some(name) = name {
                     commands::secret::delete_secret(&name, &user, &target)?;
                 }
             }
             ("list", Some(list_matches)) => {
                 let env = list_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, preview)?;
                 commands::secret::list_secrets(&user, &target)?;
             }
             ("", None) => message::warn("secret expects a subcommand"),
@@ -831,13 +834,13 @@ fn run() -> Result<(), failure::Error> {
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
                 let env = create_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, preview)?;
                 let binding = create_matches.value_of("binding").unwrap();
                 commands::kv::namespace::create(&target, env, &user, binding)?;
             }
             ("delete", Some(delete_matches)) => {
                 let env = delete_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, preview)?;
                 let namespace_id = match delete_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -851,7 +854,7 @@ fn run() -> Result<(), failure::Error> {
             }
             ("list", Some(list_matches)) => {
                 let env = list_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, preview)?;
                 commands::kv::namespace::list(&target, &user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
@@ -866,7 +869,7 @@ fn run() -> Result<(), failure::Error> {
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
                 let env = subcommand_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, preview)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -929,7 +932,7 @@ fn run() -> Result<(), failure::Error> {
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
                 let env = subcommand_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, preview)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -959,7 +962,7 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("tail") {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+        let target = manifest.get_target(env, preview)?;
         let user = settings::global_user::GlobalUser::new()?;
 
         let tunnel_port: Option<u16> = matches

@@ -19,7 +19,7 @@ pub fn script(
         target.account_id, target.name,
     );
 
-    let script_upload_form = form::build_production(target, asset_manifest)?;
+    let script_upload_form = form::build(target, asset_manifest)?;
 
     let res = client
         .put(&worker_addr)

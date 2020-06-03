@@ -23,7 +23,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use crate::kv::namespace::{upsert, UpsertedNamespace};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{ConfigKvNamespace, Target};
+use crate::settings::toml::{KvNamespace, Target};
 use crate::terminal::message;
 
 pub const KEY_MAX_SIZE: usize = 512;
@@ -35,7 +35,7 @@ pub fn add_namespace(
     user: &GlobalUser,
     target: &mut Target,
     preview: bool,
-) -> Result<ConfigKvNamespace, failure::Error> {
+) -> Result<KvNamespace, failure::Error> {
     let title = if preview {
         format!("__{}-{}", target.name, "workers_sites_assets_preview")
     } else {
@@ -61,10 +61,9 @@ pub fn add_namespace(
     // we'll just throw the created namespace id in both
     // id and preview_id since `id` is not an `Option`
     // should probably refactor this at some point
-    let site_namespace = ConfigKvNamespace {
+    let site_namespace = KvNamespace {
         binding: "__STATIC_CONTENT".to_string(),
         id: site_namespace.id.clone(),
-        preview_id: Some(site_namespace.id),
     };
 
     target.add_kv_namespace(site_namespace.clone());
@@ -303,7 +302,7 @@ mod tests {
     fn make_target(site: Site) -> Target {
         Target {
             account_id: "".to_string(),
-            kv_namespaces: None,
+            kv_namespaces: Vec::new(),
             name: "".to_string(),
             target_type: TargetType::JavaScript,
             webpack_config: None,
