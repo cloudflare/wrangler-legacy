@@ -52,12 +52,7 @@ pub fn generate(
 }
 
 pub fn run_generate(name: &str, template: &str) -> Result<(), failure::Error> {
-    let tool_name = "cargo-generate";
-    let tool_author = "ashleygwilliams";
-    let is_binary = true;
-    let version = install::get_latest_version(tool_name)?;
-    let binary_path =
-        install::install(tool_name, tool_author, is_binary, version)?.binary(tool_name)?;
+    let binary_path = install::install_cargo_generate()?;
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
 
