@@ -155,7 +155,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
                 format!("{}\n{}", msg, default_msg)
             };
 
-            match interactive::delete(&prompt_msg) {
+            match interactive::confirm(&prompt_msg) {
                 Ok(true) => (),
                 Ok(false) => {
                     message::info(&format!(

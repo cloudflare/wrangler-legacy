@@ -24,7 +24,7 @@ pub fn run(
 ) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
 
-    match interactive::delete(&format!(
+    match interactive::confirm(&format!(
         "Are you sure you want to delete all keys in {}?",
         filename.display()
     )) {
