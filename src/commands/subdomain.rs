@@ -129,11 +129,11 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {
         if subdomain == name {
-            let msg = format!("You have previously registered {}.workers.dev", subdomain);
+            let msg = format!("You have already registered {}.workers.dev", subdomain);
             message::success(&msg);
             return Ok(());
         } else {
-            // list all the effected scripts
+            // list all the affected scripts
             let scripts = get_subdomain_scripts(&target.account_id, user)?;
 
             let default_msg = format!("Are you sure you want to permanently move your subdomain from {}.workers.dev to {}.workers.dev?",
@@ -149,7 +149,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
                     ))
                 }
                 let msg = format!(
-                    "The following deployed Workers will be effected:\n{}\nIt may take a few minutes for these Workers to become available again.",
+                    "The following deployed Workers will be affected:\n{}\nIt may take a few minutes for these Workers to become available again.",
                     script_updates.join("\n")
                 );
                 format!("{}\n{}", msg, default_msg)
@@ -158,10 +158,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
             match interactive::confirm(&prompt_msg) {
                 Ok(true) => (),
                 Ok(false) => {
-                    message::info(&format!(
-                        "Not renaming subdomain: {}.workers.dev",
-                        subdomain
-                    ));
+                    message::info(&format!("Keeping subdomain: {}.workers.dev", subdomain));
                     return Ok(());
                 }
                 Err(e) => failure::bail!(e),
@@ -189,7 +186,7 @@ fn get_subdomain_scripts(
     account_id: &str,
     user: &GlobalUser,
 ) -> Result<Vec<String>, failure::Error> {
-    let addr = script_addr(account_id);
+    let addr = scripts_addr(account_id);
 
     let client = http::legacy_auth_client(user);
 
@@ -216,7 +213,7 @@ fn get_subdomain_scripts(
     Ok(scripts)
 }
 
-fn script_addr(account_id: &str) -> String {
+fn scripts_addr(account_id: &str) -> String {
     format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts",
         account_id
