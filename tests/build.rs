@@ -363,6 +363,26 @@ fn it_builds_with_webpack_name_output_warn() {
     );
 }
 
+fn build_creates_assets_with_arg(fixture: &Fixture, script_names: Vec<&str>, args: Vec<&str>) -> (String, String) {
+    let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    build.current_dir(fixture.get_path());
+    build.arg("build");
+    build.args(args);
+
+
+    let output = build.output().expect("failed to execute process");
+    assert!(output.status.success());
+
+    for script_name in script_names {
+        assert!(fixture.get_output_path().join(script_name).exists());
+    }
+
+    (
+        str::from_utf8(&output.stdout).unwrap().to_string(),
+        str::from_utf8(&output.stderr).unwrap().to_string(),
+    )
+}
+
 fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) -> (String, String) {
     let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     build.current_dir(fixture.get_path());
@@ -398,4 +418,26 @@ fn build_fails_with(fixture: &Fixture, expected_message: &str) {
             str::from_utf8(&output.stderr)
         )
     );
+}
+
+#[test]
+fn it_builds_with_webpack_target_webworker_with_custom_file() {
+    let fixture = Fixture::new();
+    fixture.scaffold_webpack();
+
+    fixture.create_file(
+        "webpack.config.js",
+        r#"
+        module.exports = {
+            "entry": "./index.js",
+            "target": "webworker"
+        }
+    "#,
+    );
+
+    let wrangler_toml = WranglerToml::webpack_std_config("test-build-webpack-target-webworker");
+    let file_name = "wrangler-custom.toml";
+    fixture.create_file(file_name, &toml::to_string(&wrangler_toml).unwrap());
+
+    build_creates_assets_with_arg(&fixture, vec!["script.js"], vec!["-f", file_name]);
 }
