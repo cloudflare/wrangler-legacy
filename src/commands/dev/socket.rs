@@ -76,7 +76,16 @@ async fn print_ws_messages(
                         failure::format_err!("this event could not be parsed:\n{}", e)
                     });
                 if let Ok(protocol::Runtime::Event(event)) = parsed_message {
-                    println!("{}", event);
+                    // Try to parse json to pretty print, otherwise just print string
+                    let json_parse: Result<serde_json::Value, serde_json::Error> =
+                        serde_json::from_str(&*event.to_string().replace("\\", ""));
+                    if let Ok(json) = json_parse {
+                        if let Ok(json_str) = serde_json::to_string_pretty(&json) {
+                            println!("{}", json_str);
+                        }
+                    } else {
+                        println!("{}", event);
+                    }
                 }
             }
             Err(error) => return Err(error.into()),
