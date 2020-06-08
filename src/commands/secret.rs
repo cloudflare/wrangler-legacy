@@ -126,7 +126,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     validate_target(target)?;
 
-    match interactive::delete(&format!(
+    match interactive::confirm(&format!(
         "Are you sure you want to permanently delete the variable {} on the script named {}?",
         name, target.name
     )) {

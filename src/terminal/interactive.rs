@@ -28,14 +28,15 @@ fn strip_trailing_whitespace(mut input: String) -> String {
     input
 }
 
-// Truncate all "yes", "no" responses for interactive delete prompt to just "y" or "n".
+// Truncate all "yes", "no" responses for interactive prompt to just "y" or "n".
 const INTERACTIVE_RESPONSE_LEN: usize = 1;
 const YES: &str = "y";
 const NO: &str = "n";
-// For interactively handling deletes (and discouraging accidental deletes).
+// For interactively handling destructive commands (and discouraging accidental deletes).
 // Input like "yes", "Yes", "no", "No" will be accepted, thanks to the whitespace-stripping
 // and lowercasing logic below.
-pub fn delete(prompt_string: &str) -> Result<bool, failure::Error> {
+// TODO: loop this to retry until valid input is received.
+pub fn confirm(prompt_string: &str) -> Result<bool, failure::Error> {
     println!("{} [y/n]", prompt_string);
     let mut response: String = read!("{}\n");
     response = response.split_whitespace().collect(); // remove whitespace
