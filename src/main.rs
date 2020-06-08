@@ -126,6 +126,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(kv_preview_arg.clone())
                         .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
@@ -133,6 +134,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Delete namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(silent_verbose_arg.clone())
@@ -840,15 +842,15 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
-
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
+                is_preview = create_matches.is_present("preview");
                 let env = create_matches.value_of("env");
-                let target = manifest.get_target(env, is_preview)?;
                 let binding = create_matches.value_of("binding").unwrap();
-                commands::kv::namespace::create(&target, env, &user, binding)?;
+                commands::kv::namespace::create(&manifest, is_preview, env, &user, binding)?;
             }
             ("delete", Some(delete_matches)) => {
+                is_preview = delete_matches.is_present("preview");
                 let env = delete_matches.value_of("env");
                 let target = manifest.get_target(env, is_preview)?;
                 let namespace_id = match delete_matches.value_of("binding") {

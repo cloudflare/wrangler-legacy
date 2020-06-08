@@ -6,8 +6,8 @@ use crate::settings::binding::Binding;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ConfigKvNamespace {
-    pub id: String,
     pub binding: String,
+    pub id: Option<String>,
     pub preview_id: Option<String>,
 }
 
