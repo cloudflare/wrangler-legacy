@@ -84,6 +84,8 @@ async fn print_ws_messages(
                     if let Ok(json) = json_parse {
                         if let Ok(json_str) = serde_json::to_string_pretty(&json) {
                             println!("{}", json_str);
+                        } else {
+                            println!("{}", &json);
                         }
                     } else {
                         println!("{}", event);
