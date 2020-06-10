@@ -57,10 +57,6 @@ pub fn add_namespace(
         }
     };
 
-    // since Workers Sites previews work a bit differently
-    // we'll just throw the created namespace id in both
-    // id and preview_id since `id` is not an `Option`
-    // should probably refactor this at some point
     let site_namespace = KvNamespace {
         binding: "__STATIC_CONTENT".to_string(),
         id: site_namespace.id,
