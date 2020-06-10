@@ -17,7 +17,7 @@ pub fn delete(
     validate_target(target)?;
     let client = http::cf_v4_client(user)?;
 
-    match interactive::delete(&format!("Are you sure you want to delete key \"{}\"?", key)) {
+    match interactive::confirm(&format!("Are you sure you want to delete key \"{}\"?", key)) {
         Ok(true) => (),
         Ok(false) => {
             message::info(&format!("Not deleting key \"{}\"", key));
