@@ -197,7 +197,7 @@ impl Manifest {
             name: self.name.clone(), // MAY inherit
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // MUST NOT inherit
             site: self.site.clone(), // MUST NOT inherit
-            vars: self.vars.clone(), // MAY inherit
+            vars: self.vars.clone(), // MAY inherit,
         };
 
         let environment = self.get_environment(environment_name)?;
@@ -408,8 +408,10 @@ fn get_namespaces(
         namespaces.into_iter().map(|ns| {
             if preview {
                 if let Some(preview_id) = &ns.preview_id {
-                    if preview_id == &ns.id {
-                        message::warn("Specifying the same KV namespace ID for both preview and production sessions may cause bugs in your production worker! Proceed with caution.");
+                    if let Some(id) = &ns.id {
+                        if preview_id == id {
+                            message::warn("Specifying the same KV namespace ID for both preview and production sessions may cause bugs in your production worker! Proceed with caution.");
+                        }
                     }
                     Ok(KvNamespace {
                         id: preview_id.to_string(),
@@ -418,11 +420,13 @@ fn get_namespaces(
                 } else {
                     failure::bail!("In order to preview a worker with KV namespaces, you must designate a preview_id for each KV namespace you'd like to preview.")
                 }
-            } else {
+            } else if let Some(id) = &ns.id {
                 Ok(KvNamespace {
-                    id: ns.id.to_string(),
+                    id: id.to_string(),
                     binding: ns.binding,
                 })
+            } else {
+                failure::bail!("You must specify the namespace ID in the id field for the namespace with binding \"{}\"", &ns.binding)
             }
         }).collect()
     } else {

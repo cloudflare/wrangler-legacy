@@ -74,6 +74,10 @@ fn run() -> Result<(), failure::Error> {
     let kv_namespace_specifier_group = ArgGroup::with_name("namespace-specifier")
         .args(&["binding", "namespace-id"])
         .required(true);
+    let kv_preview_arg = Arg::with_name("preview")
+        .help("applies the command to the preview namespace when combined with --binding")
+        .long("preview")
+        .takes_value(false);
 
     // This arg is for any action that uses environments (e.g. KV subcommands, publish)
     let environment_arg = Arg::with_name("env")
@@ -122,6 +126,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(kv_preview_arg.clone())
                         .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
@@ -129,6 +134,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Delete namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(silent_verbose_arg.clone())
@@ -153,6 +159,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Put a key-value pair into a namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -197,6 +204,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Get a key's value from a namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -212,6 +220,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Delete a key and its value from a namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -227,6 +236,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("List all keys in a namespace. Produces JSON output")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -253,6 +263,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Upload multiple key-value pairs to a namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -268,6 +279,7 @@ fn run() -> Result<(), failure::Error> {
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
+                        .arg(kv_preview_arg.clone())
                         .arg(environment_arg.clone())
                         .about("Delete multiple keys and their values from a namespace")
                         .arg(
@@ -830,15 +842,15 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
-
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
+                is_preview = create_matches.is_present("preview");
                 let env = create_matches.value_of("env");
-                let target = manifest.get_target(env, is_preview)?;
                 let binding = create_matches.value_of("binding").unwrap();
-                commands::kv::namespace::create(&target, env, &user, binding)?;
+                commands::kv::namespace::create(&manifest, is_preview, env, &user, binding)?;
             }
             ("delete", Some(delete_matches)) => {
+                is_preview = delete_matches.is_present("preview");
                 let env = delete_matches.value_of("env");
                 let target = manifest.get_target(env, is_preview)?;
                 let namespace_id = match delete_matches.value_of("binding") {
@@ -868,6 +880,7 @@ fn run() -> Result<(), failure::Error> {
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
+                is_preview = subcommand_matches.is_present("preview");
                 let env = subcommand_matches.value_of("env");
                 let target = manifest.get_target(env, is_preview)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
@@ -931,6 +944,7 @@ fn run() -> Result<(), failure::Error> {
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
+                is_preview = subcommand_matches.is_present("preview");
                 let env = subcommand_matches.value_of("env");
                 let target = manifest.get_target(env, is_preview)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {

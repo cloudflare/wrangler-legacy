@@ -4,16 +4,18 @@ use crate::commands::kv;
 use crate::http;
 use crate::kv::namespace::create;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::Target;
+use crate::settings::toml::{ConfigKvNamespace, KvNamespace, Manifest};
 use crate::terminal::message;
 
 pub fn run(
-    target: &Target,
+    manifest: &Manifest,
+    is_preview: bool,
     env: Option<&str>,
     user: &GlobalUser,
     binding: &str,
 ) -> Result<(), failure::Error> {
-    kv::validate_target(target)?;
+    let target = manifest.get_target(env, is_preview)?;
+    kv::validate_target(&target)?;
     validate_binding(binding)?;
 
     let title = format!("{}-{}", target.name, binding);
@@ -21,36 +23,24 @@ pub fn run(
     message::working(&msg);
 
     let client = http::cf_v4_client(user)?;
-    let result = create(&client, target, &title);
+    let result = create(&client, &target, &title);
 
     match result {
         Ok(success) => {
             let namespace = success.result;
-            message::success(&format!("Success: {:#?}", namespace));
-            if target.kv_namespaces.is_empty() {
-                match env {
-                    Some(env) => message::success(&format!(
-                        "Add the following to your wrangler.toml under [env.{}]:",
-                        env
-                    )),
-                    None => message::success("Add the following to your wrangler.toml:"),
-                };
-                println!(
-                    "kv-namespaces = [ \n\
-                         \t {{ binding = \"{}\", id = \"{}\" }} \n\
-                         ]",
-                    binding, namespace.id
-                );
-            } else {
-                match env {
-                        Some(env) => message::success(&format!(
-                            "Add the following to your wrangler.toml's \"kv-namespaces\" array in [env.{}]:",
-                            env
-                        )),
-                        None => message::success("Add the following to your wrangler.toml's \"kv-namespaces\" array:"),
-                    };
-                println!("{{ binding = \"{}\", id = \"{}\" }}", binding, namespace.id);
-            }
+            message::success("Success!");
+            println!(
+                "{}",
+                toml_modification_instructions(
+                    KvNamespace {
+                        binding: binding.to_string(),
+                        id: namespace.id,
+                    },
+                    manifest.kv_namespaces.as_ref(),
+                    env,
+                    is_preview,
+                )
+            );
         }
         Err(e) => print!("{}", kv::format_error(e)),
     }
@@ -68,9 +58,215 @@ fn validate_binding(binding: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
+fn toml_modification_instructions(
+    new_namespace: KvNamespace,
+    all_namespaces: Option<&Vec<ConfigKvNamespace>>,
+    env: Option<&str>,
+    is_preview: bool,
+) -> String {
+    let mut msg = "Add the following to your wrangler.toml".to_string();
+
+    if all_namespaces.is_some() {
+        msg.push_str(" in your kv_namespaces array");
+    }
+
+    if let Some(env) = env {
+        msg.push_str(&format!(" under [env.{}]", env));
+    }
+
+    msg.push_str(":\n");
+
+    let existing_namespace = if let Some(all_namespaces) = all_namespaces {
+        all_namespaces
+            .iter()
+            .find(|namespace| namespace.binding == new_namespace.binding)
+    } else {
+        None
+    };
+
+    let mut inline_msg = format!("{{ binding = \"{}\", ", &new_namespace.binding);
+    if let Some(existing_namespace) = existing_namespace {
+        if is_preview {
+            inline_msg.push_str(&format!("preview_id = \"{}\"", new_namespace.id));
+            if let Some(existing_namespace_id) = &existing_namespace.id {
+                inline_msg.push_str(&format!(", id = \"{}\"", existing_namespace_id));
+            }
+        } else {
+            inline_msg.push_str(&format!("id = \"{}\"", new_namespace.id));
+            if let Some(existing_namespace_preview_id) = &existing_namespace.preview_id {
+                inline_msg.push_str(&format!(
+                    ", preview_id = \"{}\"",
+                    existing_namespace_preview_id
+                ));
+            }
+        }
+    } else {
+        if is_preview {
+            inline_msg.push_str("preview_id");
+        } else {
+            inline_msg.push_str("id")
+        }
+        inline_msg.push_str(" = \"");
+        inline_msg.push_str(&new_namespace.id);
+        inline_msg.push_str("\"");
+    };
+    inline_msg.push_str(" }");
+
+    if all_namespaces.is_some() {
+        msg.push_str(&inline_msg);
+    } else {
+        msg.push_str(&format!("kv_namespaces = [ \n\t {}\n]", &inline_msg));
+    }
+
+    msg
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_messages_about_env() {
+        let new_namespace = KvNamespace {
+            id: "new_preview_id".to_string(),
+            binding: "FOO".to_string(),
+        };
+
+        let all_namespaces = Some(vec![ConfigKvNamespace {
+            binding: "BAR".to_string(),
+            id: Some("production_id".to_string()),
+            preview_id: None,
+        }]);
+
+        let env = Some("my_env");
+
+        let is_preview = true;
+
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        assert!(msg.contains("[env.my_env]"));
+    }
+
+    #[test]
+    fn it_messages_about_preview() {
+        let new_namespace = KvNamespace {
+            id: "new_preview_id".to_string(),
+            binding: "FOO".to_string(),
+        };
+
+        let all_namespaces = Some(vec![ConfigKvNamespace {
+            binding: "FOO".to_string(),
+            id: Some("existing_production_id".to_string()),
+            preview_id: None,
+        }]);
+
+        let env = None;
+
+        let is_preview = true;
+
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        assert!(msg.contains("{ binding = \"FOO\", preview_id = \"new_preview_id\", id = \"existing_production_id\" }"));
+        assert!(!msg.contains("kv_namespaces = ["));
+    }
+
+    #[test]
+    fn it_messages_about_namespaces() {
+        let new_namespace = KvNamespace {
+            id: "new_id".to_string(),
+            binding: "FOO".to_string(),
+        };
+
+        let all_namespaces = None;
+
+        let env = None;
+
+        let is_preview = false;
+
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        assert!(msg.contains("{ binding = \"FOO\", id = \"new_id\" }"));
+        assert!(msg.contains("kv_namespaces = ["));
+    }
+
+    #[test]
+    fn it_doesnt_message_about_namespaces() {
+        let new_namespace = KvNamespace {
+            id: "new_id".to_string(),
+            binding: "FOO".to_string(),
+        };
+
+        let all_namespaces = Some(vec![]);
+
+        let env = None;
+
+        let is_preview = false;
+
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        assert!(msg.contains("{ binding = \"FOO\", id = \"new_id\" }"));
+        assert!(!msg.contains("kv_namespaces = ["));
+    }
+
+    #[test]
+    fn it_messages_about_overridden_namespaces() {
+        let new_namespace = KvNamespace {
+            id: "new_preview_id".to_string(),
+            binding: "FOO".to_string(),
+        };
+
+        let all_namespaces = Some(vec![
+            ConfigKvNamespace {
+                binding: "FOO".to_string(),
+                id: Some("existing_production_id".to_string()),
+                preview_id: Some("existing_preview_id".to_string()),
+            },
+            ConfigKvNamespace {
+                binding: "BAR".to_string(),
+                id: Some("some_prod_id".to_string()),
+                preview_id: None,
+            },
+        ]);
+
+        let env = None;
+
+        let is_preview = true;
+
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        assert!(msg.contains("{ binding = \"FOO\", preview_id = \"new_preview_id\", id = \"existing_production_id\" }"));
+        assert!(!msg.contains("kv_namespaces = ["));
+    }
+
+    #[test]
+    fn it_messages_when_no_existing_id() {
+        let new_namespace = KvNamespace {
+            id: "new_preview_id".to_string(),
+            binding: "FOO".to_string(),
+        };
+
+        let all_namespaces = Some(vec![
+            ConfigKvNamespace {
+                binding: "FOO".to_string(),
+                id: None,
+                preview_id: None,
+            },
+            ConfigKvNamespace {
+                binding: "BAR".to_string(),
+                id: Some("some_prod_id".to_string()),
+                preview_id: None,
+            },
+        ]);
+
+        let env = None;
+
+        let is_preview = true;
+
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        assert!(msg.contains("{ binding = \"FOO\", preview_id = \"new_preview_id\" }"));
+        assert!(!msg.contains("kv_namespaces = ["));
+    }
 
     #[test]
     fn it_can_detect_invalid_binding() {
