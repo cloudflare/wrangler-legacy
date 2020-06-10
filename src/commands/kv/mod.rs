@@ -61,16 +61,15 @@ fn check_duplicate_namespaces(target: &Target) -> bool {
     // HashSet for detecting duplicate namespace bindings
     let mut binding_names: HashSet<String> = HashSet::new();
 
-    if let Some(namespaces) = &target.kv_namespaces {
-        for namespace in namespaces {
-            // Check if this is a duplicate binding
-            if binding_names.contains(&namespace.binding) {
-                return true;
-            } else {
-                binding_names.insert(namespace.binding.clone());
-            }
+    for namespace in &target.kv_namespaces {
+        // Check if this is a duplicate binding
+        if binding_names.contains(&namespace.binding) {
+            return true;
+        } else {
+            binding_names.insert(namespace.binding.clone());
         }
     }
+
     false
 }
 
@@ -84,13 +83,12 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
         )
     }
 
-    if let Some(namespaces) = &target.kv_namespaces {
-        for namespace in namespaces {
-            if namespace.binding == binding {
-                return Ok(namespace.id.to_string());
-            }
+    for namespace in &target.kv_namespaces {
+        if namespace.binding == binding {
+            return Ok(namespace.id.to_string());
         }
     }
+
     failure::bail!(
         "Namespace binding \"{}\" not found in \"{}\"",
         binding,
@@ -111,7 +109,7 @@ mod tests {
     fn it_can_detect_duplicate_bindings() {
         let target_with_dup_kv_bindings = Target {
             account_id: "".to_string(),
-            kv_namespaces: Some(vec![
+            kv_namespaces: vec![
                 KvNamespace {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
@@ -120,7 +118,7 @@ mod tests {
                     id: "fake".to_string(),
                     binding: "KV".to_string(),
                 },
-            ]),
+            ],
             name: "test-target".to_string(),
             target_type: TargetType::Webpack,
             webpack_config: None,

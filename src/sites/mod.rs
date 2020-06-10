@@ -298,7 +298,7 @@ mod tests {
     fn make_target(site: Site) -> Target {
         Target {
             account_id: "".to_string(),
-            kv_namespaces: None,
+            kv_namespaces: Vec::new(),
             name: "".to_string(),
             target_type: TargetType::JavaScript,
             webpack_config: None,
