@@ -105,7 +105,6 @@ fn toml_modification_instructions(
     } else {
         if is_preview {
             inline_msg.push_str("preview_id");
-            
         } else {
             inline_msg.push_str("id")
         }
@@ -132,20 +131,21 @@ mod tests {
     fn it_messages_about_env() {
         let new_namespace = KvNamespace {
             id: "new_preview_id".to_string(),
-            binding: "FOO".to_string()
+            binding: "FOO".to_string(),
         };
 
         let all_namespaces = Some(vec![ConfigKvNamespace {
             binding: "BAR".to_string(),
             id: Some("production_id".to_string()),
-            preview_id: None
+            preview_id: None,
         }]);
 
         let env = Some("my_env");
 
         let is_preview = true;
 
-        let msg = toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
         assert!(msg.contains("binding = \"FOO\""));
         assert!(msg.contains("[env.my_env]"));
         assert!(msg.contains("preview_id = \"new_preview_id\""));
@@ -158,20 +158,21 @@ mod tests {
     fn it_messages_about_preview() {
         let new_namespace = KvNamespace {
             id: "new_preview_id".to_string(),
-            binding: "FOO".to_string()
+            binding: "FOO".to_string(),
         };
 
         let all_namespaces = Some(vec![ConfigKvNamespace {
             binding: "FOO".to_string(),
             id: Some("existing_production_id".to_string()),
-            preview_id: None
+            preview_id: None,
         }]);
 
         let env = None;
 
         let is_preview = true;
 
-        let msg = toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
         assert!(msg.contains("binding = \"FOO\""));
         assert!(msg.contains("preview_id = \"new_preview_id\""));
         assert!(msg.contains("id = \"existing_production_id\""));
@@ -182,7 +183,7 @@ mod tests {
     fn it_messages_about_namespaces() {
         let new_namespace = KvNamespace {
             id: "new_id".to_string(),
-            binding: "FOO".to_string()
+            binding: "FOO".to_string(),
         };
 
         let all_namespaces = None;
@@ -191,7 +192,8 @@ mod tests {
 
         let is_preview = false;
 
-        let msg = toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
         assert!(msg.contains("binding = \"FOO\""));
         assert!(msg.contains("id = \"new_id\""));
         assert!(msg.contains("kv_namespaces = ["));
@@ -201,7 +203,7 @@ mod tests {
     fn it_doesnt_message_about_namespaces() {
         let new_namespace = KvNamespace {
             id: "new_id".to_string(),
-            binding: "FOO".to_string()
+            binding: "FOO".to_string(),
         };
 
         let all_namespaces = Some(vec![]);
@@ -210,7 +212,8 @@ mod tests {
 
         let is_preview = false;
 
-        let msg = toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
+        let msg =
+            toml_modification_instructions(new_namespace, all_namespaces.as_ref(), env, is_preview);
         assert!(msg.contains("binding = \"FOO\""));
         assert!(msg.contains("id = \"new_id\""));
         assert!(!msg.contains("kv_namespaces = ["));

@@ -420,15 +420,13 @@ fn get_namespaces(
                 } else {
                     failure::bail!("In order to preview a worker with KV namespaces, you must designate a preview_id for each KV namespace you'd like to preview.")
                 }
+            } else if let Some(id) = &ns.id {
+                Ok(KvNamespace {
+                    id: id.to_string(),
+                    binding: ns.binding,
+                })
             } else {
-                if let Some(id) = &ns.id {
-                    Ok(KvNamespace {
-                        id: id.to_string(),
-                        binding: ns.binding,
-                    })
-                } else {
-                    failure::bail!("You must specify the namespace ID in the id field for the namespace with binding \"{}\"", &ns.binding)
-                }
+                failure::bail!("You must specify the namespace ID in the id field for the namespace with binding \"{}\"", &ns.binding)
             }
         }).collect()
     } else {
