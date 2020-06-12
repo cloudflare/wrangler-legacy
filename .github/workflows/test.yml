@@ -42,28 +42,22 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Cache Cargo registry
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/registry
-          key: ${{ matrix.build }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.build }}-cargo-registry-
+          key: ${{ matrix.build }}-cargo-registry-beep-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache Cargo index
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/git
           key: ${{ matrix.build }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.build }}-cargo-index-
 
       - name: Cache Cargo build
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: target
           key: ${{ matrix.build }}-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.build }}-target-
 
       - name: Install Rust
         run: |
@@ -71,6 +65,11 @@ jobs:
           rustup default ${{ matrix.rust }}
 
       - name: Run Tests
-        run: cargo test --features "strict"
+        run: cargo test -vv --features "strict"
         env:
           RUST_BACKTRACE: 1
+
+      - name: Clear the cargo caches
+        run: |
+          cargo install cargo-cache --no-default-features --features ci-autoclean
+          cargo-cache
