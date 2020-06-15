@@ -62,7 +62,7 @@ which = "3.1.1"
 ws = "0.9.1"
 
 [dev-dependencies]
-assert_cmd = "0.11.1"
+assert_cmd = "1.0.1"
 fs_extra = "1.1.0"
 predicates = "1.0.4"
 
