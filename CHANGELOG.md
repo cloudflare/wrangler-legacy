@@ -1,5 +1,140 @@
 # Changelog
 
+## ♻️ 1.10.0
+
+- ### Features
+
+  - **`wrangler dev` now requires that you specify "preview" versions of KV namespaces - [EverlastingBugstopper], [ashleymichal], [issue/1032] [pull/1357] [pull/1359] [pull/1360]**
+
+    In order to prevent you from accidentally stomping on production data in Workers KV, we're introducing the concept of explicit *preview namespaces*. When running `wrangler dev`, if you're using Workers KV, you'll need to specify a specific KV Namespace to use when previewing the Worker.
+
+    Specifically, this change:
+    * Adds a `preview_id` field to items in `kv_namespaces` in `wrangler.toml` that _must_ be provided in order to preview a worker that has kv namespaces.
+    * also adds `--preview` to kv commands in order to interact with them instead of production namespaces.
+
+    If you define a KV Namespace in your `wrangler.toml` but don't specify a `preview_id`, and then try to run `wrangler dev`, you'll see the following:
+
+    ```console
+    $ wrangler preview
+    💁  JavaScript project found. Skipping unnecessary build!
+    Error: In order to preview a worker with KV namespaces, you must designate a preview_id for each KV namespace you'd like to preview.
+    ```
+
+    More details can be found in the [documentation](http://localhost:1313/workers/tooling/wrangler/configuration/#kv_namespaces).
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1357]: https://github.com/cloudflare/wrangler/pull/1357
+    [pull/1359]: https://github.com/cloudflare/wrangler/pull/1359
+    [pull/1360]: https://github.com/cloudflare/wrangler/pull/1360
+    [issue/1032]: https://github.com/cloudflare/wrangler/issues/1032
+
+  - **`wrangler subdomain` allows you to rename your existing workers.dev subdomain - [nprogers], [issue/1279] [pull/1353]**
+
+    Workers recently introduced the ability to rename your workers.dev subdomain in the Workers dashboard. This change allows you to do the same thing from `wrangler`.
+
+    [nprogers]: https://github.com/nprogers
+    [pull/1353]: https://github.com/cloudflare/wrangler/pull/1353
+    [issue/1279]: https://github.com/cloudflare/wrangler/issues/1279
+
+  - **Return more detailed error when preview uploads fail - [jahands], [issue/1330] [pull/1356]**
+
+    When running `wrangler dev` or `wrangler preview`, if the upload failed for validation or other reasons, we displayed pretty obtuse errors. Now we pass along more informative error details.
+
+    [jahands]: https://github.com/jahands
+    [pull/1356]: https://github.com/cloudflare/wrangler/pull/1356
+    [issue/1330]: https://github.com/cloudflare/wrangler/issues/1330
+
+  - **Check for wrangler updates every 24 hours and message if you should update - [EverlastingBugstopper], [jspspike], [issue/397] [pull/1190] [pull/1331]**
+
+    wrangler will now let you know if there's an update available, and will only bug you once every 24 hours.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [jspspike]: https://github.com/jspspike
+    [pull/1190]: https://github.com/cloudflare/wrangler/pull/1190
+    [pull/1331]: https://github.com/cloudflare/wrangler/pull/1331
+    [issue/397]: https://github.com/cloudflare/wrangler/issues/397
+
+  - **Improve some error messages with human-readable suggestions - [jspspike], [issue/1157] [pull/1329]**
+
+    Previously, you would see not-super-helpful error messages if your API Token was expired or missing some permissions, didn't have Workers Unlimited enabled and tried to upload to KV, or tried to create a namespace that already existed. But we strive for helpful, informative error messages!
+
+    Now, you'll see the following error messages as appropriate:
+    ```
+    10026 => "You will need to enable Workers Unlimited for your account before you can use this feature.",
+    10014 => "Namespace already exists, try using a different namespace.",
+    10037 => "Edit your API Token to have correct permissions, or use the 'Edit Cloudflare Workers' API Token template.",
+    ```
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1329]: https://github.com/cloudflare/wrangler/pull/1329
+    [issue/1157]: https://github.com/cloudflare/wrangler/issues/1157
+
+- ### Fixes
+
+  - **wrangler dev pretty-prints JSON messages from console.log() - [jspspike], [issue/1249] [pull/1371]**
+
+    Previously, when running `wrangler dev`, you could `console.log(JSON.stringify(some_object))`, but the output was hard to read: newlines weren't appropriately parsed and whitespace was a bit of a mess.
+
+    This change pretty-prints JSON received from the Inspector, so JSON output is much easier to read in `wrangler dev`.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1371]: https://github.com/cloudflare/wrangler/pull/1371
+    [issue/1249]: https://github.com/cloudflare/wrangler/issues/1249
+
+  - **Don't install wasm-pack when publishing a type:webpack project - [EverlastingBugstopper], [issue/745] [pull/1344]**
+
+    We shouldn't install wasm-pack if your project doesn't need it. We thought we fixed this in 1.7.0, but we didn't. This time it's fixed for real, we swear.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1344]: https://github.com/cloudflare/wrangler/pull/1344
+    [issue/745]: https://github.com/cloudflare/wrangler/issues/745
+
+  - **Pin wasm-pack and cargo-generate to specific versions instead of always downloading the latest version - [jspspike], [issue/1240] [pull/1358]**
+
+    Previously, every time `wasm-pack` or `cargo-generate` was needed, Wrangler would download and install the latest version. Now, we pin those dependencies to a specific version in every release of Wrangler. If you have either of these tools installed locally, Wrangler will use them if you have a more recent version.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1358]: https://github.com/cloudflare/wrangler/pull/1358
+    [issue/1240]: https://github.com/cloudflare/wrangler/issues/1240
+
+  - **Support batched KV PUT and DELETE operations to improve Workers Site publish performance - [jspspike], [issue/1191] [pull/1339]**
+
+    Previously, you couldn't use Workers Sites if you wanted to upload more than 10,000 static files, and it took a lot of time to upload close to that many files. This change instead batches upload and delete calls, allowing us to increase the limit and improve performance for everyone.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1339]: https://github.com/cloudflare/wrangler/pull/1339
+    [issue/1191]: https://github.com/cloudflare/wrangler/issues/1191
+
+- ### Maintenance
+
+  - **Add Code of Conduct - [EverlastingBugstopper], [pull/1346]**
+
+    We actually didn't have one before, so now we do!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1346]: https://github.com/cloudflare/wrangler/pull/1346
+
+  - **Deprecate undocumented KV `bucket` attribute - [ashleymichal], [issue/1136] [pull/1355]**
+
+    The `bucket` attribute was not originally intended to be released into the wild. We announced deprecation in March, and are now removing it as an available configuration property.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1355]: https://github.com/cloudflare/wrangler/pull/1355
+    [issue/1136]: https://github.com/cloudflare/wrangler/issues/1136
+
+  - **Refactor to separate KV commands, implementation of said commands, and site-specific logic - [ashleymichal], [pull/1332]**
+
+    This refactor makes the logic for interacting with KV more re-usable and maintainable.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1332]: https://github.com/cloudflare/wrangler/pull/1332
+
+  - **Add SECURITY.md with responsible reporting guidelines - [EverlastingBugstopper], [pull/1345]**
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1345]: https://github.com/cloudflare/wrangler/pull/1345
+
 ## 🐼 1.9.2
 
 - ### Fixes
