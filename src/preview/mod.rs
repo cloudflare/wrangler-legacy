@@ -30,8 +30,9 @@ pub fn preview(
     user: Option<GlobalUser>,
     options: PreviewOpt,
     verbose: bool,
+    build_env: Option<String>,
 ) -> Result<(), failure::Error> {
-    build(&target)?;
+    build(&target, build_env.clone())?;
 
     let sites_preview: bool = target.site.is_some();
 
@@ -69,6 +70,7 @@ pub fn preview(
             verbose,
             options.headless,
             request_payload,
+            build_env,
         )?;
     } else {
         if !options.headless {
@@ -166,11 +168,12 @@ fn watch_for_changes(
     verbose: bool,
     headless: bool,
     request_payload: RequestPayload,
+    build_env: Option<String>,
 ) -> Result<(), failure::Error> {
     let sites_preview: bool = target.site.is_some();
 
     let (tx, rx) = channel();
-    watch_and_build(&target, Some(tx))?;
+    watch_and_build(&target, build_env, Some(tx))?;
 
     while rx.recv().is_ok() {
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {

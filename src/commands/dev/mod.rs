@@ -17,6 +17,7 @@ pub fn dev(
     port: Option<u16>,
     ip: Option<&str>,
     verbose: bool,
+    build_env: Option<String>,
 ) -> Result<(), failure::Error> {
     let server_config = ServerConfig::new(host, ip, port)?;
 
@@ -24,12 +25,12 @@ pub fn dev(
     print_alpha_warning_message();
 
     // before serving requests we must first build the Worker
-    build(&target)?;
+    build(&target, build_env.clone())?;
 
     // eventually we will have two modes - edge and gcs
     // edge for authenticated users and gcs for unauthenticated
     // for now, always route to gcs
-    gcs::dev(target, user, server_config, verbose)
+    gcs::dev(target, user, server_config, verbose, build_env)
 }
 
 fn print_alpha_warning_message() {

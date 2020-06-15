@@ -16,11 +16,12 @@ pub fn publish(
     target: &mut Target,
     deploy_config: DeployConfig,
     verbose: bool,
+    build_env: Option<String>,
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
 
     // Build the script before uploading.
-    build(&target)?;
+    build(&target, build_env)?;
 
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();

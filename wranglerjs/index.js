@@ -39,9 +39,11 @@ function filterByExtension(ext) {
     config = require(join(process.cwd(), args["webpack-config"]));
   }
 
+  const env = args["webpack-env"];
+
   // Check if the config is a function and await it either way in
   // case the result is a Promise
-  config = await (typeof config === "function" ? config({}) : config);
+  config = await (typeof config === "function" ? config(env) : config);
 
   if (Array.isArray(config)) {
     throw error(

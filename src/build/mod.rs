@@ -6,7 +6,7 @@ use crate::{commands, install};
 use std::path::PathBuf;
 use std::process::Command;
 
-pub fn build(target: &Target) -> Result<(), failure::Error> {
+pub fn build(target: &Target, build_env: Option<String>) -> Result<(), failure::Error> {
     let target_type = &target.target_type;
     match target_type {
         TargetType::JavaScript => {
@@ -22,7 +22,7 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
             commands::run(command, &command_name)?;
         }
         TargetType::Webpack => {
-            wranglerjs::run_build(target)?;
+            wranglerjs::run_build(target, build_env)?;
         }
     }
 

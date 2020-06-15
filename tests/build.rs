@@ -3,7 +3,7 @@ use std::process::Command;
 use std::str;
 
 use assert_cmd::prelude::*;
-use wrangler::fixtures::{Fixture, WranglerToml};
+use wrangler::fixtures::{EnvConfig, Fixture, WranglerToml};
 
 #[test]
 fn it_builds_webpack() {
@@ -87,6 +87,33 @@ fn it_builds_with_webpack_function_config_js() {
     fixture.create_wrangler_toml(wrangler_toml);
 
     build_creates_assets(&fixture, vec!["script.js"]);
+}
+
+#[test]
+fn it_builds_with_webpack_function_config_js_with_env() {
+    let fixture = Fixture::new();
+    fixture.scaffold_webpack();
+
+    fixture.create_file(
+        "webpack.config.js",
+        r#"
+        module.exports = (env, args) => {
+            if (env !== "test" || args !== undefined) {
+                console.error("env is", env)
+                throw new Error("assertion failed");
+            }
+            return { entry: "./index.js" }
+        };
+    "#,
+    );
+
+    let env_config = EnvConfig::zoneless(true);
+    let mut wrangler_toml = WranglerToml::with_env("test", env_config);
+    wrangler_toml.target_type = Some("webpack");
+    wrangler_toml.webpack_config = Some("webpack.config.js");
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    build_with_env(&fixture, "test");
 }
 
 #[test]
@@ -379,6 +406,22 @@ fn build_creates_assets(fixture: &Fixture, script_names: Vec<&str>) -> (String, 
         str::from_utf8(&output.stdout).unwrap().to_string(),
         str::from_utf8(&output.stderr).unwrap().to_string(),
     )
+}
+
+fn build_with_env(fixture: &Fixture, env: &str) {
+    let mut build = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    build.current_dir(fixture.get_path());
+    build.arg("build");
+    build.arg(format!("--env={}", env));
+
+    let output = build.output().expect("failed to execute process");
+
+    println!(
+        "{:?} {:?}",
+        str::from_utf8(&output.stdout).unwrap().to_string(),
+        str::from_utf8(&output.stderr).unwrap().to_string(),
+    );
+    assert!(output.status.success());
 }
 
 fn build_fails_with(fixture: &Fixture, expected_message: &str) {

@@ -7,6 +7,7 @@ pub fn run(
     user: Option<GlobalUser>,
     options: PreviewOpt,
     verbose: bool,
+    build_env: Option<String>,
 ) -> Result<(), failure::Error> {
-    preview(target, user, options, verbose)
+    preview(target, user, options, verbose, build_env)
 }

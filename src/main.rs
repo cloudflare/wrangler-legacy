@@ -715,7 +715,8 @@ fn run() -> Result<(), failure::Error> {
             headless,
         };
 
-        commands::preview(target, user, options, verbose)?;
+        let env = env.map(|s| s.to_string());
+        commands::preview(target, user, options, verbose, env)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
         let port: Option<u16> = matches
@@ -729,7 +730,8 @@ fn run() -> Result<(), failure::Error> {
         let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
-        commands::dev::dev(target, user, host, port, ip, verbose)?;
+        let env = env.map(|s| s.to_string());
+        commands::dev::dev(target, user, host, port, ip, verbose, env)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -759,7 +761,8 @@ fn run() -> Result<(), failure::Error> {
 
         let verbose = matches.is_present("verbose");
 
-        commands::publish(&user, &mut target, deploy_config, verbose)?;
+        let env = env.map(|s| s.to_string());
+        commands::publish(&user, &mut target, deploy_config, verbose, env)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;

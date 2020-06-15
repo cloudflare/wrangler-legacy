@@ -25,6 +25,7 @@ const RUST_IGNORE: &[&str] = &["pkg", "target", "worker/generated"];
 // outputting a build event to tx.
 pub fn watch_and_build(
     target: &Target,
+    build_env: Option<String>,
     tx: Option<mpsc::Sender<()>>,
 ) -> Result<(), failure::Error> {
     let target_type = &target.target_type;
@@ -102,7 +103,7 @@ pub fn watch_and_build(
             });
         }
         TargetType::Webpack => {
-            wranglerjs::run_build_and_watch(target, tx)?;
+            wranglerjs::run_build_and_watch(target, build_env, tx)?;
         }
     }
 

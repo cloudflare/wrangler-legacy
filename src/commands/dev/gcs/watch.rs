@@ -14,9 +14,10 @@ pub fn watch_for_changes(
     preview_id: Arc<Mutex<String>>,
     session_id: &str,
     verbose: bool,
+    build_env: Option<String>,
 ) -> Result<(), failure::Error> {
     let (sender, receiver) = mpsc::channel();
-    watch_and_build(&target, Some(sender))?;
+    watch_and_build(&target, build_env, Some(sender))?;
 
     while receiver.recv().is_ok() {
         let user = user.clone();

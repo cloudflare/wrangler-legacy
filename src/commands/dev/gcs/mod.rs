@@ -23,6 +23,7 @@ pub fn dev(
     user: Option<GlobalUser>,
     server_config: ServerConfig,
     verbose: bool,
+    build_env: Option<String>,
 ) -> Result<(), failure::Error> {
     // setup the session
     let session_id = get_session_id()?;
@@ -61,6 +62,7 @@ pub fn dev(
                 Arc::clone(&preview_id),
                 &session_id,
                 verbose,
+                build_env,
             )
         });
     }

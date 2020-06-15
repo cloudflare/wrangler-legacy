@@ -35,8 +35,8 @@ use guarded_command::GuardedCommand;
 // executable and wait for completion. The file will receive a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(target: &Target) -> Result<(), failure::Error> {
-    let (mut command, temp_file, bundle) = setup_build(target)?;
+pub fn run_build(target: &Target, build_env: Option<String>) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(target, build_env)?;
 
     log::info!("Running {:?}", command);
 
@@ -55,8 +55,12 @@ pub fn run_build(target: &Target) -> Result<(), failure::Error> {
     }
 }
 
-pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<(), failure::Error> {
-    let (mut command, temp_file, bundle) = setup_build(target)?;
+pub fn run_build_and_watch(
+    target: &Target,
+    build_env: Option<String>,
+    tx: Option<Sender<()>>,
+) -> Result<(), failure::Error> {
+    let (mut command, temp_file, bundle) = setup_build(target, build_env)?;
     command.arg("--watch=1");
 
     let is_site = target.site.clone();
@@ -149,7 +153,10 @@ fn write_wranglerjs_output(
 }
 
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
-fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::Error> {
+fn setup_build(
+    target: &Target,
+    build_env: Option<String>,
+) -> Result<(Command, PathBuf, Bundle), failure::Error> {
     for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
@@ -191,6 +198,10 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
             None
         }
     };
+
+    if let Some(build_env) = build_env {
+        command.arg(format!("--webpack-env={}", build_env));
+    }
 
     // if webpack_config is not configured in the manifest
     // we infer the entry based on {package.json} and pass it to {wranglerjs}

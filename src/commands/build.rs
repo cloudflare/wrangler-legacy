@@ -13,5 +13,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), failure::Error> {
     let manifest = Manifest::new(&config_path)?;
     let env = matches.value_of("env");
     let target = &manifest.get_target(env, false)?;
-    build(&target)
+
+    let env = env.map(|s| s.to_string());
+    build(&target, env)
 }
