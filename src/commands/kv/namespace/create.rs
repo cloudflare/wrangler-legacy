@@ -18,7 +18,10 @@ pub fn run(
     kv::validate_target(&target)?;
     validate_binding(binding)?;
 
-    let title = format!("{}-{}", target.name, binding);
+    let mut title = format!("{}-{}", target.name, binding);
+    if is_preview {
+        title.push_str("_preview");
+    }
     let msg = format!("Creating namespace with title \"{}\"", title);
     message::working(&msg);
 
