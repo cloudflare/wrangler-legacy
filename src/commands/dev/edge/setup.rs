@@ -1,7 +1,6 @@
-use crate::commands::kv::bucket::AssetManifest;
-use crate::commands::publish;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
+use crate::sites::{self, AssetManifest};
 use crate::upload;
 
 use reqwest::Url;
@@ -17,7 +16,7 @@ pub(super) fn upload(
 ) -> Result<String, failure::Error> {
     let client = crate::http::legacy_auth_client(&user);
     if target.site.is_some() {
-        publish::add_site_namespace(user, target, true)?;
+        sites::add_namespace(user, target, true)?;
     }
 
     let session_config = get_session_config(deploy_config);
