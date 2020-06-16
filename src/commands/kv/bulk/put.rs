@@ -15,8 +15,6 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message;
 
-use super::bulk_api_client;
-
 pub fn run(
     target: &Target,
     user: &GlobalUser,
@@ -52,7 +50,6 @@ pub fn run(
         None
     };
 
-    let client = bulk_api_client(user)?;
     while !pairs.is_empty() {
         let p: Vec<KeyValuePair> = if pairs.len() > MAX_PAIRS {
             pairs.drain(0..MAX_PAIRS).collect()
@@ -60,7 +57,7 @@ pub fn run(
             pairs.drain(0..).collect()
         };
 
-        put(&client, target, namespace_id, &p)?;
+        put(target, &user, namespace_id, &p)?;
 
         if let Some(pb) = &progress_bar {
             pb.inc(p.len() as u64);
