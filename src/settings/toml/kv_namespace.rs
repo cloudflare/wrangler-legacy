@@ -1,15 +1,20 @@
 use std::fmt;
-use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
 use crate::settings::binding::Binding;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct ConfigKvNamespace {
+    pub binding: String,
+    pub id: Option<String>,
+    pub preview_id: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct KvNamespace {
     pub id: String,
     pub binding: String,
-    pub bucket: Option<PathBuf>,
 }
 
 impl fmt::Display for KvNamespace {

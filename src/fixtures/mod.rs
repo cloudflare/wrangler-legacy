@@ -9,7 +9,6 @@ use std::path::PathBuf;
 use std::thread;
 
 use tempfile::TempDir;
-use toml;
 
 const BUNDLE_OUT: &str = "worker";
 
