@@ -1,4 +1,4 @@
-#![allow(clippy::redundant_closure)]
+#![cfg_attr(feature = "strict", deny(warnings))]
 
 extern crate text_io;
 extern crate tokio;
@@ -9,17 +9,21 @@ use std::str::FromStr;
 
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use exitfailure::ExitFailure;
+use url::Url;
 
 use wrangler::commands;
 use wrangler::commands::kv::key::KVMetaData;
 use wrangler::installer;
+use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
 use wrangler::terminal::{emoji, interactive, message, styles};
+use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
+    let latest_version_receiver = background_check_for_updates();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
         // self-installation, otherwise just continue as usual.
@@ -32,9 +36,26 @@ fn main() -> Result<(), ExitFailure> {
             installer::install();
         }
     }
-    Ok(run()?)
+    run()?;
+    if let Ok(latest_version) = latest_version_receiver.try_recv() {
+        let latest_version = styles::highlight(latest_version.to_string());
+        let new_version_available = format!(
+            "A new version of Wrangler ({}) is available!",
+            latest_version
+        );
+        let update_message = "You can learn more about updating here:".to_string();
+        let update_docs_url =
+            styles::url("https://developers.cloudflare.com/workers/quickstart#updating-the-cli");
+
+        message::billboard(&format!(
+            "{}\n{}\n{}",
+            new_version_available, update_message, update_docs_url
+        ));
+    }
+    Ok(())
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn run() -> Result<(), failure::Error> {
     // Define commonly used arguments and arg groups up front for consistency
     // The args below are for KV Subcommands
@@ -53,6 +74,10 @@ fn run() -> Result<(), failure::Error> {
     let kv_namespace_specifier_group = ArgGroup::with_name("namespace-specifier")
         .args(&["binding", "namespace-id"])
         .required(true);
+    let kv_preview_arg = Arg::with_name("preview")
+        .help("applies the command to the preview namespace when combined with --binding")
+        .long("preview")
+        .takes_value(false);
 
     // This arg is for any action that uses environments (e.g. KV subcommands, publish)
     let environment_arg = Arg::with_name("env")
@@ -70,6 +95,13 @@ fn run() -> Result<(), failure::Error> {
         .takes_value(true)
         .index(1)
         .value_name("VAR_NAME");
+
+    let verbose_arg = Arg::with_name("verbose")
+        .long("verbose")
+        .takes_value(false)
+        .help("toggle verbose output");
+
+    let silent_verbose_arg = verbose_arg.clone().hidden(true);
 
     let matches = App::new(format!("{}{} wrangler", emoji::WORKER, emoji::SPARKLES))
         .version(env!("CARGO_PKG_VERSION"))
@@ -94,19 +126,25 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(kv_preview_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all namespaces on your Cloudflare account")
+                        .arg(silent_verbose_arg.clone())
                 )
+                .arg(silent_verbose_arg.clone())
         )
         .subcommand(
             SubCommand::with_name("kv:key")
@@ -115,11 +153,13 @@ fn run() -> Result<(), failure::Error> {
                     emoji::KEY
                 ))
                 .setting(AppSettings::SubcommandRequiredElseHelp)
+                .arg(silent_verbose_arg.clone())
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Put a key-value pair into a namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -157,12 +197,14 @@ fn run() -> Result<(), failure::Error> {
                             .long("path")
                             .takes_value(false)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("get")
                         .about("Get a key's value from a namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -171,12 +213,14 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete a key and its value from a namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -185,12 +229,14 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all keys in a namespace. Produces JSON output")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -201,6 +247,7 @@ fn run() -> Result<(), failure::Error> {
                             .value_name("STRING")
                             .takes_value(true),
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -209,12 +256,14 @@ fn run() -> Result<(), failure::Error> {
                     "{} Interact with multiple Workers KV key-value pairs at once",
                     emoji::BICEP
                 ))
+                .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Upload multiple key-value pairs to a namespace")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
+                        .arg(kv_preview_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(
@@ -223,12 +272,14 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .arg(kv_binding_arg.clone())
                         .arg(kv_namespace_id_arg.clone())
                         .group(kv_namespace_specifier_group.clone())
+                        .arg(kv_preview_arg.clone())
                         .arg(environment_arg.clone())
                         .about("Delete multiple keys and their values from a namespace")
                         .arg(
@@ -237,6 +288,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -245,11 +297,13 @@ fn run() -> Result<(), failure::Error> {
                     "{} List or delete worker routes.",
                     emoji::ROUTE
                 ))
+                .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all routes associated with a zone (outputs json)")
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -261,6 +315,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(silent_verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -269,23 +324,27 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a secret that can be referenced in the worker script",
                     emoji::SECRET
                 ))
+                .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Create or update a secret variable for a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
                         .about("Delete a secret variable from a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all secrets for a script")
                         .arg(environment_arg.clone())
+                        .arg(silent_verbose_arg.clone())
                 )
         )
         .subcommand(
@@ -317,7 +376,8 @@ fn run() -> Result<(), failure::Error> {
                         .long("site")
                         .takes_value(false)
                         .help("initializes a Workers Sites project. Overrides `type` and `template`"),
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("init")
@@ -343,7 +403,8 @@ fn run() -> Result<(), failure::Error> {
                         .long("site")
                         .takes_value(false)
                         .help("initializes a Workers Sites project. Overrides `type` and `template`"),
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("build")
@@ -357,7 +418,8 @@ fn run() -> Result<(), failure::Error> {
                         .short("e")
                         .long("env")
                         .takes_value(true)
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("preview")
@@ -401,12 +463,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("watch")
                         .takes_value(false),
                 )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("Toggle verbose output"),
-                ),
+                .arg(verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("dev")
@@ -442,12 +499,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("ip")
                         .takes_value(true)
                 )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("toggle verbose output")
-                ),
+                .arg(verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("publish")
@@ -462,12 +514,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("env")
                         .takes_value(true)
                 )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("toggle verbose output")
-                )
+                .arg(verbose_arg.clone())
                 .arg(
                     Arg::with_name("release")
                         .hidden(true)
@@ -493,7 +540,8 @@ fn run() -> Result<(), failure::Error> {
                         .help("do not verify provided credentials before writing out Wrangler config file")
                         .long("no-verify")
                         .takes_value(false),
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
         .subcommand(
             SubCommand::with_name("subdomain")
@@ -505,12 +553,17 @@ fn run() -> Result<(), failure::Error> {
                     Arg::with_name("name")
                         .help("the subdomain on workers.dev you'd like to reserve")
                         .index(1),
-                ),
+                )
+                .arg(silent_verbose_arg.clone()),
         )
-        .subcommand(SubCommand::with_name("whoami").about(&*format!(
-            "{} Retrieve your user info and test your auth config",
-            emoji::SLEUTH
-        )))
+        .subcommand(
+            SubCommand::with_name("whoami")
+                .about(&*format!(
+                    "{} Retrieve your user info and test your auth config",
+                    emoji::SLEUTH
+                ))
+                .arg(silent_verbose_arg.clone()),
+        )
         .subcommand(
             SubCommand::with_name("tail")
                 .about(&*format!("{} Aggregate logs from production worker", emoji::TAIL))
@@ -534,16 +587,12 @@ fn run() -> Result<(), failure::Error> {
                         .long("metrics")
                         .takes_value(true)
                 )
-                .arg(
-                    Arg::with_name("verbose")
-                        .long("verbose")
-                        .takes_value(false)
-                        .help("Toggle verbose output"),
-                )
+                .arg(verbose_arg.clone())
         )
         .get_matches();
 
     let config_path = Path::new("./wrangler.toml");
+    let mut is_preview = false;
 
     let not_recommended_msg = styles::warning("(Not Recommended)");
     let recommended_cmd_msg = styles::highlight("`wrangler config --api-key`");
@@ -625,7 +674,8 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+        is_preview = true;
+        let target = manifest.get_target(env, is_preview)?;
 
         // the preview command can be called with or without a Global User having been config'd
         // so we convert this Result into an Option
@@ -640,11 +690,32 @@ fn run() -> Result<(), failure::Error> {
             None => None,
         };
 
-        let watch = matches.is_present("watch");
+        let livereload = matches.is_present("watch");
         let verbose = matches.is_present("verbose");
         let headless = matches.is_present("headless");
 
-        commands::preview(target, user, method, url, body, watch, verbose, headless)?;
+        let method = HttpMethod::from_str(method)?;
+        let url = Url::parse(url)?;
+
+        // Validate the URL scheme
+        failure::ensure!(
+            match url.scheme() {
+                "http" => true,
+                "https" => true,
+                _ => false,
+            },
+            "Invalid URL scheme (use either \"https\" or \"http\")"
+        );
+
+        let options = PreviewOpt {
+            method,
+            url,
+            body,
+            livereload,
+            headless,
+        };
+
+        commands::preview(target, user, options, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
         let port: Option<u16> = matches
@@ -654,7 +725,8 @@ fn run() -> Result<(), failure::Error> {
         let ip = matches.value_of("ip");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+        is_preview = true;
+        let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
         commands::dev::dev(target, user, host, port, ip, verbose)?;
@@ -682,7 +754,7 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let mut target = manifest.get_target(env)?;
+        let mut target = manifest.get_target(env, is_preview)?;
         let deploy_config = manifest.deploy_config(env)?;
 
         let verbose = matches.is_present("verbose");
@@ -692,7 +764,7 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+        let target = manifest.get_target(env, is_preview)?;
 
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -746,7 +818,7 @@ fn run() -> Result<(), failure::Error> {
             ("put", Some(create_matches)) => {
                 let name = create_matches.value_of("name");
                 let env = create_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, is_preview)?;
                 if let Some(name) = name {
                     commands::secret::create_secret(&name, &user, &target)?;
                 }
@@ -754,14 +826,14 @@ fn run() -> Result<(), failure::Error> {
             ("delete", Some(delete_matches)) => {
                 let name = delete_matches.value_of("name");
                 let env = delete_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, is_preview)?;
                 if let Some(name) = name {
                     commands::secret::delete_secret(&name, &user, &target)?;
                 }
             }
             ("list", Some(list_matches)) => {
                 let env = list_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, is_preview)?;
                 commands::secret::list_secrets(&user, &target)?;
             }
             ("", None) => message::warn("secret expects a subcommand"),
@@ -770,17 +842,17 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
-
         match kv_matches.subcommand() {
             ("create", Some(create_matches)) => {
+                is_preview = create_matches.is_present("preview");
                 let env = create_matches.value_of("env");
-                let target = manifest.get_target(env)?;
                 let binding = create_matches.value_of("binding").unwrap();
-                commands::kv::namespace::create(&target, env, &user, binding)?;
+                commands::kv::namespace::create(&manifest, is_preview, env, &user, binding)?;
             }
             ("delete", Some(delete_matches)) => {
+                is_preview = delete_matches.is_present("preview");
                 let env = delete_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, is_preview)?;
                 let namespace_id = match delete_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -794,7 +866,7 @@ fn run() -> Result<(), failure::Error> {
             }
             ("list", Some(list_matches)) => {
                 let env = list_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, is_preview)?;
                 commands::kv::namespace::list(&target, &user)?;
             }
             ("", None) => message::warn("kv:namespace expects a subcommand"),
@@ -808,8 +880,9 @@ fn run() -> Result<(), failure::Error> {
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
+                is_preview = subcommand_matches.is_present("preview");
                 let env = subcommand_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, is_preview)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -871,8 +944,9 @@ fn run() -> Result<(), failure::Error> {
         let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
+                is_preview = subcommand_matches.is_present("preview");
                 let env = subcommand_matches.value_of("env");
-                let target = manifest.get_target(env)?;
+                let target = manifest.get_target(env, is_preview)?;
                 let namespace_id = match subcommand_matches.value_of("binding") {
                     Some(namespace_binding) => {
                         commands::kv::get_namespace_id(&target, namespace_binding)?
@@ -902,7 +976,7 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(matches) = matches.subcommand_matches("tail") {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
-        let target = manifest.get_target(env)?;
+        let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new()?;
 
         let tunnel_port: Option<u16> = matches

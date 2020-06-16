@@ -8,10 +8,10 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
-use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
 use crate::settings::toml::{Target, TargetType};
+use crate::sites::AssetManifest;
 use crate::wranglerjs;
 
 use plain_text::PlainText;
@@ -27,7 +27,7 @@ pub fn build(
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
-    let kv_namespaces = target.kv_namespaces();
+    let kv_namespaces = &target.kv_namespaces;
     let mut text_blobs: Vec<TextBlob> = Vec::new();
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
@@ -55,7 +55,7 @@ pub fn build(
             let assets = ProjectAssets::new(
                 script_path,
                 wasm_modules,
-                kv_namespaces,
+                kv_namespaces.to_vec(),
                 text_blobs,
                 plain_texts,
             )?;
@@ -72,7 +72,7 @@ pub fn build(
             let assets = ProjectAssets::new(
                 script_path,
                 wasm_modules,
-                kv_namespaces,
+                kv_namespaces.to_vec(),
                 text_blobs,
                 plain_texts,
             )?;
@@ -105,7 +105,7 @@ pub fn build(
             let assets = ProjectAssets::new(
                 script_path,
                 wasm_modules,
-                kv_namespaces,
+                kv_namespaces.to_vec(),
                 text_blobs,
                 plain_texts,
             )?;

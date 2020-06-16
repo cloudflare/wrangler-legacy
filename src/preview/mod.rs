@@ -11,7 +11,6 @@ mod upload;
 pub use upload::upload;
 
 use std::process::Command;
-use std::str::FromStr;
 use std::sync::mpsc::channel;
 use std::thread;
 
@@ -29,38 +28,21 @@ use crate::watch::watch_and_build;
 pub fn preview(
     mut target: Target,
     user: Option<GlobalUser>,
-    method: &str,
-    url: &str,
-    body: Option<String>,
-    livereload: bool,
+    options: PreviewOpt,
     verbose: bool,
-    headless: bool,
 ) -> Result<(), failure::Error> {
-    let method = HttpMethod::from_str(method)?;
-    let url = Url::parse(url)?;
-
-    // Validate the URL scheme
-    failure::ensure!(
-        match url.scheme() {
-            "http" => true,
-            "https" => true,
-            _ => false,
-        },
-        "Invalid URL scheme (use either \"https\" or \"http\")"
-    );
-
     build(&target)?;
 
     let sites_preview: bool = target.site.is_some();
 
     let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
 
-    let request_payload = RequestPayload::create(method, url, body);
+    let request_payload = RequestPayload::create(options.method, options.url, options.body);
 
     let session = &request_payload.session;
     let browser_url = &request_payload.browser_url;
 
-    if livereload {
+    if options.livereload {
         // explicitly use 127.0.0.1, since localhost can resolve to 2 addresses
         let server = WebSocket::new(|out| FiddleMessageServer { out })?.bind("127.0.0.1:0")?;
 
@@ -68,7 +50,7 @@ pub fn preview(
 
         info!("Opened websocket server on port {}", ws_port);
 
-        if !headless {
+        if !options.headless {
             open_browser(&format!(
                 "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}",
                 session, ws_port, script_id, browser_url
@@ -76,7 +58,7 @@ pub fn preview(
         }
 
         // Make a the initial request to the URL
-        client_request(&request_payload, &script_id, &sites_preview);
+        client_request(&request_payload, &script_id, sites_preview);
 
         let broadcaster = server.broadcaster();
         thread::spawn(move || server.run());
@@ -85,21 +67,30 @@ pub fn preview(
             user.as_ref(),
             broadcaster,
             verbose,
-            headless,
+            options.headless,
             request_payload,
         )?;
     } else {
-        if !headless {
+        if !options.headless {
             open_browser(&format!(
                 "https://cloudflareworkers.com/?hide_editor#{0}:{1}",
                 script_id, browser_url
             ))?;
         }
 
-        client_request(&request_payload, &script_id, &sites_preview);
+        client_request(&request_payload, &script_id, sites_preview);
     }
 
     Ok(())
+}
+
+#[derive(Clone, Debug)]
+pub struct PreviewOpt {
+    pub method: HttpMethod,
+    pub url: Url,
+    pub body: Option<String>,
+    pub livereload: bool,
+    pub headless: bool,
 }
 
 fn open_browser(url: &str) -> Result<(), failure::Error> {
@@ -118,7 +109,7 @@ fn open_browser(url: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn client_request(payload: &RequestPayload, script_id: &String, sites_preview: &bool) {
+fn client_request(payload: &RequestPayload, script_id: &str, sites_preview: bool) {
     let client = http::client();
 
     let method = &payload.method;
@@ -132,7 +123,7 @@ fn client_request(payload: &RequestPayload, script_id: &String, sites_preview: &
         HttpMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
     };
 
-    let msg = if *sites_preview {
+    let msg = if sites_preview {
         "Your Worker is a Workers Site, please preview it in browser window.".to_string()
     } else {
         format!("Your Worker responded with: {}", worker_res)
@@ -141,8 +132,8 @@ fn client_request(payload: &RequestPayload, script_id: &String, sites_preview: &
 }
 
 fn get(
-    url: &String,
-    cookie: &String,
+    url: &str,
+    cookie: &str,
     client: &reqwest::blocking::Client,
 ) -> Result<String, failure::Error> {
     let res = client.get(url).header("Cookie", cookie).send();
@@ -150,8 +141,8 @@ fn get(
 }
 
 fn post(
-    url: &String,
-    cookie: &String,
+    url: &str,
+    cookie: &str,
     body: &Option<String>,
     client: &reqwest::blocking::Client,
 ) -> Result<String, failure::Error> {
@@ -159,7 +150,7 @@ fn post(
         Some(s) => client
             .post(url)
             .header("Cookie", cookie)
-            .body(format!("{}", s))
+            .body(s.to_string())
             .send(),
         None => client.post(url).header("Cookie", cookie).send(),
     };
@@ -181,9 +172,9 @@ fn watch_for_changes(
     let (tx, rx) = channel();
     watch_and_build(&target, Some(tx))?;
 
-    while let Ok(_) = rx.recv() {
+    while rx.recv().is_ok() {
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {
-            let script_id = format!("{}", new_id);
+            let script_id = new_id.to_string();
 
             let msg = FiddleMessage {
                 session_id: request_payload.session.clone(),
@@ -201,7 +192,7 @@ fn watch_for_changes(
                 }
             }
 
-            client_request(&request_payload, &script_id, &sites_preview);
+            client_request(&request_payload, &script_id, sites_preview);
         }
     }
 

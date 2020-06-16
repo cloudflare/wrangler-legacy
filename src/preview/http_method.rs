@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+#[derive(Clone, Debug)]
 pub enum HttpMethod {
     Get,
     Post,

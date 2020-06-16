@@ -21,11 +21,51 @@ use twox_hash::XxHash64;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
-use crate::settings::toml::Target;
+use crate::kv::namespace::{upsert, UpsertedNamespace};
+use crate::settings::global_user::GlobalUser;
+use crate::settings::toml::{KvNamespace, Target};
+use crate::terminal::message;
 
 pub const KEY_MAX_SIZE: usize = 512;
 // Oddly enough, metadata.len() returns a u64, not usize.
 pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
+
+// Updates given Target with kv_namespace binding for a static site assets KV namespace.
+pub fn add_namespace(
+    user: &GlobalUser,
+    target: &mut Target,
+    preview: bool,
+) -> Result<KvNamespace, failure::Error> {
+    let title = if preview {
+        format!("__{}-{}", target.name, "workers_sites_assets_preview")
+    } else {
+        format!("__{}-{}", target.name, "workers_sites_assets")
+    };
+
+    let site_namespace = match upsert(target, &user, title)? {
+        UpsertedNamespace::Created(namespace) => {
+            let msg = format!("Created namespace for Workers Site \"{}\"", namespace.title);
+            message::working(&msg);
+
+            namespace
+        }
+        UpsertedNamespace::Reused(namespace) => {
+            let msg = format!("Using namespace for Workers Site \"{}\"", namespace.title);
+            message::working(&msg);
+
+            namespace
+        }
+    };
+
+    let site_namespace = KvNamespace {
+        binding: "__STATIC_CONTENT".to_string(),
+        id: site_namespace.id,
+    };
+
+    target.add_kv_namespace(site_namespace.clone());
+
+    Ok(site_namespace)
+}
 
 // Returns the hashed key and value pair for all files in a directory.
 pub fn directory_keys_values(
@@ -258,7 +298,7 @@ mod tests {
     fn make_target(site: Site) -> Target {
         Target {
             account_id: "".to_string(),
-            kv_namespaces: None,
+            kv_namespaces: Vec::new(),
             name: "".to_string(),
             target_type: TargetType::JavaScript,
             webpack_config: None,

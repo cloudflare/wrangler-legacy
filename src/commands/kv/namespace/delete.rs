@@ -1,17 +1,16 @@
-use cloudflare::endpoints::workerskv::remove_namespace::RemoveNamespace;
-use cloudflare::framework::apiclient::ApiClient;
-
 use crate::commands::kv;
+use crate::http;
+use crate::kv::namespace::delete;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
 use crate::terminal::message;
 
-pub fn delete(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::Error> {
+pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
-    let client = kv::api_client(user)?;
+    let client = http::cf_v4_client(user)?;
 
-    match interactive::delete(&format!(
+    match interactive::confirm(&format!(
         "Are you sure you want to delete namespace {}?",
         id
     )) {
@@ -26,11 +25,7 @@ pub fn delete(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failur
     let msg = format!("Deleting namespace {}", id);
     message::working(&msg);
 
-    let response = client.request(&RemoveNamespace {
-        account_identifier: &target.account_id,
-        namespace_identifier: id,
-    });
-
+    let response = delete(client, target, id);
     match response {
         Ok(_) => {
             message::success("Success");

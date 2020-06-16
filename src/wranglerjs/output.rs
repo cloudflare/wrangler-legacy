@@ -1,7 +1,7 @@
 use crate::terminal::emoji;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use number_prefix::{NumberPrefix, Prefixed, Standalone};
+use number_prefix::NumberPrefix;
 use serde::Deserialize;
 use std::io::prelude::*;
 
@@ -48,14 +48,14 @@ impl WranglerjsOutput {
         let bytes_left = MAX_PROJECT_SIZE.checked_sub(compressed_size);
 
         let human_size = match NumberPrefix::binary(compressed_size as f64) {
-            Standalone(bytes) => format!("{} bytes", bytes),
-            Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
+            NumberPrefix::Standalone(bytes) => format!("{} bytes", bytes),
+            NumberPrefix::Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
         };
 
         let human_leftover = if let Some(bytes_left) = bytes_left {
             let msg = match NumberPrefix::binary(bytes_left as f64) {
-                Standalone(bytes) => format!("{} bytes", bytes),
-                Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
+                NumberPrefix::Standalone(bytes) => format!("{} bytes", bytes),
+                NumberPrefix::Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
             };
             Some(msg)
         } else {

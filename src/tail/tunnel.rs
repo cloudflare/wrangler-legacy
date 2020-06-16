@@ -35,7 +35,7 @@ impl Tunnel {
 
         let child = command
             .spawn()
-            .expect(&format!("{} failed to spawn", command_name));
+            .unwrap_or_else(|_| panic!("{} failed to spawn", command_name));
 
         Ok(Tunnel { child })
     }
