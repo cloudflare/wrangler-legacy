@@ -1,5 +1,23 @@
 # Changelog
 
+## ⏳ 1.10.1
+
+- ### Fixes
+
+  - **reinstate longer timeout on bulk uploads for sites - [ashleymichal], [pull/1391]**
+
+      In 1.10.0 we introduced a bug that reduced the timeout for bulk uploads back to the standard 30 seconds. This fixes that and restores the five minute bulk upload/delete timeout.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1391]: https://github.com/cloudflare/wrangler/pull/1391
+
+  - **Increase default timeout to one minute - [EverlastingBugstopper], [pull/1392]**
+
+      For folks with slower connections we're increasing the timeout for API requests.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1392]: https://github.com/cloudflare/wrangler/pull/1392
+
 ## ♻️ 1.10.0
 
 - ### Features
