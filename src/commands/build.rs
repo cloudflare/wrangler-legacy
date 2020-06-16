@@ -12,6 +12,6 @@ pub fn run(matches: &ArgMatches) -> Result<(), failure::Error> {
     let config_path = Path::new(DEFAULT_CONFIG_PATH);
     let manifest = Manifest::new(&config_path)?;
     let env = matches.value_of("env");
-    let target = &manifest.get_target(env)?;
+    let target = &manifest.get_target(env, false)?;
     build(&target)
 }

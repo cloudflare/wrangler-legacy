@@ -53,9 +53,9 @@ pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
         let printer = print_ws_messages(read);
 
         // run the heartbeat and message printer in parallel
-        match tokio::try_join!(heartbeat, keep_alive_to_ws, printer) {
-            Ok(_) => break Ok(()),
-            Err(_) => {}
+        if tokio::try_join!(heartbeat, keep_alive_to_ws, printer).is_ok() {
+            break Ok(());
+        } else {
         }
     }
 }
@@ -68,12 +68,25 @@ async fn print_ws_messages(
             Ok(message) => {
                 let message_text = message.into_text().unwrap();
                 log::info!("{}", message_text);
+
                 let parsed_message: Result<protocol::Runtime, failure::Error> =
                     serde_json::from_str(&message_text).map_err(|e| {
                         failure::format_err!("this event could not be parsed:\n{}", e)
                     });
+
                 if let Ok(protocol::Runtime::Event(event)) = parsed_message {
-                    println!("{}", event);
+                    // Try to parse json to pretty print, otherwise just print string
+                    let json_parse: Result<serde_json::Value, serde_json::Error> =
+                        serde_json::from_str(&*event.to_string());
+                    if let Ok(json) = json_parse {
+                        if let Ok(json_str) = serde_json::to_string_pretty(&json) {
+                            println!("{}", json_str);
+                        } else {
+                            println!("{}", &json);
+                        }
+                    } else {
+                        println!("{}", event);
+                    }
                 }
             }
             Err(error) => return Err(error.into()),

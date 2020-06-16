@@ -1,10 +1,10 @@
-use super::wrangler_toml::{EnvConfig, WranglerToml, TEST_ENV_NAME};
-
 use std::str::FromStr;
 
 use crate::settings::toml::route::Route;
 use crate::settings::toml::Manifest;
 use crate::settings::toml::{DeployConfig, Zoned, Zoneless};
+
+use crate::fixtures::{EnvConfig, WranglerToml, TEST_ENV_NAME};
 
 // Test consts
 const ZONE_ID: &str = "samplezoneid";

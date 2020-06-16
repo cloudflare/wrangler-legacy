@@ -20,10 +20,8 @@ pub fn generate(
         Err(_) => true,
     };
 
-    let new_name: String;
-
-    if dirname_exists {
-        new_name = match generate_name(name) {
+    let new_name = if dirname_exists {
+        match generate_name(name) {
             Ok(val) => val,
             Err(_) => {
                 log::debug!(
@@ -32,10 +30,10 @@ pub fn generate(
                 );
                 String::from(name)
             }
-        };
+        }
     } else {
-        new_name = String::from(name);
-    }
+        String::from(name)
+    };
 
     log::info!("Generating a new worker project with name '{}'", new_name);
     run_generate(&new_name, template)?;
@@ -54,12 +52,7 @@ pub fn generate(
 }
 
 pub fn run_generate(name: &str, template: &str) -> Result<(), failure::Error> {
-    let tool_name = "cargo-generate";
-    let tool_author = "ashleygwilliams";
-    let is_binary = true;
-    let version = install::get_latest_version(tool_name)?;
-    let binary_path =
-        install::install(tool_name, tool_author, is_binary, version)?.binary(tool_name)?;
+    let binary_path = install::install_cargo_generate()?;
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
 
@@ -74,7 +67,7 @@ fn generate_name(name: &str) -> Result<String, failure::Error> {
     let mut new_name = construct_name(&name, num);
 
     while entry_names.contains(&OsString::from(&new_name)) {
-        num = num + 1;
+        num += 1;
         new_name = construct_name(&name, num);
     }
     Ok(new_name)

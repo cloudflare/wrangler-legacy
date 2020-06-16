@@ -6,8 +6,8 @@ pub use package::Package;
 
 use reqwest::blocking::Client;
 
-use crate::commands::kv::bucket::AssetManifest;
 use crate::settings::toml::Target;
+use crate::sites::AssetManifest;
 
 pub fn script(
     client: &Client,

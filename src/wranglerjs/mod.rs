@@ -167,15 +167,6 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     let wranglerjs_path = install().expect("could not install wranglerjs");
     command.arg(wranglerjs_path);
 
-    // export WASM_PACK_PATH for use by wasm-pack-plugin
-    // https://github.com/wasm-tool/wasm-pack-plugin/blob/caca20df84782223f002735a8a2e99b2291f957c/plugin.js#L13
-    let tool_name = "wasm-pack";
-    let tool_author = "rustwasm";
-    let version = install::get_latest_version(tool_name)?;
-    let wasm_pack_path =
-        install::install(tool_name, tool_author, true, version)?.binary("wasm-pack")?;
-    command.env("WASM_PACK_PATH", wasm_pack_path);
-
     // create a temp file for IPC with the wranglerjs process
     let mut temp_file = env::temp_dir();
     temp_file.push(format!(".wranglerjs_output{}", random_chars(5)));
@@ -183,7 +174,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     command.arg(format!(
         "--output-file={}",
-        temp_file.clone().to_str().unwrap().to_string()
+        temp_file.to_str().unwrap().to_string()
     ));
 
     let bundle = Bundle::new(&build_dir);
@@ -316,7 +307,7 @@ fn install() -> Result<PathBuf, failure::Error> {
         wranglerjs_path.path()
     };
 
-    run_npm_install(&wranglerjs_path.clone()).expect("could not install wranglerjs dependencies");
+    run_npm_install(&wranglerjs_path).expect("could not install wranglerjs dependencies");
     Ok(wranglerjs_path)
 }
 
