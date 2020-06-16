@@ -188,10 +188,10 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         message::warn(
             "KV Namespaces are not supported in preview without setting API credentials and account_id",
         );
-      
+
         target.kv_namespaces = Vec::new();
     }
-    let script_upload_form = upload::form::build(&target, None)?;
+    let script_upload_form = upload::form::build(&target, None, None)?;
     let client = http::client();
     let res = client
         .post(create_address)
