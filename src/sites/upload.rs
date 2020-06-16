@@ -1,9 +1,7 @@
 use indicatif::{ProgressBar, ProgressStyle};
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
-use cloudflare::framework::apiclient::ApiClient;
 
-use crate::http;
 use crate::kv::bulk::put;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -21,7 +19,6 @@ pub fn upload_files(
     mut pairs: Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {
     if !pairs.is_empty() {
-        let client = http::cf_v4_client(user)?;
         // Iterate over all key-value pairs and create batches of uploads, each of which are
         // maximum 5K key-value pairs in size OR maximum ~50MB in size. Upload each batch
         // as it is created.
@@ -40,14 +37,14 @@ pub fn upload_files(
         while !(pairs.is_empty() && key_value_batch.is_empty()) {
             if pairs.is_empty() {
                 // Last batch to upload
-                upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
+                upload_batch(target, &user, namespace_id, &mut key_value_batch)?;
             } else {
                 let pair = pairs.pop().unwrap();
                 if key_count + 1 > PAIRS_MAX_COUNT
                 // Keep upload size small to keep KV bulk API happy
                 || key_pair_bytes + pair.key.len() + pair.value.len() > UPLOAD_MAX_SIZE
                 {
-                    upload_batch(&client, target, namespace_id, &mut key_value_batch)?;
+                    upload_batch(target, &user, namespace_id, &mut key_value_batch)?;
                     if let Some(p) = &pb {
                         p.inc(key_value_batch.len() as u64);
                     }
@@ -72,13 +69,13 @@ pub fn upload_files(
 }
 
 fn upload_batch(
-    client: &impl ApiClient,
     target: &Target,
+    user: &GlobalUser,
     namespace_id: &str,
     key_value_batch: &mut Vec<KeyValuePair>,
 ) -> Result<(), failure::Error> {
     // If partial upload fails (e.g. server error), return that error message
-    put(client, target, namespace_id, &key_value_batch)?;
+    put(target, user, namespace_id, &key_value_batch)?;
     // Can clear batch now that we've uploaded it
     key_value_batch.clear();
     Ok(())

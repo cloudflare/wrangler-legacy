@@ -1,21 +1,42 @@
+use std::time::Duration;
+
 use cloudflare::endpoints::workerskv::delete_bulk::DeleteBulk;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
 use cloudflare::framework::apiclient::ApiClient;
+use cloudflare::framework::auth::Credentials;
+use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
 
 use crate::commands::kv::format_error;
-use crate::http;
+use crate::http::feature::headers;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
 pub const MAX_PAIRS: usize = 10000;
 
+// Create a special API client that has a longer timeout than usual, given that KV operations
+// can be lengthy if payloads are large.
+fn bulk_api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
+    let config = HttpApiClientConfig {
+        http_timeout: Duration::from_secs(5 * 60),
+        default_headers: headers(None),
+    };
+
+    HttpApiClient::new(
+        Credentials::from(user.to_owned()),
+        config,
+        Environment::Production,
+    )
+}
+
 pub fn put(
-    client: &impl ApiClient,
     target: &Target,
+    user: &GlobalUser,
     namespace_id: &str,
     pairs: &[KeyValuePair],
 ) -> Result<(), failure::Error> {
+    let client = bulk_api_client(user)?;
+
     match client.request(&WriteBulk {
         account_identifier: &target.account_id,
         namespace_identifier: namespace_id,
@@ -32,7 +53,7 @@ pub fn delete(
     namespace_id: &str,
     keys: Vec<String>,
 ) -> Result<(), failure::Error> {
-    let client = http::cf_v4_client(user)?;
+    let client = bulk_api_client(user)?;
 
     let response = client.request(&DeleteBulk {
         account_identifier: &target.account_id,
