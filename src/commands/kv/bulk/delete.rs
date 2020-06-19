@@ -10,7 +10,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::commands::kv;
 use crate::kv::bulk::delete;
-use crate::kv::bulk::MAX_PAIRS;
+use crate::kv::bulk::BATCH_KEY_MAX;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
@@ -36,12 +36,13 @@ pub fn run(
         Err(e) => failure::bail!(e),
     }
 
-    let pairs: Result<Vec<KeyValuePair>, failure::Error> = match &metadata(filename) {
+    let keys: Vec<String> = match &metadata(filename) {
         Ok(file_type) if file_type.is_file() => {
             let data = fs::read_to_string(filename)?;
-            let keys_vec = serde_json::from_str(&data);
+            let keys_vec: Result<Vec<KeyValuePair>, serde_json::Error> =
+                serde_json::from_str(&data);
             match keys_vec {
-                Ok(keys_vec) => Ok(keys_vec),
+                Ok(keys_vec) => keys_vec.iter().map(|kv| { kv.key.to_owned() }).collect(),
                 Err(_) => failure::bail!("Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]")
             }
         }
@@ -49,11 +50,11 @@ pub fn run(
         Err(e) => failure::bail!("{}", e),
     };
 
-    let mut keys: Vec<String> = pairs?.iter().map(|kv| kv.key.to_owned()).collect();
-
     let len = keys.len();
+
     message::working(&format!("deleting {} key value pairs", len));
-    let progress_bar = if len > MAX_PAIRS {
+
+    let progress_bar = if len > BATCH_KEY_MAX {
         let pb = ProgressBar::new(len as u64);
         pb.set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
         Some(pb)
@@ -61,21 +62,7 @@ pub fn run(
         None
     };
 
-    while !keys.is_empty() {
-        let p: Vec<String> = if keys.len() > MAX_PAIRS {
-            keys.drain(0..MAX_PAIRS).collect()
-        } else {
-            keys.drain(0..).collect()
-        };
-
-        if let Err(e) = delete(target, user, namespace_id, p) {
-            failure::bail!("{}", e);
-        }
-
-        if let Some(pb) = &progress_bar {
-            pb.inc(keys.len() as u64);
-        }
-    }
+    delete(target, user, namespace_id, keys, &progress_bar)?;
 
     if let Some(pb) = &progress_bar {
         pb.finish_with_message(&format!("deleted {} key value pairs", len));
