@@ -101,10 +101,10 @@ fn run() -> Result<(), failure::Error> {
         .takes_value(false)
         .help("toggle verbose output");
 
-    let wrangler_file = Arg::with_name("file")
-        .short("f")
+    let wrangler_file = Arg::with_name("config")
+        .short("c")
         .takes_value(true)
-        .long("file")
+        .long("config")
         .help("File path to override the default wrangler.toml file ");
 
     let silent_verbose_arg = verbose_arg.clone().hidden(true);
@@ -608,12 +608,11 @@ fn run() -> Result<(), failure::Error> {
         )
         .get_matches();
 
-
     let config_file = matches
-        .value_of("file")
+        .value_of("config")
         .unwrap_or(commands::DEFAULT_CONFIG_PATH);
     let config_path = Path::new(config_file);
-  
+
     let mut is_preview = false;
 
     let not_recommended_msg = styles::warning("(Not Recommended)");

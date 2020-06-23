@@ -442,5 +442,5 @@ fn it_builds_with_webpack_target_webworker_with_custom_file() {
     let file_name = "wrangler-custom.toml";
     fixture.create_file(file_name, &toml::to_string(&wrangler_toml).unwrap());
 
-    build_creates_assets_with_arg(&fixture, vec!["script.js"], vec!["-f", file_name]);
+    build_creates_assets_with_arg(&fixture, vec!["script.js"], vec!["-c", file_name]);
 }
