@@ -2,11 +2,9 @@ extern crate base64;
 
 mod manifest;
 mod sync;
-mod upload;
 
 pub use manifest::AssetManifest;
 pub use sync::sync;
-pub use upload::upload_files;
 
 use std::ffi::OsString;
 use std::fs;
@@ -298,7 +296,7 @@ mod tests {
     fn make_target(site: Site) -> Target {
         Target {
             account_id: "".to_string(),
-            kv_namespaces: None,
+            kv_namespaces: Vec::new(),
             name: "".to_string(),
             target_type: TargetType::JavaScript,
             webpack_config: None,

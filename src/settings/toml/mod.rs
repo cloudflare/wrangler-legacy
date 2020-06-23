@@ -9,7 +9,7 @@ mod target_type;
 
 pub use deploy_config::{DeployConfig, Zoned, Zoneless};
 pub use environment::Environment;
-pub use kv_namespace::KvNamespace;
+pub use kv_namespace::{ConfigKvNamespace, KvNamespace};
 pub use manifest::Manifest;
 pub use route::Route;
 pub use site::Site;

@@ -10,7 +10,7 @@ pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::
     kv::validate_target(target)?;
     let client = http::cf_v4_client(user)?;
 
-    match interactive::delete(&format!(
+    match interactive::confirm(&format!(
         "Are you sure you want to delete namespace {}?",
         id
     )) {
