@@ -1,10 +1,12 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+use indicatif::{ProgressBar, ProgressStyle};
+
 use crate::build;
 use crate::deploy;
 use crate::http::{self, Feature};
-use crate::kv::bulk::delete;
+use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 use crate::sites;
@@ -15,7 +17,6 @@ pub fn publish(
     user: &GlobalUser,
     target: &mut Target,
     deploy_config: DeployConfig,
-    verbose: bool,
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
 
@@ -33,10 +34,27 @@ pub fn publish(
             sites::sync(target, user, &site_namespace.id, &path)?;
 
         // First, upload all existing files in bucket directory
-        if verbose {
-            message::info("Preparing to upload updated files...");
+        message::working("Uploading site files");
+        let upload_progress_bar = if to_upload.len() > bulk::BATCH_KEY_MAX {
+            let upload_progress_bar = ProgressBar::new(to_upload.len() as u64);
+            upload_progress_bar
+                .set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
+            Some(upload_progress_bar)
+        } else {
+            None
+        };
+
+        bulk::put(
+            target,
+            user,
+            &site_namespace.id,
+            to_upload,
+            &upload_progress_bar,
+        )?;
+
+        if let Some(pb) = upload_progress_bar {
+            pb.finish_with_message("Done Uploading");
         }
-        sites::upload_files(target, user, &site_namespace.id, to_upload)?;
 
         let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
 
@@ -47,11 +65,29 @@ pub fn publish(
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
-            if verbose {
-                message::info("Deleting stale files...");
-            }
+            message::info("Deleting stale files...");
 
-            delete(target, user, &site_namespace.id, to_delete)?;
+            let delete_progress_bar = if to_delete.len() > bulk::BATCH_KEY_MAX {
+                let delete_progress_bar = ProgressBar::new(to_delete.len() as u64);
+                delete_progress_bar.set_style(
+                    ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"),
+                );
+                Some(delete_progress_bar)
+            } else {
+                None
+            };
+
+            bulk::delete(
+                target,
+                user,
+                &site_namespace.id,
+                to_delete,
+                &delete_progress_bar,
+            )?;
+
+            if let Some(pb) = delete_progress_bar {
+                pb.finish_with_message("Done deleting");
+            }
         }
     } else {
         let upload_client = http::legacy_auth_client(user);

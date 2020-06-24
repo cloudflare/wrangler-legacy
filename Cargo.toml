@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.10.0"
+version = "1.10.2"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -32,7 +32,7 @@ http = "0.2.1"
 hyper = "0.13.6"
 hyper-tls = "0.4.1"
 ignore = "0.4.16"
-indicatif = "0.14.0"
+indicatif = "0.15.0"
 lazy_static = "1.4.0"
 log = "0.4.8"
 notify = "4.0.15"
@@ -58,7 +58,7 @@ toml = "0.5.6"
 twox-hash = "1.5.0"
 url = "2.1.1"
 uuid = { version = "0.8", features = ["v4"] }
-which = "4.0.0"
+which = "4.0.1"
 ws = "0.9.1"
 
 [dev-dependencies]
