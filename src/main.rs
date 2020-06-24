@@ -813,7 +813,7 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(route_matches) = matches.subcommand_matches("route") {
         let user = settings::global_user::GlobalUser::new()?;
         let config_path = Path::new(
-            matches
+            route_matches
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
@@ -850,7 +850,7 @@ fn run() -> Result<(), failure::Error> {
     } else if let Some(secrets_matches) = matches.subcommand_matches("secret") {
         log::info!("Getting project settings");
         let config_path = Path::new(
-            matches
+            secrets_matches
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
@@ -885,7 +885,7 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
         let config_path = Path::new(
-            matches
+            kv_matches
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
@@ -923,7 +923,7 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
         let config_path = Path::new(
-            matches
+            kv_matches
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
@@ -992,7 +992,7 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
         let config_path = Path::new(
-            matches
+            kv_matches
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
