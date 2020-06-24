@@ -45,9 +45,11 @@ pub struct Manifest {
 
 impl Manifest {
     pub fn new(config_path: &Path) -> Result<Self, failure::Error> {
+        let file_name = config_path.file_name().unwrap().to_str().unwrap();
+        let message = format!("{} not found; run `wrangler init` to create one.", file_name);
         failure::ensure!(
             config_path.exists(),
-            "wrangler.toml not found; run `wrangler init` to create one."
+            message
         );
         let config = read_config(config_path)?;
 
