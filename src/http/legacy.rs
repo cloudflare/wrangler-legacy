@@ -3,7 +3,7 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::redirect::Policy;
 use std::time::Duration;
 
-use crate::http::{feature::headers, Feature};
+use crate::http::{feature::headers, Feature, DEFAULT_HTTP_TIMEOUT_SECONDS};
 use crate::settings::global_user::GlobalUser;
 
 // TODO: remove this and replace it entirely with cloudflare-rs
@@ -37,7 +37,7 @@ fn builder() -> ClientBuilder {
     let builder = reqwest::blocking::Client::builder();
     builder
         .connect_timeout(Duration::from_secs(10))
-        .timeout(Duration::from_secs(30))
+        .timeout(Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS))
 }
 
 fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) {
