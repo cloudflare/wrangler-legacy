@@ -21,7 +21,7 @@ pub struct Environment {
     pub webpack_config: Option<String>,
     pub private: Option<bool>,
     pub site: Option<Site>,
-    #[serde(rename = "kv-namespaces")]
+    #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub vars: Option<HashMap<String, String>>,
 }
