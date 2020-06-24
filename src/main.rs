@@ -484,7 +484,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Start a local server for developing your worker",
                     emoji::EAR
                 ))
-                .arg(wrangler_file.clone())
                 .arg(
                     Arg::with_name("env")
                         .help("environment to build")
@@ -513,7 +512,8 @@ fn run() -> Result<(), failure::Error> {
                         .long("ip")
                         .takes_value(true)
                 )
-                .arg(verbose_arg.clone()),
+                .arg(verbose_arg.clone())
+                .arg(wrangler_file.clone())
         )
         .subcommand(
             SubCommand::with_name("publish")
@@ -608,11 +608,6 @@ fn run() -> Result<(), failure::Error> {
         )
         .get_matches();
 
-    let config_file = matches
-        .value_of("config")
-        .unwrap_or(commands::DEFAULT_CONFIG_PATH);
-    let config_path = Path::new(config_file);
-
     let mut is_preview = false;
 
     let not_recommended_msg = styles::warning("(Not Recommended)");
@@ -693,6 +688,11 @@ fn run() -> Result<(), failure::Error> {
         commands::build(matches)?;
     } else if let Some(matches) = matches.subcommand_matches("preview") {
         log::info!("Getting project settings");
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         is_preview = true;
@@ -744,6 +744,11 @@ fn run() -> Result<(), failure::Error> {
             .map(|p| p.parse().expect("--port expects a number"));
         let host = matches.value_of("host");
         let ip = matches.value_of("ip");
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         is_preview = true;
@@ -773,6 +778,11 @@ fn run() -> Result<(), failure::Error> {
         }
 
         log::info!("Getting project settings");
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env, is_preview)?;
@@ -781,6 +791,11 @@ fn run() -> Result<(), failure::Error> {
         commands::publish(&user, &mut target, deploy_config)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env, is_preview)?;
@@ -797,6 +812,11 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(route_matches) = matches.subcommand_matches("route") {
         let user = settings::global_user::GlobalUser::new()?;
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
 
@@ -829,6 +849,11 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(secrets_matches) = matches.subcommand_matches("secret") {
         log::info!("Getting project settings");
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
@@ -859,6 +884,11 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
         match kv_matches.subcommand() {
@@ -892,6 +922,11 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
@@ -956,6 +991,11 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
 
@@ -993,6 +1033,11 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(matches) = matches.subcommand_matches("tail") {
+        let config_path = Path::new(
+            matches
+                .value_of("config")
+                .unwrap_or(commands::DEFAULT_CONFIG_PATH),
+        );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let target = manifest.get_target(env, is_preview)?;
