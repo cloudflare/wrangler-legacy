@@ -4,11 +4,10 @@ use reqwest::blocking::Client;
 use serde::Deserialize;
 
 use crate::http;
-use crate::kv::bulk::delete;
+use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::sites;
-use crate::sites::{sync, upload_files, AssetManifest};
+use crate::sites::{add_namespace, sync, AssetManifest};
 use crate::terminal::{message, styles};
 use crate::upload;
 
@@ -59,7 +58,7 @@ pub fn upload(
                 let client = http::legacy_auth_client(&user);
 
                 if let Some(site_config) = target.site.clone() {
-                    let site_namespace = sites::add_namespace(user, target, true)?;
+                    let site_namespace = add_namespace(user, target, true)?;
 
                     let path = Path::new(&site_config.bucket);
                     let (to_upload, to_delete, asset_manifest) =
@@ -70,7 +69,7 @@ pub fn upload(
                         message::info("Uploading updated files...");
                     }
 
-                    upload_files(target, user, &site_namespace.id, to_upload)?;
+                    bulk::put(target, user, &site_namespace.id, to_upload, &None)?;
 
                     let preview = authenticated_upload(&client, &target, Some(asset_manifest))?;
                     if !to_delete.is_empty() {
@@ -78,7 +77,7 @@ pub fn upload(
                             message::info("Deleting stale files...");
                         }
 
-                        delete(target, user, &site_namespace.id, to_delete)?;
+                        bulk::delete(target, user, &site_namespace.id, to_delete, &None)?;
                     }
 
                     preview
