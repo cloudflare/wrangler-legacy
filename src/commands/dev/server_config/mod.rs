@@ -16,7 +16,7 @@ impl ServerConfig {
         ip: Option<&str>,
         port: Option<u16>,
     ) -> Result<Self, failure::Error> {
-        let ip = ip.unwrap_or("[::1]");
+        let ip = ip.unwrap_or("127.0.0.1");
         let port = port.unwrap_or(8787);
         let addr = format!("{}:{}", ip, port);
         let listening_address = match TcpListener::bind(&addr) {
