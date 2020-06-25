@@ -514,7 +514,7 @@ fn run() -> Result<(), failure::Error> {
                         .long("env")
                         .takes_value(true)
                 )
-                .arg(verbose_arg.clone())
+                .arg(silent_verbose_arg.clone())
                 .arg(
                     Arg::with_name("release")
                         .hidden(true)
@@ -757,9 +757,7 @@ fn run() -> Result<(), failure::Error> {
         let mut target = manifest.get_target(env, is_preview)?;
         let deploy_config = manifest.deploy_config(env)?;
 
-        let verbose = matches.is_present("verbose");
-
-        commands::publish(&user, &mut target, deploy_config, verbose)?;
+        commands::publish(&user, &mut target, deploy_config)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
         let manifest = settings::toml::Manifest::new(config_path)?;
