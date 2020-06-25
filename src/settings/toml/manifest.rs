@@ -317,7 +317,7 @@ impl Manifest {
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
             );
             message::help(&format!(
-                "You can find your {} and {} in the right sidebar of the zone overview tab at {}",
+                "You can find your {} in the right sidebar of your account's Workers page, and {} in the right sidebar of a zone's overview tab at {}",
                 account_id_msg, zone_id_msg, dash_url
             ));
             if has_top_level_fields {
