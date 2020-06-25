@@ -1,11 +1,9 @@
 pub mod dependencies;
-mod krate;
 pub mod target;
 
 use crate::terminal::emoji;
 
 use binary_install::{Cache, Download};
-use krate::Krate;
 use log::info;
 use semver::Version;
 
@@ -163,13 +161,6 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
         );
         Some(url)
     }
-}
-
-pub fn get_latest_version(tool_name: &str) -> Result<Version, failure::Error> {
-    // TODO: return the latest version pulled from github api, not via Krate.
-    let latest_version = Krate::new(tool_name)?.max_version;
-    Version::parse(&latest_version)
-        .map_err(|e| failure::format_err!("could not parse latest version\n{}", e))
 }
 
 fn get_wrangler_cache() -> Result<Cache, failure::Error> {
