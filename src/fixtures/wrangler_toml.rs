@@ -36,7 +36,7 @@ pub struct EnvConfig {
     pub webpack_config: Option<&'static str>,
     pub private: Option<bool>,
     pub site: Option<SiteConfig>,
-    #[serde(rename = "kv-namespaces")]
+    #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvConfig>>,
     pub vars: Option<HashMap<&'static str, &'static str>>,
 }
@@ -94,7 +94,7 @@ pub struct WranglerToml {
     pub webpack_config: Option<&'static str>,
     pub private: Option<bool>,
     pub env: Option<HashMap<&'static str, EnvConfig>>,
-    #[serde(rename = "kv-namespaces")]
+    #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvConfig>>,
     pub site: Option<SiteConfig>,
     pub vars: Option<HashMap<&'static str, &'static str>>,
