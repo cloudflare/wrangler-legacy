@@ -1,5 +1,17 @@
 # Changelog
 
+## 💪 1.10.2
+
+- ### Fixes
+
+  - **Fixes bug preventing `wrangler publish` from deleting over 10000 keys - [ashleymichal], [issue/1398] [pull/1400]**
+
+    In 1.10.0 we removed the limit on bulk KV PUT and DELETE operations by batching the values but missed batched deletes for Workers Sites. Now with some refactoring all batched operations use the same logic and have the same behavior.
+
+    [ashleymichal]: https://github.com/ashleymichal
+    [pull/1400]: https://github.com/cloudflare/wrangler/pull/1400
+    [issue/1398]: https://github.com/cloudflare/wrangler/issues/1398
+
 ## ⏳ 1.10.1
 
 - ### Fixes
@@ -2001,7 +2013,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
     [issue/234]: https://github.com/cloudflare/wrangler/issue/234
     [pull/236]: https://github.com/cloudflare/wrangler/pull/236
 
-  - **Terminal messaging abstraction - [ashleymical], [issue/219][pull/263]**
+  - **Terminal messaging abstraction - [ashleymichal], [issue/219][pull/263]**
 
     We've made improvements to Wrangler's terminal output functionality, with support for various log levels and implementations in Wrangler's API for easily using the log levels in future development.
 
@@ -2017,7 +2029,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
     // message::warn, message::user_error, message::working, message::preview
     ```
 
-    [ashleymical]: https://github.com/ashleymichal
+    [ashleymichal]: https://github.com/ashleymichal
     [issue/219]: https://github.com/cloudflare/wrangler/issues/219
     [pull/263]: https://github.com/cloudflare/wrangler/pull/263
 
@@ -2033,11 +2045,11 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
 
     [pull/285]: https://github.com/cloudflare/wrangler/pull/285
 
-  - **Refactor: Conditional per command in main - [ashleymical], [pull/279]**
+  - **Refactor: Conditional per command in main - [ashleymichal], [pull/279]**
 
     The `src/main.rs` file in Wrangler has been rewritten so that the layout of the file is easier to read.
 
-    [ashleymical]: https://github.com/ashleymical
+    [ashleymichal]: https://github.com/ashleymichal
     [pull/279]: https://github.com/cloudflare/wrangler/pull/279
 
   - **Add an authenticated HTTP client - [Electroid], [issue/238][pull/267]**
