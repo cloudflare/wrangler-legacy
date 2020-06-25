@@ -177,6 +177,16 @@ impl Manifest {
         }
     }
 
+    pub fn get_account_id(&self, environment_name: Option<&str>) -> Result<String, failure::Error> {
+        let environment = self.get_environment(environment_name)?;
+        if let Some(environment) = environment {
+            if let Some(account_id) = &environment.account_id {
+                return Ok(account_id.to_string());
+            }
+        }
+        Ok(self.account_id.to_string())
+    }
+
     pub fn get_target(
         &self,
         environment_name: Option<&str>,
