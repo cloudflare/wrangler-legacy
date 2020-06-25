@@ -9,7 +9,7 @@ use config::{Config, File};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::commands::{ validate_worker_name, DEFAULT_CONFIG_PATH } ;
+use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
 use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
