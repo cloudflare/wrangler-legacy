@@ -9,7 +9,7 @@ use config::{Config, File};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::commands::validate_worker_name;
+use crate::commands::{ validate_worker_name, DEFAULT_CONFIG_PATH } ;
 use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
@@ -46,8 +46,8 @@ pub struct Manifest {
 impl Manifest {
     pub fn new(config_path: &Path) -> Result<Self, failure::Error> {
         let file_name = config_path.file_name().unwrap().to_str().unwrap();
-        let mut message = format!("{} not found");
-        if file_name == commands::DEFAULT_CONFIG_PATH {
+        let mut message = format!("{} not found", file_name);
+        if config_path.to_str().unwrap() == DEFAULT_CONFIG_PATH {
             message.push_str("; run `wrangler init` to create one.");
         }
         failure::ensure!(config_path.exists(), message);
