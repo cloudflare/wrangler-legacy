@@ -48,7 +48,7 @@ impl Manifest {
         let file_name = config_path.file_name().unwrap().to_str().unwrap();
         let mut message = format!("{} not found");
         if file_name == commands::DEFAULT_CONFIG_PATH {
-          message.push_str("; run `wrangler init` to create one.");
+            message.push_str("; run `wrangler init` to create one.");
         }
         failure::ensure!(config_path.exists(), message);
         let config = read_config(config_path)?;
