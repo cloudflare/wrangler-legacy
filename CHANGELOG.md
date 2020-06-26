@@ -1,5 +1,67 @@
 # Changelog
 
+## 🐹 1.10.3
+
+- ### Features
+
+  - **`wrangler dev` listens on IPv4 by default - [EverlastingBugstopper], [issue/1198] [pull/1405]**
+
+    Before, `wrangler dev` would listen on `[::1]:8787` by default, and call it `localhost` in the terminal output. This was confusing for developers whose `localhost` resolves to IPv4 and not IPv6. Now, `wrangler dev` will listen on `127.0.0.1:8787` by default. This can be overriden by passing values via the `--ip` and `--port` flags.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1405]: https://github.com/cloudflare/wrangler/pull/1405
+    [issue/1198]: https://github.com/cloudflare/wrangler/issues/1198
+
+  - **Clarify where to find your `account_id` in the dashboard - [EverlastingBugstopper], [issue/1364] [pull/1395]**
+
+    When you create a new project with `wrangler generate`, it directs you to the Cloudflare Dashboard to find your `account_id` and `zone_id`. However, this flow only worked if you had your own domain. Developers who only use `workers.dev` for their Workers were directed to a page that does not exist! This message now points everyone to a page where they can find the information that they need.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1395]: https://github.com/cloudflare/wrangler/pull/1395
+    [issue/1364]: https://github.com/cloudflare/wrangler/issues/1364
+
+- ### Fixes
+
+  - **Allow creation of preview namespaces when a namespace already exists in `wrangler.toml` - [EverlastingBugstopper], [pull/1414]**
+
+    When we introduced KV preview namespaces, we made sure to add nice messages when creating new namespaces so people could easily add the new namespace id to their wrangler.toml in the correct place.
+
+    However, we missed a very common case where developers already have a production namespace defined in their `wrangler.toml` and they want to add a preview namespace. When this is the case, we returned an error message intended to only be thrown when running either wrangler preview or wrangler dev. This is now fixed!
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1414]: https://github.com/cloudflare/wrangler/pull/1414
+
+  - **Allow multiple response header values in `wrangler dev` - [EverlastingBugstopper], [issue/1412] [pull/1413]**
+
+    Before, `wrangler dev` would not properly handle response headers that have multiple values. We would iterate over all response headers coming from the Workers runtime, and "insert" them into the header map instead of appending them. This is no longer the case and response headers should now work as expected. More details on this issue can be found [here](https://github.com/cloudflare/wrangler/issues/1412#issuecomment-649764506).
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1413]: https://github.com/cloudflare/wrangler/pull/1413
+    [issue/1412]: https://github.com/cloudflare/wrangler/issues/1412
+
+  - **Fix kv-namespace/kv_namespace behavior in environments - [EverlastingBugstopper], [issue/1408] [pull/1409]**
+
+    When KV namespace support was initially added to Wrangler, we documented using `kv-namespaces` in `wrangler.toml`. Unfortunately, the `-` was not consistent with other fields such as `zone_id` and `account_id`, so the decision was made to allow both `kv-namespaces` and `kv_namespaces`. When this change was introduced, it worked with top level `kv_namespaces` entries, but not in environments. This is now fixed! You can now use `kv_namespaces` everywhere you can use `kv-namespaces`.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1409]: https://github.com/cloudflare/wrangler/pull/1409
+    [issue/1408]: https://github.com/cloudflare/wrangler/issues/1408
+
+- ### Maintenance
+
+  - **Add link to testing docs in CONTRIBUTING.md - [luanraithz], [pull/1416]**
+
+    [luanraithz]: https://github.com/luanraithz
+    [pull/1416]: https://github.com/cloudflare/wrangler/pull/1416
+
+  - **Remove unused `Krate::install` code - [EverlastingBugstopper], [issue/247] [pull/1410]**
+
+    When we introduced our own version checking for Wrangler we stopped using `Krate::install`. This PR just removes that unused code.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1410]: https://github.com/cloudflare/wrangler/pull/1410
+    [issue/Issue #]: https://github.com/cloudflare/wrangler/issues/247
+
 ## 💪 1.10.2
 
 - ### Fixes
