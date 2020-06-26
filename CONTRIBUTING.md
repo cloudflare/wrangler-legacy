@@ -54,7 +54,7 @@ If you're working on a specific issue, make sure there is buy-in from the Wrangl
 
 ### Passing tests
 
-When adding features or fixing bugs, we'd love if you would add a test! There are two types of tests in Wrangler, integration and unit tests. To execute tests, you can run `cargo test`. You can read more about testing [here](). All tests must pass when submitting a new PR, this is enforced by our GitHub Actions runners, which run each test on Windows, MacOS, and Linux.
+When adding features or fixing bugs, we'd love if you would add a test! There are two types of tests in Wrangler, integration and unit tests. To execute tests, you can run `cargo test`. You can read more about testing [here](https://doc.rust-lang.org/rust-by-example/testing.html). All tests must pass when submitting a new PR, this is enforced by our GitHub Actions runners, which run each test on Windows, MacOS, and Linux.
 
 ### Proper formatting
 
