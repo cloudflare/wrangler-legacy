@@ -88,7 +88,7 @@ pub(super) async fn serve(
     println!(
         "{} Listening on http://{}",
         emoji::EAR,
-        listening_address.to_string().replace("[::1]", "localhost")
+        listening_address.to_string()
     );
     if let Err(e) = server.await {
         eprintln!("server error: {}", e);
