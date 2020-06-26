@@ -19,7 +19,7 @@ pub fn upsert(
     title: String,
 ) -> Result<UpsertedNamespace, failure::Error> {
     let client = http::cf_v4_client(user)?;
-    let response = create(&client, target, &title);
+    let response = create(&client, &target.account_id, &title);
 
     match response {
         Ok(success) => Ok(UpsertedNamespace::Created(success.result)),

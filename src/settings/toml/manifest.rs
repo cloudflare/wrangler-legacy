@@ -179,6 +179,25 @@ impl Manifest {
         }
     }
 
+    pub fn get_account_id(&self, environment_name: Option<&str>) -> Result<String, failure::Error> {
+        let environment = self.get_environment(environment_name)?;
+        let mut result = self.account_id.to_string();
+        if let Some(environment) = environment {
+            if let Some(account_id) = &environment.account_id {
+                result = account_id.to_string();
+            }
+        }
+        if result.is_empty() {
+            let mut msg = "Your wrangler.toml is missing an account_id field".to_string();
+            if let Some(environment_name) = environment_name {
+                msg.push_str(&format!(" in [env.{}]", environment_name));
+            }
+            failure::bail!("{}", &msg)
+        } else {
+            Ok(result)
+        }
+    }
+
     pub fn get_target(
         &self,
         environment_name: Option<&str>,
