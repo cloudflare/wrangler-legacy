@@ -728,7 +728,7 @@
 
     This PR adds a GitHub Actions badge to our README, indicating whether the repo's builds are currently passing:
 
-    [![Github Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Rust%20Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
+    [![GitHub Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Rust%20Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions)
 
     [pull/1030]: https://github.com/cloudflare/wrangler/pull/1030
 
@@ -1164,9 +1164,9 @@
     [issue/723]: https://github.com/cloudflare/wrangler/pull/792
     [pull/792]: https://github.com/cloudflare/wrangler/issues/723
 
-  - **Allow installs to utilize Wrangler binaries via a caching proxy instead of Github directly - [gabbifish], [pull/797]**
+  - **Allow installs to utilize Wrangler binaries via a caching proxy instead of GitHub directly - [gabbifish], [pull/797]**
 
-    To avoid dependency on one external service, Github, we enabled a cache proxy (using Workers!) for installations of Wrangler.
+    To avoid dependency on one external service, GitHub, we enabled a cache proxy (using Workers!) for installations of Wrangler.
 
     [gabbifish]: https://github.com/cloudflare/wrangler/pull/797
 
@@ -1676,7 +1676,7 @@
 
   - **Install current version, not latest - [ashleygwilliams], [issue/418][pull/419]**
 
-    Previously the NPM installer for wrangler would always pull the most recent release from Github releases, and the installer did not increase version numbers when Wrangler did. Many users found this confusing. Now the installer will increment versions along with Wrangler releases, and point at specific versions rather than the most recent one at the time of installation.
+    Previously the NPM installer for wrangler would always pull the most recent release from GitHub releases, and the installer did not increase version numbers when Wrangler did. Many users found this confusing. Now the installer will increment versions along with Wrangler releases, and point at specific versions rather than the most recent one at the time of installation.
 
     [ashleygwilliams]: https://github.com/ashleygwilliams
     [issue/418]: https://github.com/cloudflare/wrangler/issues/418
@@ -1755,9 +1755,9 @@
     [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
     [pull/383]: https://github.com/cloudflare/wrangler/pull/383
 
-  - **Update issue templates to fit Github's data model - [EverlastingBugstopper], [pull/387]**
+  - **Update issue templates to fit GitHub's data model - [EverlastingBugstopper], [pull/387]**
 
-    Our previous issue templates were not picked up by Github's user interface. This PR updates the templates to fit the accepted data model, and adds some style tweaks to make the templates easier to use.
+    Our previous issue templates were not picked up by GitHub's user interface. This PR updates the templates to fit the accepted data model, and adds some style tweaks to make the templates easier to use.
 
     [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
     [pull/387]: https://github.com/cloudflare/wrangler/pull/387
