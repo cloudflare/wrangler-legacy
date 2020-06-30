@@ -83,15 +83,13 @@ fn preview_request(
         HeaderValue::from_str(&host).expect("Could not create host header"),
     );
 
-    parts.headers.insert(
-        HeaderName::from_static("cf-workers-preview-token"),
-        HeaderValue::from_str(&preview_token).expect("Could not create header for preview id"),
-    );
-
     // TODO: figure out how to http _or_ https
-    parts.uri = format!("https://{}{}", host, path)
-        .parse()
-        .expect("Could not construct preview url");
+    parts.uri = format!(
+        "https://{}{}?cf_workers_preview_token={}",
+        host, path, preview_token
+    )
+    .parse()
+    .expect("Could not construct preview url");
 
     let req = Request::from_parts(parts, body);
 
