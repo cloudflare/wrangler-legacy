@@ -4,15 +4,13 @@ use cloudflare::endpoints::workerskv::WorkersKvNamespace;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::{ApiFailure, ApiSuccess};
 
-use crate::settings::toml::Target;
-
 pub fn create(
     client: &impl ApiClient,
-    target: &Target,
+    account_id: &str,
     title: &str,
 ) -> Result<ApiSuccess<WorkersKvNamespace>, ApiFailure> {
     client.request(&CreateNamespace {
-        account_identifier: &target.account_id,
+        account_identifier: account_id,
         params: CreateNamespaceParams {
             title: title.to_string(),
         },

@@ -60,7 +60,7 @@ fn strip_response_headers_prefix(parts: &mut ResponseParts) -> Result<(), failur
         if name.starts_with(HEADER_PREFIX) {
             let header_name = &name[HEADER_PREFIX.len()..];
             let header_name = HeaderName::from_bytes(header_name.as_bytes())?;
-            headers.insert(header_name, value.clone());
+            headers.append(header_name, value.clone());
         }
     }
     parts.headers = headers;
@@ -80,4 +80,30 @@ fn set_response_status(parts: &mut ResponseParts) -> Result<(), failure::Error> 
     let status_vec: Vec<&str> = status.to_str()?.split(' ').collect();
     parts.status = StatusCode::from_str(status_vec[0])?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hyper::Response;
+
+    #[test]
+    fn headers_are_appended() {
+        let first_cookie = "chocolate chip".to_string();
+        let second_cookie = "peanut butter".to_string();
+        let response = Response::builder()
+            .header("cf-ew-raw-Set-Cookie", &first_cookie)
+            .header("cf-ew-raw-Set-Cookie", &second_cookie)
+            .body(())
+            .unwrap();
+        let (mut parts, body) = response.into_parts();
+        strip_response_headers_prefix(&mut parts).unwrap();
+        let response = Response::from_parts(parts, body);
+        let cookie_jar = response.headers().get_all("Set-Cookie");
+
+        let mut iter = cookie_jar.iter();
+        assert_eq!(&first_cookie, iter.next().unwrap());
+        assert_eq!(&second_cookie, iter.next().unwrap());
+        assert!(iter.next().is_none());
+    }
 }

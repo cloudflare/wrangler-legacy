@@ -14,11 +14,11 @@ pub fn run(
     user: &GlobalUser,
     binding: &str,
 ) -> Result<(), failure::Error> {
-    let target = manifest.get_target(env, is_preview)?;
-    kv::validate_target(&target)?;
+    let account_id = manifest.get_account_id(env)?;
+    let worker_name = manifest.worker_name(env);
     validate_binding(binding)?;
 
-    let mut title = format!("{}-{}", target.name, binding);
+    let mut title = format!("{}-{}", worker_name, binding);
     if is_preview {
         title.push_str("_preview");
     }
@@ -26,7 +26,7 @@ pub fn run(
     message::working(&msg);
 
     let client = http::cf_v4_client(user)?;
-    let result = create(&client, &target, &title);
+    let result = create(&client, &account_id, &title);
 
     match result {
         Ok(success) => {
