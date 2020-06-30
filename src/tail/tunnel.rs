@@ -6,6 +6,8 @@ use tokio::process::Child;
 use tokio::process::Command;
 use tokio::sync::oneshot::Receiver;
 
+use crate::install::install_cloudflared;
+
 pub struct Tunnel {
     child: Child,
 }
@@ -21,16 +23,13 @@ impl Tunnel {
         metrics_port: u16,
         verbose: bool,
     ) -> Result<Tunnel, failure::Error> {
-        let tool_name = PathBuf::from("cloudflared");
-        // TODO: Finally get cloudflared release binaries distributed on GitHub so we could
-        // simply uncomment the line below.
-        // let binary_path = install::install(tool_name, "cloudflare")?.binary(tool_name)?;
+        let binary_path = install_cloudflared()?;
 
         let tunnel_url = format!("localhost:{}", tunnel_port);
         let metrics_url = format!("localhost:{}", metrics_port);
         let args = ["tunnel", "--url", &tunnel_url, "--metrics", &metrics_url];
 
-        let mut command = command(&args, &tool_name, verbose);
+        let mut command = command(&args, &binary_path, verbose);
         let command_name = format!("{:?}", command);
 
         let child = command

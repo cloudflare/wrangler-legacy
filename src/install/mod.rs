@@ -38,6 +38,14 @@ pub fn install_wasm_pack() -> Result<PathBuf, failure::Error> {
     install(tool_name, tool_author, is_binary, version)?.binary(tool_name)
 }
 
+pub fn install_cloudflared() -> Result<PathBuf, failure::Error> {
+    let tool_name = "cloudflared";
+    let tool_author = "cloudflare";
+    let is_binary = true;
+    let version = Version::parse(dependencies::CLOUDFLARED_VERSION)?;
+    install(tool_name, tool_author, is_binary, version)?.binary(tool_name)
+}
+
 pub fn install(
     tool_name: &str,
     owner: &str,

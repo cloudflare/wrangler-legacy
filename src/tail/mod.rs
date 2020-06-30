@@ -20,9 +20,7 @@ use session::Session;
 use shutdown::ShutdownHandler;
 use tunnel::Tunnel;
 
-use console::style;
 use tokio::runtime::Runtime as TokioRuntime;
-use which::which;
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -38,7 +36,6 @@ impl Tail {
         metrics_port: u16,
         verbose: bool,
     ) -> Result<(), failure::Error> {
-        is_cloudflared_installed()?;
         print_startup_message(&target.name, tunnel_port, metrics_port);
 
         let mut runtime = TokioRuntime::new()?;
@@ -85,18 +82,6 @@ impl Tail {
                 Err(e) => Err(e),
             }
         })
-    }
-}
-
-fn is_cloudflared_installed() -> Result<(), failure::Error> {
-    // this can be removed once we automatically install cloudflared
-    if which("cloudflared").is_err() {
-        let install_url = style("https://developers.cloudflare.com/argo-tunnel/downloads/")
-            .blue()
-            .bold();
-        failure::bail!("You must install cloudflared to use wrangler tail.\n\nInstallation instructions can be found here:\n{}", install_url);
-    } else {
-        Ok(())
     }
 }
 
