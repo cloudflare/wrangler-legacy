@@ -17,7 +17,7 @@ pub fn dev(
     server_config: ServerConfig,
 ) -> Result<(), failure::Error> {
     let init = Init::new(&target, &deploy_config, &user)?;
-    let mut target = target.clone();
+    let mut target = target;
 
     // TODO: replace asset manifest parameter
     let preview_token = setup::upload(

@@ -60,7 +60,7 @@ impl Init {
         }?;
 
         let host = match deploy_config {
-            DeployConfig::Zoned(_) => host.to_owned(),
+            DeployConfig::Zoned(_) => host,
             DeployConfig::Zoneless(_) => {
                 let namespaces: Vec<&str> = host.as_str().split('.').collect();
                 let subdomain = namespaces[1];
