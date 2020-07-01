@@ -83,7 +83,7 @@ impl Manifest {
                 config.warn_on_account_info();
                 if let Some(target_type) = &target_type {
                     if config.target_type != *target_type {
-                        message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in  to \"{}\"", config.target_type, target_type, config.target_type));
+                        message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
                     }
                 }
                 Ok(config)
