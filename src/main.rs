@@ -105,7 +105,7 @@ fn run() -> Result<(), failure::Error> {
         .short("c")
         .takes_value(true)
         .long("config")
-        .help("File path to override the default wrangler.toml file ");
+        .help("Path to configuration file. Defaults to `./wrangler.toml`");
 
     let silent_verbose_arg = verbose_arg.clone().hidden(true);
 
