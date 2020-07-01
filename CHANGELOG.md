@@ -1815,7 +1815,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
 
   - **Support KV Namespace Configuration - [ashleymichal], [pull/334], add check + error message for pre 1.1.0 kv namespace format - [xortive], [pull/369]**
 
-    Wrangler now supports using [Workers KV][kv] namespaces in your project! To start using KV with your projects, create a namespace in the Cloduflare Dashboard, and the namespace information to your `wrangler.toml` configuration file. The `kv-namespaces` key requires setting a `binding` (the representation of your namespace in your code) and `id`, the namespace ID:
+    Wrangler now supports using [Workers KV][kv] namespaces in your project! To start using KV with your projects, create a namespace in the Cloudflare Dashboard, and the namespace information to your `wrangler.toml` configuration file. The `kv-namespaces` key requires setting a `binding` (the representation of your namespace in your code) and `id`, the namespace ID:
 
     ```toml
     # wrangler.toml
