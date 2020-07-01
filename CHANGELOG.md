@@ -1007,7 +1007,7 @@
 
 - ### Maintenance
 
-  - **Create fixtures programatically - [EverlastingBugstopper], [pull/854]**
+  - **Create fixtures programmatically - [EverlastingBugstopper], [pull/854]**
 
     Wrangler's test suite relied on a large number of fixtures that it read in from the file system. Now, it writes the test fixtures itself and does not rely on reading fixtures from the file system.
 
@@ -1216,7 +1216,7 @@
 
     - Removed "metadata_wasm.json" from `simple_rust` fixture
 
-    - Extracted all module declrations in `main.rs` to `lib.rs` to allow tests to import with `use wrangler::foo`
+    - Extracted all module declarations in `main.rs` to `lib.rs` to allow tests to import with `use wrangler::foo`
 
     - Split `target/mod.rs` into one file per struct
 
@@ -1333,7 +1333,7 @@
 
   **Ensure we install and cache the latest version of cargo-generate and wasm-pack if user has an outdated cargo installed version - [EverlastingBugstopper], [issue/666] [pull/726]**
 
-    Wrangler orchestrates a few other tools under the hood, notably [`wasm-pack`](https://github.com/rustwasm/wasm-pack) and [`cargo-generate`](https://github.com/ashleygwilliams/cargo-generate). We use a library called [`binary-install`](https://github.com/rustwasm/binary-install) to fetch and cache binaries we download. However, to avoid downloading unecessarily, we first check if the user has a copy locally on their machine that they had `cargo install`'d. We had a bug where in this logic branch, we *didn't* check that the local version was the most up-to-date version. This meant that users who had an older installed version may run into errors when wrangler expected to use features of a newer version of that tool. This PR adds the logic to check for the version and will install and cache a newer version for wrangler to use (leaving your local version as is!).
+    Wrangler orchestrates a few other tools under the hood, notably [`wasm-pack`](https://github.com/rustwasm/wasm-pack) and [`cargo-generate`](https://github.com/ashleygwilliams/cargo-generate). We use a library called [`binary-install`](https://github.com/rustwasm/binary-install) to fetch and cache binaries we download. However, to avoid downloading unnecessarily, we first check if the user has a copy locally on their machine that they had `cargo install`'d. We had a bug where in this logic branch, we *didn't* check that the local version was the most up-to-date version. This meant that users who had an older installed version may run into errors when wrangler expected to use features of a newer version of that tool. This PR adds the logic to check for the version and will install and cache a newer version for wrangler to use (leaving your local version as is!).
 
   [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
   [issue/666]: https://github.com/cloudflare/wrnagler/issues/666
