@@ -787,9 +787,9 @@
     [pull/981]: https://github.com/cloudflare/wrangler/pull/981
     [issue/958]: https://github.com/cloudflare/wrangler/issues/958
 
-  - **Update cloudflare-rs, reqwest, http, uuid - [ashleymichal], [issue/301] [pull/1009]**
+  - **Update cloudflare-rs, request, http, uuid - [ashleymichal], [issue/301] [pull/1009]**
 
-    These dependency updates may look like routine maintenance, but this reqwest version actually makes support for corporate proxies possible!
+    These dependency updates may look like routine maintenance, but this request version actually makes support for corporate proxies possible!
 
     [ashleymichal]: https://github.com/ashleymichal
     [pull/1009]: https://github.com/cloudflare/wrangler/pull/1009
