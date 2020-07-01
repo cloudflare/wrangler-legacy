@@ -21,7 +21,7 @@ fn validate_target(target: &Target) -> Result<(), failure::Error> {
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "{} Your wrangler.toml is missing the following field(s): {:?}",
+            "{} Your configuration file is missing the following field(s): {:?}",
             emoji::WARN,
             missing_fields
         )
@@ -34,9 +34,9 @@ fn validate_target(target: &Target) -> Result<(), failure::Error> {
 fn secret_errors(error_code: u16) -> &'static str {
     match error_code {
         7003 | 7000 => {
-            "Your wrangler.toml is likely missing the field \"account_id\", which is required to create a secret."
+            "Your configuration file is likely missing the field \"account_id\", which is required to create a secret."
         }
-        10053 => "There is already another binding with a different type by this name. Check your wrangler.toml or your Cloudflare dashboard for conflicting bindings",
+        10053 => "There is already another binding with a different type by this name. Check your configuration file or your Cloudflare dashboard for conflicting bindings",
         10054 => "Your secret is too large, it must be 1kB or less",
         10055 => "You have exceeded the limit of 32 text bindings for this worker. Run `wrangler secret list` or go to your Cloudflare dashboard to clean up unused text/secret variables",
         _ => "",

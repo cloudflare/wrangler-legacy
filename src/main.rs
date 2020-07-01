@@ -832,7 +832,7 @@ fn run() -> Result<(), failure::Error> {
             Ok(zone_id)
         } else {
             failure::bail!(
-                "You must specify a zone_id in `wrangler.toml` to use `wrangler route` commands."
+                "You must specify a zone_id in your configuration file to use `wrangler route` commands."
             )
         };
 

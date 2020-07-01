@@ -57,7 +57,7 @@ impl Manifest {
             Ok(m) => m,
             Err(e) => {
                 if e.to_string().contains("unknown field `kv-namespaces`") {
-                    failure::bail!("kv-namespaces should not live under the [site] table in wrangler.toml; please move it above [site].")
+                    failure::bail!("kv-namespaces should not live under the [site] table in your configuration file; please move it above [site].")
                 } else {
                     failure::bail!(e)
                 }
@@ -83,7 +83,7 @@ impl Manifest {
                 config.warn_on_account_info();
                 if let Some(target_type) = &target_type {
                     if config.target_type != *target_type {
-                        message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
+                        message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in  to \"{}\"", config.target_type, target_type, config.target_type));
                     }
                 }
                 Ok(config)
@@ -188,7 +188,7 @@ impl Manifest {
             }
         }
         if result.is_empty() {
-            let mut msg = "Your wrangler.toml is missing an account_id field".to_string();
+            let mut msg = "Your configuration file is missing an account_id field".to_string();
             if let Some(environment_name) = environment_name {
                 msg.push_str(&format!(" in [env.{}]", environment_name));
             }
@@ -260,7 +260,7 @@ impl Manifest {
                 }
             } else {
                 failure::bail!(format!(
-                    "{} There are no environments specified in your wrangler.toml",
+                    "{} There are no environments specified in your configuration file",
                     emoji::WARN
                 ))
             }
@@ -412,7 +412,7 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
     };
     if let Some(message) = duplicate_message {
         failure::bail!(format!(
-            "{} Each name in your `wrangler.toml` must be unique, {}: {}",
+            "{} Each name in your configuration file must be unique, {}: {}",
             emoji::WARN,
             message,
             duplicate_name_string
