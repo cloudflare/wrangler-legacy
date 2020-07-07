@@ -288,9 +288,9 @@ dependencies = [
 
 [[package]]
 name = "chrono"
-version = "0.4.12"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0fee792e164f78f5fe0c296cc2eb3688a2ca2b70cdff33040922d298203f0c4"
+checksum = "c74d84029116787153e02106bf53e66828452a4b325cc8652b788b5967c0a0b6"
 dependencies = [
  "num-integer",
  "num-traits 0.2.12",
@@ -545,6 +545,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13aea89a5c93364a98e9b37b2fa237effbb694d5cfe01c5b70941f7eb087d5e3"
 dependencies = [
  "cfg-if",
+ "dirs-sys",
+]
+
+[[package]]
+name = "dirs"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "142995ed02755914747cc6ca76fc7e4583cd18578746716d0508ea6ed558b9ff"
+dependencies = [
  "dirs-sys",
 ]
 
@@ -994,9 +1003,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-tls"
-version = "0.4.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3adcd308402b9553630734e9c36b77a7e48b3821251ca2493e8cd596763aafaa"
+checksum = "d979acc56dcb5b8dddba3917601745e877576475aa046df3226eabdecef78eed"
 dependencies = [
  "bytes 0.5.5",
  "hyper",
@@ -2772,7 +2781,7 @@ dependencies = [
  "cloudflare",
  "config",
  "console 0.11.3",
- "dirs 2.0.2",
+ "dirs 3.0.1",
  "env_logger",
  "exitfailure",
  "failure",
