@@ -67,7 +67,7 @@ fn toml_modification_instructions(
     env: Option<&str>,
     is_preview: bool,
 ) -> String {
-    let mut msg = "Add the following to your wrangler.toml".to_string();
+    let mut msg = "Add the following to your configuration file".to_string();
 
     if all_namespaces.is_some() {
         msg.push_str(" in your kv_namespaces array");

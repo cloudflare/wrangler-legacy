@@ -30,7 +30,7 @@ pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::
         Ok(_) => {
             message::success("Success");
             message::warn(
-                "Make sure to remove this \"kv-namespace\" entry from your wrangler.toml!",
+                "Make sure to remove this \"kv-namespace\" entry from your configuration file!",
             )
         }
         Err(e) => print!("{}", kv::format_error(e)),
