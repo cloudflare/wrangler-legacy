@@ -134,6 +134,7 @@ fn run() -> Result<(), failure::Error> {
                         )
                         .arg(kv_preview_arg.clone())
                         .arg(silent_verbose_arg.clone())
+                        .arg(wrangler_file.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -144,14 +145,15 @@ fn run() -> Result<(), failure::Error> {
                         .group(kv_namespace_specifier_group.clone())
                         .arg(environment_arg.clone())
                         .arg(silent_verbose_arg.clone())
+                        .arg(wrangler_file.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all namespaces on your Cloudflare account")
                         .arg(silent_verbose_arg.clone())
+                        .arg(wrangler_file.clone())
                 )
                 .arg(silent_verbose_arg.clone())
-                .arg(wrangler_file.clone())
         )
         .subcommand(
             SubCommand::with_name("kv:key")
@@ -161,7 +163,6 @@ fn run() -> Result<(), failure::Error> {
                 ))
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .arg(silent_verbose_arg.clone())
-                .arg(wrangler_file.clone())
                 .subcommand(
                     SubCommand::with_name("put")
                         .about("Put a key-value pair into a namespace")
@@ -206,6 +207,7 @@ fn run() -> Result<(), failure::Error> {
                             .takes_value(false)
                         )
                         .arg(silent_verbose_arg.clone())
+                        .arg(wrangler_file.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("get")
@@ -222,6 +224,7 @@ fn run() -> Result<(), failure::Error> {
                             .index(1)
                         )
                         .arg(silent_verbose_arg.clone())
+                        .arg(wrangler_file.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("delete")
@@ -238,6 +241,7 @@ fn run() -> Result<(), failure::Error> {
                             .index(1)
                         )
                         .arg(silent_verbose_arg.clone())
+                        .arg(wrangler_file.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
@@ -256,6 +260,7 @@ fn run() -> Result<(), failure::Error> {
                             .takes_value(true),
                         )
                         .arg(silent_verbose_arg.clone())
+                        .arg(wrangler_file.clone())
                 )
         )
         .subcommand(
@@ -265,7 +270,6 @@ fn run() -> Result<(), failure::Error> {
                     emoji::BICEP
                 ))
                 .arg(silent_verbose_arg.clone())
-                .arg(wrangler_file.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("put")
@@ -281,6 +285,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(wrangler_file.clone())
                         .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
@@ -297,6 +302,7 @@ fn run() -> Result<(), failure::Error> {
                             .required(true)
                             .index(1)
                         )
+                        .arg(wrangler_file.clone())
                         .arg(silent_verbose_arg.clone())
                 )
         )
@@ -306,13 +312,13 @@ fn run() -> Result<(), failure::Error> {
                     "{} List or delete worker routes.",
                     emoji::ROUTE
                 ))
-                .arg(wrangler_file.clone())
                 .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all routes associated with a zone (outputs json)")
                         .arg(environment_arg.clone())
+                        .arg(wrangler_file.clone())
                         .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
@@ -326,6 +332,7 @@ fn run() -> Result<(), failure::Error> {
                             .index(1)
                         )
                         .arg(silent_verbose_arg.clone())
+                        .arg(wrangler_file.clone())
                 )
         )
         .subcommand(
@@ -334,7 +341,6 @@ fn run() -> Result<(), failure::Error> {
                     "{} Generate a secret that can be referenced in the worker script",
                     emoji::SECRET
                 ))
-                .arg(wrangler_file.clone())
                 .arg(silent_verbose_arg.clone())
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(
@@ -342,6 +348,7 @@ fn run() -> Result<(), failure::Error> {
                         .about("Create or update a secret variable for a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
+                        .arg(wrangler_file.clone())
                         .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
@@ -349,12 +356,14 @@ fn run() -> Result<(), failure::Error> {
                         .about("Delete a secret variable from a script")
                         .arg(secret_name_arg.clone())
                         .arg(environment_arg.clone())
+                        .arg(wrangler_file.clone())
                         .arg(silent_verbose_arg.clone())
                 )
                 .subcommand(
                     SubCommand::with_name("list")
                         .about("List all secrets for a script")
                         .arg(environment_arg.clone())
+                        .arg(wrangler_file.clone())
                         .arg(silent_verbose_arg.clone())
                 )
         )
@@ -812,8 +821,10 @@ fn run() -> Result<(), failure::Error> {
         }
     } else if let Some(route_matches) = matches.subcommand_matches("route") {
         let user = settings::global_user::GlobalUser::new()?;
+        let (subcommand, subcommand_matches) = route_matches.subcommand();
         let config_path = Path::new(
-            route_matches
+            subcommand_matches
+                .unwrap()
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
@@ -836,7 +847,7 @@ fn run() -> Result<(), failure::Error> {
             )
         };
 
-        match route_matches.subcommand() {
+        match (subcommand, subcommand_matches) {
             ("list", Some(_)) => {
                 commands::route::list(zone_id?, &user)?;
             }
@@ -848,17 +859,19 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(secrets_matches) = matches.subcommand_matches("secret") {
+        log::info!("Getting User settings");
+        let user = settings::global_user::GlobalUser::new()?;
+
         log::info!("Getting project settings");
+        let (subcommand, subcommand_matches) = secrets_matches.subcommand();
         let config_path = Path::new(
-            secrets_matches
+            subcommand_matches
+                .unwrap()
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
-        log::info!("Getting User settings");
-        let user = settings::global_user::GlobalUser::new()?;
-
-        match secrets_matches.subcommand() {
+        match (subcommand, subcommand_matches) {
             ("put", Some(create_matches)) => {
                 let name = create_matches.value_of("name");
                 let env = create_matches.value_of("env");
@@ -884,14 +897,19 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
+        let user = settings::global_user::GlobalUser::new()?;
+
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
+
         let config_path = Path::new(
-            kv_matches
+            subcommand_matches
+                .unwrap()
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
-        let user = settings::global_user::GlobalUser::new()?;
-        match kv_matches.subcommand() {
+
+        match (subcommand, subcommand_matches) {
             ("create", Some(create_matches)) => {
                 is_preview = create_matches.is_present("preview");
                 let env = create_matches.value_of("env");
@@ -922,16 +940,18 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
+        let user = settings::global_user::GlobalUser::new()?;
+        // Get environment and bindings
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
+
         let config_path = Path::new(
-            kv_matches
+            subcommand_matches
+                .unwrap()
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
-        let user = settings::global_user::GlobalUser::new()?;
 
-        // Get environment and bindings
-        let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
                 is_preview = subcommand_matches.is_present("preview");
@@ -991,16 +1011,16 @@ fn run() -> Result<(), failure::Error> {
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
+        // Get environment and bindings
+        let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let config_path = Path::new(
-            kv_matches
+            subcommand_matches
+                .unwrap()
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
         let user = settings::global_user::GlobalUser::new()?;
-
-        // Get environment and bindings
-        let (subcommand, subcommand_matches) = kv_matches.subcommand();
         let (target, namespace_id) = match subcommand_matches {
             Some(subcommand_matches) => {
                 is_preview = subcommand_matches.is_present("preview");
