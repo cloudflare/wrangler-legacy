@@ -122,7 +122,7 @@ fn register_subdomain(
 pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
     if target.account_id.is_empty() {
         failure::bail!(format!(
-            "{} You must provide an account_id in your wrangler.toml before creating a subdomain!",
+            "{} You must provide an account_id in your configuration file before creating a subdomain!",
             emoji::WARN
         ))
     }

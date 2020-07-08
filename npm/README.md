@@ -22,7 +22,9 @@ npm i @cloudflare/wrangler -g
 ```
 
 #### Specify binary site URL
+
 In case you need to store/mirror binaries on premise you will need to specify where wrangler should search for them by providing any of the following:
+
 - Environment variable: `WRANGLER_BINARY_HOST`
 - NPM configuration: `wrangler_binary_host`
 

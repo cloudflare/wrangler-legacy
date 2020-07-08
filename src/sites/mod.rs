@@ -114,7 +114,7 @@ pub fn directory_keys_values(
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             // TODO: return an error type here, like NotADirectoryError
-            Err(format_err!("Check your wrangler.toml; the `bucket` attribute for [site] should point to a directory."))
+            Err(format_err!("Check your configuration file; the `bucket` attribute for [site] should point to a directory."))
         }
         Err(e) => Err(format_err!("{}", e)),
     }
