@@ -432,7 +432,6 @@
     [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
     [pull/1220]: https://github.com/cloudflare/wrangler/pull/1220
 
-
 ## 🎭 1.8.4
 
 - ### Fixes
@@ -895,7 +894,6 @@
     [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
     [pull/862]: https://github.com/cloudflare/wrangler/pull/862
     [binary-install]: http://npmjs.org/package/binary-install
-
 
 ## 🎰 1.6.0
 
@@ -1380,7 +1378,6 @@
     [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
     [issue/721]: https://github.com/cloudflare/wrangler/issues/721
     [pull/724]: https://github.com/cloudflare/wrangler/pull/724
-
 
 ## 🐛 1.3.1
 
