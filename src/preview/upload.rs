@@ -86,7 +86,7 @@ pub fn upload(
                 }
             } else {
                 message::warn(&format!(
-                    "Your wrangler.toml is missing the following fields: {:?}",
+                    "Your configuration file is missing the following fields: {:?}",
                     missing_fields
                 ));
                 message::warn("Falling back to unauthenticated preview.");

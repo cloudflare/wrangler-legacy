@@ -21,7 +21,7 @@ pub fn format_error(e: ApiFailure) -> String {
 fn kv_help(error_code: u16) -> &'static str {
     match error_code {
         7003 | 7000 => {
-            "Your wrangler.toml is likely missing the field \"account_id\", which is required to write to Workers KV."
+            "Your configuration file is likely missing the field \"account_id\", which is required to write to Workers KV."
         }
         // namespace errors
         10010 | 10011 | 10012 | 10013 | 10014 | 10018 => {
@@ -49,7 +49,7 @@ pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "Your wrangler.toml is missing the following field(s): {:?}",
+            "Your configuration file is missing the following field(s): {:?}",
             missing_fields
         )
     } else {

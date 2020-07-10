@@ -22,7 +22,9 @@ npm i @cloudflare/wrangler -g
 ```
 
 #### Specify binary site URL
+
 In case you need to store/mirror binaries on premise you will need to specify where wrangler should search for them by providing any of the following:
+
 - Environment variable: `WRANGLER_BINARY_HOST`
 - NPM configuration: `wrangler_binary_host`
 
@@ -139,7 +141,7 @@ $ wrangler publish
   You should run wrangler dev from your worker directory, and if your worker makes any requests to a backend, you should specify the host with `--host example.com`.
 
   From here you should be able to send HTTP requests to `localhost:8787` along with any headers and paths, and your worker should execute as expected. Additionally, you should see console.log messages and exceptions appearing in your terminal.
-  
+
   ```bash
 👂 Listening on http://localhost:8787
   [2020-02-18 19:37:08] GET example.com/ HTTP/1.1 200 OK

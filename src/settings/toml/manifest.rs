@@ -9,7 +9,7 @@ use config::{Config, File};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::commands::validate_worker_name;
+use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
 use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
@@ -45,17 +45,19 @@ pub struct Manifest {
 
 impl Manifest {
     pub fn new(config_path: &Path) -> Result<Self, failure::Error> {
-        failure::ensure!(
-            config_path.exists(),
-            "wrangler.toml not found; run `wrangler init` to create one."
-        );
+        let file_name = config_path.file_name().unwrap().to_str().unwrap();
+        let mut message = format!("{} not found", file_name);
+        if config_path.to_str().unwrap() == DEFAULT_CONFIG_PATH {
+            message.push_str("; run `wrangler init` to create one.");
+        }
+        failure::ensure!(config_path.exists(), message);
         let config = read_config(config_path)?;
 
         let manifest: Manifest = match config.try_into() {
             Ok(m) => m,
             Err(e) => {
                 if e.to_string().contains("unknown field `kv-namespaces`") {
-                    failure::bail!("kv-namespaces should not live under the [site] table in wrangler.toml; please move it above [site].")
+                    failure::bail!("kv-namespaces should not live under the [site] table in your configuration file; please move it above [site].")
                 } else {
                     failure::bail!(e)
                 }
@@ -186,7 +188,7 @@ impl Manifest {
             }
         }
         if result.is_empty() {
-            let mut msg = "Your wrangler.toml is missing an account_id field".to_string();
+            let mut msg = "Your configuration file is missing an account_id field".to_string();
             if let Some(environment_name) = environment_name {
                 msg.push_str(&format!(" in [env.{}]", environment_name));
             }
@@ -258,7 +260,7 @@ impl Manifest {
                 }
             } else {
                 failure::bail!(format!(
-                    "{} There are no environments specified in your wrangler.toml",
+                    "{} There are no environments specified in your configuration file",
                     emoji::WARN
                 ))
             }
@@ -410,7 +412,7 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
     };
     if let Some(message) = duplicate_message {
         failure::bail!(format!(
-            "{} Each name in your `wrangler.toml` must be unique, {}: {}",
+            "{} Each name in your configuration file must be unique, {}: {}",
             emoji::WARN,
             message,
             duplicate_name_string
