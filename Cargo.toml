@@ -30,7 +30,7 @@ fs2 = "0.4.3"
 futures-util = "0.3"
 http = "0.2.1"
 hyper = "0.13.6"
-hyper-tls = "0.4.3"
+hyper-rustls = "0.21.0"
 ignore = "0.4.16"
 indicatif = "0.15.0"
 lazy_static = "1.4.0"
@@ -52,6 +52,7 @@ tempfile = "3.1.0"
 term_size = "0.3"
 text_io = "0.1.8"
 tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
+tokio-rustls = "0.14.0"
 tokio-tls = "0.3.1"
 tokio-tungstenite = { version = "0.10.1", features = ["tls"] }
 toml = "0.5.6"
@@ -60,6 +61,7 @@ url = "2.1.1"
 uuid = { version = "0.8", features = ["v4"] }
 which = "4.0.1"
 ws = "0.9.1"
+rustls = "0.18.0"
 
 [dev-dependencies]
 assert_cmd = "1.0.1"
@@ -67,10 +69,10 @@ fs_extra = "1.1.0"
 predicates = "1.0.4"
 
 [features]
-# We build Linux binaries with vendored openssl
-# to avoid SSL issues
-vendored-openssl = ['openssl/vendored']
 
 # Treat compiler warnings as a build error.
 # This only runs in CI by default
 strict = []
+# We build Linux binaries with vendored openssl
+# to avoid SSL issues
+vendored-openssl = ['openssl/vendored']

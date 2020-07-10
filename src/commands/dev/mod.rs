@@ -1,6 +1,7 @@
 mod gcs;
 mod server_config;
 mod socket;
+pub mod tls;
 use server_config::ServerConfig;
 
 use crate::build;
