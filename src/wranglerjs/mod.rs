@@ -186,7 +186,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         None => {
             let config_path = PathBuf::from("webpack.config.js".to_string());
             if config_path.exists() {
-                message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your wrangler.toml:\nwebpack_config = \"webpack.config.js\"");
+                message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your configuration file:\nwebpack_config = \"webpack.config.js\"");
             }
             None
         }

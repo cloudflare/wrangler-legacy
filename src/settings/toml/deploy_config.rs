@@ -69,7 +69,7 @@ impl DeployConfig {
             } else if let Some(routes) = &route_config.routes {
                 for route in routes {
                     if route.is_empty() {
-                        message::warn("your wrangler.toml contains an empty route")
+                        message::warn("your configuration file contains an empty route")
                     } else {
                         zoned.routes.push(Route {
                             id: None,
