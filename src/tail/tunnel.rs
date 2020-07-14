@@ -77,6 +77,7 @@ pub fn command(args: &[&str], binary_path: &PathBuf, verbose: bool) -> Command {
     // Let user read cloudflared process logs iff RUST_LOG=info.
     if !verbose {
         c.stderr(Stdio::null());
+        c.stdout(Stdio::null());
     }
 
     c

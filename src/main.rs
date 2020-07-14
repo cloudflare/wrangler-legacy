@@ -829,7 +829,7 @@ fn run() -> Result<(), failure::Error> {
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
-        let env = matches.value_of("env");
+        let env = subcommand_matches.unwrap().value_of("env");
 
         let env_zone_id = if let Some(environment) = manifest.get_environment(env)? {
             environment.zone_id.as_ref()
@@ -855,7 +855,6 @@ fn run() -> Result<(), failure::Error> {
                 let route_id = delete_matches.value_of("route_id").unwrap();
                 commands::route::delete(zone_id?, &user, route_id)?;
             }
-            ("", None) => message::warn("route expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(secrets_matches) = matches.subcommand_matches("secret") {
@@ -893,7 +892,6 @@ fn run() -> Result<(), failure::Error> {
                 let target = manifest.get_target(env, is_preview)?;
                 commands::secret::list_secrets(&user, &target)?;
             }
-            ("", None) => message::warn("secret expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:namespace") {
@@ -936,7 +934,6 @@ fn run() -> Result<(), failure::Error> {
                 let target = manifest.get_target(env, is_preview)?;
                 commands::kv::namespace::list(&target, &user)?;
             }
-            ("", None) => message::warn("kv:namespace expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:key") {
@@ -1007,7 +1004,6 @@ fn run() -> Result<(), failure::Error> {
                 let prefix = list_key_matches.value_of("prefix");
                 commands::kv::key::list(&target, &user, &namespace_id, prefix)?
             }
-            ("", None) => message::warn("kv:key expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(kv_matches) = matches.subcommand_matches("kv:bulk") {
@@ -1049,7 +1045,6 @@ fn run() -> Result<(), failure::Error> {
                 let path = delete_bulk_matches.value_of("path").unwrap();
                 commands::kv::bulk::delete(&target, &user, &namespace_id, Path::new(path))?
             }
-            ("", None) => message::warn("kv:bulk expects a subcommand"),
             _ => unreachable!(),
         }
     } else if let Some(matches) = matches.subcommand_matches("tail") {
