@@ -32,7 +32,7 @@ pub fn dev(
 
     match user {
         // authenticated users connect to the edge
-        Some(user) => edge::dev(target, deploy_config, user, server_config),
+        Some(user) => edge::dev(target, deploy_config, user, server_config, verbose),
 
         // unauthenticated users connect to gcs
         None => gcs::dev(target, server_config, verbose),
