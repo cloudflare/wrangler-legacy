@@ -55,8 +55,6 @@ pub fn dev(
         thread::spawn(move || {
             watch_for_changes(
                 target,
-                // there is no user for unauthenticated dev
-                None,
                 &server_config,
                 Arc::clone(&preview_id),
                 &session_id,

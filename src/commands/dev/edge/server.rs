@@ -2,6 +2,8 @@ use crate::commands::dev::server_config::ServerConfig;
 use crate::commands::dev::utils::get_path_as_str;
 use crate::terminal::emoji;
 
+use std::sync::{Arc, Mutex};
+
 use chrono::prelude::*;
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
@@ -11,7 +13,7 @@ use hyper_tls::HttpsConnector;
 
 pub(super) async fn serve(
     server_config: ServerConfig,
-    preview_token: String,
+    preview_token: Arc<Mutex<String>>,
     host: String,
 ) -> Result<(), failure::Error> {
     // set up https client to connect to the preview service
@@ -29,7 +31,7 @@ pub(super) async fn serve(
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
                 let client = client.to_owned();
-                let preview_token = preview_token.to_owned();
+                let preview_token = preview_token.lock().unwrap().to_owned();
                 let host = host.to_owned();
                 let version = req.version();
                 let (parts, body) = req.into_parts();
