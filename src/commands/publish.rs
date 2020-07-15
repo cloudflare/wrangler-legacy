@@ -113,7 +113,7 @@ fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
 
         if !no_star_routes.is_empty() {
             message::warn(&format!(
-                "The following routes in your wrangler.toml should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\n{}",
+                "The following routes in your configuration file should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\n{}",
                 no_star_routes.join("\n"))
             );
         }
@@ -127,7 +127,7 @@ pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> 
     let current_dir = env::current_dir()?;
     if bucket.as_os_str() == current_dir {
         failure::bail!(
-            "{} Your bucket cannot be set to the parent directory of your wrangler.toml",
+            "{} Your bucket cannot be set to the parent directory of your configuration file",
             emoji::WARN
         )
     }
@@ -177,7 +177,7 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
 
     if !missing_fields.is_empty() {
         failure::bail!(
-            "{} Your wrangler.toml is missing the {} {:?} which {} required to publish your worker!",
+            "{} Your configuration file is missing the {} {:?} which {} required to publish your worker!",
             emoji::WARN,
             field_pluralization,
             missing_fields,

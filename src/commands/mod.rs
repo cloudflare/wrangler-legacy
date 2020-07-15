@@ -28,7 +28,7 @@ pub use whoami::whoami;
 
 use regex::Regex;
 
-const DEFAULT_CONFIG_PATH: &str = "./wrangler.toml";
+pub const DEFAULT_CONFIG_PATH: &str = "./wrangler.toml";
 
 // Run the given command and return its stdout.
 pub fn run(mut command: Command, command_name: &str) -> Result<(), failure::Error> {

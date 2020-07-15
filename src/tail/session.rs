@@ -211,7 +211,7 @@ async fn send_heartbeat(
 fn tail_help(error_code: u16) -> &'static str {
     match error_code {
         7003 | 7000 => {
-            "Your wrangler.toml is likely missing the field \"account_id\", which is required to tail a worker."
+            "Your configuration file is likely missing the field \"account_id\", which is required to tail a worker."
         }
         // unauthorized
         10000 => {
