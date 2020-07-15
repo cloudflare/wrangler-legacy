@@ -180,7 +180,7 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
     log::info!("address: {}", create_address);
 
     let mut target = target.clone();
-    // KV namespaces are not supported by the preview service unless you authenticate
+    // KV namespaces and sites are not supported by the preview service unless you authenticate
     // so we omit them and provide the user with a little guidance. We don't error out, though,
     // because there are valid workarounds for this for testing purposes.
     if !target.kv_namespaces.is_empty() {
@@ -189,6 +189,13 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         );
         target.kv_namespaces = Vec::new();
     }
+    if target.site.is_some() {
+        message::warn(
+            "Sites are not supported in preview without setting API credentials and account_id",
+        );
+        target.site = None;
+    }
+
     let script_upload_form = upload::form::build(&target, None)?;
     let client = http::client();
     let res = client
