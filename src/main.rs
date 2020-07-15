@@ -830,7 +830,7 @@ fn run() -> Result<(), failure::Error> {
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
-        let env = matches.value_of("env");
+        let env = subcommand_matches.unwrap().value_of("env");
 
         let env_zone_id = if let Some(environment) = manifest.get_environment(env)? {
             environment.zone_id.as_ref()
