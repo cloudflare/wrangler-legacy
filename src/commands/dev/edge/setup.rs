@@ -1,6 +1,10 @@
+use std::path::Path;
+
+use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
-use crate::sites::{self, AssetManifest};
+use crate::sites::{add_namespace, sync};
+use crate::terminal::message;
 use crate::upload;
 
 use reqwest::Url;
@@ -9,15 +13,30 @@ use serde_json::json;
 
 pub(super) fn upload(
     target: &mut Target,
-    asset_manifest: Option<AssetManifest>,
     deploy_config: &DeployConfig,
     user: &GlobalUser,
     preview_token: String,
+    verbose: bool,
 ) -> Result<String, failure::Error> {
     let client = crate::http::legacy_auth_client(&user);
-    if target.site.is_some() {
-        sites::add_namespace(user, target, true)?;
-    }
+
+    let (to_delete, asset_manifest, site_namespace_id) = if let Some(site_config) =
+        target.site.clone()
+    {
+        let site_namespace = add_namespace(user, target, true)?;
+        let path = Path::new(&site_config.bucket);
+        let (to_upload, to_delete, asset_manifest) = sync(target, user, &site_namespace.id, path)?;
+
+        // First, upload all existing files in given directory
+        if verbose {
+            message::info("Uploading updated files...");
+        }
+
+        bulk::put(target, user, &site_namespace.id, to_upload, &None)?;
+        (to_delete, Some(asset_manifest), Some(site_namespace.id))
+    } else {
+        (Vec::new(), None, None)
+    };
 
     let session_config = get_session_config(deploy_config);
     let address = get_upload_address(target);
@@ -30,6 +49,14 @@ pub(super) fn upload(
         .multipart(script_upload_form)
         .send()?
         .error_for_status()?;
+
+    if !to_delete.is_empty() {
+        if verbose {
+            message::info("Deleting stale files...");
+        }
+
+        bulk::delete(target, user, &site_namespace_id.unwrap(), to_delete, &None)?;
+    }
 
     let text = &response.text()?;
 
