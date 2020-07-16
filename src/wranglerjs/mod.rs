@@ -100,7 +100,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                         continue;
                     }
 
-                    let output = fs::read_to_string(&temp_file).expect("could not retrieve ouput");
+                    let output = fs::read_to_string(&temp_file).expect("could not retrieve output");
                     let wranglerjs_output: WranglerjsOutput =
                         serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
