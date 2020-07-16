@@ -15,7 +15,7 @@ pub fn publish_routes(
 ) -> Result<Vec<RouteUploadResult>, failure::Error> {
     // For the moment, we'll just make this call once and make all our decisions based on the response.
     // There is a possibility of race conditions, but we just report back the results and allow the
-    // user to decide how to procede.
+    // user to decide how to proceed.
     let existing_routes = fetch_all(user, &zoned_config.zone_id)?;
 
     let deployed_routes = zoned_config

@@ -12,7 +12,7 @@ use std::io::prelude::*;
 pub struct WranglerjsOutput {
     pub wasm: Option<String>,
     pub script: String,
-    // Errors emited by {wranglerjs}, if any
+    // Errors emitted by {wranglerjs}, if any
     pub errors: Vec<String>,
 }
 
