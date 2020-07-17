@@ -53,7 +53,7 @@ fn it_builds_from_environments_config_with_kv() {
     if target.kv_namespaces.is_empty() {
         panic!("found no kv namespaces");
     } else {
-        assert!(target.kv_namespaces.len() == 2);
+        assert_eq!(target.kv_namespaces.len(), 2);
         assert!(target.kv_namespaces.contains(&kv_1));
         assert!(target.kv_namespaces.contains(&kv_2));
     }
@@ -70,7 +70,7 @@ fn it_builds_from_environments_config_with_kv() {
     if target.kv_namespaces.is_empty() {
         panic!("found no kv namespaces");
     } else {
-        assert!(target.kv_namespaces.len() == 2);
+        assert_eq!(target.kv_namespaces.len(), 2);
         assert!(target.kv_namespaces.contains(&kv_1));
         assert!(target.kv_namespaces.contains(&kv_2));
     }

@@ -15,7 +15,7 @@ pub(super) fn upload(
     target: &mut Target,
     deploy_config: &DeployConfig,
     user: &GlobalUser,
-    preview_token: String,
+    session_token: String,
     verbose: bool,
 ) -> Result<String, failure::Error> {
     let client = crate::http::legacy_auth_client(&user);
@@ -45,7 +45,7 @@ pub(super) fn upload(
 
     let response = client
         .post(&address)
-        .header("cf-preview-upload-config-token", preview_token)
+        .header("cf-preview-upload-config-token", session_token)
         .multipart(script_upload_form)
         .send()?
         .error_for_status()?;
@@ -66,18 +66,18 @@ pub(super) fn upload(
 }
 
 #[derive(Debug, Clone)]
-pub struct Init {
+pub struct Session {
     pub host: String,
     pub websocket_url: Url,
     pub preview_token: String,
 }
 
-impl Init {
+impl Session {
     pub fn new(
         target: &Target,
-        deploy_config: &DeployConfig,
         user: &GlobalUser,
-    ) -> Result<Init, failure::Error> {
+        deploy_config: &DeployConfig,
+    ) -> Result<Session, failure::Error> {
         let exchange_url = get_exchange_url(deploy_config, user)?;
         let host = match exchange_url.host_str() {
             Some(host) => Ok(host.to_string()),
@@ -106,7 +106,7 @@ impl Init {
         let websocket_url = Url::parse(&full_url)?;
         let preview_token = response.token;
 
-        Ok(Init {
+        Ok(Session {
             host,
             websocket_url,
             preview_token,
@@ -127,7 +127,7 @@ fn get_session_config(deploy_config: &DeployConfig) -> serde_json::Value {
     }
 }
 
-fn get_initialize_address(deploy_config: &DeployConfig) -> String {
+fn get_session_address(deploy_config: &DeployConfig) -> String {
     match deploy_config {
         DeployConfig::Zoned(config) => format!(
             "https://api.cloudflare.com/client/v4/zones/{}/workers/edge-preview",
@@ -153,24 +153,24 @@ fn get_exchange_url(
     user: &GlobalUser,
 ) -> Result<Url, failure::Error> {
     let client = crate::http::legacy_auth_client(&user);
-    let address = get_initialize_address(deploy_config);
+    let address = get_session_address(deploy_config);
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;
     let text = &response.text()?;
-    let response: InitV4ApiResponse = serde_json::from_str(text)?;
+    let response: SessionV4ApiResponse = serde_json::from_str(text)?;
     let url = Url::parse(&response.result.exchange_url)?;
     Ok(url)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct InitResponse {
+struct SessionResponse {
     pub exchange_url: String,
     pub token: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct InitV4ApiResponse {
-    pub result: InitResponse,
+struct SessionV4ApiResponse {
+    pub result: SessionResponse,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

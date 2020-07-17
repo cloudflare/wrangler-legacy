@@ -11,7 +11,7 @@ pub fn watch_for_changes(
     deploy_config: &DeployConfig,
     user: &GlobalUser,
     preview_token: Arc<Mutex<String>>,
-    init_preview_token: String,
+    session_token: String,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     let (sender, receiver) = mpsc::channel();
@@ -21,7 +21,7 @@ pub fn watch_for_changes(
         let user = user.clone();
         let target = target.clone();
         let deploy_config = deploy_config.clone();
-        let init_preview_token = init_preview_token.clone();
+        let session_token = session_token.clone();
         let mut target = target;
 
         // acquire the lock so incoming requests are halted
@@ -32,13 +32,7 @@ pub fn watch_for_changes(
         //
         // this allows the server to route subsequent requests
         // to the proper script
-        *preview_token = setup::upload(
-            &mut target,
-            &deploy_config,
-            &user,
-            init_preview_token,
-            verbose,
-        )?;
+        *preview_token = setup::upload(&mut target, &deploy_config, &user, session_token, verbose)?;
     }
 
     Ok(())

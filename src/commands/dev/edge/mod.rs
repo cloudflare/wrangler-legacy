@@ -3,7 +3,7 @@ mod setup;
 mod watch;
 
 use server::serve;
-use setup::Init;
+use setup::{upload, Session};
 use watch::watch_for_changes;
 
 use crate::commands::dev::{socket, ServerConfig};
@@ -17,19 +17,19 @@ use std::thread;
 
 pub fn dev(
     target: Target,
-    deploy_config: DeployConfig,
     user: GlobalUser,
     server_config: ServerConfig,
+    deploy_config: DeployConfig,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let init = Init::new(&target, &deploy_config, &user)?;
+    let session = Session::new(&target, &user, &deploy_config)?;
     let mut target = target;
 
-    let preview_token = setup::upload(
+    let preview_token = upload(
         &mut target,
         &deploy_config,
         &user,
-        init.preview_token.clone(),
+        session.preview_token.clone(),
         verbose,
     )?;
 
@@ -37,7 +37,7 @@ pub fn dev(
 
     {
         let preview_token = preview_token.clone();
-        let init_preview_token = init.preview_token.clone();
+        let session_token = session.preview_token.clone();
 
         thread::spawn(move || {
             watch_for_changes(
@@ -45,7 +45,7 @@ pub fn dev(
                 &deploy_config,
                 &user,
                 Arc::clone(&preview_token),
-                init_preview_token,
+                session_token,
                 verbose,
             )
         });
@@ -53,8 +53,12 @@ pub fn dev(
 
     let mut runtime = TokioRuntime::new()?;
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(init.websocket_url));
-        let server = tokio::spawn(serve(server_config, Arc::clone(&preview_token), init.host));
+        let devtools_listener = tokio::spawn(socket::listen(session.websocket_url));
+        let server = tokio::spawn(serve(
+            server_config,
+            Arc::clone(&preview_token),
+            session.host,
+        ));
         let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
 
         match res {
