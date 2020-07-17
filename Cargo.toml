@@ -34,7 +34,7 @@ hyper-tls = "0.4.3"
 ignore = "0.4.16"
 indicatif = "0.15.0"
 lazy_static = "1.4.0"
-log = "0.4.8"
+log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
 openssl = { version = '0.10.29', optional = true }
