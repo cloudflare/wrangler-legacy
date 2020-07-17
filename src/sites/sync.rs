@@ -127,14 +127,14 @@ mod tests {
     }
 
     fn check_kv_pairs_equality(expected: Vec<KeyValuePair>, actual: Vec<KeyValuePair>) {
-        assert!(expected.len() == actual.len());
+        assert_eq!(expected.len(), actual.len());
         for (idx, pair) in expected.into_iter().enumerate() {
             // Ensure the expected key and value was returned in the filtered pair list
             // Awkward field-by-field comparison below courtesy of not yet implementing
             // PartialEq for KeyValuePair in cloudflare-rs :)
             // TODO: (gabbi) Implement PartialEq for KeyValuePair in cloudflare-rs.
-            assert!(pair.key == actual[idx].key);
-            assert!(pair.value == actual[idx].value);
+            assert_eq!(pair.key, actual[idx].key);
+            assert_eq!(pair.value, actual[idx].value);
         }
     }
 }
