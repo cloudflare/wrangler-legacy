@@ -151,7 +151,7 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = upload::form::build(target, asset_manifest)?;
+    let script_upload_form = upload::form::build(target, asset_manifest, None)?;
 
     let res = client
         .post(&create_address)
@@ -187,6 +187,7 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         message::warn(
             "KV Namespaces are not supported in preview without setting API credentials and account_id",
         );
+
         target.kv_namespaces = Vec::new();
     }
     if target.site.is_some() {
@@ -196,7 +197,7 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         target.site = None;
     }
 
-    let script_upload_form = upload::form::build(&target, None)?;
+    let script_upload_form = upload::form::build(&target, None, None)?;
     let client = http::client();
     let res = client
         .post(create_address)

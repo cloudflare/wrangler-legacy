@@ -22,6 +22,8 @@ pub fn dev(
     server_config: ServerConfig,
     verbose: bool,
 ) -> Result<(), failure::Error> {
+    println!("unauthenticated");
+
     // setup the session
     let session_id = get_session_id()?;
 

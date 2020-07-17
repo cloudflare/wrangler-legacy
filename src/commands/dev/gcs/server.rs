@@ -1,5 +1,6 @@
 use crate::commands::dev::gcs::headers::{destructure_response, structure_request};
-use crate::commands::dev::ServerConfig;
+use crate::commands::dev::server_config::ServerConfig;
+use crate::commands::dev::utils::get_path_as_str;
 use crate::terminal::emoji;
 
 use std::sync::{Arc, Mutex};
@@ -96,6 +97,10 @@ pub(super) async fn serve(
     Ok(())
 }
 
+fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
+    format!("https://{}{}", PREVIEW_HOST, path_string).parse()
+}
+
 fn preview_request(
     req: Request<Body>,
     client: HyperClient<HttpsConnector<HttpConnector>>,
@@ -123,15 +128,4 @@ fn preview_request(
     let req = Request::from_parts(parts, body);
 
     client.request(req)
-}
-
-fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
-    format!("https://{}{}", PREVIEW_HOST, path_string).parse()
-}
-
-fn get_path_as_str(uri: &Uri) -> String {
-    uri.path_and_query()
-        .map(|x| x.as_str())
-        .unwrap_or("")
-        .to_string()
 }
