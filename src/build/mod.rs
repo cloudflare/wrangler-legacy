@@ -13,6 +13,9 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
             message::info("JavaScript project found. Skipping unnecessary build!")
         }
         TargetType::Rust => {
+            let _ = which::which("rustc")
+                .map_err(|e| failure::format_err!("'rustc' not found: {}", e))?;
+
             let binary_path = install::install_wasm_pack()?;
             let args = ["build", "--target", "no-modules"];
 
