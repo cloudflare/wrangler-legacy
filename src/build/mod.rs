@@ -1,5 +1,5 @@
 use crate::settings::toml::{Target, TargetType};
-use crate::terminal::message;
+use crate::terminal::{message, styles};
 use crate::wranglerjs;
 use crate::{commands, install};
 
@@ -13,8 +13,13 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
             message::info("JavaScript project found. Skipping unnecessary build!")
         }
         TargetType::Rust => {
-            let _ = which::which("rustc")
-                .map_err(|e| failure::format_err!("'rustc' not found: {}", e))?;
+            let _ = which::which("rustc").map_err(|e| {
+                failure::format_err!(
+                    "'rustc' not found: {}. Installation documentation can be found here: {}",
+                    e,
+                    styles::url("https://www.rust-lang.org/tools/install")
+                )
+            })?;
 
             let binary_path = install::install_wasm_pack()?;
             let args = ["build", "--target", "no-modules"];
