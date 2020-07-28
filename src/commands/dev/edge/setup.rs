@@ -65,6 +65,7 @@ pub(super) fn upload(
     Ok(response.result.preview_token)
 }
 
+#[derive(Debug, Clone)]
 pub struct Session {
     pub host: String,
     pub websocket_url: Url,
@@ -98,7 +99,11 @@ impl Session {
         let response = client.get(exchange_url).send()?.error_for_status()?;
         let text = &response.text()?;
         let response: InspectorV4ApiResponse = serde_json::from_str(text)?;
-        let websocket_url = Url::parse(&response.inspector_websocket)?;
+        let full_url = format!(
+            "{}?{}={}",
+            &response.inspector_websocket, "cf_workers_preview_token", &response.token
+        );
+        let websocket_url = Url::parse(&full_url)?;
         let preview_token = response.token;
 
         Ok(Session {
