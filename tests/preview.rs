@@ -160,6 +160,9 @@ fn it_can_preview_rust_project() {
         [profile.release]
         # Tell `rustc` to optimize for small code size.
         opt-level = "s"
+
+        [package.metadata.wasm-pack.profile.release]
+        wasm-opt = false
     "#,
     );
 
