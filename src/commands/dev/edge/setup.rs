@@ -15,7 +15,7 @@ pub(super) fn upload(
     target: &mut Target,
     deploy_config: &DeployConfig,
     user: &GlobalUser,
-    preview_token: String,
+    session_token: String,
     verbose: bool,
 ) -> Result<String, failure::Error> {
     let client = crate::http::legacy_auth_client(&user);
@@ -45,7 +45,7 @@ pub(super) fn upload(
 
     let response = client
         .post(&address)
-        .header("cf-preview-upload-config-token", preview_token)
+        .header("cf-preview-upload-config-token", session_token)
         .multipart(script_upload_form)
         .send()?
         .error_for_status()?;
