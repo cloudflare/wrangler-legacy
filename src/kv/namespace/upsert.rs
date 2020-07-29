@@ -48,7 +48,7 @@ pub fn upsert(
 
 fn error_suggestions(code: u16) -> &'static str {
     match code {
-        10026 => "You will need to enable Workers Unlimited for your account before you can use this feature.",
+        10026 => "You will need to enable Workers Bundled for your account before you can use this feature.",
         10014 => "Namespace already exists, try using a different namespace.",
         10037 => "Edit your API Token to have correct permissions, or use the 'Edit Cloudflare Workers' API Token template.",
         _ => "",
