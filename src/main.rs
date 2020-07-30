@@ -516,7 +516,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("ip")
-                        .help("ip to listen on. defaults to localhost")
+                        .help("ip to listen on. defaults to 127.0.0.1")
                         .short("i")
                         .long("ip")
                         .takes_value(true)
