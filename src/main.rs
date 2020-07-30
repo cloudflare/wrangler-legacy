@@ -617,7 +617,7 @@ fn run() -> Result<(), failure::Error> {
         )
         .subcommand(
             SubCommand::with_name("login")
-                .about(&*format!("{} Give Wrangler permission for your Workers with your Cloudflare login", emoji::UNLOCKED)))
+                .about(&*format!("{} Authenticate Wrangler with your Cloudflare login", emoji::UNLOCKED)))
         .get_matches();
 
     let mut is_preview = false;

@@ -8,7 +8,7 @@ use std::str;
 
 use crate::commands::config::global_config;
 use crate::settings::global_user::GlobalUser;
-use crate::terminal::{interactive, message, open_browser};
+use crate::terminal::{interactive, open_browser};
 
 pub fn run() -> Result<(), failure::Error> {
     let rsa = Rsa::generate(1024)?;
@@ -18,7 +18,7 @@ pub fn run() -> Result<(), failure::Error> {
     let pubkey_str = str::from_utf8(&pubkey)?;
     let pubkey_filtered = pubkey_str
         .lines()
-        .filter(|line| !line.starts_with("-"))
+        .filter(|line| !line.starts_with('-'))
         .fold(String::new(), |mut data, line| {
             data.push_str(&line);
             data
@@ -64,9 +64,7 @@ fn poll_token(token_id: String) -> Result<String, failure::Error> {
     spinner.set_message("Waiting to be sent api token...");
     spinner.enable_steady_tick(20);
 
-    let mut seconds = 0;
-
-    for _ in timer {
+    for (seconds, _) in timer.enumerate() {
         let res = client
             .get("https://api.staging.cloudflare.com/client/v4/workers/token")
             .json(&request_params)
@@ -79,11 +77,10 @@ fn poll_token(token_id: String) -> Result<String, failure::Error> {
         if seconds >= 500 {
             break;
         }
-        seconds += 1;
     }
 
     failure::bail!(
-        "Timed out when waiting for api token. Try using `wrangler config` if login fails to work."
+        "Timed out while waiting for api token. Try using `wrangler config` if login fails to work."
     );
 }
 

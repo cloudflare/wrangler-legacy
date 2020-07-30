@@ -88,6 +88,11 @@ $ wrangler publish
 
   Additionally, you can configure different [environments](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments).
 
+
+### 🔓 `login`
+
+  Authenticate Wrangler with your Cloudflare login. This will configure Wrangler to have access to your Workers and is the alternative to `wrangler config`.
+
 ### 🔧 `config`
 
   Configure your global Cloudflare user. This is an interactive command that will prompt you for your API token:
