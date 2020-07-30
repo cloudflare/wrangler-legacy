@@ -615,6 +615,9 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(verbose_arg.clone())
         )
+        .subcommand(
+            SubCommand::with_name("login")
+                .about(&*format!("{} Give Wrangler permission for your Workers with your Cloudflare login", emoji::UNLOCKED)))
         .get_matches();
 
     let mut is_preview = false;
@@ -1069,6 +1072,8 @@ fn run() -> Result<(), failure::Error> {
         let verbose = matches.is_present("verbose");
 
         commands::tail::start(&target, &user, tunnel_port, metrics_port, verbose)?;
+    } else if matches.subcommand_matches("login").is_some() {
+        commands::login::run()?;
     }
     Ok(())
 }

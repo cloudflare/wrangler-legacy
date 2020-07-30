@@ -619,6 +619,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "eventual"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9bda6d089b434ca50f3d6feb5fca421309b8bac97b8be9af51cff879fa3f54b"
+dependencies = [
+ "log 0.3.9",
+ "syncbox",
+ "time",
+]
+
+[[package]]
 name = "exitfailure"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2184,6 +2195,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "syncbox"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05bc2b72659ac27a2d0e7c4166c8596578197c4c41f767deab12c81f523b85c7"
+dependencies = [
+ "log 0.3.9",
+ "time",
+]
+
+[[package]]
 name = "synstructure"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2803,6 +2824,7 @@ dependencies = [
  "console 0.11.3",
  "dirs 3.0.1",
  "env_logger",
+ "eventual",
  "exitfailure",
  "failure",
  "flate2",

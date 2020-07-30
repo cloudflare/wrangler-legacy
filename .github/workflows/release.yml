@@ -89,15 +89,6 @@ jobs:
         if: matrix.build == 'macos'
         run: brew install p7zip
 
-      - name: Install OpenSSL via vcpkg (Windows)
-        if: matrix.build == 'windows'
-        run: |
-          git clone https://github.com/microsoft/vcpkg
-          .\vcpkg\bootstrap-vcpkg.bat
-          .\vcpkg\vcpkg install openssl:x64-windows
-        env:
-            VCPKGRS_DYNAMIC: 1
-
       - name: Build (Linux)
         if: matrix.build == 'linux'
         run: |
@@ -110,10 +101,9 @@ jobs:
 
       - name: Build (Windows)
         if: matrix.build == 'windows'
-        run: cargo build --release
+        run: cargo build --release --features vendored-openssl
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
-          VCPKGRS_DYNAMIC: 1
 
       - name: Create artifact directory
         run: |

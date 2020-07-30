@@ -1,3 +1,5 @@
-//use crate::login;
+use crate::login;
 
-pub fn run() {}
+pub fn run() -> Result<(), failure::Error> {
+    login::run()
+}
