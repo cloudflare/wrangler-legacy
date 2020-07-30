@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Cache Cargo registry
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/registry
           key: ${{ matrix.build }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -38,7 +38,7 @@ jobs:
             ${{ matrix.build }}-cargo-registry-
 
       - name: Cache Cargo index
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/git
           key: ${{ matrix.build }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
@@ -46,7 +46,7 @@ jobs:
             ${{ matrix.build }}-cargo-index-
 
       - name: Cache Cargo build
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: target
           key: ${{ matrix.build }}-target-${{ hashFiles('**/Cargo.lock') }}
