@@ -89,7 +89,7 @@ jobs:
         if: matrix.build == 'macos'
         run: brew install p7zip
 
-      - name: Install vcpkg OpenSSL (Windows)
+      - name: Install OpenSSL via vcpkg (Windows)
         if: matrix.build == 'windows'
         run: |
           git clone https://github.com/microsoft/vcpkg
