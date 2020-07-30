@@ -25,6 +25,7 @@ use super::{krate, Package};
 pub fn build(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
+    session_config: Option<serde_json::Value>,
 ) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
     let kv_namespaces = &target.kv_namespaces;
@@ -60,7 +61,7 @@ pub fn build(
                 plain_texts,
             )?;
 
-            build_form(&assets)
+            build_form(&assets, session_config)
         }
         TargetType::JavaScript => {
             log::info!("JavaScript project detected. Publishing...");
@@ -77,7 +78,7 @@ pub fn build(
                 plain_texts,
             )?;
 
-            build_form(&assets)
+            build_form(&assets, session_config)
         }
         TargetType::Webpack => {
             log::info!("webpack project detected. Publishing...");
@@ -110,7 +111,7 @@ pub fn build(
                 plain_texts,
             )?;
 
-            build_form(&assets)
+            build_form(&assets, session_config)
         }
     }
 }
@@ -120,13 +121,19 @@ fn get_asset_manifest_blob(asset_manifest: AssetManifest) -> Result<String, fail
     Ok(asset_manifest)
 }
 
-fn build_form(assets: &ProjectAssets) -> Result<Form, failure::Error> {
+fn build_form(
+    assets: &ProjectAssets,
+    session_config: Option<serde_json::Value>,
+) -> Result<Form, failure::Error> {
     let mut form = Form::new();
 
     // The preview service in particular streams the request form, and requires that the
     // "metadata" part be set first, so this order is important.
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
+    if let Some(session_config) = session_config {
+        form = add_session_config(form, session_config)?
+    }
 
     log::info!("building form");
     log::info!("{:?}", &form);
@@ -163,6 +170,19 @@ fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure:
         .mime_str("application/json")?;
 
     form = form.part("metadata", metadata);
+
+    Ok(form)
+}
+
+fn add_session_config(
+    mut form: Form,
+    session_config: serde_json::Value,
+) -> Result<Form, failure::Error> {
+    let wrangler_session_config = Part::text((session_config).to_string())
+        .file_name("")
+        .mime_str("application/json")?;
+
+    form = form.part("wrangler-session-config", wrangler_session_config);
 
     Ok(form)
 }

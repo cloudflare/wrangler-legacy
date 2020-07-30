@@ -19,10 +19,7 @@ const KEEP_ALIVE_INTERVAL: u64 = 10;
 
 /// connect to a Workers runtime WebSocket emitting the Chrome Devtools Protocol
 /// parse all console messages, and print them to stdout
-pub async fn listen(session_id: String) -> Result<(), failure::Error> {
-    let socket_url = format!("wss://rawhttp.cloudflareworkers.com/inspect/{}", session_id);
-    let socket_url = Url::parse(&socket_url)?;
-
+pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
