@@ -509,7 +509,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("host")
-                        .help("domain to test behind your worker. defaults to example.com")
+                        .help("if you are not an authenticated user, this flag specifies the host of the request in your worker event. defaults to https://tutorial.cloudflareworkers.com")
                         .short("h")
                         .long("host")
                         .takes_value(true)

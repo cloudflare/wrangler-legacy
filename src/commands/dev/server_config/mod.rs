@@ -23,7 +23,9 @@ impl ServerConfig {
             Ok(socket) => socket.local_addr(),
             Err(_) => failure::bail!("{} is unavailable, try binding to another address with the --port and --ip flags, or stop other `wrangler dev` processes.", &addr)
         }?;
-        let host = host.unwrap_or("https://example.com").to_string();
+        let host = host
+            .unwrap_or("https://tutorial.cloudflareworkers.com")
+            .to_string();
 
         let host = Host::new(&host)?;
 
