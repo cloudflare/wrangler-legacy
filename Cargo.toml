@@ -38,7 +38,7 @@ lazy_static = "1.4.0"
 log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
-openssl = { version = "0.10.29", optional = true}
+openssl = { version = "0.10.29", optional = true }
 percent-encoding = "2.1.0"
 predicates = "1.0.5"
 prettytable-rs = "0.8.0"
@@ -68,6 +68,7 @@ fs_extra = "1.1.0"
 predicates = "1.0.5"
 
 [features]
+# OpenSSL is vendored by default, can use system OpenSSL through feature flag.
 default = ['openssl/vendored']
 sys-openssl = ['openssl']
 

@@ -91,11 +91,11 @@ $ wrangler publish
 
 ### 🔓 `login`
 
-  Authenticate Wrangler with your Cloudflare login. This will configure Wrangler to have access to your Workers and is the alternative to `wrangler config`.
+  Authenticate Wrangler with your Cloudflare login. This will prompt you with a Cloudflare account login page and is the alternative to `wrangler config`.
 
 ### 🔧 `config`
 
-  Configure your global Cloudflare user. This is an interactive command that will prompt you for your API token:
+  Authenticate Wrangler with a Cloudflare API Token. This is an interactive command that will prompt you for your API token:
 
   ```bash
   wrangler config
