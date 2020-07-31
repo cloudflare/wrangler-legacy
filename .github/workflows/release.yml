@@ -93,7 +93,7 @@ jobs:
         if: matrix.build == 'linux'
         run: |
           rustup target add ${{ env.LINUX_TARGET }}
-          cargo build --release --target ${{ env.LINUX_TARGET }} --features vendored-openssl
+          cargo build --release --target ${{ env.LINUX_TARGET }}
 
       - name: Build (MacOS)
         if: matrix.build == 'macos'
@@ -101,7 +101,7 @@ jobs:
 
       - name: Build (Windows)
         if: matrix.build == 'windows'
-        run: cargo build --release --features vendored-openssl
+        run: cargo build --release
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
 

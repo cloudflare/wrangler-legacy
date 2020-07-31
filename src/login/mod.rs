@@ -3,9 +3,9 @@ use indicatif::{ProgressBar, ProgressStyle};
 use openssl::base64;
 use openssl::rsa::{Padding, Rsa};
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::str;
-use serde::Deserialize;
 
 use crate::commands::config::global_config;
 use crate::settings::global_user::GlobalUser;
@@ -54,7 +54,7 @@ pub fn run() -> Result<(), failure::Error> {
 
 #[derive(Deserialize)]
 struct TokenResponse {
-    result: String
+    result: String,
 }
 
 /// Poll for token, bail after 500 seconds.
