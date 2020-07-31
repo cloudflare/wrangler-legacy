@@ -5,6 +5,7 @@ use cloudflare::framework::auth::Credentials;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
 use http::StatusCode;
+use url::Url;
 
 use crate::http::{feature::headers, Feature, DEFAULT_HTTP_TIMEOUT_SECONDS};
 use crate::settings::global_user::GlobalUser;
@@ -19,7 +20,7 @@ pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> 
     HttpApiClient::new(
         Credentials::from(user.to_owned()),
         config,
-        Environment::Production,
+        Environment::Custom(Url::parse("https://api.staging.cloudflare.com/client/v4/")?),
     )
 }
 
@@ -35,7 +36,7 @@ pub fn featured_cf_v4_client(
     HttpApiClient::new(
         Credentials::from(user.to_owned()),
         config,
-        Environment::Production,
+        Environment::Custom(Url::parse("https://api.staging.cloudflare.com/client/v4/")?),
     )
 }
 
@@ -46,7 +47,7 @@ pub fn cf_v4_api_client_async(
     async_api::Client::new(
         Credentials::from(user.to_owned()),
         config,
-        Environment::Production,
+        Environment::Custom(Url::parse("https://api.staging.cloudflare.com/client/v4/")?),
     )
 }
 

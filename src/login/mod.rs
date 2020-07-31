@@ -5,6 +5,7 @@ use openssl::rsa::{Padding, Rsa};
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use std::collections::HashMap;
 use std::str;
+use serde::Deserialize;
 
 use crate::commands::config::global_config;
 use crate::settings::global_user::GlobalUser;
@@ -41,7 +42,7 @@ pub fn run() -> Result<(), failure::Error> {
     let mut token_bytes: [u8; 128] = [0; 128];
 
     rsa.private_decrypt(&encrypted_token, &mut token_bytes, Padding::PKCS1)?;
-    let token = str::from_utf8(&token_bytes)?;
+    let token = str::from_utf8(&token_bytes)?.trim_matches(char::from(0));
 
     let user = GlobalUser::TokenAuth {
         api_token: token.to_string(),
@@ -49,6 +50,11 @@ pub fn run() -> Result<(), failure::Error> {
     global_config(&user, true)?;
 
     Ok(())
+}
+
+#[derive(Deserialize)]
+struct TokenResponse {
+    result: String
 }
 
 /// Poll for token, bail after 500 seconds.
@@ -71,7 +77,8 @@ fn poll_token(token_id: String) -> Result<String, failure::Error> {
             .send()?;
 
         if res.status().is_success() {
-            return Ok(res.text_with_charset("utf-8")?);
+            let body: TokenResponse = res.json()?;
+            return Ok(body.result);
         }
 
         if seconds >= 500 {
