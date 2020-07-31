@@ -70,8 +70,10 @@ predicates = "1.0.5"
 [features]
 # OpenSSL is vendored by default, can use system OpenSSL through feature flag.
 default = ['openssl/vendored']
+# Keeping feature for users already using this feature flag
+vendored-openssl = ['openssl/vendored']
 sys-openssl = ['openssl']
 
 # Treat compiler warnings as a build error.
 # This only runs in CI by default
-strict = []
+strict = ['openssl/vendored']
