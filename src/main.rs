@@ -550,7 +550,7 @@ fn run() -> Result<(), failure::Error> {
         .subcommand(
             SubCommand::with_name("config")
                 .about(&*format!(
-                    "{} Authenticate Wrangler by copying in your Cloudflare API Token",
+                    "{} Authenticate Wrangler with a Cloudflare API Token or Global API Key",
                     emoji::SLEUTH
                 ))
                 .arg(
@@ -617,7 +617,7 @@ fn run() -> Result<(), failure::Error> {
         )
         .subcommand(
             SubCommand::with_name("login")
-                .about(&*format!("{} Authenticate Wrangler by logging in with your Cloudflare account", emoji::UNLOCKED)))
+                .about(&*format!("{} Authenticate Wrangler with your Cloudflare username and password", emoji::UNLOCKED)))
         .get_matches();
 
     let mut is_preview = false;

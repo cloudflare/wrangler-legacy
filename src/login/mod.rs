@@ -19,7 +19,7 @@ pub fn run() -> Result<(), failure::Error> {
     let pubkey_str = str::from_utf8(&pubkey)?;
     let pubkey_filtered = pubkey_str
         .lines()
-        .filter(|line| !line.starts_with('-'))
+        .filter(|line| !line.starts_with("---"))
         .fold(String::new(), |mut data, line| {
             data.push_str(&line);
             data
@@ -27,9 +27,9 @@ pub fn run() -> Result<(), failure::Error> {
     let pubkey_encoded = percent_encode(pubkey_filtered.as_bytes(), NON_ALPHANUMERIC).to_string();
 
     let browser_permission =
-        interactive::confirm("Allow Wrangler to a open page in your browser?")?;
+        interactive::confirm("Allow Wrangler to open a page in your browser?")?;
     if !browser_permission {
-        failure::bail!("In order to use login you must allow Wrangler to open pages in your browser. If you don't want to do this consder using `wrangler config`");
+        failure::bail!("In order to log in you must allow Wrangler to open your browser. If you don't want to do this consider using `wrangler config`");
     }
 
     open_browser(&format!(
@@ -67,7 +67,7 @@ fn poll_token(token_id: String) -> Result<String, failure::Error> {
 
     let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
     let spinner = ProgressBar::new_spinner().with_style(style);
-    spinner.set_message("Waiting to be sent api token...");
+    spinner.set_message("Waiting for API token...");
     spinner.enable_steady_tick(20);
 
     for (seconds, _) in timer.enumerate() {
@@ -87,7 +87,7 @@ fn poll_token(token_id: String) -> Result<String, failure::Error> {
     }
 
     failure::bail!(
-        "Timed out while waiting for api token. Try using `wrangler config` if login fails to work."
+        "Timed out while waiting for API token. Try using `wrangler config` if login fails to work."
     );
 }
 
