@@ -759,7 +759,7 @@ fn run() -> Result<(), failure::Error> {
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
 
-        let mut host: Option<&str> = matches.value_of("host");
+        let host: Option<&str> = matches.value_of("host");
         let mut ip: Option<&str> = matches.value_of("ip");
         let mut port: Option<u16> = matches
             .value_of("port")
@@ -767,10 +767,6 @@ fn run() -> Result<(), failure::Error> {
 
         // Check if arg not given but present in wrangler.toml
         if let Some(d) = &manifest.dev {
-            if host.is_none() && d.host.is_some() {
-                host = d.host.as_deref();
-            }
-
             if ip.is_none() && d.ip.is_some() {
                 ip = d.ip.as_deref();
             }
