@@ -751,17 +751,35 @@ fn run() -> Result<(), failure::Error> {
         commands::preview(target, user, options, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
         log::info!("Starting dev server");
-        let port: Option<u16> = matches
-            .value_of("port")
-            .map(|p| p.parse().expect("--port expects a number"));
-        let host = matches.value_of("host");
-        let ip = matches.value_of("ip");
+
         let config_path = Path::new(
             matches
                 .value_of("config")
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
+
+        let mut host: Option<&str> = matches.value_of("host");
+        let mut ip: Option<&str> = matches.value_of("ip");
+        let mut port: Option<u16> = matches
+            .value_of("port")
+            .map(|p| p.parse().expect("--port expects a number"));
+
+        // Check if arg not given but present in wrangler.toml
+        if let Some(d) = &manifest.dev {
+            if host.is_none() && d.host.is_some() {
+                host = d.host.as_deref();
+            }
+
+            if ip.is_none() && d.ip.is_some() {
+                ip = d.ip.as_deref();
+            }
+
+            if port.is_none() && d.port.is_some() {
+                port = d.port;
+            }
+        }
+
         let env = matches.value_of("env");
         let deploy_config = manifest.deploy_config(env)?;
         is_preview = true;

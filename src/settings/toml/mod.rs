@@ -1,4 +1,5 @@
 mod deploy_config;
+mod dev;
 mod environment;
 mod kv_namespace;
 mod manifest;
