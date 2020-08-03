@@ -36,3 +36,4 @@ pub static UP: Emoji = Emoji("🆙 ", "");
 pub static WARN: Emoji = Emoji("⚠️ ", "");
 pub static WAVING: Emoji = Emoji("👋 ", "");
 pub static WORKER: Emoji = Emoji("👷 ", "");
+pub static UNLOCKED: Emoji = Emoji("🔓", "");

@@ -10,7 +10,6 @@ pub use request_payload::RequestPayload;
 mod upload;
 pub use upload::upload;
 
-use std::process::Command;
 use std::sync::mpsc::channel;
 use std::thread;
 
@@ -22,7 +21,7 @@ use crate::build;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::message;
+use crate::terminal::{message, open_browser};
 use crate::watch::watch_and_build;
 
 pub fn preview(
@@ -91,22 +90,6 @@ pub struct PreviewOpt {
     pub body: Option<String>,
     pub livereload: bool,
     pub headless: bool,
-}
-
-fn open_browser(url: &str) -> Result<(), failure::Error> {
-    let _output = if cfg!(target_os = "windows") {
-        let url_escaped = url.replace("&", "^&");
-        let windows_cmd = format!("start {}", url_escaped);
-        Command::new("cmd").args(&["/C", &windows_cmd]).output()?
-    } else if cfg!(target_os = "linux") {
-        let linux_cmd = format!(r#"xdg-open "{}""#, url);
-        Command::new("sh").arg("-c").arg(&linux_cmd).output()?
-    } else {
-        let mac_cmd = format!(r#"open "{}""#, url);
-        Command::new("sh").arg("-c").arg(&mac_cmd).output()?
-    };
-
-    Ok(())
 }
 
 fn client_request(payload: &RequestPayload, script_id: &str, sites_preview: bool) {

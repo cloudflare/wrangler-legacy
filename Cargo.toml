@@ -23,6 +23,7 @@ config = "0.10.1"
 console = "0.11.3"
 dirs = "3.0.1"
 env_logger = "0.7.1"
+eventual = "0.1.7"
 exitfailure = "0.5.1"
 failure = "0.1.8"
 flate2 = "1.0.16"
@@ -37,7 +38,7 @@ lazy_static = "1.4.0"
 log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
-openssl = { version = '0.10.29', optional = true }
+openssl = { version = "0.10.29", optional = true }
 percent-encoding = "2.1.0"
 predicates = "1.0.5"
 prettytable-rs = "0.8.0"
@@ -67,10 +68,12 @@ fs_extra = "1.1.0"
 predicates = "1.0.5"
 
 [features]
-# We build Linux binaries with vendored openssl
-# to avoid SSL issues
+# OpenSSL is vendored by default, can use system OpenSSL through feature flag.
+default = ['openssl/vendored']
+# Keeping feature for users already using this feature flag
 vendored-openssl = ['openssl/vendored']
+sys-openssl = ['openssl']
 
 # Treat compiler warnings as a build error.
 # This only runs in CI by default
-strict = []
+strict = ['openssl/vendored']
