@@ -439,7 +439,7 @@ fn get_namespaces(
                         binding: ns.binding.to_string(),
                     })
                 } else {
-                    failure::bail!("In order to preview a worker with KV namespaces, you must designate a preview_id for each KV namespace you'd like to preview.")
+                    failure::bail!("In order to preview a worker with KV namespaces, you must designate a preview_id in your configuration file for each KV namespace you'd like to preview.")
                 }
             } else if let Some(id) = &ns.id {
                 Ok(KvNamespace {

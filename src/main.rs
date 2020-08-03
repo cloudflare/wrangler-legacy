@@ -509,14 +509,14 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("host")
-                        .help("domain to test behind your worker. defaults to example.com")
+                        .help("if you are not an authenticated user, this flag specifies the host of the request in your worker event. defaults to https://tutorial.cloudflareworkers.com")
                         .short("h")
                         .long("host")
                         .takes_value(true)
                 )
                 .arg(
                     Arg::with_name("ip")
-                        .help("ip to listen on. defaults to localhost")
+                        .help("ip to listen on. defaults to 127.0.0.1")
                         .short("i")
                         .long("ip")
                         .takes_value(true)

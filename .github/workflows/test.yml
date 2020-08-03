@@ -29,29 +29,32 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/registry
-          key: ${{ matrix.build }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.build }}-cargo-registry-
+      # for some reason our caching is causing flakiness
+      # temporarily disable it
 
-      - name: Cache Cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: ${{ matrix.build }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.build }}-cargo-index-
+      # - name: Cache Cargo registry
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: ~/.cargo/registry
+      #     key: ${{ matrix.build }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      #     restore-keys: |
+      #       ${{ matrix.build }}-cargo-registry-
 
-      - name: Cache Cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ matrix.build }}-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.build }}-target-
+      # - name: Cache Cargo index
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: ~/.cargo/git
+      #     key: ${{ matrix.build }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      #     restore-keys: |
+      #       ${{ matrix.build }}-cargo-index-
+
+      # - name: Cache Cargo build
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: target
+      #     key: ${{ matrix.build }}-target-${{ hashFiles('**/Cargo.lock') }}
+      #     restore-keys: |
+      #       ${{ matrix.build }}-target-
 
       - name: Install Rust
         run: |
