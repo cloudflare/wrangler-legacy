@@ -11,6 +11,7 @@ use serde_with::rust::string_empty_as_none;
 
 use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
 use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
+use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
 use crate::settings::toml::site::Site;
@@ -37,6 +38,7 @@ pub struct Manifest {
     // TODO: maybe one day, serde toml support will allow us to serialize sites
     // as a TOML inline table (this would prevent confusion with environments too!)
     pub site: Option<Site>,
+    pub dev: Option<Dev>,
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
