@@ -9,7 +9,7 @@ use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
-use hyper_tls::HttpsConnector;
+use hyper_rustls::HttpsConnector;
 
 pub(super) async fn serve(
     server_config: ServerConfig,

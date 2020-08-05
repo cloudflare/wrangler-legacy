@@ -521,6 +521,12 @@ fn run() -> Result<(), failure::Error> {
                         .long("ip")
                         .takes_value(true)
                 )
+                .arg(
+                    Arg::with_name("http")
+                    .help("Runs local server on http instead of https, only valid when running dev authenticated")
+                    .long("http")
+                    .takes_value(false)
+                    )
                 .arg(verbose_arg.clone())
                 .arg(wrangler_file.clone())
         )
@@ -764,6 +770,7 @@ fn run() -> Result<(), failure::Error> {
         let mut port: Option<u16> = matches
             .value_of("port")
             .map(|p| p.parse().expect("--port expects a number"));
+        let mut http: bool = matches.is_present("http");
 
         // Check if arg not given but present in wrangler.toml
         if let Some(d) = &manifest.dev {
@@ -774,6 +781,10 @@ fn run() -> Result<(), failure::Error> {
             if port.is_none() && d.port.is_some() {
                 port = d.port;
             }
+
+            if !http && d.http.is_some() {
+                http = d.http.unwrap();
+            }
         }
 
         let env = matches.value_of("env");
@@ -782,7 +793,7 @@ fn run() -> Result<(), failure::Error> {
         let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
-        commands::dev::dev(target, deploy_config, user, host, port, ip, verbose)?;
+        commands::dev::dev(target, deploy_config, user, host, port, ip, http, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

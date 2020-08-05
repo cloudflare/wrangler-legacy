@@ -11,7 +11,7 @@ use hyper::header::{HeaderName, HeaderValue};
 use hyper::http::uri::InvalidUri;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
-use hyper_tls::HttpsConnector;
+use hyper_rustls::HttpsConnector;
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 

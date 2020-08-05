@@ -2,6 +2,7 @@ mod edge;
 mod gcs;
 mod server_config;
 mod socket;
+mod tls;
 mod utils;
 
 use server_config::ServerConfig;
@@ -19,6 +20,7 @@ pub fn dev(
     host: Option<&str>,
     port: Option<u16>,
     ip: Option<&str>,
+    http: bool,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     let server_config = ServerConfig::new(host, ip, port)?;
@@ -31,6 +33,12 @@ pub fn dev(
         Some(user) => edge::dev(target, user, server_config, deploy_config, verbose),
 
         // unauthenticated users connect to gcs
-        None => gcs::dev(target, server_config, verbose),
+        None => {
+            if http {
+                failure::bail!("Unauthenticated dev must use https")
+            } else {
+                gcs::dev(target, server_config, verbose)
+            }
+        }
     }
 }
