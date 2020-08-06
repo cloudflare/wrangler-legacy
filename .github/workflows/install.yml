@@ -1,0 +1,35 @@
+name: Installation
+
+on:
+  schedule:
+    # this must be quoted because * is special char
+    # this runs every 6 hours
+    # see https://crontab.guru/#0_*/6_*_*_*
+    - cron:  '0 */6 * * *'
+
+jobs:
+  npm:
+    name: Install from npm
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        target:
+          [
+            linux,
+            macos,
+            windows,
+          ]
+        include:
+          - target: linux
+            os: ubuntu-latest
+          - target: macos
+            os: macos-latest
+          - target: windows
+            os: windows-latest
+
+    steps:
+      - name: Install Node
+        uses: actions/setup-node@v1
+
+      - name: Install Wrangler
+        run: npm install -g @cloudflare/wrangler
