@@ -73,14 +73,21 @@ pub fn dev(
     // and we must block the main thread on the completion of
     // said futures
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(socket_url));
-        let server = tokio::spawn(serve(server_config, Arc::clone(&preview_id)));
-        let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
+        let mut running = true;
+        let devtools_listener = tokio::spawn(socket::listen(socket_url.clone()));
 
-        match res {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
+        while running {
+            let server = tokio::spawn(serve(server_config.clone(), Arc::clone(&preview_id)));
+
+            //let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
+            let res = server.await;
+            running = match res {
+                Ok(_) => false,
+                Err(_) => true,
+            }
         }
+
+        devtools_listener.await?
     })
 }
 

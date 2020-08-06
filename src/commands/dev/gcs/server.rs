@@ -1,7 +1,8 @@
 use crate::commands::dev::gcs::headers::{destructure_response, structure_request};
 use crate::commands::dev::server_config::ServerConfig;
 use crate::commands::dev::utils::get_path_as_str;
-use crate::terminal::emoji;
+use crate::commands::dev::tls;
+use crate::terminal::{emoji, message};
 
 use std::sync::{Arc, Mutex};
 
@@ -12,6 +13,11 @@ use hyper::http::uri::InvalidUri;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
 use hyper_rustls::HttpsConnector;
+use tokio::net::TcpListener;
+use futures_util::{
+    future::TryFutureExt,
+    stream::{StreamExt, TryStreamExt},
+};
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
@@ -21,16 +27,34 @@ pub(super) async fn serve(
     server_config: ServerConfig,
     preview_id: Arc<Mutex<String>>,
 ) -> Result<(), failure::Error> {
+    tls::generate_cert()?;
+
     // set up https client to connect to the preview service
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
 
     let listening_address = server_config.listening_address;
 
+    // Create a TCP listener via tokio.
+    let mut tcp = TcpListener::bind(&listening_address).await?;
+    let tls_acceptor = tls::get_tls_acceptor()?;
+    // Prepare a long-running future stream to accept and serve cients.
+    
+
+    let incoming_tls_stream = tcp
+        .incoming()
+        .map_err(|e| tls::io_error(format!("Incoming connection failed: {:?}", e)))
+        .and_then(move |s| {
+            tls_acceptor
+                .accept(s)
+                .map_err(|e| tls::io_error(format!("TLS Error: {:?}", e)))
+        })
+        .boxed();
+
     // create a closure that hyper will use later to handle HTTP requests
     // this takes care of sending an incoming request along to
     // the uploaded Worker script and returning its response
-    let make_service = make_service_fn(move |_| {
+    let service = make_service_fn(move |_| {
         let client = client.to_owned();
         let server_config = server_config.to_owned();
         let preview_id = preview_id.to_owned();
@@ -85,16 +109,16 @@ pub(super) async fn serve(
         }
     });
 
-    let server = Server::bind(&listening_address).serve(make_service);
+    let server = Server::builder(tls::HyperAcceptor{ acceptor: incoming_tls_stream }).serve(service);
     println!(
-        "{} Listening on http://{}",
+        "{} Listening on https://{}",
         emoji::EAR,
         listening_address.to_string()
     );
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
-    }
-    Ok(())
+
+    message::info("Generated certifiacte is not verified, browsers will give a warning and curl will require `--inscure`");
+
+    Ok(server.await?)
 }
 
 fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
