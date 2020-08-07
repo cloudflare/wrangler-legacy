@@ -74,13 +74,13 @@ pub fn dev(
     // said futures
     runtime.block_on(async {
         let devtools_listener = tokio::spawn(socket::listen(socket_url.clone()));
-        let mut server = tokio::spawn(serve(server_config.clone(), Arc::clone(&preview_id)));
+        let server = tokio::spawn(serve(server_config.clone(), Arc::clone(&preview_id)));
 
-        while server.await.is_ok() {
-            server = tokio::spawn(serve(server_config.clone(), Arc::clone(&preview_id)));
+        let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
+        match res {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
         }
-
-        devtools_listener.await?
     })
 }
 

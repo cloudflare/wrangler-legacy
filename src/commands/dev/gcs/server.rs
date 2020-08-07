@@ -7,10 +7,7 @@ use crate::terminal::{emoji, message};
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
-use futures_util::{
-    future::TryFutureExt,
-    stream::{StreamExt, TryStreamExt},
-};
+use futures_util::stream::StreamExt;
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::http::uri::InvalidUri;
@@ -95,14 +92,25 @@ pub(super) async fn serve(
 
     // Create a TCP listener via tokio.
     let mut tcp = TcpListener::bind(&listening_address).await?;
-    let tls_acceptor = tls::get_tls_acceptor()?;
+    let tls_acceptor = &tls::get_tls_acceptor()?;
     let incoming_tls_stream = tcp
         .incoming()
-        .map_err(|e| tls::io_error(format!("Incoming connection failed: {:?}", e)))
-        .and_then(move |s| {
-            tls_acceptor
-                .accept(s)
-                .map_err(|e| tls::io_error(format!("Incoming connection failed: {:?}", e)))
+        .filter_map(move |s| async move {
+            let client = match s {
+                Ok(x) => x,
+                Err(e) => {
+                    println!("Failed to accept client");
+                    return Some(Err(e));
+                }
+            };
+            match tls_acceptor.accept(client).await {
+                Ok(x) => Some(Ok(x)),
+                Err(e) => {
+                    println!("Client connection error {}", e);
+                    message::info("Make sure to use https and `--insecure` with curl");
+                    None
+                }
+            }
         })
         .boxed();
 
@@ -116,7 +124,7 @@ pub(super) async fn serve(
         listening_address.to_string()
     );
 
-    message::info("Generated certifiacte is not verified, browsers will give a warning and curl will require `--inscure`");
+    message::info("Generated certificate is not verified, browsers will give a warning and curl will require `--inscure`");
 
     if let Err(e) = server.await {
         eprintln!("{}", e);

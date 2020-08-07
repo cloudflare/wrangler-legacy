@@ -53,48 +53,25 @@ pub fn dev(
 
     let mut runtime = TokioRuntime::new()?;
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(session.clone().websocket_url));
-        if http {
-            start_http(server_config, preview_token, session.clone()).await?;
+        let devtools_listener = tokio::spawn(socket::listen(session.websocket_url));
+        let server = if http {
+            tokio::spawn(server::http(
+                server_config,
+                Arc::clone(&preview_token),
+                session.host,
+            ))
         } else {
-            start_https(server_config, preview_token, session.clone()).await;
+            tokio::spawn(server::https(
+                server_config.clone(),
+                Arc::clone(&preview_token),
+                session.host.clone(),
+            ))
+        };
+
+        let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
+        match res {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
         }
-
-        //let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
-        devtools_listener.await?
     })
-}
-
-async fn start_http(
-    server_config: ServerConfig,
-    preview_token: Arc<Mutex<String>>,
-    session: Session,
-) -> Result<(), failure::Error> {
-    let server = tokio::spawn(server::http(
-        server_config,
-        Arc::clone(&preview_token),
-        session.host,
-    ));
-
-    server.await?
-}
-
-async fn start_https(
-    server_config: ServerConfig,
-    preview_token: Arc<Mutex<String>>,
-    session: Session,
-) {
-    let mut server = tokio::spawn(server::https(
-        server_config.clone(),
-        Arc::clone(&preview_token),
-        session.host.clone(),
-    ));
-
-    while server.await.is_ok() {
-        server = tokio::spawn(server::https(
-            server_config.clone(),
-            Arc::clone(&preview_token),
-            session.host.clone(),
-        ));
-    }
 }
