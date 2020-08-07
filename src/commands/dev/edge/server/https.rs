@@ -1,29 +1,34 @@
+use super::preview_request;
 use crate::commands::dev::server_config::ServerConfig;
+use crate::commands::dev::tls;
 use crate::commands::dev::utils::get_path_as_str;
-use crate::terminal::emoji;
+use crate::terminal::{emoji, message};
 
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
-use hyper::client::{HttpConnector, ResponseFuture};
-use hyper::header::{HeaderName, HeaderValue};
+use futures_util::{
+    future::TryFutureExt,
+    stream::{StreamExt, TryStreamExt},
+};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
 use hyper_rustls::HttpsConnector;
+use tokio::net::TcpListener;
 
-pub(super) async fn serve(
+pub async fn https(
     server_config: ServerConfig,
     preview_token: Arc<Mutex<String>>,
     host: String,
 ) -> Result<(), failure::Error> {
+    tls::generate_cert()?;
+
     // set up https client to connect to the preview service
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
 
-    let listening_address = server_config.listening_address;
-
     // create a closure that hyper will use later to handle HTTP requests
-    let make_service = make_service_fn(move |_| {
+    let service = make_service_fn(move |_| {
         let client = client.to_owned();
         let preview_token = preview_token.to_owned();
         let host = host.to_owned();
@@ -44,6 +49,7 @@ pub(super) async fn serve(
                         client,
                         preview_token.to_owned(),
                         host.clone(),
+                        false,
                     )
                     .await?;
 
@@ -62,40 +68,31 @@ pub(super) async fn serve(
         }
     });
 
-    let server = Server::bind(&listening_address).serve(make_service);
-    println!("{} Listening on http://{}", emoji::EAR, listening_address);
+    let listening_address = server_config.listening_address;
+
+    let mut tcp = TcpListener::bind(&listening_address).await?;
+    let tls_acceptor = tls::get_tls_acceptor()?;
+    let incoming_tls_stream = tcp
+        .incoming()
+        .map_err(|e| tls::io_error(format!("Incoming connection failed: {:?}", e)))
+        .and_then(move |s| {
+            tls_acceptor
+                .accept(s)
+                .map_err(|e| tls::io_error(format!("Incoming connection failed: {:?}", e)))
+        })
+        .boxed();
+
+    let server = Server::builder(tls::HyperAcceptor {
+        acceptor: incoming_tls_stream,
+    })
+    .serve(service);
+
+    println!("{} Listening on https://{}", emoji::EAR, listening_address);
+    message::info("Generated certifiacte is not verified, browsers will give a warning and curl will require `--inscure`");
+
     if let Err(e) = server.await {
-        eprintln!("server error: {}", e)
+        eprintln!("{}", e);
     }
+
     Ok(())
-}
-
-fn preview_request(
-    req: Request<Body>,
-    client: HyperClient<HttpsConnector<HttpConnector>>,
-    preview_token: String,
-    host: String,
-) -> ResponseFuture {
-    let (mut parts, body) = req.into_parts();
-
-    let path = get_path_as_str(&parts.uri);
-
-    parts.headers.insert(
-        HeaderName::from_static("host"),
-        HeaderValue::from_str(&host).expect("Could not create host header"),
-    );
-
-    parts.headers.insert(
-        HeaderName::from_static("cf-workers-preview-token"),
-        HeaderValue::from_str(&preview_token).expect("Could not create token header"),
-    );
-
-    // TODO: figure out how to http _or_ https
-    parts.uri = format!("https://{}{}", host, path)
-        .parse()
-        .expect("Could not construct preview url");
-
-    let req = Request::from_parts(parts, body);
-
-    client.request(req)
 }

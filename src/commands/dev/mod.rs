@@ -5,7 +5,7 @@ mod socket;
 mod tls;
 mod utils;
 
-use server_config::ServerConfig;
+pub use server_config::ServerConfig;
 
 use crate::build;
 use crate::settings::global_user::GlobalUser;
@@ -17,20 +17,16 @@ pub fn dev(
     target: Target,
     deploy_config: DeployConfig,
     user: Option<GlobalUser>,
-    host: Option<&str>,
-    port: Option<u16>,
-    ip: Option<&str>,
+    server_config: ServerConfig,
     http: bool,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let server_config = ServerConfig::new(host, ip, port)?;
-
     // before serving requests we must first build the Worker
     build(&target)?;
 
     match user {
         // authenticated users connect to the edge
-        Some(user) => edge::dev(target, user, server_config, deploy_config, verbose),
+        Some(user) => edge::dev(target, user, server_config, deploy_config, http, verbose),
 
         // unauthenticated users connect to gcs
         None => {

@@ -793,7 +793,10 @@ fn run() -> Result<(), failure::Error> {
         let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
-        commands::dev::dev(target, deploy_config, user, host, port, ip, http, verbose)?;
+
+        let server_config = commands::dev::ServerConfig::new(host, ip, port)?;
+
+        commands::dev::dev(target, deploy_config, user, server_config, http, verbose)?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
