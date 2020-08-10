@@ -99,8 +99,8 @@ pub(super) async fn serve(
             let client = match s {
                 Ok(x) => x,
                 Err(e) => {
-                    println!("Failed to accept client");
-                    return Some(Err(e));
+                    println!("Failed to accept client {}", e);
+                    return None;
                 }
             };
             match tls_acceptor.accept(client).await {
