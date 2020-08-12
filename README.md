@@ -20,6 +20,7 @@ You have many options to install wrangler!
 ```bash
 npm i @cloudflare/wrangler -g
 ```
+If you are running an ARM based system (eg Raspberry Pi, Pinebook) you'll need to use the `cargo` installation method listed below to build wrangler from source.
 
 #### Specify binary site URL
 
