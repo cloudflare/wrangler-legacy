@@ -6,10 +6,11 @@ use url::Url;
 #[derive(Debug, Clone)]
 pub struct Host {
     url: Url,
+    default: bool,
 }
 
 impl Host {
-    pub fn new(host: &str) -> Result<Self, failure::Error> {
+    pub fn new(host: &str, default: bool) -> Result<Self, failure::Error> {
         // try to create a url from host
         let url = match Url::parse(&host) {
             Ok(host) => Ok(host),
@@ -29,11 +30,15 @@ impl Host {
 
         // recreate url without any trailing path
         let url = Url::parse(&format!("{}://{}", scheme, host))?;
-        Ok(Host { url })
+        Ok(Host { url, default })
     }
 
     pub fn is_https(&self) -> bool {
         self.url.scheme() == "https"
+    }
+
+    pub fn is_default(&self) -> bool {
+        self.default
     }
 }
 

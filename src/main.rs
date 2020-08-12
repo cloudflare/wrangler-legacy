@@ -510,7 +510,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("host")
-                        .help("if you are not an authenticated user, this flag specifies the host of the request in your worker event. defaults to https://tutorial.cloudflareworkers.com")
+                        .help("Host to forward or requests to, defaults to the zone of project or to tutorial.cloudflareworkers.com if unauthenticated.")
                         .short("h")
                         .long("host")
                         .takes_value(true)
@@ -819,7 +819,6 @@ fn run() -> Result<(), failure::Error> {
             deploy_config,
             user,
             server_config,
-            host.is_some(),
             local_protocol,
             upstream_protocol,
             verbose,

@@ -20,7 +20,6 @@ pub fn dev(
     deploy_config: DeployConfig,
     user: Option<GlobalUser>,
     server_config: ServerConfig,
-    host: bool,
     local_protocol: Protocol,
     upstream_protocol: Protocol,
     verbose: bool,
@@ -41,26 +40,29 @@ pub fn dev(
         failure::bail!("{} cannot be https if {} is http", local_str, upstream_str)
     }
 
-    if host || user.is_none() {
-        if user.is_some() {
-            message::warn(
-                format!(
-                    "{} provided, will run unauthenticated and upstream to provided host",
-                    host_str
-                )
-                .as_str(),
+    if let Some(user) = user {
+        if server_config.host.is_default() {
+            //Authenticated and no host provided, run on edge with user's zone
+            return edge::dev(
+                target,
+                user,
+                server_config,
+                deploy_config,
+                local_protocol,
+                upstream_protocol,
+                verbose,
             );
         }
-        gcs::dev(target, server_config, local_protocol, verbose)
-    } else {
-        edge::dev(
-            target,
-            user.unwrap(),
-            server_config,
-            deploy_config,
-            local_protocol,
-            upstream_protocol,
-            verbose,
-        )
+
+        // If user is authenticated but host is provided, use gcs with given host
+        message::warn(
+            format!(
+                "{} provided, will run unauthenticated and upstream to provided host",
+                host_str
+            )
+            .as_str(),
+        );
     }
+
+    gcs::dev(target, server_config, local_protocol, verbose)
 }
