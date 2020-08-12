@@ -524,14 +524,14 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("local-protocol")
-                    .help("Takes requests for local server via https instead of http")
-                    .long("local-https")
+                    .help("sets the protocol on which the wrangler dev listens, by default this is http but can be set to https")
+                    .long("local-protocol")
                     .takes_value(true)
                     )
                 .arg(
                     Arg::with_name("upstream-protocol")
-                    .help("Sends requests to host via http instead of https")
-                    .long("upstream-http")
+                    .help("sets the protocol on which requests are sent to the host, by default this is https but can be set to http")
+                    .long("upstream-protocol")
                     .takes_value(true)
                     )
                 .arg(verbose_arg.clone())

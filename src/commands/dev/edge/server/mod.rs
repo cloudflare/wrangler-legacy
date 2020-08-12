@@ -17,7 +17,7 @@ fn preview_request(
     client: HyperClient<HttpsConnector<HttpConnector>>,
     preview_token: String,
     host: String,
-    http: Protocol,
+    protocol: Protocol,
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
 
@@ -33,7 +33,7 @@ fn preview_request(
         HeaderValue::from_str(&preview_token).expect("Could not create token header"),
     );
 
-    parts.uri = match http {
+    parts.uri = match protocol {
         Protocol::Http => format!("http://{}{}", host, path),
         Protocol::Https => format!("https://{}{}", host, path),
     }
