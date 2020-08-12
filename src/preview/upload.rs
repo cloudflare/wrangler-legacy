@@ -99,9 +99,10 @@ pub fn upload(
         }
         None => {
             let wrangler_config_msg = styles::highlight("`wrangler config`");
+            let wrangler_login_msg = styles::highlight("`wrangler login`");
             let docs_url_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
             message::billboard(
-            &format!("You have not provided your Cloudflare credentials.\n\nPlease run {} or visit\n{}\nfor info on authenticating with environment variables.", wrangler_config_msg, docs_url_msg)
+            &format!("You have not provided your Cloudflare credentials.\n\nPlease run {}, {}, or visit\n{}\nfor info on authenticating with environment variables.", wrangler_login_msg, wrangler_config_msg, docs_url_msg)
             );
 
             message::info("Running preview without authentication.");

@@ -40,7 +40,7 @@ fn error_msg(status: reqwest::StatusCode, text: String) -> String {
     if text.contains("\"code\": 10034,") {
         "You need to verify your account's email address before you can publish. You can do this by checking your email or logging in to https://dash.cloudflare.com.".to_string()
     } else if text.contains("\"code\":10000,") {
-        "Your user configuration is invalid, please run wrangler config and enter a new set of credentials.".to_string()
+        "Your user configuration is invalid, please run wrangler login or wrangler config and enter a new set of credentials.".to_string()
     } else {
         format!("Something went wrong! Status: {}, Details {}", status, text)
     }

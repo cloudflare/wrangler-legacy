@@ -81,7 +81,7 @@ impl GlobalUser {
             s.merge(config::File::with_name(config_str))?;
         } else {
             failure::bail!(
-                "config path does not exist {}. Try running `wrangler config`",
+                "config path does not exist {}. Try running `wrangler login` or `wrangler config`",
                 config_str
             );
         }
@@ -103,11 +103,13 @@ impl GlobalUser {
         match global_user {
             Ok(user) => Ok(user),
             Err(_) => {
+                let wrangler_login_msg = styles::highlight("`wrangler login`");
                 let wrangler_config_msg = styles::highlight("`wrangler config`");
                 let vars_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
                 let msg = format!(
-                    "{} Your authentication details are improperly configured.\nPlease run {} or visit\n{}\nfor info on configuring with environment variables",
+                    "{} Your authentication details are improperly configured.\nPlease run {}, {}, or visit\n{}\nfor info on configuring with environment variables",
                     emoji::WARN,
+                    wrangler_login_msg,
                     wrangler_config_msg,
                     vars_msg
                 );
