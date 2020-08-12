@@ -31,7 +31,7 @@ fn create_output_files() -> Result<Option<(PathBuf, PathBuf)>, failure::Error> {
     }
 }
 
-/// Generate cert and private key for local https server
+/// Generate certificate authority to sign cert
 fn create_ca() -> Result<(X509, PKey<Private>), failure::Error> {
     let rsa = Rsa::generate(2048)?;
     let privkey = PKey::from_rsa(rsa)?;
@@ -95,6 +95,7 @@ fn create_req(privkey: &PKey<Private>) -> Result<X509Req, failure::Error> {
     Ok(req)
 }
 
+/// Generate cert and private key
 pub fn generate_cert() -> Result<(), failure::Error> {
     let files = create_output_files()?;
     if files.is_none() {
@@ -132,6 +133,7 @@ pub fn generate_cert() -> Result<(), failure::Error> {
     cert_builder.append_extension(BasicConstraints::new().build()?)?;
 
     cert_builder.append_extension(
+        //Extensions requried by browsers to be a valid cert
         KeyUsage::new()
             .critical()
             .non_repudiation()

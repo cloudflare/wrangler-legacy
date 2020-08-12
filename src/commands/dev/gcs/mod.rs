@@ -3,7 +3,6 @@ mod server;
 mod setup;
 mod watch;
 
-use server::serve;
 use setup::{get_preview_id, get_session_id};
 use watch::watch_for_changes;
 
@@ -20,6 +19,7 @@ use url::Url;
 pub fn dev(
     target: Target,
     server_config: ServerConfig,
+    local_https: bool,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     println!("unauthenticated");
@@ -74,7 +74,15 @@ pub fn dev(
     // said futures
     runtime.block_on(async {
         let devtools_listener = tokio::spawn(socket::listen(socket_url.clone()));
-        let server = tokio::spawn(serve(server_config.clone(), Arc::clone(&preview_id)));
+
+        let server = if local_https {
+            tokio::spawn(server::https(
+                server_config.clone(),
+                Arc::clone(&preview_id),
+            ))
+        } else {
+            tokio::spawn(server::http(server_config.clone(), Arc::clone(&preview_id)))
+        };
 
         let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
         match res {

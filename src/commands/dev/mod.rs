@@ -18,23 +18,32 @@ pub fn dev(
     deploy_config: DeployConfig,
     user: Option<GlobalUser>,
     server_config: ServerConfig,
-    http: bool,
+    local_https: bool,
+    upstream_http: bool,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     // before serving requests we must first build the Worker
     build(&target)?;
 
+    if server_config.host.is_https() && upstream_http {
+        failure::bail!("Can't upstream http with https host")
+    } else if local_https && upstream_http {
+        failure::bail!("Can't have local https and upstreamed http")
+    }
+
     match user {
         // authenticated users connect to the edge
-        Some(user) => edge::dev(target, user, server_config, deploy_config, http, verbose),
+        Some(user) => edge::dev(
+            target,
+            user,
+            server_config,
+            deploy_config,
+            local_https,
+            upstream_http,
+            verbose,
+        ),
 
         // unauthenticated users connect to gcs
-        None => {
-            if http {
-                failure::bail!("Unauthenticated dev must use https")
-            } else {
-                gcs::dev(target, server_config, verbose)
-            }
-        }
+        None => gcs::dev(target, server_config, local_https, verbose),
     }
 }

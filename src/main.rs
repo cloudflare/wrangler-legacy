@@ -522,9 +522,15 @@ fn run() -> Result<(), failure::Error> {
                         .takes_value(true)
                 )
                 .arg(
-                    Arg::with_name("http")
-                    .help("Runs local server on http instead of https, only valid when running dev authenticated")
-                    .long("http")
+                    Arg::with_name("local-https")
+                    .help("Takes requests for local server via https instead of http")
+                    .long("local-https")
+                    .takes_value(false)
+                    )
+                .arg(
+                    Arg::with_name("upstream-http")
+                    .help("Sends requests to host via http instead of https")
+                    .long("upstream-http")
                     .takes_value(false)
                     )
                 .arg(verbose_arg.clone())
@@ -770,7 +776,8 @@ fn run() -> Result<(), failure::Error> {
         let mut port: Option<u16> = matches
             .value_of("port")
             .map(|p| p.parse().expect("--port expects a number"));
-        let mut http: bool = matches.is_present("http");
+        let mut local_https: bool = matches.is_present("local-https");
+        let mut upstream_http: bool = matches.is_present("upstream-http");
 
         // Check if arg not given but present in wrangler.toml
         if let Some(d) = &manifest.dev {
@@ -782,8 +789,12 @@ fn run() -> Result<(), failure::Error> {
                 port = d.port;
             }
 
-            if !http && d.http.is_some() {
-                http = d.http.unwrap();
+            if !local_https && d.local_https.is_some() {
+                local_https = d.local_https.unwrap();
+            }
+
+            if !upstream_http && d.upstream_http.is_some() {
+                upstream_http = d.upstream_http.unwrap();
             }
         }
 
@@ -794,9 +805,17 @@ fn run() -> Result<(), failure::Error> {
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
 
-        let server_config = commands::dev::ServerConfig::new(host, ip, port)?;
+        let server_config = commands::dev::ServerConfig::new(host, ip, port, upstream_http)?;
 
-        commands::dev::dev(target, deploy_config, user, server_config, http, verbose)?;
+        commands::dev::dev(
+            target,
+            deploy_config,
+            user,
+            server_config,
+            local_https,
+            upstream_http,
+            verbose,
+        )?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

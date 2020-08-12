@@ -75,14 +75,14 @@ pub async fn https(
             let client = match s {
                 Ok(x) => x,
                 Err(e) => {
-                    println!("Failed to accept client");
-                    return Some(Err(e));
+                    eprintln!("Failed to accept client {}", e);
+                    return None;
                 }
             };
             match tls_acceptor.accept(client).await {
                 Ok(x) => Some(Ok(x)),
                 Err(e) => {
-                    println!("Client connection error {}", e);
+                    eprintln!("Client connection error {}", e);
                     message::info("Make sure to use https and `--insecure` with curl");
                     None
                 }
@@ -95,7 +95,7 @@ pub async fn https(
     .serve(service);
 
     println!("{} Listening on https://{}", emoji::EAR, listening_address);
-    message::info("Generated certifiacte is not verified, browsers will give a warning and curl will require `--inscure`");
+    message::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
 
     if let Err(e) = server.await {
         eprintln!("{}", e);

@@ -15,6 +15,7 @@ impl ServerConfig {
         host: Option<&str>,
         ip: Option<&str>,
         port: Option<u16>,
+        upstream_http: bool,
     ) -> Result<Self, failure::Error> {
         let ip = ip.unwrap_or("127.0.0.1");
         let port = port.unwrap_or(8787);
@@ -23,9 +24,13 @@ impl ServerConfig {
             Ok(socket) => socket.local_addr(),
             Err(_) => failure::bail!("{} is unavailable, try binding to another address with the --port and --ip flags, or stop other `wrangler dev` processes.", &addr)
         }?;
-        let host = host
-            .unwrap_or("https://tutorial.cloudflareworkers.com")
-            .to_string();
+        let host = if upstream_http {
+            host.unwrap_or("http://tutorial.cloudflareworkers.com")
+                .to_string()
+        } else {
+            host.unwrap_or("https://tutorial.cloudflareworkers.com")
+                .to_string()
+        };
 
         let host = Host::new(&host)?;
 

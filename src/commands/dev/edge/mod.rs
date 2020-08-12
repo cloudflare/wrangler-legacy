@@ -19,7 +19,8 @@ pub fn dev(
     user: GlobalUser,
     server_config: ServerConfig,
     deploy_config: DeployConfig,
-    http: bool,
+    local_https: bool,
+    upstream_http: bool,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     let session = Session::new(&target, &user, &deploy_config)?;
@@ -54,17 +55,18 @@ pub fn dev(
     let mut runtime = TokioRuntime::new()?;
     runtime.block_on(async {
         let devtools_listener = tokio::spawn(socket::listen(session.websocket_url));
-        let server = if http {
-            tokio::spawn(server::http(
-                server_config,
-                Arc::clone(&preview_token),
-                session.host,
-            ))
-        } else {
+        let server = if local_https {
             tokio::spawn(server::https(
                 server_config.clone(),
                 Arc::clone(&preview_token),
                 session.host.clone(),
+            ))
+        } else {
+            tokio::spawn(server::http(
+                server_config,
+                Arc::clone(&preview_token),
+                session.host,
+                upstream_http,
             ))
         };
 
