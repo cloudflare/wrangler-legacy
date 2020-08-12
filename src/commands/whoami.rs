@@ -35,6 +35,7 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
     let mut msg = format!("{} You are logged in with {}!\n", emoji::WAVING, auth);
     let num_permissions_missing = missing_permissions.len();
     if num_permissions_missing > 0 {
+        let login_msg = styles::highlight("`wrangler login`");
         let config_msg = styles::highlight("`wrangler config`");
         let whoami_msg = styles::highlight("`wrangler whoami`");
         if missing_permissions.len() == 1 {
@@ -49,7 +50,7 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
                 styles::highlight(missing_permissions.get(1).unwrap())
             ));
         }
-        msg.push_str(&format!("\n\nPlease generate a new token and authenticate with {}\nfor more information when running {}", config_msg, whoami_msg));
+        msg.push_str(&format!("\n\nPlease generate a new token and authenticate with {} or {}\nfor more information when running {}", login_msg, config_msg, whoami_msg));
     }
     message::billboard(&msg);
     if table.len() > 1 {

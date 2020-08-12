@@ -637,6 +637,7 @@ fn run() -> Result<(), failure::Error> {
 
     let not_recommended_msg = styles::warning("(Not Recommended)");
     let recommended_cmd_msg = styles::highlight("`wrangler config --api-key`");
+    let wrangler_login_msg = styles::highlight("`wrangler login`");
     let api_token_url = styles::url("https://dash.cloudflare.com/profile/api-tokens");
     let token_support_url = styles::url(
         "https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys",
@@ -648,7 +649,7 @@ fn run() -> Result<(), failure::Error> {
 
         let user: GlobalUser = if default {
             // API Tokens are the default
-            message::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", api_token_url, not_recommended_msg, recommended_cmd_msg));
+            message::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nConsider using {} which only requires your Cloudflare username and password.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", api_token_url, wrangler_login_msg, not_recommended_msg, recommended_cmd_msg));
             let api_token: String = interactive::get_user_input("Enter API Token: ");
             GlobalUser::TokenAuth { api_token }
         } else {
