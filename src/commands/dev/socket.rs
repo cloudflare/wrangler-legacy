@@ -9,7 +9,7 @@ use futures_util::stream::{SplitStream, StreamExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio::time::delay_for;
-use tokio_tls::TlsStream;
+use tokio_native_tls::TlsStream;
 use tokio_tungstenite::stream::Stream;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, WebSocketStream};
 
