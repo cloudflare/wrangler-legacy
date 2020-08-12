@@ -3,6 +3,7 @@
 extern crate text_io;
 extern crate tokio;
 
+use std::convert::TryFrom;
 use std::env;
 use std::path::Path;
 use std::str::FromStr;
@@ -521,6 +522,18 @@ fn run() -> Result<(), failure::Error> {
                         .long("ip")
                         .takes_value(true)
                 )
+                .arg(
+                    Arg::with_name("local-protocol")
+                    .help("sets the protocol on which the wrangler dev listens, by default this is http but can be set to https")
+                    .long("local-protocol")
+                    .takes_value(true)
+                    )
+                .arg(
+                    Arg::with_name("upstream-protocol")
+                    .help("sets the protocol on which requests are sent to the host, by default this is https but can be set to http")
+                    .long("upstream-protocol")
+                    .takes_value(true)
+                    )
                 .arg(verbose_arg.clone())
                 .arg(wrangler_file.clone())
         )
@@ -766,6 +779,10 @@ fn run() -> Result<(), failure::Error> {
             .value_of("port")
             .map(|p| p.parse().expect("--port expects a number"));
 
+        type Protocol = commands::dev::Protocol;
+        let mut local_protocol_str: Option<&str> = matches.value_of("local-protocol");
+        let mut upstream_protocol_str: Option<&str> = matches.value_of("upstream-protocol");
+
         // Check if arg not given but present in wrangler.toml
         if let Some(d) = &manifest.dev {
             if ip.is_none() && d.ip.is_some() {
@@ -775,6 +792,14 @@ fn run() -> Result<(), failure::Error> {
             if port.is_none() && d.port.is_some() {
                 port = d.port;
             }
+
+            if local_protocol_str.is_none() && d.local_protocol.is_some() {
+                local_protocol_str = d.local_protocol.as_deref();
+            }
+
+            if upstream_protocol_str.is_none() && d.upstream_protocol.is_some() {
+                upstream_protocol_str = d.upstream_protocol.as_deref();
+            }
         }
 
         let env = matches.value_of("env");
@@ -783,7 +808,21 @@ fn run() -> Result<(), failure::Error> {
         let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
-        commands::dev::dev(target, deploy_config, user, host, port, ip, verbose)?;
+
+        let local_protocol = Protocol::try_from(local_protocol_str.unwrap_or("http"))?;
+        let upstream_protocol = Protocol::try_from(upstream_protocol_str.unwrap_or("https"))?;
+
+        let server_config = commands::dev::ServerConfig::new(host, ip, port, upstream_protocol)?;
+
+        commands::dev::dev(
+            target,
+            deploy_config,
+            user,
+            server_config,
+            local_protocol,
+            upstream_protocol,
+            verbose,
+        )?;
     } else if matches.subcommand_matches("whoami").is_some() {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;

@@ -2,11 +2,10 @@ mod server;
 mod setup;
 mod watch;
 
-use server::serve;
 use setup::{upload, Session};
 use watch::watch_for_changes;
 
-use crate::commands::dev::{socket, ServerConfig};
+use crate::commands::dev::{socket, Protocol, ServerConfig};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 
@@ -20,6 +19,8 @@ pub fn dev(
     user: GlobalUser,
     server_config: ServerConfig,
     deploy_config: DeployConfig,
+    local_protocol: Protocol,
+    upstream_protocol: Protocol,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     let session = Session::new(&target, &user, &deploy_config)?;
@@ -54,13 +55,21 @@ pub fn dev(
     let mut runtime = TokioRuntime::new()?;
     runtime.block_on(async {
         let devtools_listener = tokio::spawn(socket::listen(session.websocket_url));
-        let server = tokio::spawn(serve(
-            server_config,
-            Arc::clone(&preview_token),
-            session.host,
-        ));
-        let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
+        let server = match local_protocol {
+            Protocol::Https => tokio::spawn(server::https(
+                server_config.clone(),
+                Arc::clone(&preview_token),
+                session.host.clone(),
+            )),
+            Protocol::Http => tokio::spawn(server::http(
+                server_config,
+                Arc::clone(&preview_token),
+                session.host,
+                upstream_protocol,
+            )),
+        };
 
+        let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
         match res {
             Ok(_) => Ok(()),
             Err(e) => Err(e),

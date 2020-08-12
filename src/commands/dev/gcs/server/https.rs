@@ -1,26 +1,27 @@
-use crate::commands::dev::gcs::headers::{destructure_response, structure_request};
+use super::preview_request;
+use crate::commands::dev::gcs::headers::destructure_response;
 use crate::commands::dev::server_config::ServerConfig;
+use crate::commands::dev::tls;
 use crate::commands::dev::utils::get_path_as_str;
-use crate::terminal::emoji;
+use crate::terminal::{emoji, message};
 
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
-use hyper::client::{HttpConnector, ResponseFuture};
-use hyper::header::{HeaderName, HeaderValue};
-use hyper::http::uri::InvalidUri;
+use futures_util::stream::StreamExt;
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Client as HyperClient, Request, Response, Server, Uri};
-use hyper_tls::HttpsConnector;
-
-const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
+use hyper::{Body, Client as HyperClient, Request, Response, Server};
+use hyper_rustls::HttpsConnector;
+use tokio::net::TcpListener;
 
 /// performs all logic that takes an incoming request
 /// and routes it to the Workers runtime preview service
-pub(super) async fn serve(
+pub async fn https(
     server_config: ServerConfig,
     preview_id: Arc<Mutex<String>>,
 ) -> Result<(), failure::Error> {
+    tls::generate_cert()?;
+
     // set up https client to connect to the preview service
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
@@ -30,7 +31,7 @@ pub(super) async fn serve(
     // create a closure that hyper will use later to handle HTTP requests
     // this takes care of sending an incoming request along to
     // the uploaded Worker script and returning its response
-    let make_service = make_service_fn(move |_| {
+    let service = make_service_fn(move |_| {
         let client = client.to_owned();
         let server_config = server_config.to_owned();
         let preview_id = preview_id.to_owned();
@@ -85,47 +86,45 @@ pub(super) async fn serve(
         }
     });
 
-    let server = Server::bind(&listening_address).serve(make_service);
+    // Create a TCP listener via tokio.
+    let mut tcp = TcpListener::bind(&listening_address).await?;
+    let tls_acceptor = &tls::get_tls_acceptor()?;
+    let incoming_tls_stream = tcp
+        .incoming()
+        .filter_map(move |s| async move {
+            let client = match s {
+                Ok(x) => x,
+                Err(e) => {
+                    eprintln!("Failed to accept client {}", e);
+                    return None;
+                }
+            };
+            match tls_acceptor.accept(client).await {
+                Ok(x) => Some(Ok(x)),
+                Err(e) => {
+                    eprintln!("Client connection error {}", e);
+                    message::info("Make sure to use https and `--insecure` with curl");
+                    None
+                }
+            }
+        })
+        .boxed();
+
+    let server = Server::builder(tls::HyperAcceptor {
+        acceptor: incoming_tls_stream,
+    })
+    .serve(service);
     println!(
-        "{} Listening on http://{}",
+        "{} Listening on https://{}",
         emoji::EAR,
         listening_address.to_string()
     );
+
+    message::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
+
     if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
+        eprintln!("{}", e);
     }
+
     Ok(())
-}
-
-fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
-    format!("https://{}{}", PREVIEW_HOST, path_string).parse()
-}
-
-fn preview_request(
-    req: Request<Body>,
-    client: HyperClient<HttpsConnector<HttpConnector>>,
-    preview_id: String,
-) -> ResponseFuture {
-    let (mut parts, body) = req.into_parts();
-
-    let path = get_path_as_str(&parts.uri);
-    let preview_id = &preview_id;
-
-    structure_request(&mut parts);
-
-    parts.headers.insert(
-        HeaderName::from_static("host"),
-        HeaderValue::from_static(PREVIEW_HOST),
-    );
-
-    parts.headers.insert(
-        HeaderName::from_static("cf-ew-preview"),
-        HeaderValue::from_str(preview_id).expect("Could not create header for preview id"),
-    );
-
-    parts.uri = get_preview_url(&path).expect("Could not get preview url");
-
-    let req = Request::from_parts(parts, body);
-
-    client.request(req)
 }

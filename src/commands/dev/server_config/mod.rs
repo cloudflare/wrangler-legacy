@@ -1,4 +1,7 @@
 mod host;
+mod protocol;
+
+pub use protocol::Protocol;
 
 use host::Host;
 
@@ -15,6 +18,7 @@ impl ServerConfig {
         host: Option<&str>,
         ip: Option<&str>,
         port: Option<u16>,
+        upstream_protocol: Protocol,
     ) -> Result<Self, failure::Error> {
         let ip = ip.unwrap_or("127.0.0.1");
         let port = port.unwrap_or(8787);
@@ -23,9 +27,14 @@ impl ServerConfig {
             Ok(socket) => socket.local_addr(),
             Err(_) => failure::bail!("{} is unavailable, try binding to another address with the --port and --ip flags, or stop other `wrangler dev` processes.", &addr)
         }?;
-        let host = host
-            .unwrap_or("https://tutorial.cloudflareworkers.com")
-            .to_string();
+        let host = match upstream_protocol {
+            Protocol::Http => host
+                .unwrap_or("http://tutorial.cloudflareworkers.com")
+                .to_string(),
+            Protocol::Https => host
+                .unwrap_or("https://tutorial.cloudflareworkers.com")
+                .to_string(),
+        };
 
         let host = Host::new(&host)?;
 
