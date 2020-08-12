@@ -42,7 +42,7 @@ pub fn dev(
 
     if let Some(user) = user {
         if server_config.host.is_default() {
-            //Authenticated and no host provided, run on edge with user's zone
+            // Authenticated and no host provided, run on edge with user's zone
             return edge::dev(
                 target,
                 user,
