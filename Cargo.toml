@@ -45,6 +45,7 @@ prettytable-rs = "0.8.0"
 rand = "0.7.3"
 regex = "1"
 reqwest = { version = "0.10.7", features = ["blocking", "json"] }
+rustls = "0.18.0"
 semver = "0.10.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
@@ -53,16 +54,15 @@ tempfile = "3.1.0"
 term_size = "0.3"
 text_io = "0.1.8"
 tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
+tokio-native-tls = "0.1.0"
 tokio-rustls = "0.14.0"
-tokio-tls = "0.3.1"
-tokio-tungstenite = { version = "0.10.1", features = ["tls"] }
+tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
 toml = "0.5.6"
 twox-hash = "1.5.0"
 url = "2.1.1"
 uuid = { version = "0.8", features = ["v4"] }
 which = "4.0.2"
 ws = "0.9.1"
-rustls = "0.18.0"
 
 [dev-dependencies]
 assert_cmd = "1.0.1"
@@ -72,10 +72,10 @@ predicates = "1.0.5"
 [features]
 # OpenSSL is vendored by default, can use system OpenSSL through feature flag.
 default = ['openssl/vendored']
-# Keeping feature for users already using this feature flag
-vendored-openssl = ['openssl/vendored']
-sys-openssl = ['openssl']
 
 # Treat compiler warnings as a build error.
 # This only runs in CI by default
 strict = ['openssl/vendored']
+sys-openssl = ['openssl']
+# Keeping feature for users already using this feature flag
+vendored-openssl = ['openssl/vendored']
