@@ -1,7 +1,6 @@
 use super::preview_request;
-use crate::commands::dev::server_config::ServerConfig;
-use crate::commands::dev::tls;
 use crate::commands::dev::utils::get_path_as_str;
+use crate::commands::dev::{tls, Protocol, ServerConfig};
 use crate::terminal::{emoji, message};
 
 use std::sync::{Arc, Mutex};
@@ -46,7 +45,7 @@ pub async fn https(
                         client,
                         preview_token.to_owned(),
                         host.clone(),
-                        false,
+                        Protocol::Https,
                     )
                     .await?;
 

@@ -133,7 +133,7 @@ pub fn generate_cert() -> Result<(), failure::Error> {
     cert_builder.append_extension(BasicConstraints::new().build()?)?;
 
     cert_builder.append_extension(
-        //Extensions requried by browsers to be a valid cert
+        // Extensions requried by browsers to be a valid cert
         KeyUsage::new()
             .critical()
             .non_repudiation()

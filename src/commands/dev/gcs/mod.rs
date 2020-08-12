@@ -6,7 +6,7 @@ mod watch;
 use setup::{get_preview_id, get_session_id};
 use watch::watch_for_changes;
 
-use crate::commands::dev::{socket, ServerConfig};
+use crate::commands::dev::{socket, Protocol, ServerConfig};
 use crate::settings::toml::Target;
 
 use std::sync::{Arc, Mutex};
@@ -19,7 +19,7 @@ use url::Url;
 pub fn dev(
     target: Target,
     server_config: ServerConfig,
-    local_https: bool,
+    local_protocol: Protocol,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     println!("unauthenticated");
@@ -75,13 +75,14 @@ pub fn dev(
     runtime.block_on(async {
         let devtools_listener = tokio::spawn(socket::listen(socket_url.clone()));
 
-        let server = if local_https {
-            tokio::spawn(server::https(
+        let server = match local_protocol {
+            Protocol::Https => tokio::spawn(server::https(
                 server_config.clone(),
                 Arc::clone(&preview_id),
-            ))
-        } else {
-            tokio::spawn(server::http(server_config.clone(), Arc::clone(&preview_id)))
+            )),
+            Protocol::Http => {
+                tokio::spawn(server::http(server_config.clone(), Arc::clone(&preview_id)))
+            }
         };
 
         let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });

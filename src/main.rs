@@ -3,6 +3,7 @@
 extern crate text_io;
 extern crate tokio;
 
+use std::convert::TryFrom;
 use std::env;
 use std::path::Path;
 use std::str::FromStr;
@@ -522,16 +523,16 @@ fn run() -> Result<(), failure::Error> {
                         .takes_value(true)
                 )
                 .arg(
-                    Arg::with_name("local-https")
+                    Arg::with_name("local-protocol")
                     .help("Takes requests for local server via https instead of http")
                     .long("local-https")
-                    .takes_value(false)
+                    .takes_value(true)
                     )
                 .arg(
-                    Arg::with_name("upstream-http")
+                    Arg::with_name("upstream-protocol")
                     .help("Sends requests to host via http instead of https")
                     .long("upstream-http")
-                    .takes_value(false)
+                    .takes_value(true)
                     )
                 .arg(verbose_arg.clone())
                 .arg(wrangler_file.clone())
@@ -776,8 +777,10 @@ fn run() -> Result<(), failure::Error> {
         let mut port: Option<u16> = matches
             .value_of("port")
             .map(|p| p.parse().expect("--port expects a number"));
-        let mut local_https: bool = matches.is_present("local-https");
-        let mut upstream_http: bool = matches.is_present("upstream-http");
+
+        type Protocol = commands::dev::Protocol;
+        let mut local_protocol_str: Option<&str> = matches.value_of("local-protocol");
+        let mut upstream_protocol_str: Option<&str> = matches.value_of("upstream-protocol");
 
         // Check if arg not given but present in wrangler.toml
         if let Some(d) = &manifest.dev {
@@ -789,12 +792,12 @@ fn run() -> Result<(), failure::Error> {
                 port = d.port;
             }
 
-            if !local_https && d.local_https.is_some() {
-                local_https = d.local_https.unwrap();
+            if local_protocol_str.is_none() && d.local_protocol.is_some() {
+                local_protocol_str = d.local_protocol.as_deref();
             }
 
-            if !upstream_http && d.upstream_http.is_some() {
-                upstream_http = d.upstream_http.unwrap();
+            if upstream_protocol_str.is_none() && d.upstream_protocol.is_some() {
+                upstream_protocol_str = d.upstream_protocol.as_deref();
             }
         }
 
@@ -805,15 +808,18 @@ fn run() -> Result<(), failure::Error> {
         let user = settings::global_user::GlobalUser::new().ok();
         let verbose = matches.is_present("verbose");
 
-        let server_config = commands::dev::ServerConfig::new(host, ip, port, upstream_http)?;
+        let local_protocol = Protocol::try_from(local_protocol_str.unwrap_or("http"))?;
+        let upstream_protocol = Protocol::try_from(upstream_protocol_str.unwrap_or("https"))?;
+
+        let server_config = commands::dev::ServerConfig::new(host, ip, port, upstream_protocol)?;
 
         commands::dev::dev(
             target,
             deploy_config,
             user,
             server_config,
-            local_https,
-            upstream_http,
+            local_protocol,
+            upstream_protocol,
             verbose,
         )?;
     } else if matches.subcommand_matches("whoami").is_some() {

@@ -5,6 +5,7 @@ pub use self::http::http;
 pub use self::https::https;
 
 use crate::commands::dev::utils::get_path_as_str;
+use crate::commands::dev::Protocol;
 
 use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
@@ -16,7 +17,7 @@ fn preview_request(
     client: HyperClient<HttpsConnector<HttpConnector>>,
     preview_token: String,
     host: String,
-    http: bool,
+    http: Protocol,
 ) -> ResponseFuture {
     let (mut parts, body) = req.into_parts();
 
@@ -32,10 +33,9 @@ fn preview_request(
         HeaderValue::from_str(&preview_token).expect("Could not create token header"),
     );
 
-    parts.uri = if http {
-        format!("http://{}{}", host, path)
-    } else {
-        format!("https://{}{}", host, path)
+    parts.uri = match http {
+        Protocol::Http => format!("http://{}{}", host, path),
+        Protocol::Https => format!("https://{}{}", host, path),
     }
     .parse()
     .expect("Could not construct preview url");

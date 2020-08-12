@@ -5,6 +5,6 @@ use serde::{Deserialize, Serialize};
 pub struct Dev {
     pub ip: Option<String>,
     pub port: Option<u16>,
-    pub local_https: Option<bool>,
-    pub upstream_http: Option<bool>,
+    pub local_protocol: Option<String>,
+    pub upstream_protocol: Option<String>,
 }

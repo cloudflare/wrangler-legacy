@@ -1,6 +1,6 @@
 use super::preview_request;
-use crate::commands::dev::server_config::ServerConfig;
 use crate::commands::dev::utils::get_path_as_str;
+use crate::commands::dev::{Protocol, ServerConfig};
 use crate::terminal::emoji;
 
 use std::sync::{Arc, Mutex};
@@ -14,7 +14,7 @@ pub async fn http(
     server_config: ServerConfig,
     preview_token: Arc<Mutex<String>>,
     host: String,
-    upstream_http: bool,
+    upstream_protocol: Protocol,
 ) -> Result<(), failure::Error> {
     // set up https client to connect to the preview service
     let https = HttpsConnector::new();
@@ -44,7 +44,7 @@ pub async fn http(
                         client,
                         preview_token.to_owned(),
                         host.clone(),
-                        upstream_http,
+                        upstream_protocol,
                     )
                     .await?;
 
