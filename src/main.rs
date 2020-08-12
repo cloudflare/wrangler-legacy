@@ -819,6 +819,7 @@ fn run() -> Result<(), failure::Error> {
             deploy_config,
             user,
             server_config,
+            host.is_some(),
             local_protocol,
             upstream_protocol,
             verbose,
