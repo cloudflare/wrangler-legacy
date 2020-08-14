@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.11.0-rc.0"
+version = "1.11.0-rc.1"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -17,7 +17,7 @@ billboard = "0.1.0"
 binary-install = "0.0.3-alpha.1"
 chrome-devtools-rs = { version = "0.0.0-alpha.1", features = ["color"] }
 chrono = "0.4.13"
-clap = "2.33.2"
+clap = "2.33.3"
 cloudflare = "0.6.6"
 config = "0.10.1"
 console = "0.12.0"
@@ -31,7 +31,7 @@ fs2 = "0.4.3"
 futures-util = "0.3"
 http = "0.2.1"
 hyper = "0.13.7"
-hyper-tls = "0.4.3"
+hyper-rustls = "0.21.0"
 ignore = "0.4.16"
 indicatif = "0.15.0"
 lazy_static = "1.4.0"
@@ -45,6 +45,7 @@ prettytable-rs = "0.8.0"
 rand = "0.7.3"
 regex = "1"
 reqwest = { version = "0.10.7", features = ["blocking", "json"] }
+rustls = "0.18.0"
 semver = "0.10.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
@@ -53,8 +54,9 @@ tempfile = "3.1.0"
 term_size = "0.3"
 text_io = "0.1.8"
 tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
-tokio-tls = "0.3.1"
-tokio-tungstenite = { version = "0.10.1", features = ["tls"] }
+tokio-native-tls = "0.1.0"
+tokio-rustls = "0.14.0"
+tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
 toml = "0.5.6"
 twox-hash = "1.5.0"
 url = "2.1.1"
@@ -70,10 +72,10 @@ predicates = "1.0.5"
 [features]
 # OpenSSL is vendored by default, can use system OpenSSL through feature flag.
 default = ['openssl/vendored']
-# Keeping feature for users already using this feature flag
-vendored-openssl = ['openssl/vendored']
-sys-openssl = ['openssl']
 
 # Treat compiler warnings as a build error.
 # This only runs in CI by default
 strict = ['openssl/vendored']
+sys-openssl = ['openssl']
+# Keeping feature for users already using this feature flag
+vendored-openssl = ['openssl/vendored']

@@ -3,11 +3,10 @@ mod server;
 mod setup;
 mod watch;
 
-use server::serve;
 use setup::{get_preview_id, get_session_id};
 use watch::watch_for_changes;
 
-use crate::commands::dev::{socket, ServerConfig};
+use crate::commands::dev::{socket, Protocol, ServerConfig};
 use crate::settings::toml::Target;
 
 use std::sync::{Arc, Mutex};
@@ -20,6 +19,7 @@ use url::Url;
 pub fn dev(
     target: Target,
     server_config: ServerConfig,
+    local_protocol: Protocol,
     verbose: bool,
 ) -> Result<(), failure::Error> {
     println!("unauthenticated");
@@ -73,10 +73,19 @@ pub fn dev(
     // and we must block the main thread on the completion of
     // said futures
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(socket_url));
-        let server = tokio::spawn(serve(server_config, Arc::clone(&preview_id)));
-        let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
+        let devtools_listener = tokio::spawn(socket::listen(socket_url.clone()));
 
+        let server = match local_protocol {
+            Protocol::Https => tokio::spawn(server::https(
+                server_config.clone(),
+                Arc::clone(&preview_id),
+            )),
+            Protocol::Http => {
+                tokio::spawn(server::http(server_config.clone(), Arc::clone(&preview_id)))
+            }
+        };
+
+        let res = tokio::try_join!(async { devtools_listener.await? }, async { server.await? });
         match res {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
