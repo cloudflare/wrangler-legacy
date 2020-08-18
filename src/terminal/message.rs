@@ -41,10 +41,9 @@ fn message(msg: &str) {
         Some(OutputType::Json) => {
             eprintln!("{}", msg);
         }
-        Some(OutputType::Human) => {
+        _ => {
             println!("{}", msg);
         }
-        _ => panic!("output not defined"),
     }
 }
 
