@@ -2,10 +2,10 @@ use std::path::Path;
 
 use clap::ArgMatches;
 
+use super::DEFAULT_CONFIG_PATH;
 use crate::build;
 use crate::settings::toml::Manifest;
 use crate::terminal;
-use super::DEFAULT_CONFIG_PATH;
 
 pub fn run(matches: &ArgMatches) -> Result<(), failure::Error> {
     log::info!("Getting project settings");
