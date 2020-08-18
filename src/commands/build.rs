@@ -21,9 +21,20 @@ pub fn run(matches: &ArgMatches) -> Result<(), failure::Error> {
         else {
             terminal::message::user_error("json is the only valid value for output flag");
         }
+        let result = build(&target);
+        let jsonoutput = terminal::message::PublishOutput {
+            name: Some(target.name.clone()),
+            success: match result {
+                Ok(_) => Some("true".to_string()),
+                Err(_) => Some("false".to_string())
+            },
+            url: None,
+        };
+        terminal::message::jsonout(&jsonoutput);
+        result
     }
     else {
-        terminal::message::set_output_type(terminal::message::OutputType::Human)
+        terminal::message::set_output_type(terminal::message::OutputType::Human);
+        build(&target)
     }
-    build(&target)
 }

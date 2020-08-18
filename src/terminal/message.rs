@@ -2,10 +2,19 @@ use super::emoji;
 use once_cell::sync::OnceCell;
 
 use billboard::{Billboard, BorderColor, BorderStyle};
+use serde::{Deserialize, Serialize};
 
 pub enum OutputType {
     Json,
     Human
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PublishOutput {
+    pub success : Option<String>,
+    pub name : Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url : Option<String>,
 }
 
 static OUTPUT_TYPE: OnceCell<OutputType> = OnceCell::new();
@@ -14,14 +23,19 @@ pub fn set_output_type(typ: OutputType) {
     OUTPUT_TYPE.set(typ);
 }
 
+// Always goes to stdout
+pub fn jsonout<T>(value: &T)
+where
+    T: ?Sized + Serialize, {
+        println!("{}", &serde_json::to_string(value).unwrap());
+}
+
 fn message(msg: &str) {
     match OUTPUT_TYPE.get() {
         Some(OutputType::Json) => {
-            println!("json");
             eprintln!("{}", msg);
         }
         Some(OutputType::Human) => {
-            println!("human");
             println!("{}", msg);
         }
         _ => {
