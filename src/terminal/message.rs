@@ -6,15 +6,15 @@ use serde::{Deserialize, Serialize};
 
 pub enum OutputType {
     Json,
-    Human
+    Human,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct PublishOutput {
-    pub success : Option<String>,
-    pub name : Option<String>,
+    pub success: Option<String>,
+    pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub url : Option<String>,
+    pub url: Option<String>,
 }
 
 static OUTPUT_TYPE: OnceCell<OutputType> = OnceCell::new();
@@ -26,8 +26,9 @@ pub fn set_output_type(typ: OutputType) {
 // Always goes to stdout
 pub fn jsonout<T>(value: &T)
 where
-    T: ?Sized + Serialize, {
-        println!("{}", &serde_json::to_string(value).unwrap());
+    T: ?Sized + Serialize,
+{
+    println!("{}", &serde_json::to_string(value).unwrap());
 }
 
 fn message(msg: &str) {
@@ -38,9 +39,7 @@ fn message(msg: &str) {
         Some(OutputType::Human) => {
             println!("{}", msg);
         }
-        _ => {
-            panic!("output not defined")
-        }
+        _ => panic!("output not defined"),
     }
 }
 

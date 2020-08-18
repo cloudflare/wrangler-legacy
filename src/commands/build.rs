@@ -17,8 +17,7 @@ pub fn run(matches: &ArgMatches) -> Result<(), failure::Error> {
     if matches.is_present("output") {
         if matches.value_of("output") == Some("json") {
             terminal::message::set_output_type(terminal::message::OutputType::Json)
-        }
-        else {
+        } else {
             terminal::message::user_error("json is the only valid value for output flag");
         }
         let result = build(&target);
@@ -26,14 +25,13 @@ pub fn run(matches: &ArgMatches) -> Result<(), failure::Error> {
             name: Some(target.name.clone()),
             success: match result {
                 Ok(_) => Some("true".to_string()),
-                Err(_) => Some("false".to_string())
+                Err(_) => Some("false".to_string()),
             },
             url: None,
         };
         terminal::message::jsonout(&jsonoutput);
         result
-    }
-    else {
+    } else {
         terminal::message::set_output_type(terminal::message::OutputType::Human);
         build(&target)
     }
