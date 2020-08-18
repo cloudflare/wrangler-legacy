@@ -440,6 +440,13 @@ fn run() -> Result<(), failure::Error> {
                         .long("env")
                         .takes_value(true)
                 )
+                .arg(
+                    Arg::with_name("output")
+                    .short("o")
+                    .long("output")
+                    .takes_value(true)
+                    .help("Machine or human readable output")
+                )
                 .arg(wrangler_file.clone())
                 .arg(silent_verbose_arg.clone()),
         )

@@ -1,9 +1,33 @@
 use super::emoji;
+use once_cell::sync::OnceCell;
 
 use billboard::{Billboard, BorderColor, BorderStyle};
 
+pub enum OutputType {
+    Json,
+    Human
+}
+
+static OUTPUT_TYPE: OnceCell<OutputType> = OnceCell::new();
+
+pub fn set_output_type(typ: OutputType) {
+    OUTPUT_TYPE.set(typ);
+}
+
 fn message(msg: &str) {
-    println!("{}", msg);
+    match OUTPUT_TYPE.get() {
+        Some(OutputType::Json) => {
+            println!("json");
+            eprintln!("{}", msg);
+        }
+        Some(OutputType::Human) => {
+            println!("human");
+            println!("{}", msg);
+        }
+        _ => {
+            panic!("output not defined")
+        }
+    }
 }
 
 pub fn billboard(msg: &str) {
