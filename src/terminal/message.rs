@@ -20,7 +20,13 @@ pub struct PublishOutput {
 static OUTPUT_TYPE: OnceCell<OutputType> = OnceCell::new();
 
 pub fn set_output_type(typ: OutputType) {
-    OUTPUT_TYPE.set(typ);
+    match OUTPUT_TYPE.set(typ) {
+        Ok(_) => {}
+        Err(_) => {
+            let msg = format!("Output type already set");
+            message(&msg);
+        }
+    }
 }
 
 // Always goes to stdout
