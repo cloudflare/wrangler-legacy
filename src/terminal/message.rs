@@ -23,8 +23,7 @@ pub fn set_output_type(typ: OutputType) {
     match OUTPUT_TYPE.set(typ) {
         Ok(_) => {}
         Err(_) => {
-            let msg = format!("Output type already set");
-            message(&msg);
+            message(&"Output type already set".to_string());
         }
     }
 }
