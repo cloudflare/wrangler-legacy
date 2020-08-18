@@ -61,8 +61,19 @@ pub fn publish(
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&upload_client, &target, Some(asset_manifest))?;
 
-        deploy::worker(&user, &deploy_config)?;
-
+        if message::is_json_output() {
+            let result = build(&target);
+            let mut jsonoutput = message::PublishOutput {
+                name: Some(target.name.clone()),
+                success: match result {
+                    Ok(_) => Some(true),
+                    Err(_) => Some(true),
+                },
+                urls: Vec::new(),
+            };
+            deploy::worker(&user, &deploy_config, Some(&mut jsonoutput))?;
+            message::jsonout(&jsonoutput);
+        }
         // Finally, remove any stale files
         if !to_delete.is_empty() {
             message::info("Deleting stale files...");
@@ -94,7 +105,7 @@ pub fn publish(
 
         upload::script(&upload_client, &target, None)?;
 
-        deploy::worker(&user, &deploy_config)?;
+        deploy::worker(&user, &deploy_config, None)?;
     }
 
     Ok(())

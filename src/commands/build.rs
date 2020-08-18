@@ -24,10 +24,10 @@ pub fn run(matches: &ArgMatches) -> Result<(), failure::Error> {
         let jsonoutput = terminal::message::PublishOutput {
             name: Some(target.name.clone()),
             success: match result {
-                Ok(_) => Some("true".to_string()),
-                Err(_) => Some("false".to_string()),
+                Ok(_) => Some(true),
+                Err(_) => Some(false),
             },
-            url: None,
+            urls: Vec::new(),
         };
         terminal::message::jsonout(&jsonoutput);
         result

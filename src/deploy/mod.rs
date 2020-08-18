@@ -7,7 +7,11 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Zoneless};
 use crate::terminal::message;
 
-pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), failure::Error> {
+pub fn worker(
+    user: &GlobalUser,
+    deploy_config: &DeployConfig,
+    publish_out: Option<&mut message::PublishOutput>,
+) -> Result<(), failure::Error> {
     match deploy_config {
         DeployConfig::Zoneless(zoneless_config) => {
             // this is a zoneless deploy
@@ -18,6 +22,9 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
                 "Successfully published your script to {}",
                 deploy_address
             ));
+            if let Some(pub_out) = publish_out {
+                pub_out.urls.push(deploy_address);
+            };
 
             Ok(())
         }
@@ -27,14 +34,16 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
 
             let published_routes = publish_routes(&user, zoned_config)?;
 
-            let display_results: Vec<String> =
+            let mut display_results: Vec<String> =
                 published_routes.iter().map(|r| format!("{}", r)).collect();
 
             message::success(&format!(
                 "Deployed to the following routes:\n{}",
                 display_results.join("\n")
             ));
-
+            if let Some(pub_out) = publish_out {
+                pub_out.urls.append(&mut display_results);
+            };
             Ok(())
         }
     }
