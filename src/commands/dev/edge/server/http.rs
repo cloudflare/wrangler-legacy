@@ -1,5 +1,5 @@
 use super::preview_request;
-use crate::commands::dev::utils::get_path_as_str;
+use crate::commands::dev::utils::{get_path_as_str, rewrite_redirect};
 use crate::commands::dev::{Protocol, ServerConfig};
 use crate::terminal::emoji;
 
@@ -20,7 +20,7 @@ pub async fn http(
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
 
-    let listening_address = server_config.listening_address;
+    let listening_address = server_config.listening_address.clone();
 
     // create a closure that hyper will use later to handle HTTP requests
     let make_service = make_service_fn(move |_| {
@@ -35,11 +35,12 @@ pub async fn http(
                 let host = host.to_owned();
                 let version = req.version();
                 let (parts, body) = req.into_parts();
+                let local_host = server_config.listening_address.ip().to_string();
                 let req_method = parts.method.to_string();
                 let now: DateTime<Local> = Local::now();
                 let path = get_path_as_str(&parts.uri);
                 async move {
-                    let resp = preview_request(
+                    let mut resp = preview_request(
                         Request::from_parts(parts, body),
                         client,
                         preview_token.to_owned(),
@@ -47,6 +48,8 @@ pub async fn http(
                         upstream_protocol,
                     )
                     .await?;
+
+                    rewrite_redirect(&mut resp, &host, &local_host);
 
                     println!(
                         "[{}] {} {}{} {:?} {}",
