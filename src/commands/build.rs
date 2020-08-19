@@ -14,12 +14,8 @@ pub fn run(matches: &ArgMatches) -> Result<(), failure::Error> {
     let manifest = Manifest::new(&config_path)?;
     let env = matches.value_of("env");
     let target = &manifest.get_target(env, false)?;
-    if matches.is_present("output") {
-        if matches.value_of("output") == Some("json") {
-            terminal::message::set_output_type(terminal::message::OutputType::Json)
-        } else {
-            terminal::message::user_error("json is the only valid value for output flag");
-        }
+    if matches.is_present("output") && matches.value_of("output") == Some("json") {
+        terminal::message::set_output_type(terminal::message::OutputType::Json);
         let result = build(&target);
         let jsonoutput = terminal::message::PublishOutput {
             name: Some(target.name.clone()),

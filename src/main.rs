@@ -445,7 +445,7 @@ fn run() -> Result<(), failure::Error> {
                     .short("o")
                     .long("output")
                     .takes_value(true)
-                    .help("Machine or human readable output")
+                    .possible_value("json")
                 )
                 .arg(wrangler_file.clone())
                 .arg(silent_verbose_arg.clone()),
@@ -571,7 +571,7 @@ fn run() -> Result<(), failure::Error> {
                     .short("o")
                     .long("output")
                     .takes_value(true)
-                    .help("Machine or human readable output")
+                    .possible_value("json")
                 ),
         )
         .subcommand(
@@ -868,12 +868,8 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env, is_preview)?;
         let deploy_config = manifest.deploy_config(env)?;
-        if matches.is_present("output") {
-            if matches.value_of("output") == Some("json") {
-                message::set_output_type(message::OutputType::Json)
-            } else {
-                message::user_error("json is the only valid value for output flag");
-            }
+        if matches.is_present("output") && matches.value_of("output") == Some("json") {
+            message::set_output_type(message::OutputType::Json)
         } else {
             message::set_output_type(message::OutputType::Human);
         }
