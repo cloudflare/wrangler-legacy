@@ -21,12 +21,7 @@ pub struct PublishOutput {
 static OUTPUT_TYPE: OnceCell<OutputType> = OnceCell::new();
 
 pub fn set_output_type(typ: OutputType) {
-    match OUTPUT_TYPE.set(typ) {
-        Ok(_) => {}
-        Err(_) => {
-            message(&"Output type already set".to_string());
-        }
-    }
+    let _ = OUTPUT_TYPE.set(typ);
 }
 
 pub fn is_json_output() -> bool {
