@@ -20,7 +20,6 @@ pub(super) fn rewrite_redirect(resp: &mut Response<Body>, upstream_host: &str, l
                         if destination_domain == upstream_host {
                             let rewritten_destination =
                                 destination.replace(destination_domain, local_host);
-                            println!("rewriting to {:?}", &rewritten_destination);
                             if let Ok(header_value) = HeaderValue::from_str(&rewritten_destination)
                             {
                                 headers.insert("Location", header_value);
