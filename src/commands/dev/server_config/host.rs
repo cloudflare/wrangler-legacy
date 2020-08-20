@@ -40,17 +40,10 @@ impl Host {
     pub fn is_default(&self) -> bool {
         self.default
     }
-
-    pub fn to_string(&self) -> String {
-        self.url
-            .host_str()
-            .expect("could not parse host")
-            .to_string()
-    }
 }
 
 impl fmt::Display for Host {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", self.url.host_str().expect("could not parse host"))
     }
 }

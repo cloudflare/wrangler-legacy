@@ -24,13 +24,14 @@ pub async fn https(
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
 
-    let listening_address = server_config.listening_address.clone();
+    let listening_address = server_config.listening_address;
 
     // create a closure that hyper will use later to handle HTTP requests
     let service = make_service_fn(move |_| {
         let client = client.to_owned();
         let preview_token = preview_token.to_owned();
         let host = host.to_owned();
+        let server_config = server_config.to_owned();
 
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
