@@ -39,7 +39,7 @@ where
 fn message(msg: &str) {
     match OUTPUT_TYPE.get() {
         Some(OutputType::Json) => {
-            eprintln!("{}", msg);
+            log::info!("{}", msg);
         }
         _ => {
             println!("{}", msg);
