@@ -67,7 +67,7 @@ pub fn publish(
                 name: Some(target.name.clone()),
                 success: match result {
                     Ok(_) => Some(true),
-                    Err(_) => Some(true),
+                    Err(_) => Some(false),
                 },
                 urls: Vec::new(),
             };
