@@ -43,7 +43,11 @@ pub async fn http(
                 // split the request into parts so we can read
                 // what it contains and display in logs
                 let (parts, body) = req.into_parts();
-                let local_host = server_config.listening_address.ip().to_string();
+                let local_host = format!(
+                    "{}:{}",
+                    server_config.listening_address.ip().to_string(),
+                    server_config.listening_address.port().to_string()
+                );
 
                 let req_method = parts.method.to_string();
 

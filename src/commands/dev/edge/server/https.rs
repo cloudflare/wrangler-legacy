@@ -40,7 +40,11 @@ pub async fn https(
                 let host = host.to_owned();
                 let version = req.version();
                 let (parts, body) = req.into_parts();
-                let local_host = server_config.listening_address.ip().to_string();
+                let local_host = format!(
+                    "{}:{}",
+                    server_config.listening_address.ip().to_string(),
+                    server_config.listening_address.port().to_string()
+                );
                 let req_method = parts.method.to_string();
                 let now: DateTime<Local> = Local::now();
                 let path = get_path_as_str(&parts.uri);
