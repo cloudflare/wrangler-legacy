@@ -69,7 +69,12 @@ pub async fn https(
                     // format the response for the user
                     destructure_response(&mut parts)?;
                     let mut resp = Response::from_parts(parts, body);
-                    rewrite_redirect(&mut resp, &server_config.host.to_string(), &local_host);
+                    rewrite_redirect(
+                        &mut resp,
+                        &server_config.host.to_string(),
+                        &local_host,
+                        true,
+                    );
 
                     // print information about the response
                     // [2020-04-20 15:25:54] GET example.com/ HTTP/1.1 200 OK

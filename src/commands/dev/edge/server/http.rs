@@ -50,7 +50,7 @@ pub async fn http(
                     )
                     .await?;
 
-                    rewrite_redirect(&mut resp, &host, &local_host);
+                    rewrite_redirect(&mut resp, &host, &local_host, false);
 
                     println!(
                         "[{}] {} {}{} {:?} {}",

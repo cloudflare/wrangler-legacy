@@ -54,7 +54,7 @@ pub async fn https(
                     )
                     .await?;
 
-                    rewrite_redirect(&mut resp, &host, &local_host);
+                    rewrite_redirect(&mut resp, &host, &local_host, true);
 
                     println!(
                         "[{}] {} {}{} {:?} {}",
