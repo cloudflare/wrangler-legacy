@@ -1,5 +1,131 @@
 # Changelog
 
+## 🌊 1.11.0
+
+- ### Features
+
+  - **New configuration method with `wrangler login` - [jspspike], [pull/1471]**
+
+    `wrangler login` allows you to authenticate Wrangler to use your Cloudflare user credentials without hunting down an API token in the Cloudflare dashboard. It's straightforward! Just run `wrangler login`, enter your credentials, and you're off to the races.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1471]: https://github.com/cloudflare/wrangler/pull/1471
+
+  - **`wrangler dev` now runs on the same machines as your production code - [EverlastingBugstopper] [avidal] [jwheels], [pull/1085]**
+
+    When running `wrangler dev` as an authenticated user, your requests will now run on the same servers that Cloudflare Workers run on in production. This means that what you see is what you get. `wrangler dev` should behave exactly like production, though we still recommend deploying to a staging website before going to production in order to ensure your changes are safe. This change means you get access to things like `request.cf`, the Cache API, and any Cloudflare settings you've applied in the dashboard while developing your Workers.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [avidal]: https://github.com/avidal
+    [jwheels]: https://github.com/jwheels
+    [pull/1085]: https://github.com/cloudflare/wrangler/pull/1085
+
+  - **`wrangler dev` now supports redirects` - [jspspike], [issue/1508] [pull/1512]**
+
+    When an HTTP response status code is between 300 and 399, the server lets the client know that the data they're looking for isn't here anymore, and the client should issue another separate request to the endpoint denoted in the `Location` header of the response. Before, if you were developing with `wrangler dev` on `example.com`, and your Worker issued a redirect from `https://example.com/oldurl` to `https://example.com/newurl`, that's what would be in the `Location` header. This meant that whatever client you were using would then issue their second request to the public Internet rather than the `wrangler dev` server running on your local machine. With this release, the `Location` header would now be rewritten to `http://127.0.0.1:8787/newurl`, preventing your client from redirecting you away from the Worker you're trying to develop.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1512]: https://github.com/cloudflare/wrangler/pull/1512
+    [issue/1508]: https://github.com/cloudflare/wrangler/issues/1508
+
+  - **Add `--config` flag to all commmands to override the default `wrangler.toml` configuration file path - [luanraithz], [issue/1064] [pull/1350]**
+
+    All commands that read from a configuration file can now use a different configuration file path if the `--config` flag is specified. The commands affected are: `kv:namespace`, `kv:key`, `kv:bulk`, `route`, `secret`, `build`, `preview`, `dev`, `publish`, `subdomain`, and `tail`.
+
+    [luanraithz]: https://github.com/luanraithz
+    [pull/1350]: https://github.com/cloudflare/wrangler/pull/1350
+    [issue/1064]: https://github.com/cloudflare/wrangler/issues/1064
+
+  - **`wrangler dev` configuration options for HTTP protocol - [jspspike], [issue/1204] [pull/1485]**
+
+    `wrangler dev` now takes two additional configuration flags: `--upstream-protocol` and `--local-protocol`. Both of these take a value of either `http` or `https`. `--upstream-protocol` determines what protocol the request going to your preview worker is (previously this was only controlled with the `--host` flag) - this flag defaults to `https`. `--local-protocol` determines what protocol `wrangler dev` listens for and defaults to `http`. If `https` is chosen, a self-signed certificate will be auto-generated for the dev server.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1485]: https://github.com/cloudflare/wrangler/pull/1485
+    [issue/1204]: https://github.com/cloudflare/wrangler/issues/1204
+
+  - **`wrangler dev` can be configured in `wrangler.toml` - [jspspike], [issue/1282] [pull/1477]**
+
+    Any flag taken by `wrangler dev` (except `--host`) can now be configured in the `[dev]` section of your `wrangler.toml`. This allows different developers on the same project to share and persist settings for their local development environment.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1477]: https://github.com/cloudflare/wrangler/pull/1477
+    [issue/1282]: https://github.com/cloudflare/wrangler/issues/1282
+
+  - **Check if `rustc` is installed before building a Rust project - [ObsidianMinor], [issue/487] [pull/1461]**
+
+    [ObsidianMinor]: https://github.com/ObsidianMinor
+    [pull/1461]: https://github.com/cloudflare/wrangler/pull/1461
+    [issue/487]: https://github.com/cloudflare/wrangler/issues/487
+
+  - **Improve `preview_id` error message - [EverlastingBugstopper], [issue/1458] [pull/1465]**
+
+    When a `preview_id` is needed, the error message directs the user to add it to their `wrangler.toml`.
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1465]: https://github.com/cloudflare/wrangler/pull/1465
+    [issue/1458]: https://github.com/cloudflare/wrangler/issues/1458
+
+  - **Prevent `wrangler preview` and `wrangler dev` for a Workers Site if there is no authenticated user - [jspspike], [issue/1138] [pull/1447]**
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1447]: https://github.com/cloudflare/wrangler/pull/1447
+    [issue/1138]: https://github.com/cloudflare/wrangler/issues/1138
+
+- ### Fixes
+
+  - **Fix `wrangler route` commands that take an `--env` flag - [jspspike], [issue/1216] [pull/1448]**
+
+    Before, if you passed an environment to a `wrangler route` command, it wouldn't work properly due to some mishandling of the arguments in the way we used our command line argument parser. This is now fixed and `wrangler route` commands work as expected.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1448]: https://github.com/cloudflare/wrangler/pull/1448
+    [issue/1216]: https://github.com/cloudflare/wrangler/issues/1216
+
+  - **Open browser as child process - [jspspike], [issue/516] [pull/1495]**
+
+    When running `wrangler preview`, the browser is now opened as a child process. This fixes an issue on Linux where Wrangler would start the browser and then hang waiting for the browser to exit before it begins watching for changes.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1495]: https://github.com/cloudflare/wrangler/pull/1495
+    [issue/516]: https://github.com/cloudflare/wrangler/issues/516
+
+  - **Direct cloudflared output with `wrangler tail` to `/dev/null` - [jspspike], [issue/1432] [pull/1450]**
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1450]: https://github.com/cloudflare/wrangler/pull/1450
+    [issue/1432]: https://github.com/cloudflare/wrangler/issues/1432
+
+- ### Maintenance
+
+  - **Workers Unlimited is now Workers Bundled - [EverlastingBugstopper], [issue/1466] [pull/1467]**
+
+    [EverlastingBugstopper]: https://github.com/EverlastingBugstopper
+    [pull/1467]: https://github.com/cloudflare/wrangler/pull/1467
+    [issue/1466]: https://github.com/cloudflare/wrangler/issues/1466
+
+  - **Replace `assert` with `==` in tests with `assert_eq` - [sudheesh001], [pull/1455]**
+
+    [sudheesh001]: https://github.com/sudheesh001
+    [pull/1455]: https://github.com/cloudflare/wrangler/pull/1455
+
+  - **Various typo fixes - [sudheesh001] [jbampton], [pull/1423] [pull/1427] [pull/1428] [pull/1429] [pull/1431] [pull/1443] [pull/1454]**
+
+    [sudheesh001]: https://github.com/sudheesh001
+    [jbampton]: https://github.com/jbampton
+    [pull/1423]: https://github.com/cloudflare/wrangler/pull/1423
+    [pull/1427]: https://github.com/cloudflare/wrangler/pull/1427
+    [pull/1428]: https://github.com/cloudflare/wrangler/pull/1428
+    [pull/1429]: https://github.com/cloudflare/wrangler/pull/1429
+    [pull/1431]: https://github.com/cloudflare/wrangler/pull/1431
+    [pull/1443]: https://github.com/cloudflare/wrangler/pull/1443
+    [pull/1454]: https://github.com/cloudflare/wrangler/pull/1454
+
+  - **Removed unreachable code in `main.rs` - [luanraithz], [pull/1444]**
+
+    [luanraithz]: https://github.com/luanraithz
+    [pull/1444]: https://github.com/cloudflare/wrangler/pull/1444
+
 ## 🐹 1.10.3
 
 - ### Features
