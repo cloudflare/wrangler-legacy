@@ -44,13 +44,6 @@ impl Host {
 
 impl fmt::Display for Host {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.url
-                .host_str()
-                .expect("could not parse host")
-                .to_string()
-        )
+        write!(f, "{}", self.url.host_str().expect("could not parse host"))
     }
 }

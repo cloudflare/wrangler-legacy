@@ -2,7 +2,7 @@ use super::preview_request;
 use crate::commands::dev::gcs::headers::destructure_response;
 use crate::commands::dev::server_config::ServerConfig;
 use crate::commands::dev::tls;
-use crate::commands::dev::utils::get_path_as_str;
+use crate::commands::dev::utils::{get_path_as_str, rewrite_redirect};
 use crate::terminal::{emoji, message};
 
 use std::sync::{Arc, Mutex};
@@ -48,6 +48,11 @@ pub async fn https(
                 // split the request into parts so we can read
                 // what it contains and display in logs
                 let (parts, body) = req.into_parts();
+                let local_host = format!(
+                    "{}:{}",
+                    server_config.listening_address.ip().to_string(),
+                    server_config.listening_address.port().to_string()
+                );
 
                 let req_method = parts.method.to_string();
 
@@ -67,7 +72,13 @@ pub async fn https(
 
                     // format the response for the user
                     destructure_response(&mut parts)?;
-                    let resp = Response::from_parts(parts, body);
+                    let mut resp = Response::from_parts(parts, body);
+                    rewrite_redirect(
+                        &mut resp,
+                        &server_config.host.to_string(),
+                        &local_host,
+                        true,
+                    );
 
                     // print information about the response
                     // [2020-04-20 15:25:54] GET example.com/ HTTP/1.1 200 OK
