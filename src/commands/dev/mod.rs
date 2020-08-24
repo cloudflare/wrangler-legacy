@@ -11,7 +11,8 @@ pub use server_config::ServerConfig;
 use crate::build;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
-use crate::terminal::{message, styles};
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::styles;
 
 /// `wrangler dev` starts a server on a dev machine that routes incoming HTTP requests
 /// to a Cloudflare Workers runtime and returns HTTP responses
@@ -55,7 +56,7 @@ pub fn dev(
         }
 
         // If user is authenticated but host is provided, use gcs with given host
-        message::warn(
+        StdOut::warn(
             format!(
                 "{} provided, will run unauthenticated and upstream to provided host",
                 host_str
