@@ -1,5 +1,6 @@
 use crate::settings::toml::{Target, TargetType};
-use crate::terminal::{message, styles};
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::styles;
 use crate::wranglerjs;
 use crate::{commands, install};
 
@@ -10,7 +11,7 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
     let target_type = &target.target_type;
     match target_type {
         TargetType::JavaScript => {
-            message::info("JavaScript project found. Skipping unnecessary build!")
+            StdOut::info("JavaScript project found. Skipping unnecessary build!")
         }
         TargetType::Rust => {
             let _ = which::which("rustc").map_err(|e| {
@@ -38,7 +39,7 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
 }
 
 pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
-    message::working("Compiling your project to WebAssembly...");
+    StdOut::working("Compiling your project to WebAssembly...");
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");

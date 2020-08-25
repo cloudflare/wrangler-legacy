@@ -17,8 +17,8 @@ use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
 use crate::settings::toml::Target;
-use crate::terminal::{emoji, message, styles};
-
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::{emoji, styles};
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Manifest {
     #[serde(default)]
@@ -85,7 +85,7 @@ impl Manifest {
                 config.warn_on_account_info();
                 if let Some(target_type) = &target_type {
                     if config.target_type != *target_type {
-                        message::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
+                        StdOut::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
                     }
                 }
                 Ok(config)
@@ -336,10 +336,10 @@ impl Manifest {
             let account_id_msg = styles::highlight("account_id");
             let zone_id_msg = styles::highlight("zone_id");
             let dash_url = styles::url("https://dash.cloudflare.com");
-            message::help(
+            StdOut::help(
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
             );
-            message::help(&format!(
+            StdOut::help(&format!(
                 "You can find your {} in the right sidebar of your account's Workers page, and {} in the right sidebar of a zone's overview tab at {}",
                 account_id_msg, zone_id_msg, dash_url
             ));
@@ -433,7 +433,7 @@ fn get_namespaces(
                 if let Some(preview_id) = &ns.preview_id {
                     if let Some(id) = &ns.id {
                         if preview_id == id {
-                            message::warn("Specifying the same KV namespace ID for both preview and production sessions may cause bugs in your production worker! Proceed with caution.");
+                            StdOut::warn("Specifying the same KV namespace ID for both preview and production sessions may cause bugs in your production worker! Proceed with caution.");
                         }
                     }
                     Ok(KvNamespace {

@@ -1,7 +1,7 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::terminal::{emoji, message, styles};
-
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::{emoji, styles};
 use cloudflare::endpoints::account::{self, Account};
 use cloudflare::endpoints::user::GetUserDetails;
 use cloudflare::framework::apiclient::ApiClient;
@@ -52,7 +52,7 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
         }
         msg.push_str(&format!("\n\nPlease generate a new token and authenticate with {} or {}\nfor more information when running {}", login_msg, config_msg, whoami_msg));
     }
-    message::billboard(&msg);
+    StdOut::billboard(&msg);
     if table.len() > 1 {
         println!("{}", &table);
     }
