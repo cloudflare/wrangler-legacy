@@ -17,7 +17,7 @@ use log::info;
 use url::Url;
 use ws::{Sender, WebSocket};
 
-use crate::build;
+use crate::build::build_target;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -31,7 +31,7 @@ pub fn preview(
     options: PreviewOpt,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    build(&target)?;
+    build_target(&target)?;
 
     let sites_preview: bool = target.site.is_some();
 

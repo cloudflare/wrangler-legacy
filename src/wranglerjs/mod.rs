@@ -35,7 +35,7 @@ use guarded_command::GuardedCommand;
 // executable and wait for completion. The file will receive a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(target: &Target) -> Result<(), failure::Error> {
+pub fn run_build(target: &Target) -> Result<WranglerjsOutput, failure::Error> {
     let (mut command, temp_file, bundle) = setup_build(target)?;
 
     log::info!("Running {:?}", command);
@@ -49,7 +49,8 @@ pub fn run_build(target: &Target) -> Result<(), failure::Error> {
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
         let custom_webpack = target.webpack_config.is_some();
-        write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack)
+        write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack)?;
+        Ok(wranglerjs_output)
     } else {
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
@@ -139,12 +140,10 @@ fn write_wranglerjs_output(
 
     bundle.write(output)?;
 
-    let msg = format!(
+    log::info!(
         "Built successfully, built project size is {}",
         output.project_size()
     );
-
-    StdOut::success(&msg);
     Ok(())
 }
 
