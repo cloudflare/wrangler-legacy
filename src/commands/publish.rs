@@ -11,7 +11,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 use crate::sites;
 use crate::terminal::emoji;
-use crate::terminal::message::{Message, StdOut};
+use crate::terminal::message::{Message, StdErr, StdOut};
 use crate::upload;
 
 pub fn publish(
@@ -21,8 +21,15 @@ pub fn publish(
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
 
-    // Build the script before uploading.
-    build_target(&target)?;
+    // Build the script before uploading and log build result
+    let build_result = build_target(&target);
+    match build_result {
+        Ok(msg) => {
+            StdErr::success(&msg);
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }?;
 
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
@@ -35,7 +42,7 @@ pub fn publish(
             sites::sync(target, user, &site_namespace.id, &path)?;
 
         // First, upload all existing files in bucket directory
-        StdOut::working("Uploading site files");
+        StdErr::working("Uploading site files");
         let upload_progress_bar = if to_upload.len() > bulk::BATCH_KEY_MAX {
             let upload_progress_bar = ProgressBar::new(to_upload.len() as u64);
             upload_progress_bar
@@ -66,7 +73,7 @@ pub fn publish(
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
-            StdOut::info("Deleting stale files...");
+            StdErr::info("Deleting stale files...");
 
             let delete_progress_bar = if to_delete.len() > bulk::BATCH_KEY_MAX {
                 let delete_progress_bar = ProgressBar::new(to_delete.len() as u64);

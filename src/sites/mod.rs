@@ -22,7 +22,7 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use crate::kv::namespace::{upsert, UpsertedNamespace};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{KvNamespace, Target};
-use crate::terminal::message::{Message, StdOut};
+use crate::terminal::message::{Message, StdErr};
 pub const KEY_MAX_SIZE: usize = 512;
 // Oddly enough, metadata.len() returns a u64, not usize.
 pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
@@ -42,13 +42,13 @@ pub fn add_namespace(
     let site_namespace = match upsert(target, &user, title)? {
         UpsertedNamespace::Created(namespace) => {
             let msg = format!("Created namespace for Workers Site \"{}\"", namespace.title);
-            StdOut::working(&msg);
+            StdErr::working(&msg);
 
             namespace
         }
         UpsertedNamespace::Reused(namespace) => {
             let msg = format!("Using namespace for Workers Site \"{}\"", namespace.title);
-            StdOut::working(&msg);
+            StdErr::working(&msg);
 
             namespace
         }
