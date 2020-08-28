@@ -559,6 +559,13 @@ fn run() -> Result<(), failure::Error> {
                         .long("release")
                         .takes_value(false)
                         .help("[deprecated] alias of wrangler publish")
+                )
+                .arg(
+                    Arg::with_name("output")
+                    .short("o")
+                    .long("output")
+                    .takes_value(true)
+                    .possible_value("json")
                 ),
         )
         .subcommand(
@@ -855,8 +862,9 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env, is_preview)?;
         let deploy_config = manifest.deploy_config(env)?;
-
-        commands::publish(&user, &mut target, deploy_config)?;
+        let output_option =
+            matches.is_present("output") && matches.value_of("output") == Some("json");
+        commands::publish(&user, &mut target, deploy_config, output_option)?;
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
         let config_path = Path::new(

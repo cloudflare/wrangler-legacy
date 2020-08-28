@@ -1,24 +1,27 @@
 mod route;
 use route::publish_routes;
 
+use crate::commands::publish::PublishOutput;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Zoneless};
-use crate::terminal::message::{Message, StdOut};
-pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), failure::Error> {
+
+pub fn worker(
+    user: &GlobalUser,
+    deploy_config: &DeployConfig,
+) -> Result<PublishOutput, failure::Error> {
+    let mut jsonoutput = PublishOutput::new();
     match deploy_config {
         DeployConfig::Zoneless(zoneless_config) => {
             // this is a zoneless deploy
             log::info!("publishing to workers.dev subdomain");
             let deploy_address = publish_zoneless(user, zoneless_config)?;
-
-            StdOut::success(&format!(
+            jsonoutput.urls.push(deploy_address.clone());
+            jsonoutput.result_msg = Some(format!(
                 "Successfully published your script to {}",
                 deploy_address
             ));
-
-            Ok(())
         }
         DeployConfig::Zoned(zoned_config) => {
             // this is a zoned deploy
@@ -26,17 +29,17 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
 
             let published_routes = publish_routes(&user, zoned_config)?;
 
-            let display_results: Vec<String> =
+            let mut display_results: Vec<String> =
                 published_routes.iter().map(|r| format!("{}", r)).collect();
 
-            StdOut::success(&format!(
+            jsonoutput.urls.append(&mut display_results);
+            jsonoutput.result_msg = Some(format!(
                 "Deployed to the following routes:\n{}",
-                display_results.join("\n")
+                &display_results.join("\n")
             ));
-
-            Ok(())
         }
     }
+    Ok(jsonoutput)
 }
 
 fn publish_zoneless(

@@ -2,6 +2,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use indicatif::{ProgressBar, ProgressStyle};
+use serde::{Deserialize, Serialize};
 
 use crate::build::build_target;
 use crate::deploy;
@@ -14,10 +15,35 @@ use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdErr, StdOut};
 use crate::upload;
 
+// Including the human readable result msg so that we can output
+// result messages at the command level. This avoids having to make
+// implementation functions (deploy::worker) aware of output type
+#[derive(Serialize, Deserialize, Default)]
+pub struct PublishOutput {
+    pub success: Option<bool>,
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub urls: Vec<String>,
+    #[serde(skip_serializing)]
+    pub result_msg: Option<String>,
+}
+
+impl PublishOutput {
+    pub fn new() -> Self {
+        PublishOutput {
+            name: None,
+            success: None,
+            urls: Vec::new(),
+            result_msg: None,
+        }
+    }
+}
+
 pub fn publish(
     user: &GlobalUser,
     target: &mut Target,
     deploy_config: DeployConfig,
+    is_json_out: bool,
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
 
@@ -69,7 +95,7 @@ pub fn publish(
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&upload_client, &target, Some(asset_manifest))?;
 
-        deploy::worker(&user, &deploy_config)?;
+        deploy_report_result(&user, &target, deploy_config, is_json_out)?;
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
@@ -102,10 +128,35 @@ pub fn publish(
 
         upload::script(&upload_client, &target, None)?;
 
-        deploy::worker(&user, &deploy_config)?;
+        deploy_report_result(&user, &target, deploy_config, is_json_out)?;
     }
 
     Ok(())
+}
+
+fn deploy_report_result(
+    user: &GlobalUser,
+    target: &Target,
+    deploy_config: DeployConfig,
+    is_json_out: bool,
+) -> Result<(), failure::Error> {
+    match deploy::worker(&user, &deploy_config) {
+        Ok(mut jsonout) => {
+            if let Some(result_msg) = jsonout.result_msg.clone() {
+                if is_json_out {
+                    jsonout.name = Some(target.name.clone());
+                    jsonout.success = Some(true);
+                    StdOut::json_out(&jsonout);
+                    StdErr::success(&result_msg);
+                } else {
+                    StdOut::success(&result_msg);
+                }
+            };
+            Ok(())
+        }
+        // No structured output for unhappy path. That will have to be handled in main to catch all errors
+        Err(e) => Err(e),
+    }
 }
 
 // This checks all of the configured routes for the wildcard ending and warns
