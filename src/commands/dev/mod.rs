@@ -8,7 +8,7 @@ mod utils;
 pub use server_config::Protocol;
 pub use server_config::ServerConfig;
 
-use crate::build;
+use crate::build::build_target;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 use crate::terminal::message::{Message, StdOut};
@@ -26,7 +26,7 @@ pub fn dev(
     verbose: bool,
 ) -> Result<(), failure::Error> {
     // before serving requests we must first build the Worker
-    build(&target)?;
+    build_target(&target)?;
 
     let host_str = styles::highlight("--host");
     let local_str = styles::highlight("--local-protocol");

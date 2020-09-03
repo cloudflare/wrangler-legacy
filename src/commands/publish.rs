@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::build;
+use crate::build::build_target;
 use crate::deploy;
 use crate::http::{self, Feature};
 use crate::kv::bulk;
@@ -22,7 +22,7 @@ pub fn publish(
     validate_target_required_fields_present(target)?;
 
     // Build the script before uploading.
-    build(&target)?;
+    build_target(&target)?;
 
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
