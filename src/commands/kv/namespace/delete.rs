@@ -4,8 +4,7 @@ use crate::kv::namespace::delete;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::Error> {
     kv::validate_target(target)?;
     let client = http::cf_v4_client(user)?;
@@ -16,20 +15,20 @@ pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::
     )) {
         Ok(true) => (),
         Ok(false) => {
-            message::info(&format!("Not deleting namespace {}", id));
+            StdOut::info(&format!("Not deleting namespace {}", id));
             return Ok(());
         }
         Err(e) => failure::bail!(e),
     }
 
     let msg = format!("Deleting namespace {}", id);
-    message::working(&msg);
+    StdOut::working(&msg);
 
     let response = delete(client, target, id);
     match response {
         Ok(_) => {
-            message::success("Success");
-            message::warn(
+            StdOut::success("Success");
+            StdOut::warn(
                 "Make sure to remove this \"kv-namespace\" entry from your configuration file!",
             )
         }

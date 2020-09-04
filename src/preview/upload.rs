@@ -8,7 +8,8 @@ use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::sites::{add_namespace, sync, AssetManifest};
-use crate::terminal::{message, styles};
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::styles;
 use crate::upload;
 
 #[derive(Debug, Deserialize)]
@@ -66,7 +67,7 @@ pub fn upload(
 
                     // First, upload all existing files in given directory
                     if verbose {
-                        message::info("Uploading updated files...");
+                        StdOut::info("Uploading updated files...");
                     }
 
                     bulk::put(target, user, &site_namespace.id, to_upload, &None)?;
@@ -74,7 +75,7 @@ pub fn upload(
                     let preview = authenticated_upload(&client, &target, Some(asset_manifest))?;
                     if !to_delete.is_empty() {
                         if verbose {
-                            message::info("Deleting stale files...");
+                            StdOut::info("Deleting stale files...");
                         }
 
                         bulk::delete(target, user, &site_namespace.id, to_delete, &None)?;
@@ -85,11 +86,11 @@ pub fn upload(
                     authenticated_upload(&client, &target, None)?
                 }
             } else {
-                message::warn(&format!(
+                StdOut::warn(&format!(
                     "Your configuration file is missing the following fields: {:?}",
                     missing_fields
                 ));
-                message::warn("Falling back to unauthenticated preview.");
+                StdOut::warn("Falling back to unauthenticated preview.");
                 if sites_preview {
                     failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
                 }
@@ -101,11 +102,11 @@ pub fn upload(
             let wrangler_config_msg = styles::highlight("`wrangler config`");
             let wrangler_login_msg = styles::highlight("`wrangler login`");
             let docs_url_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
-            message::billboard(
+            StdOut::billboard(
             &format!("You have not provided your Cloudflare credentials.\n\nPlease run {}, {}, or visit\n{}\nfor info on authenticating with environment variables.", wrangler_login_msg, wrangler_config_msg, docs_url_msg)
             );
 
-            message::info("Running preview without authentication.");
+            StdOut::info("Running preview without authentication.");
 
             if sites_preview {
                 failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
@@ -185,14 +186,14 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
     // so we omit them and provide the user with a little guidance. We don't error out, though,
     // because there are valid workarounds for this for testing purposes.
     if !target.kv_namespaces.is_empty() {
-        message::warn(
+        StdOut::warn(
             "KV Namespaces are not supported in preview without setting API credentials and account_id",
         );
 
         target.kv_namespaces = Vec::new();
     }
     if target.site.is_some() {
-        message::warn(
+        StdOut::warn(
             "Sites are not supported in preview without setting API credentials and account_id",
         );
         target.site = None;

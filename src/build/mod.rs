@@ -1,16 +1,20 @@
 use crate::settings::toml::{Target, TargetType};
-use crate::terminal::{message, styles};
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::styles;
 use crate::wranglerjs;
 use crate::{commands, install};
 
 use std::path::PathBuf;
 use std::process::Command;
 
-pub fn build(target: &Target) -> Result<(), failure::Error> {
+// Internal build logic, called by both `build` and `publish`
+// TODO: return a struct containing optional build info and construct output at command layer
+pub fn build_target(target: &Target) -> Result<String, failure::Error> {
     let target_type = &target.target_type;
     match target_type {
         TargetType::JavaScript => {
-            message::info("JavaScript project found. Skipping unnecessary build!")
+            let msg = "JavaScript project found. Skipping unnecessary build!".to_string();
+            Ok(msg)
         }
         TargetType::Rust => {
             let _ = which::which("rustc").map_err(|e| {
@@ -28,17 +32,24 @@ pub fn build(target: &Target) -> Result<(), failure::Error> {
             let command_name = format!("{:?}", command);
 
             commands::run(command, &command_name)?;
+            let msg = "Build succeeded".to_string();
+            Ok(msg)
         }
-        TargetType::Webpack => {
-            wranglerjs::run_build(target)?;
-        }
+        TargetType::Webpack => match wranglerjs::run_build(target) {
+            Ok(output) => {
+                let msg = format!(
+                    "Built successfully, built project size is {}",
+                    output.project_size()
+                );
+                Ok(msg)
+            }
+            Err(e) => Err(e),
+        },
     }
-
-    Ok(())
 }
 
 pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
-    message::working("Compiling your project to WebAssembly...");
+    StdOut::working("Compiling your project to WebAssembly...");
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");

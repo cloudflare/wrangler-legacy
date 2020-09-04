@@ -1,4 +1,4 @@
-use crate::terminal::message;
+use crate::terminal::message::{Message, StdOut};
 use log::info;
 use serde::Serialize;
 use ws::{CloseCode, Handler, Handshake, Sender};
@@ -63,14 +63,14 @@ impl Handler for FiddleMessageServer {
             );
         } else {
             if !origin_is_safe {
-                message::user_error(&format!(
+                StdOut::user_error(&format!(
                     "Denied connection from site {}. This is not a trusted origin",
                     origin
                 ));
             }
 
             if !addr_is_safe {
-                message::user_error(&format!(
+                StdOut::user_error(&format!(
                     "Denied connection originating from {} which is outside this machine",
                     incoming_addr
                 ));
