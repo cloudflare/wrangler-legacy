@@ -93,6 +93,9 @@ impl Session {
                 let subdomain = namespaces[1];
                 format!("{}.{}.workers.dev", target.name, subdomain)
             }
+            DeployConfig::NoRoutes => {
+                failure::bail!("wrangler dev does not support previewing scripts that are not reachable from a route or your workers.dev subdomain.");
+            }
         };
 
         let client = crate::http::legacy_auth_client(&user);
@@ -124,6 +127,7 @@ fn get_session_config(deploy_config: &DeployConfig) -> serde_json::Value {
             json!({ "routes": routes })
         }
         DeployConfig::Zoneless(_) => json!({"workers_dev": true}),
+        DeployConfig::NoRoutes => unimplemented!(),
     }
 }
 
@@ -138,6 +142,7 @@ fn get_session_address(deploy_config: &DeployConfig) -> String {
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/subdomain/edge-preview",
             config.account_id
         ),
+        DeployConfig::NoRoutes => unimplemented!(),
     }
 }
 

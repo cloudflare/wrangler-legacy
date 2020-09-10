@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::settings::toml::deploy_config::RouteConfig;
+use crate::settings::toml::deploy_config::InvocationConfig;
 use crate::settings::toml::kv_namespace::ConfigKvNamespace;
 use crate::settings::toml::site::Site;
 
@@ -27,11 +27,11 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn route_config(
+    pub fn invocation_config(
         &self,
         top_level_account_id: String,
         top_level_zone_id: Option<String>,
-    ) -> Option<RouteConfig> {
+    ) -> Option<InvocationConfig> {
         let account_id = if self.account_id.is_none() {
             Some(top_level_account_id)
         } else {
@@ -39,7 +39,12 @@ impl Environment {
         };
 
         let zone_id = if self.zone_id.is_none() {
-            top_level_zone_id
+            // we shouldn't be passing in the top level zone id unless this is a zoned environment
+            if self.route.is_some() || self.routes.as_ref().map_or(false, |r| !r.is_empty()) {
+                top_level_zone_id
+            } else {
+                None
+            }
         } else {
             self.zone_id.clone()
         };
@@ -47,7 +52,7 @@ impl Environment {
         if self.workers_dev.is_none() && self.route.is_none() && self.routes.is_none() {
             None
         } else {
-            Some(RouteConfig {
+            Some(InvocationConfig {
                 account_id,
                 workers_dev: self.workers_dev,
                 route: self.route.clone(),

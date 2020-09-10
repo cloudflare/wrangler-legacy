@@ -13,14 +13,16 @@ const ACCOUNT_ID: &str = "fakeaccountid";
 
 // TOP LEVEL TESTS
 #[test]
-fn it_errors_on_empty_deploy_config() {
+fn it_can_get_an_empty_deploy_config() {
     let test_toml = WranglerToml::webpack("empty");
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let environment = None;
+    let actual_deploy_config = manifest.deploy_config(environment).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(manifest.deploy_config(environment).is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -85,7 +87,7 @@ fn it_errors_on_deploy_config_missing_account_id() {
 }
 
 #[test]
-fn it_errors_on_zoneless_deploy_config_workers_dev_false() {
+fn it_can_get_a_zoneless_deploy_config_workers_dev_false() {
     let script_name = "zoneless_false";
     let workers_dev = false;
     let test_toml = WranglerToml::zoneless(script_name, ACCOUNT_ID, workers_dev);
@@ -94,7 +96,10 @@ fn it_errors_on_zoneless_deploy_config_workers_dev_false() {
 
     let environment = None;
 
-    assert!(manifest.deploy_config(environment).is_err());
+    let actual_deploy_config = manifest.deploy_config(environment).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
+
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -174,7 +179,7 @@ fn it_errors_on_single_route_deploy_config_missing_zone_id() {
 }
 
 #[test]
-fn it_errors_on_single_route_deploy_config_empty_route() {
+fn it_can_get_a_single_route_deploy_config_empty_route() {
     let script_name = "single_route_empty_route";
     let pattern = "";
 
@@ -184,11 +189,14 @@ fn it_errors_on_single_route_deploy_config_empty_route() {
 
     let environment = None;
 
-    assert!(manifest.deploy_config(environment).is_err());
+    let actual_deploy_config = manifest.deploy_config(environment).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
+
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
-fn it_errors_on_single_route_deploy_config_missing_route() {
+fn it_can_get_a_single_route_deploy_config_missing_route() {
     let script_name = "single_route_missing_route";
 
     let mut test_toml = WranglerToml::zoned_single_route(script_name, ZONE_ID, "");
@@ -198,7 +206,10 @@ fn it_errors_on_single_route_deploy_config_missing_route() {
 
     let environment = None;
 
-    assert!(manifest.deploy_config(environment).is_err());
+    let actual_deploy_config = manifest.deploy_config(environment).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
+
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -295,7 +306,7 @@ fn it_errors_on_multi_route_deploy_config_missing_zone_id() {
 }
 
 #[test]
-fn it_errors_on_multi_route_deploy_config_empty_routes_list() {
+fn it_can_get_a_multi_route_deploy_config_empty_routes_list() {
     let script_name = "multi_route_empty_routes_list";
     let patterns = [];
 
@@ -305,11 +316,14 @@ fn it_errors_on_multi_route_deploy_config_empty_routes_list() {
 
     let environment = None;
 
-    assert!(manifest.deploy_config(environment).is_err());
+    let actual_deploy_config = manifest.deploy_config(environment).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
+
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
-fn it_errors_on_multi_route_deploy_config_empty_route() {
+fn it_can_get_a_multi_route_deploy_config_empty_route() {
     let script_name = "multi_route_empty_route";
     let patterns = [""];
 
@@ -319,7 +333,10 @@ fn it_errors_on_multi_route_deploy_config_empty_route() {
 
     let environment = None;
 
-    assert!(manifest.deploy_config(environment).is_err());
+    let actual_deploy_config = manifest.deploy_config(environment).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
+
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -377,14 +394,15 @@ fn when_top_level_empty_env_empty() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
 fn when_top_level_empty_env_has_zone_id() {
-    // if env only includes zone id, error
+    // if env only includes zone id
     let script_name = "when_top_level_empty_env_has_zone_id";
     let mut env_config = EnvConfig::default();
     env_config.zone_id = Some(ZONE_ID);
@@ -393,9 +411,10 @@ fn when_top_level_empty_env_has_zone_id() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -410,9 +429,10 @@ fn when_top_level_empty_env_workers_dev_false() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -438,7 +458,7 @@ fn when_top_level_empty_env_workers_dev_true() {
 
 #[test]
 fn when_top_level_empty_zoned_single_route_env() {
-    // when route is empty, error
+    // when route is empty
     let pattern = "";
     let env_config = EnvConfig::zoned_single_route(ZONE_ID, pattern);
 
@@ -447,9 +467,10 @@ fn when_top_level_empty_zoned_single_route_env() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -477,9 +498,10 @@ fn when_top_level_empty_env_zoned_single_route_zone_id_only() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -510,7 +532,7 @@ fn when_top_level_empty_env_zoned_single_route() {
 
 #[test]
 fn when_top_level_empty_zoned_multi_route_env_routes_empty() {
-    // when routes list is empty, error
+    // when routes list is empty
     let patterns = [];
     let env_config = EnvConfig::zoned_multi_route(ZONE_ID, patterns.to_vec());
 
@@ -519,9 +541,10 @@ fn when_top_level_empty_zoned_multi_route_env_routes_empty() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -535,9 +558,10 @@ fn when_top_level_empty_zoned_multi_route_env_route_empty() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -620,9 +644,10 @@ fn when_top_level_zoneless_env_zoneless_workers_dev_false() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -719,7 +744,7 @@ fn when_top_level_zoneless_env_zoned_single_route() {
 
 #[test]
 fn when_top_level_zoneless_env_zoned_multi_route_routes_list_empty() {
-    // when routes list is empty, error
+    // when routes list is empty
     let patterns = [];
     let env_config = EnvConfig::zoned_multi_route(ZONE_ID, patterns.to_vec());
 
@@ -730,14 +755,15 @@ fn when_top_level_zoneless_env_zoned_multi_route_routes_list_empty() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
 fn when_top_level_zoneless_env_zoned_multi_route_route_empty() {
-    // when route is empty, error
+    // when route is empty
     let patterns = [""];
     let env_config = EnvConfig::zoned_multi_route(ZONE_ID, patterns.to_vec());
 
@@ -748,9 +774,10 @@ fn when_top_level_zoneless_env_zoned_multi_route_route_empty() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]
@@ -851,9 +878,10 @@ fn when_top_level_zoned_env_zoneless_workers_dev_false() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME));
+    let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deploy_config = DeployConfig::NoRoutes;
 
-    assert!(actual_deploy_config.is_err());
+    assert_eq!(actual_deploy_config, expected_deploy_config);
 }
 
 #[test]

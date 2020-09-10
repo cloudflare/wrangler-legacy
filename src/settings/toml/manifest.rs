@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
-use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
+use crate::settings::toml::deploy_config::{DeployConfig, InvocationConfig};
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
@@ -146,8 +146,8 @@ impl Manifest {
         self.name.clone()
     }
 
-    fn route_config(&self) -> RouteConfig {
-        RouteConfig {
+    fn invocation_config(&self) -> InvocationConfig {
+        InvocationConfig {
             account_id: Some(self.account_id.clone()),
             workers_dev: self.workers_dev,
             route: self.route.clone(),
@@ -162,22 +162,23 @@ impl Manifest {
 
         if let Some(environment) = self.get_environment(env)? {
             // if there is an environment level deploy target, try to return that
-            if let Some(env_route_config) =
-                environment.route_config(self.account_id.clone(), self.zone_id.clone())
+            if let Some(env_invocation_config) =
+                environment.invocation_config(self.account_id.clone(), self.zone_id.clone())
             {
-                DeployConfig::build(&script, &env_route_config)
+                DeployConfig::build(&script, &env_invocation_config)
             } else {
                 // If the top level config is Zoned, the user needs to specify new route config
-                let top_level_config = DeployConfig::build(&script, &self.route_config())?;
+                let top_level_config = DeployConfig::build(&script, &self.invocation_config())?;
                 match top_level_config {
                     DeployConfig::Zoned(_) => failure::bail!(
                         "you must specify route(s) per environment for zoned deploys."
                     ),
                     DeployConfig::Zoneless(_) => Ok(top_level_config),
+                    DeployConfig::NoRoutes => Ok(top_level_config),
                 }
             }
         } else {
-            DeployConfig::build(&script, &self.route_config())
+            DeployConfig::build(&script, &self.invocation_config())
         }
     }
 

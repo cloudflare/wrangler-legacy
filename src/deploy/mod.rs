@@ -36,6 +36,7 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
 
             Ok(())
         }
+        DeployConfig::NoRoutes => Ok(()),
     }
 }
 
