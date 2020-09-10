@@ -8,7 +8,7 @@ mod site;
 mod target;
 mod target_type;
 
-pub use deploy_config::{DeployConfig, Zoned, Zoneless};
+pub use deploy_config::{DeployConfig, HttpRouteDeployConfig, Zoned, Zoneless};
 pub use environment::Environment;
 pub use kv_namespace::{ConfigKvNamespace, KvNamespace};
 pub use manifest::Manifest;

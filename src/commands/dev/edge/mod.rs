@@ -23,7 +23,7 @@ pub fn dev(
     upstream_protocol: Protocol,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    let session = Session::new(&target, &user, &deploy_config)?;
+    let session = Session::new(&target, &user, &deploy_config.http_routes)?;
     let mut target = target;
 
     let preview_token = upload(

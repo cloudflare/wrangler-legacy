@@ -1,10 +1,26 @@
 use crate::settings::toml::Route;
 use crate::terminal::message::{Message, StdOut};
+
 #[derive(Clone, Debug, PartialEq)]
-pub enum DeployConfig {
-    Zoneless(Zoneless),
-    Zoned(Zoned),
-    NoRoutes,
+pub struct DeployConfig {
+    pub http_routes: HttpRouteDeployConfig,
+    // It is an arbitrary limitation of wrangler
+    // to only allow configuring either routes on a single zone, or a workers.dev subdomain.
+    //
+    // With the addition of new invocation types that make sense alongside the existing
+    // route-based invocations, this limitation is more painful. So, I've replaced DeployConfig
+    // with a struct type that can allow for multiple invocations per environment.
+    // Invocation was chosen as the name as to not overload the word event, as actor invocations
+    // and http route invocations share a protocol (http) and an event type (fetch).
+    //
+    // However, this single-deploy assumption is baked into the user interface and implementation
+    // of wrangler dev, which automatically detects the hostname to use from your deploy config,
+    // and uses the detected hostname to determine which api path to hit for zoned vs zoneless.
+    //
+    // Someday, RouteDeployConfig should be eliminated, and folded into DeployConfig
+    // with the following fields placed directly in DeployConfig:
+    // zoneless_invocation: Option<ZonelessConfig>
+    // zoned_invocation: Option<ZonedConfig>
 }
 
 impl DeployConfig {
@@ -12,6 +28,29 @@ impl DeployConfig {
         script_name: &str,
         invocation_config: &InvocationConfig,
     ) -> Result<DeployConfig, failure::Error> {
+        let http_routes = HttpRouteDeployConfig::build(script_name, invocation_config)?;
+        Ok(DeployConfig { http_routes })
+    }
+}
+
+impl From<HttpRouteDeployConfig> for DeployConfig {
+    fn from(http_routes: HttpRouteDeployConfig) -> DeployConfig {
+        DeployConfig { http_routes }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum HttpRouteDeployConfig {
+    Zoneless(Zoneless),
+    Zoned(Zoned),
+    NoRoutes,
+}
+
+impl HttpRouteDeployConfig {
+    pub fn build(
+        script_name: &str,
+        invocation_config: &InvocationConfig,
+    ) -> Result<HttpRouteDeployConfig, failure::Error> {
         if invocation_config.has_conflicting_targets() {
             failure::bail!(
                 "You cannot set workers_dev = true AND provide a zone_id and route/routes, you must pick one."
@@ -21,18 +60,18 @@ impl DeployConfig {
         invocation_config.warn_if_no_routes();
 
         if invocation_config.is_zoneless() {
-            DeployConfig::build_zoneless(script_name, invocation_config)
+            HttpRouteDeployConfig::build_zoneless(script_name, invocation_config)
         } else if invocation_config.maybe_zoned() {
-            DeployConfig::build_zoned(script_name, invocation_config)
+            HttpRouteDeployConfig::build_zoned(script_name, invocation_config)
         } else {
-            Ok(DeployConfig::NoRoutes)
+            Ok(HttpRouteDeployConfig::NoRoutes)
         }
     }
 
     fn build_zoneless(
         script_name: &str,
         invocation_config: &InvocationConfig,
-    ) -> Result<DeployConfig, failure::Error> {
+    ) -> Result<HttpRouteDeployConfig, failure::Error> {
         if let Some(account_id) = &invocation_config.account_id {
             // TODO: Deserialize empty strings to None; cannot do this for account id
             // yet without a large refactor.
@@ -44,7 +83,7 @@ impl DeployConfig {
                 account_id: account_id.to_string(),
             };
 
-            Ok(DeployConfig::Zoneless(zoneless))
+            Ok(HttpRouteDeployConfig::Zoneless(zoneless))
         } else {
             failure::bail!("field `account_id` is required to deploy to workers.dev");
         }
@@ -53,7 +92,7 @@ impl DeployConfig {
     fn build_zoned(
         script_name: &str,
         invocation_config: &InvocationConfig,
-    ) -> Result<DeployConfig, failure::Error> {
+    ) -> Result<HttpRouteDeployConfig, failure::Error> {
         if let Some(zone_id) = &invocation_config.zone_id {
             if zone_id.is_empty() {
                 failure::bail!("field `zone_id` is required to deploy to routes");
@@ -89,9 +128,9 @@ impl DeployConfig {
             }
 
             if zoned.routes.is_empty() {
-                Ok(DeployConfig::NoRoutes)
+                Ok(HttpRouteDeployConfig::NoRoutes)
             } else {
-                Ok(DeployConfig::Zoned(zoned))
+                Ok(HttpRouteDeployConfig::Zoned(zoned))
             }
         } else {
             failure::bail!("field `zone_id` is required to deploy to routes");

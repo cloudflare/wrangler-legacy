@@ -8,7 +8,7 @@ use crate::deploy;
 use crate::http::{self, Feature};
 use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, Target};
+use crate::settings::toml::{DeployConfig, HttpRouteDeployConfig, Target};
 use crate::sites;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
@@ -27,7 +27,7 @@ pub fn publish(
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
         validate_bucket_location(path)?;
-        warn_site_incompatible_route(&deploy_config);
+        warn_site_incompatible_route(&deploy_config.http_routes);
 
         let site_namespace = sites::add_namespace(user, target, false)?;
 
@@ -103,8 +103,8 @@ pub fn publish(
 
 // This checks all of the configured routes for the wildcard ending and warns
 // the user that their site may not work as expected without it.
-fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
-    if let DeployConfig::Zoned(zoned) = &deploy_config {
+fn warn_site_incompatible_route(deploy_config: &HttpRouteDeployConfig) {
+    if let HttpRouteDeployConfig::Zoned(zoned) = &deploy_config {
         let mut no_star_routes = Vec::new();
         for route in &zoned.routes {
             if !route.pattern.ends_with('*') {

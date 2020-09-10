@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
-use crate::settings::toml::deploy_config::{DeployConfig, InvocationConfig};
+use crate::settings::toml::deploy_config::{DeployConfig, HttpRouteDeployConfig, InvocationConfig};
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
@@ -169,12 +169,12 @@ impl Manifest {
             } else {
                 // If the top level config is Zoned, the user needs to specify new route config
                 let top_level_config = DeployConfig::build(&script, &self.invocation_config())?;
-                match top_level_config {
-                    DeployConfig::Zoned(_) => failure::bail!(
+                match top_level_config.http_routes {
+                    HttpRouteDeployConfig::Zoned(_) => failure::bail!(
                         "you must specify route(s) per environment for zoned deploys."
                     ),
-                    DeployConfig::Zoneless(_) => Ok(top_level_config),
-                    DeployConfig::NoRoutes => Ok(top_level_config),
+                    HttpRouteDeployConfig::Zoneless(_) => Ok(top_level_config),
+                    HttpRouteDeployConfig::NoRoutes => Ok(top_level_config),
                 }
             }
         } else {

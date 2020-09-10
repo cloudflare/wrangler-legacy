@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, Target};
+use crate::settings::toml::{DeployConfig, HttpRouteDeployConfig, Target};
 use crate::sites::{add_namespace, sync};
 use crate::terminal::message::{Message, StdOut};
 use crate::upload;
@@ -38,7 +38,7 @@ pub(super) fn upload(
         (Vec::new(), None, None)
     };
 
-    let session_config = get_session_config(deploy_config);
+    let session_config = get_session_config(&deploy_config.http_routes);
     let address = get_upload_address(target);
 
     let script_upload_form = upload::form::build(target, asset_manifest, Some(session_config))?;
@@ -76,7 +76,7 @@ impl Session {
     pub fn new(
         target: &Target,
         user: &GlobalUser,
-        deploy_config: &DeployConfig,
+        deploy_config: &HttpRouteDeployConfig,
     ) -> Result<Session, failure::Error> {
         let exchange_url = get_exchange_url(deploy_config, user)?;
         let host = match exchange_url.host_str() {
@@ -87,13 +87,13 @@ impl Session {
         }?;
 
         let host = match deploy_config {
-            DeployConfig::Zoned(_) => host,
-            DeployConfig::Zoneless(_) => {
+            HttpRouteDeployConfig::Zoned(_) => host,
+            HttpRouteDeployConfig::Zoneless(_) => {
                 let namespaces: Vec<&str> = host.as_str().split('.').collect();
                 let subdomain = namespaces[1];
                 format!("{}.{}.workers.dev", target.name, subdomain)
             }
-            DeployConfig::NoRoutes => {
+            HttpRouteDeployConfig::NoRoutes => {
                 failure::bail!("wrangler dev does not support previewing scripts that are not reachable from a route or your workers.dev subdomain.");
             }
         };
@@ -117,32 +117,32 @@ impl Session {
     }
 }
 
-fn get_session_config(deploy_config: &DeployConfig) -> serde_json::Value {
+fn get_session_config(deploy_config: &HttpRouteDeployConfig) -> serde_json::Value {
     match deploy_config {
-        DeployConfig::Zoned(config) => {
+        HttpRouteDeployConfig::Zoned(config) => {
             let mut routes: Vec<String> = Vec::new();
             for route in &config.routes {
                 routes.push(route.pattern.clone());
             }
             json!({ "routes": routes })
         }
-        DeployConfig::Zoneless(_) => json!({"workers_dev": true}),
-        DeployConfig::NoRoutes => unimplemented!(),
+        HttpRouteDeployConfig::Zoneless(_) => json!({"workers_dev": true}),
+        HttpRouteDeployConfig::NoRoutes => unimplemented!(),
     }
 }
 
-fn get_session_address(deploy_config: &DeployConfig) -> String {
+fn get_session_address(deploy_config: &HttpRouteDeployConfig) -> String {
     match deploy_config {
-        DeployConfig::Zoned(config) => format!(
+        HttpRouteDeployConfig::Zoned(config) => format!(
             "https://api.cloudflare.com/client/v4/zones/{}/workers/edge-preview",
             config.zone_id
         ),
         // TODO: zoneless is probably wrong
-        DeployConfig::Zoneless(config) => format!(
+        HttpRouteDeployConfig::Zoneless(config) => format!(
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/subdomain/edge-preview",
             config.account_id
         ),
-        DeployConfig::NoRoutes => unimplemented!(),
+        HttpRouteDeployConfig::NoRoutes => unimplemented!(),
     }
 }
 
@@ -154,7 +154,7 @@ fn get_upload_address(target: &mut Target) -> String {
 }
 
 fn get_exchange_url(
-    deploy_config: &DeployConfig,
+    deploy_config: &HttpRouteDeployConfig,
     user: &GlobalUser,
 ) -> Result<Url, failure::Error> {
     let client = crate::http::legacy_auth_client(&user);

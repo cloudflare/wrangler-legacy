@@ -4,11 +4,12 @@ use route::publish_routes;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, Zoneless};
+use crate::settings::toml::{DeployConfig, HttpRouteDeployConfig, Zoneless};
 use crate::terminal::message::{Message, StdOut};
+
 pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), failure::Error> {
-    match deploy_config {
-        DeployConfig::Zoneless(zoneless_config) => {
+    match &deploy_config.http_routes {
+        HttpRouteDeployConfig::Zoneless(zoneless_config) => {
             // this is a zoneless deploy
             log::info!("publishing to workers.dev subdomain");
             let deploy_address = publish_zoneless(user, zoneless_config)?;
@@ -20,7 +21,7 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
 
             Ok(())
         }
-        DeployConfig::Zoned(zoned_config) => {
+        HttpRouteDeployConfig::Zoned(zoned_config) => {
             // this is a zoned deploy
             log::info!("publishing to zone {}", zoned_config.zone_id);
 
@@ -36,7 +37,7 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
 
             Ok(())
         }
-        DeployConfig::NoRoutes => Ok(()),
+        HttpRouteDeployConfig::NoRoutes => Ok(()),
     }
 }
 

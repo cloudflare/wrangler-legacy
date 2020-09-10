@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::settings::toml::route::Route;
 use crate::settings::toml::Manifest;
-use crate::settings::toml::{DeployConfig, Zoned, Zoneless};
+use crate::settings::toml::{HttpRouteDeployConfig, Zoned, Zoneless};
 
 use crate::fixtures::{EnvConfig, WranglerToml, TEST_ENV_NAME};
 
@@ -20,9 +20,9 @@ fn it_can_get_an_empty_deploy_config() {
 
     let environment = None;
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -51,12 +51,12 @@ fn it_can_get_a_top_level_zoneless_deploy_config() {
 
     let environment = None;
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::Zoneless(Zoneless {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoneless(Zoneless {
         script_name: script_name.to_string(),
         account_id: ACCOUNT_ID.to_string(),
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -97,9 +97,9 @@ fn it_can_get_a_zoneless_deploy_config_workers_dev_false() {
     let environment = None;
 
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -117,12 +117,12 @@ fn it_can_get_a_single_route_zoned_deploy_config() {
         pattern: PATTERN.to_string(),
         id: None,
     }];
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -141,12 +141,12 @@ fn it_can_get_a_single_route_zoned_deploy_config_workers_dev_false() {
         pattern: PATTERN.to_string(),
         id: None,
     }];
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -190,9 +190,9 @@ fn it_can_get_a_single_route_deploy_config_empty_route() {
     let environment = None;
 
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -207,9 +207,9 @@ fn it_can_get_a_single_route_deploy_config_missing_route() {
     let environment = None;
 
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -231,7 +231,7 @@ fn it_can_get_a_multi_route_zoned_deploy_config() {
             id: None,
         })
         .collect();
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
@@ -239,7 +239,7 @@ fn it_can_get_a_multi_route_zoned_deploy_config() {
     let environment = None;
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -262,7 +262,7 @@ fn it_can_get_a_multi_route_zoned_deploy_config_workers_dev_false() {
             id: None,
         })
         .collect();
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
@@ -270,7 +270,7 @@ fn it_can_get_a_multi_route_zoned_deploy_config_workers_dev_false() {
     let environment = None;
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -317,9 +317,9 @@ fn it_can_get_a_multi_route_deploy_config_empty_routes_list() {
     let environment = None;
 
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -334,9 +334,9 @@ fn it_can_get_a_multi_route_deploy_config_empty_route() {
     let environment = None;
 
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -395,9 +395,9 @@ fn when_top_level_empty_env_empty() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -412,9 +412,9 @@ fn when_top_level_empty_env_has_zone_id() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -430,9 +430,9 @@ fn when_top_level_empty_env_workers_dev_false() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -448,12 +448,12 @@ fn when_top_level_empty_env_workers_dev_true() {
 
     let environment = Some(TEST_ENV_NAME);
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::Zoneless(Zoneless {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoneless(Zoneless {
         script_name: manifest.worker_name(environment),
         account_id: account_id.to_string(),
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -468,9 +468,9 @@ fn when_top_level_empty_zoned_single_route_env() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -499,9 +499,9 @@ fn when_top_level_empty_env_zoned_single_route_zone_id_only() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -522,12 +522,12 @@ fn when_top_level_empty_env_zoned_single_route() {
         pattern: PATTERN.to_string(),
         id: None,
     }];
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -542,9 +542,9 @@ fn when_top_level_empty_zoned_multi_route_env_routes_empty() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -559,9 +559,9 @@ fn when_top_level_empty_zoned_multi_route_env_route_empty() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -604,12 +604,12 @@ fn when_top_level_empty_zoned_multi_route_env() {
         })
         .collect();
 
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -625,12 +625,12 @@ fn when_top_level_zoneless_env_empty() {
 
     let environment = Some(TEST_ENV_NAME);
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::Zoneless(Zoneless {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoneless(Zoneless {
         script_name: manifest.worker_name(environment),
         account_id: ACCOUNT_ID.to_string(),
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -645,9 +645,9 @@ fn when_top_level_zoneless_env_zoneless_workers_dev_false() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -664,12 +664,12 @@ fn when_top_level_zoneless_env_zoneless_workers_dev_true() {
 
     let environment = Some(TEST_ENV_NAME);
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::Zoneless(Zoneless {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoneless(Zoneless {
         account_id: ACCOUNT_ID.to_string(),
         script_name: manifest.worker_name(environment),
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -687,12 +687,12 @@ fn when_top_level_zoneless_env_zoned_single_route_empty() {
 
     let environment = Some(TEST_ENV_NAME);
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::Zoneless(Zoneless {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoneless(Zoneless {
         account_id: ACCOUNT_ID.to_string(),
         script_name: manifest.worker_name(environment),
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -734,12 +734,12 @@ fn when_top_level_zoneless_env_zoned_single_route() {
         pattern: PATTERN.to_string(),
         id: None,
     }];
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -756,9 +756,9 @@ fn when_top_level_zoneless_env_zoned_multi_route_routes_list_empty() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -775,9 +775,9 @@ fn when_top_level_zoneless_env_zoned_multi_route_route_empty() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -843,12 +843,12 @@ fn when_top_level_zoneless_env_zoned_multi_route() {
         })
         .collect();
 
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -879,9 +879,9 @@ fn when_top_level_zoned_env_zoneless_workers_dev_false() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let actual_deploy_config = manifest.deploy_config(Some(TEST_ENV_NAME)).unwrap();
-    let expected_deploy_config = DeployConfig::NoRoutes;
+    let expected_deploy_config = HttpRouteDeployConfig::NoRoutes;
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -898,12 +898,12 @@ fn when_top_level_zoned_env_zoneless_workers_dev_true() {
 
     let environment = Some(TEST_ENV_NAME);
     let actual_deploy_config = manifest.deploy_config(environment).unwrap();
-    let expected_deploy_config = DeployConfig::Zoneless(Zoneless {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoneless(Zoneless {
         account_id: ACCOUNT_ID.to_string(),
         script_name: manifest.worker_name(environment),
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -944,12 +944,12 @@ fn when_top_level_zoned_env_zoned_single_route_zone_id_missing() {
         pattern: env_pattern.to_string(),
         id: None,
     }];
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: ZONE_ID.to_string(),
         routes: expected_routes,
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
 
 #[test]
@@ -974,10 +974,10 @@ fn when_top_level_zoned_env_zoned_single_route() {
         pattern: PATTERN.to_string(),
         id: None,
     }];
-    let expected_deploy_config = DeployConfig::Zoned(Zoned {
+    let expected_deploy_config = HttpRouteDeployConfig::Zoned(Zoned {
         zone_id: env_zone_id.to_string(),
         routes: expected_routes,
     });
 
-    assert_eq!(actual_deploy_config, expected_deploy_config);
+    assert_eq!(actual_deploy_config.http_routes, expected_deploy_config);
 }
