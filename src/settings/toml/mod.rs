@@ -1,3 +1,4 @@
+mod actors;
 mod deploy_config;
 mod dev;
 mod environment;
@@ -8,7 +9,12 @@ mod site;
 mod target;
 mod target_type;
 
-pub use deploy_config::{DeployConfig, HttpRouteDeployConfig, Zoned, Zoneless};
+pub use actors::{
+    ActorNamespace, ActorNamespaceNoId, ConfigActorNamespaceBinding, ConfigActorNamespaceImpl,
+};
+pub use deploy_config::{
+    ActorNamespacesDeployConfig, DeployConfig, HttpRouteDeployConfig, Zoned, Zoneless,
+};
 pub use environment::Environment;
 pub use kv_namespace::{ConfigKvNamespace, KvNamespace};
 pub use manifest::Manifest;

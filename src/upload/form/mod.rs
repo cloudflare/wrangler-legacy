@@ -10,6 +10,7 @@ use std::path::PathBuf;
 
 use crate::settings::binding;
 use crate::settings::metadata::Metadata;
+use crate::settings::toml::ActorNamespace;
 use crate::settings::toml::{Target, TargetType};
 use crate::sites::AssetManifest;
 use crate::wranglerjs;
@@ -24,11 +25,13 @@ use super::{krate, Package};
 
 pub fn build(
     target: &Target,
+    actor_namespaces: Vec<ActorNamespace>,
     asset_manifest: Option<AssetManifest>,
     session_config: Option<serde_json::Value>,
 ) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
     let kv_namespaces = &target.kv_namespaces;
+    let actor_namespaces = &actor_namespaces;
     let mut text_blobs: Vec<TextBlob> = Vec::new();
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
@@ -57,6 +60,7 @@ pub fn build(
                 script_path,
                 wasm_modules,
                 kv_namespaces.to_vec(),
+                actor_namespaces.to_vec(),
                 text_blobs,
                 plain_texts,
             )?;
@@ -74,6 +78,7 @@ pub fn build(
                 script_path,
                 wasm_modules,
                 kv_namespaces.to_vec(),
+                actor_namespaces.to_vec(),
                 text_blobs,
                 plain_texts,
             )?;
@@ -107,6 +112,7 @@ pub fn build(
                 script_path,
                 wasm_modules,
                 kv_namespaces.to_vec(),
+                actor_namespaces.to_vec(),
                 text_blobs,
                 plain_texts,
             )?;

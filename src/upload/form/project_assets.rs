@@ -8,7 +8,7 @@ use super::plain_text::PlainText;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
 
-use crate::settings::toml::KvNamespace;
+use crate::settings::toml::{ActorNamespace, KvNamespace};
 
 #[derive(Debug)]
 pub struct ProjectAssets {
@@ -16,6 +16,7 @@ pub struct ProjectAssets {
     script_path: PathBuf,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub actor_namespaces: Vec<ActorNamespace>,
     pub text_blobs: Vec<TextBlob>,
     pub plain_texts: Vec<PlainText>,
 }
@@ -25,6 +26,7 @@ impl ProjectAssets {
         script_path: PathBuf,
         wasm_modules: Vec<WasmModule>,
         kv_namespaces: Vec<KvNamespace>,
+        actor_namespaces: Vec<ActorNamespace>,
         text_blobs: Vec<TextBlob>,
         plain_texts: Vec<PlainText>,
     ) -> Result<Self, failure::Error> {
@@ -37,6 +39,7 @@ impl ProjectAssets {
             script_path,
             wasm_modules,
             kv_namespaces,
+            actor_namespaces,
             text_blobs,
             plain_texts,
         })
@@ -51,6 +54,10 @@ impl ProjectAssets {
         }
         for kv in &self.kv_namespaces {
             let binding = kv.binding();
+            bindings.push(binding);
+        }
+        for actor in &self.actor_namespaces {
+            let binding = actor.binding();
             bindings.push(binding);
         }
         for blob in &self.text_blobs {

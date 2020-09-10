@@ -1,8 +1,9 @@
-use crate::settings::toml::Route;
+use crate::settings::toml::{ConfigActorNamespaceImpl, Route};
 use crate::terminal::message::{Message, StdOut};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct DeployConfig {
+    pub actor_namespaces: Option<ActorNamespacesDeployConfig>,
     pub http_routes: HttpRouteDeployConfig,
     // It is an arbitrary limitation of wrangler
     // to only allow configuring either routes on a single zone, or a workers.dev subdomain.
@@ -29,13 +30,20 @@ impl DeployConfig {
         invocation_config: &InvocationConfig,
     ) -> Result<DeployConfig, failure::Error> {
         let http_routes = HttpRouteDeployConfig::build(script_name, invocation_config)?;
-        Ok(DeployConfig { http_routes })
+        let actor_namespaces = ActorNamespacesDeployConfig::build(invocation_config)?;
+        Ok(DeployConfig {
+            actor_namespaces,
+            http_routes,
+        })
     }
 }
 
 impl From<HttpRouteDeployConfig> for DeployConfig {
     fn from(http_routes: HttpRouteDeployConfig) -> DeployConfig {
-        DeployConfig { http_routes }
+        DeployConfig {
+            actor_namespaces: None,
+            http_routes,
+        }
     }
 }
 
@@ -139,6 +147,35 @@ impl HttpRouteDeployConfig {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ActorNamespacesDeployConfig {
+    pub account_id: String,
+    pub actor_namespaces: Vec<ConfigActorNamespaceImpl>,
+}
+
+impl ActorNamespacesDeployConfig {
+    pub fn build(
+        invocation_config: &InvocationConfig,
+    ) -> Result<Option<ActorNamespacesDeployConfig>, failure::Error> {
+        if let Some(actor_namespaces) = &invocation_config.actor_namespaces {
+            if actor_namespaces.is_empty() {
+                StdOut::warn("your configuration file contains an empty list for actor namespaces to be implemented");
+                return Ok(None);
+            }
+            if let Some(account_id) = &invocation_config.account_id {
+                Ok(Some(ActorNamespacesDeployConfig {
+                    account_id: account_id.clone(),
+                    actor_namespaces: actor_namespaces.clone(),
+                }))
+            } else {
+                failure::bail!("field `account_id` is required to deploy actor namespaces");
+            }
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct Zoneless {
     pub account_id: String,
     pub script_name: String,
@@ -157,6 +194,7 @@ pub struct InvocationConfig {
     pub routes: Option<Vec<String>>,
     pub zone_id: Option<String>,
     pub account_id: Option<String>,
+    pub actor_namespaces: Option<Vec<ConfigActorNamespaceImpl>>,
 }
 
 impl InvocationConfig {

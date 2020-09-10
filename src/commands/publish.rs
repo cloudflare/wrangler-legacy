@@ -62,7 +62,7 @@ pub fn publish(
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&upload_client, &target, Some(asset_manifest))?;
 
-        deploy::worker(&user, &deploy_config)?;
+        deploy::worker(&user, &target, &deploy_config)?;
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
@@ -95,7 +95,7 @@ pub fn publish(
 
         upload::script(&upload_client, &target, None)?;
 
-        deploy::worker(&user, &deploy_config)?;
+        deploy::worker(&user, &target, &deploy_config)?;
     }
 
     Ok(())

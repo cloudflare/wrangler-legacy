@@ -296,6 +296,7 @@ mod tests {
         Target {
             account_id: "".to_string(),
             kv_namespaces: Vec::new(),
+            actor_namespaces: Vec::new(),
             name: "".to_string(),
             target_type: TargetType::JavaScript,
             webpack_config: None,

@@ -119,6 +119,7 @@ mod tests {
                     binding: "KV".to_string(),
                 },
             ],
+            actor_namespaces: Vec::new(),
             name: "test-target".to_string(),
             target_type: TargetType::Webpack,
             webpack_config: None,

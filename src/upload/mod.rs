@@ -6,6 +6,7 @@ pub use package::Package;
 
 use reqwest::blocking::Client;
 
+use crate::actors;
 use crate::settings::toml::Target;
 use crate::sites::AssetManifest;
 
@@ -19,7 +20,12 @@ pub fn script(
         target.account_id, target.name,
     );
 
-    let script_upload_form = form::build(target, asset_manifest, None)?;
+    let actor_namespaces = actors::convert_namespace_names_to_ids(
+        client,
+        &target.account_id,
+        &target.actor_namespaces,
+    )?;
+    let script_upload_form = form::build(target, actor_namespaces, asset_manifest, None)?;
 
     let res = client
         .put(&worker_addr)

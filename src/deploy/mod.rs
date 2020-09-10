@@ -1,13 +1,20 @@
+mod actors;
 mod route;
+
+use actors::upsert_actor_namespaces;
 use route::publish_routes;
 
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, HttpRouteDeployConfig, Zoneless};
+use crate::settings::toml::{DeployConfig, HttpRouteDeployConfig, Target, Zoneless};
 use crate::terminal::message::{Message, StdOut};
 
-pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), failure::Error> {
+pub fn worker(
+    user: &GlobalUser,
+    target: &Target,
+    deploy_config: &DeployConfig,
+) -> Result<(), failure::Error> {
     match &deploy_config.http_routes {
         HttpRouteDeployConfig::Zoneless(zoneless_config) => {
             // this is a zoneless deploy
@@ -18,8 +25,6 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
                 "Successfully published your script to {}",
                 deploy_address
             ));
-
-            Ok(())
         }
         HttpRouteDeployConfig::Zoned(zoned_config) => {
             // this is a zoned deploy
@@ -34,11 +39,13 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
                 "Deployed to the following routes:\n{}",
                 display_results.join("\n")
             ));
-
-            Ok(())
         }
-        HttpRouteDeployConfig::NoRoutes => Ok(()),
-    }
+        HttpRouteDeployConfig::NoRoutes => (),
+    };
+    if let Some(actor_namespaces) = deploy_config.actor_namespaces.as_ref() {
+        upsert_actor_namespaces(user, target.name.as_str(), actor_namespaces)?;
+    };
+    Ok(())
 }
 
 fn publish_zoneless(

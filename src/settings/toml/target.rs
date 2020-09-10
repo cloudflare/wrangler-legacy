@@ -1,6 +1,6 @@
-use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
+use super::{actors::ActorNamespaceNoId, kv_namespace::KvNamespace};
 
 use std::collections::HashMap;
 use std::env;
@@ -11,6 +11,7 @@ use std::path::PathBuf;
 pub struct Target {
     pub account_id: String,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub actor_namespaces: Vec<ActorNamespaceNoId>,
     pub name: String,
     pub target_type: TargetType,
     pub webpack_config: Option<String>,

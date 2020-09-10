@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
+use crate::settings::toml::actors::ActorNamespaceNoId;
+use crate::settings::toml::actors::{ConfigActorNamespaceBinding, ConfigActors};
 use crate::settings::toml::deploy_config::{DeployConfig, HttpRouteDeployConfig, InvocationConfig};
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
@@ -43,6 +45,8 @@ pub struct Manifest {
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
     pub vars: Option<HashMap<String, String>>,
+    #[serde(alias = "actors-beta")]
+    pub actors_beta: Option<ConfigActors>,
 }
 
 impl Manifest {
@@ -153,6 +157,7 @@ impl Manifest {
             route: self.route.clone(),
             routes: self.routes.clone(),
             zone_id: self.zone_id.clone(),
+            actor_namespaces: self.actors_beta.clone().and_then(|a| a.implements),
         }
     }
 
@@ -219,7 +224,11 @@ impl Manifest {
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(), // MAY inherit
-            kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // MUST NOT inherit
+            kv_namespaces: get_kv_namespaces(self.kv_namespaces.clone(), preview)?, // MUST NOT inherit
+            actor_namespaces: get_actor_namespaces(
+                self.actors_beta.clone().and_then(|a| a.uses),
+                preview,
+            )?, // MUST NOT inherit
             site: self.site.clone(), // MUST NOT inherit
             vars: self.vars.clone(), // MAY inherit,
         };
@@ -236,7 +245,13 @@ impl Manifest {
             }
 
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
-            target.kv_namespaces = get_namespaces(environment.kv_namespaces.clone(), preview)?;
+            target.kv_namespaces = get_kv_namespaces(environment.kv_namespaces.clone(), preview)?;
+
+            // don't inherit actor namespaces because it could be potentially dangerous to use the same namespaces across environments.
+            target.actor_namespaces = get_actor_namespaces(
+                environment.actors_beta.clone().and_then(|a| a.uses),
+                preview,
+            )?;
 
             // don't inherit vars
             target.vars = environment.vars.clone();
@@ -424,7 +439,41 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
     Ok(())
 }
 
-fn get_namespaces(
+fn get_actor_namespaces(
+    namespaces: Option<Vec<ConfigActorNamespaceBinding>>,
+    preview: bool,
+) -> Result<Vec<ActorNamespaceNoId>, failure::Error> {
+    if let Some(namespaces) = namespaces {
+        namespaces.into_iter().map(|ns| {
+            if preview {
+                if let Some(preview_name) = &ns.preview_name {
+                    if let Some(name) = &ns.name {
+                        if preview_name == name {
+                            StdOut::warn("Specifying the same actor namespace for both preview and production sessions may cause bugs in your production worker! Proceed with caution.");
+                        }
+                    }
+                    Ok(ActorNamespaceNoId {
+                        binding: ns.binding.clone(),
+                        name: preview_name.clone()
+                    })
+                } else {
+                    failure::bail!("In order to preview a worker with actor namespaces, you must designate a preview_id in your configuration file for each actor namespace you'd like to preview.")
+                }
+            } else if let Some(name) = &ns.name {
+                Ok(ActorNamespaceNoId {
+                    binding: ns.binding.clone(),
+                    name: name.clone()
+                })
+            } else {
+                failure::bail!("You must specify the namespace name in the name field for the namespace with binding \"{}\"", &ns.binding)
+            }
+        }).collect()
+    } else {
+        Ok(Vec::new())
+    }
+}
+
+fn get_kv_namespaces(
     kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     preview: bool,
 ) -> Result<Vec<KvNamespace>, failure::Error> {

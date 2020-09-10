@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
+use crate::settings::toml::actors::ConfigActors;
 use crate::settings::toml::deploy_config::InvocationConfig;
 use crate::settings::toml::kv_namespace::ConfigKvNamespace;
 use crate::settings::toml::site::Site;
@@ -24,6 +25,8 @@ pub struct Environment {
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub vars: Option<HashMap<String, String>>,
+    #[serde(alias = "actors-beta")]
+    pub actors_beta: Option<ConfigActors>,
 }
 
 impl Environment {
@@ -58,6 +61,7 @@ impl Environment {
                 route: self.route.clone(),
                 routes: self.routes.clone(),
                 zone_id,
+                actor_namespaces: self.actors_beta.clone().and_then(|a| a.implements),
             })
         }
     }

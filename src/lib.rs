@@ -6,6 +6,7 @@ extern crate text_io;
 mod build;
 pub mod preview;
 pub use build::build_target;
+pub mod actors;
 pub mod commands;
 pub mod deploy;
 pub mod http;

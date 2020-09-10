@@ -153,7 +153,13 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = upload::form::build(target, asset_manifest, None)?;
+    if !target.actor_namespaces.is_empty() {
+        StdOut::warn(
+            "Actor namespace nindings are not supported in preview. use wrangler dev instead.",
+        );
+    }
+
+    let script_upload_form = upload::form::build(target, Vec::new(), asset_manifest, None)?;
 
     let res = client
         .post(&create_address)
@@ -198,8 +204,13 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         );
         target.site = None;
     }
+    if !target.actor_namespaces.is_empty() {
+        StdOut::warn(
+            "Actor namespace bindings are not supported in preview. use wrangler dev instead.",
+        );
+    }
 
-    let script_upload_form = upload::form::build(&target, None, None)?;
+    let script_upload_form = upload::form::build(&target, Vec::new(), None, None)?;
     let client = http::client();
     let res = client
         .post(create_address)
