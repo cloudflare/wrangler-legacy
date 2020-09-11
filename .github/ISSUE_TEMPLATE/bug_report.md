@@ -11,7 +11,7 @@ labels: user report
 
   Before opening a new issue, please:
   * search for existing issues: https://github.com/cloudflare/wrangler/issues
-  * make sure you are using the latest release: https://workers.cloudflare.com/docs/quickstart/updating-the-cli/
+  * make sure you are using the latest release: https://developers.cloudflare.com/workers/cli-wrangler/install-update
   
   Thanks! -->
 
