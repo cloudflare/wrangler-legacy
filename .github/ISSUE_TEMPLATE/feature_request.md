@@ -1,7 +1,10 @@
 ---
-name: 💡 Feature request
+name: "\U0001F4A1 Feature request"
 about: Suggest a feature for wrangler
+title: ''
 labels: user report
+assignees: ''
+
 ---
 
 ### 💡 Feature request
