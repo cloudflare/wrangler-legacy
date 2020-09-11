@@ -17,6 +17,10 @@ You have many options to install wrangler!
 
 ### Install with `npm`
 
+We strongly recommend you install `npm` with a Node version manager like [`nvm`](https://github.com/nvm-sh/nvm#installing-and-updating), which will allow `wrangler` to install configuration data in a global `node_modules` directory in your user's home directory, without requiring that you run as `root`. 
+
+Once you've installed `nvm`, run:
+
 ```bash
 npm i @cloudflare/wrangler -g
 ```
