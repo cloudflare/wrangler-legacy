@@ -5,8 +5,7 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub fn list(zone_identifier: String, user: &GlobalUser) -> Result<(), failure::Error> {
     let client = http::cf_v4_client(user)?;
 
@@ -40,7 +39,7 @@ pub fn delete(
     match result {
         Ok(success) => {
             let msg = format!("Successfully deleted route with id {}", success.result.id);
-            message::success(&msg);
+            StdOut::success(&msg);
         }
 
         Err(e) => failure::bail!("{}", http::format_error(e, Some(&error_suggestions))),

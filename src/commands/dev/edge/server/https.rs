@@ -1,8 +1,8 @@
 use super::preview_request;
 use crate::commands::dev::utils::{get_path_as_str, rewrite_redirect};
 use crate::commands::dev::{tls, Protocol, ServerConfig};
-use crate::terminal::{emoji, message};
-
+use crate::terminal::emoji;
+use crate::terminal::message::{Message, StdOut};
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
@@ -91,7 +91,7 @@ pub async fn https(
                 Ok(x) => Some(Ok(x)),
                 Err(e) => {
                     eprintln!("Client connection error {}", e);
-                    message::info("Make sure to use https and `--insecure` with curl");
+                    StdOut::info("Make sure to use https and `--insecure` with curl");
                     None
                 }
             }
@@ -103,7 +103,7 @@ pub async fn https(
     .serve(service);
 
     println!("{} Listening on https://{}", emoji::EAR, listening_address);
-    message::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
+    StdOut::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
 
     if let Err(e) = server.await {
         eprintln!("{}", e);

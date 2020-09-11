@@ -6,8 +6,7 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub fn delete(
     target: &Target,
     user: &GlobalUser,
@@ -20,14 +19,14 @@ pub fn delete(
     match interactive::confirm(&format!("Are you sure you want to delete key \"{}\"?", key)) {
         Ok(true) => (),
         Ok(false) => {
-            message::info(&format!("Not deleting key \"{}\"", key));
+            StdOut::info(&format!("Not deleting key \"{}\"", key));
             return Ok(());
         }
         Err(e) => failure::bail!(e),
     }
 
     let msg = format!("Deleting key \"{}\"", key);
-    message::working(&msg);
+    StdOut::working(&msg);
 
     let response = client.request(&DeleteKey {
         account_identifier: &target.account_id,
@@ -36,7 +35,7 @@ pub fn delete(
     });
 
     match response {
-        Ok(_) => message::success("Success"),
+        Ok(_) => StdOut::success("Success"),
         Err(e) => print!("{}", format_error(e)),
     }
 

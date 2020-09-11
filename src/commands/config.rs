@@ -10,7 +10,8 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use crate::http;
 use crate::settings::{get_global_config_path, global_user::GlobalUser};
-use crate::terminal::{message, styles};
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::styles;
 
 // set the permissions on the dir, we want to avoid that other user reads to file
 #[cfg(not(target_os = "windows"))]
@@ -23,7 +24,7 @@ pub fn set_file_mode(file: &PathBuf) {
 
 pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Error> {
     if verify {
-        message::info("Validating credentials...");
+        StdOut::info("Validating credentials...");
         validate_credentials(user)?;
     }
 
@@ -34,7 +35,7 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
     #[cfg(not(target_os = "windows"))]
     set_file_mode(&config_file);
 
-    message::success(&format!(
+    StdOut::success(&format!(
         "Successfully configured. You can find your configuration file at: {}",
         &config_file.to_string_lossy()
     ));

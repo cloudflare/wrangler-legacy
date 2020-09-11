@@ -1,7 +1,8 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::{emoji, interactive, message};
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::{emoji, interactive};
 
 use serde::{Deserialize, Serialize};
 
@@ -67,7 +68,7 @@ impl Subdomain {
             };
             failure::bail!(msg)
         }
-        message::success(&format!("Success! You've registered {}.", name));
+        StdOut::success(&format!("Success! You've registered {}.", name));
         Ok(())
     }
 }
@@ -115,7 +116,7 @@ fn register_subdomain(
         "Registering your subdomain, {}.workers.dev, this could take up to a minute.",
         name
     );
-    message::working(&msg);
+    StdOut::working(&msg);
     Subdomain::put(name, &target.account_id, user)
 }
 
@@ -130,7 +131,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     if let Some(subdomain) = subdomain {
         if subdomain == name {
             let msg = format!("You have already registered {}.workers.dev", subdomain);
-            message::success(&msg);
+            StdOut::success(&msg);
             return Ok(());
         } else {
             // list all the affected scripts
@@ -158,7 +159,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
             match interactive::confirm(&prompt_msg) {
                 Ok(true) => (),
                 Ok(false) => {
-                    message::info(&format!("Keeping subdomain: {}.workers.dev", subdomain));
+                    StdOut::info(&format!("Keeping subdomain: {}.workers.dev", subdomain));
                     return Ok(());
                 }
                 Err(e) => failure::bail!(e),
@@ -173,11 +174,11 @@ pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::
     let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {
         let msg = format!("{}.workers.dev", subdomain);
-        message::info(&msg);
+        StdOut::info(&msg);
     } else {
         let msg =
             "No subdomain registered. Use `wrangler subdomain <name>` to register one.".to_string();
-        message::user_error(&msg);
+        StdOut::user_error(&msg);
     }
     Ok(())
 }

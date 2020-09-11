@@ -3,15 +3,14 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
+use super::directory_keys_values;
+use super::manifest::AssetManifest;
 use crate::commands::kv;
 use crate::http;
 use crate::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::message;
-
-use super::directory_keys_values;
-use super::manifest::AssetManifest;
+use crate::terminal::message::{Message, StdOut};
 
 pub fn sync(
     target: &Target,
@@ -58,7 +57,7 @@ pub fn sync(
         .map(|key| key.to_owned())
         .collect();
 
-    message::success("Success");
+    StdOut::success("Success");
     Ok((to_upload, to_delete, asset_manifest))
 }
 
