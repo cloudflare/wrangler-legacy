@@ -13,8 +13,7 @@ use crate::kv::bulk::put;
 use crate::kv::bulk::BATCH_KEY_MAX;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub fn run(
     target: &Target,
     user: &GlobalUser,
@@ -41,7 +40,7 @@ pub fn run(
 
     let len = pairs.len();
 
-    message::working(&format!("uploading {} key value pairs", len));
+    StdOut::working(&format!("uploading {} key value pairs", len));
     let progress_bar = if len > BATCH_KEY_MAX {
         let pb = ProgressBar::new(len as u64);
         pb.set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
@@ -56,6 +55,6 @@ pub fn run(
         pb.finish_with_message(&format!("uploaded {} key value pairs", len));
     }
 
-    message::success("Success");
+    StdOut::success("Success");
     Ok(())
 }

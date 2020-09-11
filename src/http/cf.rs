@@ -8,8 +8,8 @@ use http::StatusCode;
 
 use crate::http::{feature::headers, Feature, DEFAULT_HTTP_TIMEOUT_SECONDS};
 use crate::settings::global_user::GlobalUser;
-use crate::terminal::{emoji, message};
-
+use crate::terminal::emoji;
+use crate::terminal::message::{Message, StdOut};
 pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
     let config = HttpApiClientConfig {
         http_timeout: Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS),
@@ -81,8 +81,8 @@ fn print_status_code_context(status_code: StatusCode) {
     match status_code {
       // Folks should never hit PAYLOAD_TOO_LARGE, given that Wrangler ensures that bulk file uploads
       // are max ~50 MB in size. This case is handled anyways out of an abundance of caution.
-      StatusCode::PAYLOAD_TOO_LARGE => message::warn("Returned status code 413, Payload Too Large. Please make sure your upload is less than 100MB in size"),
-      StatusCode::GATEWAY_TIMEOUT => message::warn("Returned status code 504, Gateway Timeout. Please try again in a few seconds"),
+      StatusCode::PAYLOAD_TOO_LARGE => StdOut::warn("Returned status code 413, Payload Too Large. Please make sure your upload is less than 100MB in size"),
+      StatusCode::GATEWAY_TIMEOUT => StdOut::warn("Returned status code 504, Gateway Timeout. Please try again in a few seconds"),
       _ => (),
   }
 }

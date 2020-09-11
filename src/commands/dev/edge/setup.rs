@@ -4,7 +4,7 @@ use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 use crate::sites::{add_namespace, sync};
-use crate::terminal::message;
+use crate::terminal::message::{Message, StdOut};
 use crate::upload;
 
 use reqwest::Url;
@@ -29,7 +29,7 @@ pub(super) fn upload(
 
         // First, upload all existing files in given directory
         if verbose {
-            message::info("Uploading updated files...");
+            StdOut::info("Uploading updated files...");
         }
 
         bulk::put(target, user, &site_namespace.id, to_upload, &None)?;
@@ -52,7 +52,7 @@ pub(super) fn upload(
 
     if !to_delete.is_empty() {
         if verbose {
-            message::info("Deleting stale files...");
+            StdOut::info("Deleting stale files...");
         }
 
         bulk::delete(target, user, &site_namespace_id.unwrap(), to_delete, &None)?;

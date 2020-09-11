@@ -23,7 +23,7 @@ use semver::Version;
 
 use crate::install;
 use crate::settings::toml::Target;
-use crate::terminal::message;
+use crate::terminal::message::{Message, StdOut};
 use crate::upload::package::Package;
 use crate::watch::{wait_for_changes, COOLDOWN_PERIOD};
 
@@ -35,7 +35,7 @@ use guarded_command::GuardedCommand;
 // executable and wait for completion. The file will receive a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(target: &Target) -> Result<(), failure::Error> {
+pub fn run_build(target: &Target) -> Result<WranglerjsOutput, failure::Error> {
     let (mut command, temp_file, bundle) = setup_build(target)?;
 
     log::info!("Running {:?}", command);
@@ -49,7 +49,8 @@ pub fn run_build(target: &Target) -> Result<(), failure::Error> {
             serde_json::from_str(&output).expect("could not parse wranglerjs output");
 
         let custom_webpack = target.webpack_config.is_some();
-        write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack)
+        write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack)?;
+        Ok(wranglerjs_output)
     } else {
         failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
@@ -94,7 +95,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                 Ok(_) => {
                     if is_first {
                         is_first = false;
-                        message::info("Ignoring stale first change");
+                        StdOut::info("Ignoring stale first change");
                         // skip the first change event
                         // so we don't do a refresh immediately
                         continue;
@@ -111,7 +112,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                         }
                     }
                 }
-                Err(_) => message::user_error("Something went wrong while watching."),
+                Err(_) => StdOut::user_error("Something went wrong while watching."),
             }
         }
     });
@@ -125,7 +126,7 @@ fn write_wranglerjs_output(
     custom_webpack: bool,
 ) -> Result<(), failure::Error> {
     if output.has_errors() {
-        message::user_error(output.get_errors().as_str());
+        StdOut::user_error(output.get_errors().as_str());
         if custom_webpack {
             failure::bail!(
             "webpack returned an error. Try configuring `entry` in your webpack config relative to the current working directory, or setting `context = __dirname` in your webpack config."
@@ -139,12 +140,10 @@ fn write_wranglerjs_output(
 
     bundle.write(output)?;
 
-    let msg = format!(
+    log::info!(
         "Built successfully, built project size is {}",
         output.project_size()
     );
-
-    message::success(&msg);
     Ok(())
 }
 
@@ -186,7 +185,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         None => {
             let config_path = PathBuf::from("webpack.config.js".to_string());
             if config_path.exists() {
-                message::warn("If you would like to use your own custom webpack configuration, you will need to add this to your configuration file:\nwebpack_config = \"webpack.config.js\"");
+                StdOut::warn("If you would like to use your own custom webpack configuration, you will need to add this to your configuration file:\nwebpack_config = \"webpack.config.js\"");
             }
             None
         }

@@ -17,11 +17,12 @@ use log::info;
 use url::Url;
 use ws::{Sender, WebSocket};
 
-use crate::build;
+use crate::build::build_target;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::{message, open_browser};
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::open_browser;
 use crate::watch::watch_and_build;
 
 pub fn preview(
@@ -30,7 +31,7 @@ pub fn preview(
     options: PreviewOpt,
     verbose: bool,
 ) -> Result<(), failure::Error> {
-    build(&target)?;
+    build_target(&target)?;
 
     let sites_preview: bool = target.site.is_some();
 
@@ -111,7 +112,7 @@ fn client_request(payload: &RequestPayload, script_id: &str, sites_preview: bool
     } else {
         format!("Your Worker responded with: {}", worker_res)
     };
-    message::preview(&msg);
+    StdOut::preview(&msg);
 }
 
 fn get(
@@ -138,7 +139,7 @@ fn post(
         None => client.post(url).header("Cookie", cookie).send(),
     };
     let msg = format!("POST {}", url);
-    message::preview(&msg);
+    StdOut::preview(&msg);
     Ok(res?.text()?)
 }
 
@@ -169,9 +170,9 @@ fn watch_for_changes(
             if !headless {
                 match broadcaster.send(serde_json::to_string(&msg)?) {
                     Ok(_) => {
-                        message::preview("Updated preview with changes");
+                        StdOut::preview("Updated preview with changes");
                     }
-                    Err(_e) => message::user_error("communication with preview failed"),
+                    Err(_e) => StdOut::user_error("communication with preview failed"),
                 }
             }
 

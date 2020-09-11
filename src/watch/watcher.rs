@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use failure::{format_err, Error};
 
-use crate::terminal::message;
+use crate::terminal::message::{Message, StdOut};
 use log::info;
 
 // Add cooldown for all types of events to watching logic
@@ -17,7 +17,7 @@ pub fn wait_for_changes(
         let event = rx.recv()?;
         match get_changed_path_from_event(event) {
             Ok(Some(path)) => {
-                message::working("Detected changes...");
+                StdOut::working("Detected changes...");
                 // wait for cooldown
                 while rx.recv_timeout(cooldown).is_ok() {}
                 return Ok(path);
@@ -26,7 +26,7 @@ pub fn wait_for_changes(
                 continue; // was an event type we don't care about, continue
             }
             Err(error) => {
-                message::user_error(&format!("WatchError {:?}", error));
+                StdOut::user_error(&format!("WatchError {:?}", error));
                 continue;
             }
         };
