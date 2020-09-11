@@ -17,7 +17,9 @@ You have many options to install wrangler!
 
 ### Install with `npm`
 
-To install `wrangler` the Workers CLI with [`npm` installed](https://www.npmjs.com/get-npm) in typical installations you MUST USE a Node.js Version Manager e.g. use `nvm install node` to install Node.js and the `npm` package manager, then run:
+We strongly recommend you install `npm` with a Node version manager like [`nvm`](https://github.com/nvm-sh/nvm#installing-and-updating), which will allow `wrangler` to install configuration data in a global `node_modules` directory in your user's home directory, without requiring that you run as `root`. 
+
+Once you've installed `nvm`, run:
 
 ```bash
 npm i @cloudflare/wrangler -g
