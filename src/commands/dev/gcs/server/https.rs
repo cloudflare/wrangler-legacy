@@ -3,8 +3,8 @@ use crate::commands::dev::gcs::headers::destructure_response;
 use crate::commands::dev::server_config::ServerConfig;
 use crate::commands::dev::tls;
 use crate::commands::dev::utils::{get_path_as_str, rewrite_redirect};
-use crate::terminal::{emoji, message};
-
+use crate::terminal::emoji;
+use crate::terminal::message::{Message, StdOut};
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
@@ -114,7 +114,7 @@ pub async fn https(
                 Ok(x) => Some(Ok(x)),
                 Err(e) => {
                     eprintln!("Client connection error {}", e);
-                    message::info("Make sure to use https and `--insecure` with curl");
+                    StdOut::info("Make sure to use https and `--insecure` with curl");
                     None
                 }
             }
@@ -131,7 +131,7 @@ pub async fn https(
         listening_address.to_string()
     );
 
-    message::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
+    StdOut::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
 
     if let Err(e) = server.await {
         eprintln!("{}", e);

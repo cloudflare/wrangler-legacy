@@ -5,7 +5,7 @@ pub use watcher::wait_for_changes;
 
 use crate::build::command;
 use crate::settings::toml::{Target, TargetType};
-use crate::terminal::message;
+use crate::terminal::message::{Message, StdOut};
 use crate::wranglerjs;
 use crate::{commands, install};
 
@@ -37,7 +37,7 @@ pub fn watch_and_build(
                 watcher
                     .watch(JAVASCRIPT_PATH, RecursiveMode::Recursive)
                     .unwrap();
-                message::info(&format!("watching {:?}", &JAVASCRIPT_PATH));
+                StdOut::info(&format!("watching {:?}", &JAVASCRIPT_PATH));
 
                 loop {
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
@@ -48,7 +48,7 @@ pub fn watch_and_build(
                         }
                         Err(e) => {
                             log::debug!("{:?}", e);
-                            message::user_error("Something went wrong while watching.")
+                            StdOut::user_error("Something went wrong while watching.")
                         }
                     }
                 }
@@ -83,7 +83,7 @@ pub fn watch_and_build(
                         .watch(entry.path(), RecursiveMode::Recursive)
                         .unwrap();
                 }
-                message::info(&format!("watching {:?}", &RUST_PATH));
+                StdOut::info(&format!("watching {:?}", &RUST_PATH));
 
                 loop {
                     match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
@@ -96,7 +96,7 @@ pub fn watch_and_build(
                                 }
                             }
                         }
-                        Err(_) => message::user_error("Something went wrong while watching."),
+                        Err(_) => StdOut::user_error("Something went wrong while watching."),
                     }
                 }
             });

@@ -3,14 +3,15 @@ use std::path::{Path, PathBuf};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::build;
+use crate::build::build_target;
 use crate::deploy;
 use crate::http::{self, Feature};
 use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 use crate::sites;
-use crate::terminal::{emoji, message};
+use crate::terminal::emoji;
+use crate::terminal::message::{Message, StdOut};
 use crate::upload;
 
 pub fn publish(
@@ -21,7 +22,7 @@ pub fn publish(
     validate_target_required_fields_present(target)?;
 
     // Build the script before uploading.
-    build(&target)?;
+    build_target(&target)?;
 
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
@@ -34,7 +35,7 @@ pub fn publish(
             sites::sync(target, user, &site_namespace.id, &path)?;
 
         // First, upload all existing files in bucket directory
-        message::working("Uploading site files");
+        StdOut::working("Uploading site files");
         let upload_progress_bar = if to_upload.len() > bulk::BATCH_KEY_MAX {
             let upload_progress_bar = ProgressBar::new(to_upload.len() as u64);
             upload_progress_bar
@@ -65,7 +66,7 @@ pub fn publish(
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
-            message::info("Deleting stale files...");
+            StdOut::info("Deleting stale files...");
 
             let delete_progress_bar = if to_delete.len() > bulk::BATCH_KEY_MAX {
                 let delete_progress_bar = ProgressBar::new(to_delete.len() as u64);
@@ -112,7 +113,7 @@ fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
         }
 
         if !no_star_routes.is_empty() {
-            message::warn(&format!(
+            StdOut::warn(&format!(
                 "The following routes in your configuration file should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\n{}",
                 no_star_routes.join("\n"))
             );

@@ -1,6 +1,5 @@
 use crate::settings::toml::Route;
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 #[derive(Clone, Debug, PartialEq)]
 pub enum DeployConfig {
     Zoneless(Zoneless),
@@ -75,7 +74,7 @@ impl DeployConfig {
             } else if let Some(routes) = &route_config.routes {
                 for route in routes {
                     if route.is_empty() {
-                        message::warn("your configuration file contains an empty route")
+                        StdOut::warn("your configuration file contains an empty route")
                     } else {
                         zoned.routes.push(Route {
                             id: None,

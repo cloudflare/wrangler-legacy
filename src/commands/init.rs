@@ -2,8 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::commands::validate_worker_name;
 use crate::settings::toml::{Manifest, Site, TargetType};
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub fn init(
     name: Option<&str>,
     target_type: Option<TargetType>,
@@ -42,12 +41,12 @@ entry-point = "workers-site"
         )?;
 
         site.scaffold_worker()?;
-        message::success("Successfully scaffolded workers site");
+        StdOut::success("Successfully scaffolded workers site");
     } else {
         Manifest::generate(name.to_string(), Some(target_type), &config_path, None)?;
     }
 
-    message::success("Succesfully created a `wrangler.toml`");
+    StdOut::success("Succesfully created a `wrangler.toml`");
     Ok(())
 }
 
