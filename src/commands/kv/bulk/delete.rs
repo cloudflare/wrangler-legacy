@@ -14,8 +14,7 @@ use crate::kv::bulk::BATCH_KEY_MAX;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub fn run(
     target: &Target,
     user: &GlobalUser,
@@ -30,7 +29,7 @@ pub fn run(
     )) {
         Ok(true) => (),
         Ok(false) => {
-            message::info(&format!("Not deleting keys in {}", filename.display()));
+            StdOut::info(&format!("Not deleting keys in {}", filename.display()));
             return Ok(());
         }
         Err(e) => failure::bail!(e),
@@ -52,7 +51,7 @@ pub fn run(
 
     let len = keys.len();
 
-    message::working(&format!("deleting {} key value pairs", len));
+    StdOut::working(&format!("deleting {} key value pairs", len));
 
     let progress_bar = if len > BATCH_KEY_MAX {
         let pb = ProgressBar::new(len as u64);
@@ -68,6 +67,6 @@ pub fn run(
         pb.finish_with_message(&format!("deleted {} key value pairs", len));
     }
 
-    message::success("Success");
+    StdOut::success("Success");
     Ok(())
 }

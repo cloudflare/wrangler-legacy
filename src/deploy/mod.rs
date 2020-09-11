@@ -5,8 +5,7 @@ use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Zoneless};
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), failure::Error> {
     match deploy_config {
         DeployConfig::Zoneless(zoneless_config) => {
@@ -14,7 +13,7 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
             log::info!("publishing to workers.dev subdomain");
             let deploy_address = publish_zoneless(user, zoneless_config)?;
 
-            message::success(&format!(
+            StdOut::success(&format!(
                 "Successfully published your script to {}",
                 deploy_address
             ));
@@ -30,7 +29,7 @@ pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), fai
             let display_results: Vec<String> =
                 published_routes.iter().map(|r| format!("{}", r)).collect();
 
-            message::success(&format!(
+            StdOut::success(&format!(
                 "Deployed to the following routes:\n{}",
                 display_results.join("\n")
             ));

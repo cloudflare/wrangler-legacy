@@ -40,7 +40,7 @@ If you don't have `cargo` or `npm` installed, you will need to follow these [add
 
 ## Updating
 
-For information regarding updating Wrangler, click [here](https://workers.cloudflare.com/docs/quickstart/updating-the-cli/).
+For information regarding updating Wrangler, click [here](https://developers.cloudflare.com/workers/cli-wrangler/install-update).
 
 ## Getting Started
 

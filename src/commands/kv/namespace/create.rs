@@ -5,8 +5,7 @@ use crate::http;
 use crate::kv::namespace::create;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{ConfigKvNamespace, KvNamespace, Manifest};
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub fn run(
     manifest: &Manifest,
     is_preview: bool,
@@ -23,7 +22,7 @@ pub fn run(
         title.push_str("_preview");
     }
     let msg = format!("Creating namespace with title \"{}\"", title);
-    message::working(&msg);
+    StdOut::working(&msg);
 
     let client = http::cf_v4_client(user)?;
     let result = create(&client, &account_id, &title);
@@ -31,7 +30,7 @@ pub fn run(
     match result {
         Ok(success) => {
             let namespace = success.result;
-            message::success("Success!");
+            StdOut::success("Success!");
             println!(
                 "{}",
                 toml_modification_instructions(

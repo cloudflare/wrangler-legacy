@@ -12,8 +12,7 @@ use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 pub struct KVMetaData {
     pub namespace_id: String,
     pub key: String,
@@ -69,7 +68,7 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
 
     let response_status = res.status();
     if response_status.is_success() {
-        message::success("Success")
+        StdOut::success("Success")
     } else {
         // This is logic pulled from cloudflare-rs for pretty error formatting right now;
         // it will be redundant when we switch to using cloudflare-rs for all API requests.

@@ -12,8 +12,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::settings::get_wrangler_home_dir;
-use crate::terminal::message;
-
+use crate::terminal::message::{Message, StdOut};
 /// Create files for cert and private key
 fn create_output_files() -> Result<Option<(PathBuf, PathBuf)>, failure::Error> {
     let home = get_wrangler_home_dir()?.join("config");
@@ -25,7 +24,7 @@ fn create_output_files() -> Result<Option<(PathBuf, PathBuf)>, failure::Error> {
     } else {
         fs::create_dir_all(&home)?;
 
-        message::info(format!("Generating certificate and private key for https server, if you would like to use your own you can replace `dev-cert.pem` and `dev-privkey.rsa` at {}", home.to_str().unwrap()).as_str());
+        StdOut::info(format!("Generating certificate and private key for https server, if you would like to use your own you can replace `dev-cert.pem` and `dev-privkey.rsa` at {}", home.to_str().unwrap()).as_str());
 
         Ok(Some((cert, privkey)))
     }

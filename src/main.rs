@@ -19,7 +19,8 @@ use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
-use wrangler::terminal::{emoji, interactive, message, styles};
+use wrangler::terminal::message::{Message, StdOut};
+use wrangler::terminal::{emoji, interactive, styles};
 use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<(), ExitFailure> {
@@ -48,7 +49,7 @@ fn main() -> Result<(), ExitFailure> {
         let update_docs_url =
             styles::url("https://developers.cloudflare.com/workers/quickstart#updating-the-cli");
 
-        message::billboard(&format!(
+        StdOut::billboard(&format!(
             "{}\n{}\n{}",
             new_version_available, update_message, update_docs_url
         ));
@@ -649,11 +650,11 @@ fn run() -> Result<(), failure::Error> {
 
         let user: GlobalUser = if default {
             // API Tokens are the default
-            message::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nConsider using {} which only requires your Cloudflare username and password.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", api_token_url, wrangler_login_msg, not_recommended_msg, recommended_cmd_msg));
+            StdOut::billboard(&format!("To find your API Token, go to {}\nand create it using the \"Edit Cloudflare Workers\" template.\n\nConsider using {} which only requires your Cloudflare username and password.\n\nIf you are trying to use your Global API Key instead of an API Token\n{}, run {}.", api_token_url, wrangler_login_msg, not_recommended_msg, recommended_cmd_msg));
             let api_token: String = interactive::get_user_input("Enter API Token: ");
             GlobalUser::TokenAuth { api_token }
         } else {
-            message::billboard(&format!("We don't recommend using your Global API Key!\nPlease consider using an API Token instead.\n\n{}", token_support_url));
+            StdOut::billboard(&format!("We don't recommend using your Global API Key!\nPlease consider using an API Token instead.\n\n{}", token_support_url));
             let email: String = interactive::get_user_input("Enter Email: ");
             let api_key: String = interactive::get_user_input("Enter Global API Key: ");
 
@@ -837,11 +838,11 @@ fn run() -> Result<(), failure::Error> {
             let publish_release_msg = styles::highlight("`wrangler publish --release`");
             let publish_msg = styles::highlight("`wrangler publish`");
             let environments_url = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments");
-            message::warn(&format!(
+            StdOut::warn(&format!(
                 "{} is deprecated and behaves exactly the same as {}.",
                 publish_release_msg, publish_msg
             ));
-            message::warn(&format!("See {} for more information.", environments_url));
+            StdOut::warn(&format!("See {} for more information.", environments_url));
         }
 
         log::info!("Getting project settings");
