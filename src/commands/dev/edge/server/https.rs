@@ -1,12 +1,13 @@
 use super::preview_request;
-use crate::commands::dev::utils::get_path_as_str;
+use crate::commands::dev::utils::{get_path_as_str, rewrite_redirect};
 use crate::commands::dev::{tls, Protocol, ServerConfig};
-use crate::terminal::{emoji, message};
-
+use crate::terminal::emoji;
+use crate::terminal::message::{Message, StdOut};
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
 use futures_util::stream::StreamExt;
+
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
 use hyper_rustls::HttpsConnector;
@@ -23,11 +24,14 @@ pub async fn https(
     let https = HttpsConnector::new();
     let client = HyperClient::builder().build::<_, Body>(https);
 
+    let listening_address = server_config.listening_address;
+
     // create a closure that hyper will use later to handle HTTP requests
     let service = make_service_fn(move |_| {
         let client = client.to_owned();
         let preview_token = preview_token.to_owned();
         let host = host.to_owned();
+        let server_config = server_config.to_owned();
 
         async move {
             Ok::<_, failure::Error>(service_fn(move |req| {
@@ -36,11 +40,16 @@ pub async fn https(
                 let host = host.to_owned();
                 let version = req.version();
                 let (parts, body) = req.into_parts();
+                let local_host = format!(
+                    "{}:{}",
+                    server_config.listening_address.ip().to_string(),
+                    server_config.listening_address.port().to_string()
+                );
                 let req_method = parts.method.to_string();
                 let now: DateTime<Local> = Local::now();
                 let path = get_path_as_str(&parts.uri);
                 async move {
-                    let resp = preview_request(
+                    let mut resp = preview_request(
                         Request::from_parts(parts, body),
                         client,
                         preview_token.to_owned(),
@@ -48,6 +57,8 @@ pub async fn https(
                         Protocol::Https,
                     )
                     .await?;
+
+                    rewrite_redirect(&mut resp, &host, &local_host, true);
 
                     println!(
                         "[{}] {} {}{} {:?} {}",
@@ -63,8 +74,6 @@ pub async fn https(
             }))
         }
     });
-
-    let listening_address = server_config.listening_address;
 
     let mut tcp = TcpListener::bind(&listening_address).await?;
     let tls_acceptor = &tls::get_tls_acceptor()?;
@@ -82,7 +91,7 @@ pub async fn https(
                 Ok(x) => Some(Ok(x)),
                 Err(e) => {
                     eprintln!("Client connection error {}", e);
-                    message::info("Make sure to use https and `--insecure` with curl");
+                    StdOut::info("Make sure to use https and `--insecure` with curl");
                     None
                 }
             }
@@ -94,7 +103,7 @@ pub async fn https(
     .serve(service);
 
     println!("{} Listening on https://{}", emoji::EAR, listening_address);
-    message::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
+    StdOut::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
 
     if let Err(e) = server.await {
         eprintln!("{}", e);

@@ -8,9 +8,10 @@ mod utils;
 pub use server_config::Protocol;
 pub use server_config::ServerConfig;
 
-use crate::build;
+use crate::build::build_target;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
+use crate::terminal::message::{Message, StdOut};
 use crate::terminal::styles;
 
 /// `wrangler dev` starts a server on a dev machine that routes incoming HTTP requests
@@ -25,7 +26,7 @@ pub fn dev(
     verbose: bool,
 ) -> Result<(), failure::Error> {
     // before serving requests we must first build the Worker
-    build(&target)?;
+    build_target(&target)?;
 
     let host_str = styles::highlight("--host");
     let local_str = styles::highlight("--local-protocol");
@@ -40,19 +41,29 @@ pub fn dev(
         failure::bail!("{} cannot be https if {} is http", local_str, upstream_str)
     }
 
-    match user {
-        // authenticated users connect to the edge
-        Some(user) => edge::dev(
-            target,
-            user,
-            server_config,
-            deploy_config,
-            local_protocol,
-            upstream_protocol,
-            verbose,
-        ),
+    if let Some(user) = user {
+        if server_config.host.is_default() {
+            // Authenticated and no host provided, run on edge with user's zone
+            return edge::dev(
+                target,
+                user,
+                server_config,
+                deploy_config,
+                local_protocol,
+                upstream_protocol,
+                verbose,
+            );
+        }
 
-        // unauthenticated users connect to gcs
-        None => gcs::dev(target, server_config, local_protocol, verbose),
+        // If user is authenticated but host is provided, use gcs with given host
+        StdOut::warn(
+            format!(
+                "{} provided, will run unauthenticated and upstream to provided host",
+                host_str
+            )
+            .as_str(),
+        );
     }
+
+    gcs::dev(target, server_config, local_protocol, verbose)
 }

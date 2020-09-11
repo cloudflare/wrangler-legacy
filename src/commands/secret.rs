@@ -5,7 +5,8 @@ use cloudflare::framework::response::ApiFailure;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::{emoji, interactive, message};
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::{emoji, interactive};
 use crate::upload;
 
 fn format_error(e: ApiFailure) -> String {
@@ -56,7 +57,7 @@ pub fn upload_draft_worker(
         ApiFailure::Error(_, api_errors) => {
             let error = &api_errors.errors[0];
             if error.code == 10007 {
-                message::working(&format!("Worker {} doesn't exist in the API yet. Creating a draft Worker so we can create new secret.", target.name));
+                StdOut::working(&format!("Worker {} doesn't exist in the API yet. Creating a draft Worker so we can create new secret.", target.name));
                 let upload_client = http::legacy_auth_client(user);
                 Some(upload::script(&upload_client, target, None))
             } else {
@@ -79,7 +80,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
         failure::bail!("Your secret cannot be empty.")
     }
 
-    message::working(&format!(
+    StdOut::working(&format!(
         "Creating the secret for script name {}",
         target.name
     ));
@@ -99,7 +100,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     });
 
     match response {
-        Ok(_) => message::success(&format!("Success! Uploaded secret {}.", name)),
+        Ok(_) => StdOut::success(&format!("Success! Uploaded secret {}.", name)),
         Err(e) => match upload_draft_worker(&e, user, target) {
             None => failure::bail!(format_error(e)),
             Some(draft_upload_response) => match draft_upload_response {
@@ -111,7 +112,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
                     });
 
                     match retry_response {
-                        Ok(_) => message::success(&format!("Success! Uploaded secret {}.", name)),
+                        Ok(_) => StdOut::success(&format!("Success! Uploaded secret {}.", name)),
                         Err(e) => failure::bail!(format_error(e)),
                     }
                 }
@@ -132,13 +133,13 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     )) {
         Ok(true) => (),
         Ok(false) => {
-            message::info(&format!("Not deleting secret {}.", name));
+            StdOut::info(&format!("Not deleting secret {}.", name));
             return Ok(());
         }
         Err(e) => failure::bail!(e),
     }
 
-    message::working(&format!(
+    StdOut::working(&format!(
         "Deleting the secret {} on script {}.",
         name, target.name
     ));
@@ -152,7 +153,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     });
 
     match response {
-        Ok(_) => message::success(&format!("Success! Deleted secret {}.", name)),
+        Ok(_) => StdOut::success(&format!("Success! Deleted secret {}.", name)),
         Err(e) => failure::bail!(format_error(e)),
     }
 

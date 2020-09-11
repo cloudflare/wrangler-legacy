@@ -27,16 +27,18 @@ impl ServerConfig {
             Ok(socket) => socket.local_addr(),
             Err(_) => failure::bail!("{} is unavailable, try binding to another address with the --port and --ip flags, or stop other `wrangler dev` processes.", &addr)
         }?;
-        let host = match upstream_protocol {
-            Protocol::Http => host
-                .unwrap_or("http://tutorial.cloudflareworkers.com")
-                .to_string(),
-            Protocol::Https => host
-                .unwrap_or("https://tutorial.cloudflareworkers.com")
-                .to_string(),
-        };
 
-        let host = Host::new(&host)?;
+        let host = if let Some(host) = host {
+            Host::new(&host, false)?
+        } else {
+            Host::new(
+                match upstream_protocol {
+                    Protocol::Http => "http://tutorial.cloudflareworkers.com",
+                    Protocol::Https => "https://tutorial.cloudflareworkers.com",
+                },
+                true,
+            )?
+        };
 
         Ok(ServerConfig {
             host,
