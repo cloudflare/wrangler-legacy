@@ -44,7 +44,7 @@ predicates = "1.0.5"
 prettytable-rs = "0.8.0"
 rand = "0.7.3"
 regex = "1"
-reqwest = { version = "0.10.7", features = ["blocking", "json"] }
+reqwest = { version = "0.10.8", features = ["blocking", "json"] }
 rustls = "0.18.1"
 semver = "0.10.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -55,7 +55,7 @@ term_size = "0.3"
 text_io = "0.1.8"
 tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
 tokio-native-tls = "0.1.0"
-tokio-rustls = "0.14.0"
+tokio-rustls = "0.14.1"
 tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
 toml = "0.5.6"
 twox-hash = "1.5.0"
@@ -66,7 +66,7 @@ ws = "0.9.1"
 
 [dev-dependencies]
 assert_cmd = "1.0.1"
-fs_extra = "1.1.0"
+fs_extra = "1.2.0"
 predicates = "1.0.5"
 
 [features]
