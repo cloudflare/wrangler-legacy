@@ -21,7 +21,8 @@ pub fn publish(
     validate_target_required_fields_present(target)?;
 
     // Build the script before uploading.
-    build(&target)?;
+    // build(&target)?;
+    println!("Skipping build due to hacks...");
 
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
@@ -33,62 +34,62 @@ pub fn publish(
         let (to_upload, to_delete, asset_manifest) =
             sites::sync(target, user, &site_namespace.id, &path)?;
 
-        // First, upload all existing files in bucket directory
-        message::working("Uploading site files");
-        let upload_progress_bar = if to_upload.len() > bulk::BATCH_KEY_MAX {
-            let upload_progress_bar = ProgressBar::new(to_upload.len() as u64);
-            upload_progress_bar
-                .set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
-            Some(upload_progress_bar)
-        } else {
-            None
-        };
+        // // First, upload all existing files in bucket directory
+        // message::working("Uploading site files");
+        // let upload_progress_bar = if to_upload.len() > bulk::BATCH_KEY_MAX {
+        //     let upload_progress_bar = ProgressBar::new(to_upload.len() as u64);
+        //     upload_progress_bar
+        //         .set_style(ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"));
+        //     Some(upload_progress_bar)
+        // } else {
+        //     None
+        // };
 
-        bulk::put(
-            target,
-            user,
-            &site_namespace.id,
-            to_upload,
-            &upload_progress_bar,
-        )?;
+        // bulk::put(
+        //     target,
+        //     user,
+        //     &site_namespace.id,
+        //     to_upload,
+        //     &upload_progress_bar,
+        // )?;
 
-        if let Some(pb) = upload_progress_bar {
-            pb.finish_with_message("Done Uploading");
-        }
+        // if let Some(pb) = upload_progress_bar {
+        //     pb.finish_with_message("Done Uploading");
+        // }
 
-        let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
+        // let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
 
-        // Next, upload and deploy the worker with the updated asset_manifest
-        upload::script(&upload_client, &target, Some(asset_manifest))?;
+        // // Next, upload and deploy the worker with the updated asset_manifest
+        // upload::script(&upload_client, &target, Some(asset_manifest))?;
 
-        deploy::worker(&user, &deploy_config)?;
+        // deploy::worker(&user, &deploy_config)?;
 
-        // Finally, remove any stale files
-        if !to_delete.is_empty() {
-            message::info("Deleting stale files...");
+        // // Finally, remove any stale files
+        // if !to_delete.is_empty() {
+        //     message::info("Deleting stale files...");
 
-            let delete_progress_bar = if to_delete.len() > bulk::BATCH_KEY_MAX {
-                let delete_progress_bar = ProgressBar::new(to_delete.len() as u64);
-                delete_progress_bar.set_style(
-                    ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"),
-                );
-                Some(delete_progress_bar)
-            } else {
-                None
-            };
+        //     let delete_progress_bar = if to_delete.len() > bulk::BATCH_KEY_MAX {
+        //         let delete_progress_bar = ProgressBar::new(to_delete.len() as u64);
+        //         delete_progress_bar.set_style(
+        //             ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"),
+        //         );
+        //         Some(delete_progress_bar)
+        //     } else {
+        //         None
+        //     };
 
-            bulk::delete(
-                target,
-                user,
-                &site_namespace.id,
-                to_delete,
-                &delete_progress_bar,
-            )?;
+        //     bulk::delete(
+        //         target,
+        //         user,
+        //         &site_namespace.id,
+        //         to_delete,
+        //         &delete_progress_bar,
+        //     )?;
 
-            if let Some(pb) = delete_progress_bar {
-                pb.finish_with_message("Done deleting");
-            }
-        }
+        //     if let Some(pb) = delete_progress_bar {
+        //         pb.finish_with_message("Done deleting");
+        //     }
+        // }
     } else {
         let upload_client = http::legacy_auth_client(user);
 

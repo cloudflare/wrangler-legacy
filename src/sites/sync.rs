@@ -1,6 +1,10 @@
 use std::collections::HashSet;
 use std::path::Path;
 
+use std::fs::File;
+use std::io::prelude::*;
+
+
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use crate::commands::kv;
@@ -41,8 +45,38 @@ pub fn sync(
 
     let (pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) =
         directory_keys_values(target, path)?;
+    
+    let j = serde_json::to_string(&asset_manifest)?;
+
+    let mut path = Path::new("asset_manifest.json");
+    let mut display = path.display();
+
+    let mut file = match File::create(&path) {
+        Err(why) => panic!("couldn't create {}: {}", display, why),
+        Ok(file) => file,
+    };
+
+    match file.write_all(j.as_bytes()) {
+        Err(why) => panic!("couldn't write to {}: {}", display, why),
+        Ok(_) => println!("successfully wrote to {}", display),
+    }
 
     let to_upload = filter_files(pairs.clone(), &remote_keys);
+
+    let q = serde_json::to_string(&pairs)?;
+
+    path = Path::new("kvs.json");
+    display = path.display();
+    file = match File::create(&path) {
+        Err(why) => panic!("couldn't create {}: {}", display, why),
+        Ok(file) => file,
+    };
+
+    match file.write_all(q.as_bytes()) {
+        Err(why) => panic!("couldn't write to {}: {}", display, why),
+        Ok(_) => println!("successfully wrote to {}", display),
+    }
+
 
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
