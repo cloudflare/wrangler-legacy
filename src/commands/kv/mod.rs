@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use cloudflare::framework::response::ApiFailure;
 
-use percent_encoding::{utf8_percent_encode, CONTROLS};
+use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
 use crate::http;
 use crate::settings::toml::Target;
@@ -96,8 +96,10 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
     )
 }
 
+const KV_ASCII_SET: &AsciiSet = &CONTROLS.add(b'/');
+
 fn url_encode_key(key: &str) -> String {
-    utf8_percent_encode(key, CONTROLS).to_string()
+    utf8_percent_encode(key, KV_ASCII_SET).to_string()
 }
 
 #[cfg(test)]
@@ -126,5 +128,10 @@ mod tests {
             vars: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
+    }
+
+    #[test]
+    fn it_encodes_slash() {
+        assert_eq!(kv::url_encode_key("/slash").to_string(), "%2Fslash");
     }
 }
