@@ -134,4 +134,9 @@ mod tests {
     fn it_encodes_slash() {
         assert_eq!(kv::url_encode_key("/slash").to_string(), "%2Fslash");
     }
+
+    #[test]
+    fn it_doesnt_double_encode_slash() {
+        assert_eq!(kv::url_encode_key("%2Fslash").to_string(), "%2Fslash");
+    }
 }
