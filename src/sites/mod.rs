@@ -78,13 +78,26 @@ pub fn directory_keys_values(
             let spinner_style =
                 ProgressStyle::default_spinner().template("{spinner}   Preparing {msg}...");
             let spinner = ProgressBar::new_spinner().with_style(spinner_style);
+
+            let set: regex::RegexSet = regex::RegexSet::new(&[
+                r"^.*(/\.(.)*)+(/.*)*$",   // Hidden files (nested)
+                r"^\.[^/].*$", // Hidden files at root
+                r"^\./public(/.*)*\.well-known(/.*)*$", // Well known
+            ])?;
+
             for entry in dir_walker {
                 spinner.tick();
                 let entry = entry.unwrap();
                 let path = entry.path();
                 if path.is_file() {
                     spinner.set_message(&format!("{}", path.display()));
+                    let str_path = path.to_str().unwrap();
 
+                    let matches = set.matches(str_path);
+                    //Catch hidden files which are NOT .well-known and don't upload
+                    if ( matches.matched(0) || matches.matched(1)) && !matches.matched(2) {
+                        continue;
+                    }
                     validate_file_size(&path)?;
 
                     let value = std::fs::read(path)?;
@@ -165,6 +178,7 @@ fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::
     let ignore = build_ignore(target, directory)?;
     Ok(WalkBuilder::new(directory)
         .git_ignore(false)
+        .hidden(false)
         .overrides(ignore)
         .build())
 }
