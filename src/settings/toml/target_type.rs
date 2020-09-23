@@ -9,6 +9,7 @@ pub enum TargetType {
     JavaScript,
     Rust,
     Webpack,
+    Bundler,
 }
 
 impl Default for TargetType {
@@ -23,6 +24,7 @@ impl fmt::Display for TargetType {
             TargetType::JavaScript => "js",
             TargetType::Rust => "rust",
             TargetType::Webpack => "webpack",
+            TargetType::Bundler => "bundler",
         };
         write!(f, "{}", printable)
     }
@@ -36,6 +38,7 @@ impl FromStr for TargetType {
             "javascript" => Ok(TargetType::JavaScript),
             "rust" => Ok(TargetType::Rust),
             "webpack" => Ok(TargetType::Webpack),
+            "bundler" => Ok(TargetType::Bundler),
             _ => failure::bail!("{} is not a valid wrangler build type!", s),
         }
     }
