@@ -511,7 +511,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("host")
-                        .help("Host to forward or requests to, defaults to the zone of project or to tutorial.cloudflareworkers.com if unauthenticated.")
+                        .help("Host to forward requests to, defaults to the zone of project or to tutorial.cloudflareworkers.com if unauthenticated.")
                         .short("h")
                         .long("host")
                         .takes_value(true)
