@@ -2,6 +2,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use indicatif::{ProgressBar, ProgressStyle};
+use serde::{Deserialize, Serialize};
 
 use crate::build::build_target;
 use crate::deploy;
@@ -11,19 +12,33 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{DeployConfig, Target};
 use crate::sites;
 use crate::terminal::emoji;
-use crate::terminal::message::{Message, StdOut};
+use crate::terminal::message::{Message, Output, StdErr, StdOut};
 use crate::upload;
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct PublishOutput {
+    pub success: bool,
+    pub name: String,
+    pub urls: Vec<String>,
+}
 
 pub fn publish(
     user: &GlobalUser,
     target: &mut Target,
     deploy_config: DeployConfig,
+    out: Output,
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
 
-    // Build the script before uploading.
-    build_target(&target)?;
-
+    // Build the script before uploading and log build result
+    let build_result = build_target(&target);
+    match build_result {
+        Ok(msg) => {
+            StdErr::success(&msg);
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }?;
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
         validate_bucket_location(path)?;
@@ -35,7 +50,7 @@ pub fn publish(
             sites::sync(target, user, &site_namespace.id, &path)?;
 
         // First, upload all existing files in bucket directory
-        StdOut::working("Uploading site files");
+        StdErr::working("Uploading site files");
         let upload_progress_bar = if to_upload.len() > bulk::BATCH_KEY_MAX {
             let upload_progress_bar = ProgressBar::new(to_upload.len() as u64);
             upload_progress_bar
@@ -62,11 +77,30 @@ pub fn publish(
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&upload_client, &target, Some(asset_manifest))?;
 
-        deploy::worker(&user, &deploy_config)?;
+        match deploy::worker(&user, &deploy_config) {
+            Ok(urls) => {
+                let result_msg = format!("Successfully published your script to {}", urls[0]);
+                match out {
+                    Output::Json => {
+                        let mut jsonout = PublishOutput::default();
+                        jsonout.success = true;
+                        jsonout.name = target.name.clone();
+                        jsonout.urls = urls;
+                        StdErr::success(&result_msg);
+                        StdOut::as_json(&jsonout);
+                    }
+                    Output::PlainText => {
+                        StdOut::success(&result_msg);
+                    }
+                }
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }?;
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
-            StdOut::info("Deleting stale files...");
+            StdErr::info("Deleting stale files...");
 
             let delete_progress_bar = if to_delete.len() > bulk::BATCH_KEY_MAX {
                 let delete_progress_bar = ProgressBar::new(to_delete.len() as u64);
@@ -94,8 +128,26 @@ pub fn publish(
         let upload_client = http::legacy_auth_client(user);
 
         upload::script(&upload_client, &target, None)?;
-
-        deploy::worker(&user, &deploy_config)?;
+        match deploy::worker(&user, &deploy_config) {
+            Ok(urls) => {
+                let result_msg = format!("Successfully published your script to {}", urls[0]);
+                match out {
+                    Output::Json => {
+                        let mut jsonout = PublishOutput::default();
+                        jsonout.success = true;
+                        jsonout.name = target.name.clone();
+                        jsonout.urls = urls;
+                        StdErr::success(&result_msg);
+                        StdOut::as_json(&jsonout);
+                    }
+                    Output::PlainText => {
+                        StdOut::success(&result_msg);
+                    }
+                }
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }?;
     }
 
     Ok(())
