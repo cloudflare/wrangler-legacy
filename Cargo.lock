@@ -294,14 +294,16 @@ dependencies = [
 
 [[package]]
 name = "chrono"
-version = "0.4.15"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "942f72db697d8767c22d46a598e01f2d3b475501ea43d0db4f16d90259182d0b"
+checksum = "9942f5f46d88ae2926edcd93a8a5b24151133cf6dc4e5f4c3fadb1c532ac8041"
 dependencies = [
+ "libc",
  "num-integer",
  "num-traits 0.2.12",
  "serde 1.0.116",
  "time",
+ "winapi 0.3.9",
 ]
 
 [[package]]
