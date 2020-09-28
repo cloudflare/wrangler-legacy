@@ -10,18 +10,6 @@ mod wasm;
 use js::check_js;
 use wasm::check_wasm;
 
-// TODO: i'm not sure whether it's better to do a pointer to an array of &str, or specify the length.
-// my gut feeling is that specifying the length is better since the lengths are known at compile time
-const UNAVAILABLE_BUILTINS: [&str; 2] = ["eval", "new Function"];
-const AVAILABLE_BUILTINS: [&str; 5] = ["atob", "btoa", "TextEncoder", "TextDecoder", "URL"];
-const AVAILABLE_WITHIN_REQUEST_CONTEXT: [&str; 5] = [
-    "setInterval",
-    "clearInterval",
-    "setTimeout",
-    "clearTimeout",
-    "fetch",
-];
-
 /// Run some sanity checks on a given output directory before
 /// uploading. Namely:
 ///
@@ -49,6 +37,7 @@ pub fn check_output_dir<P: AsRef<Path> + Debug>(dir: P) -> Result<String, failur
         ));
     };
 
+    // TODO: depending on what the Cloudflare team says, this could be completely unnecessary
     let wasm_result = if let Some(path) = wasm_file {
         check_wasm(path)?
     } else {
@@ -90,4 +79,59 @@ fn file_with_extension<P: AsRef<Path> + Debug>(
     }
 
     Ok(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::file_with_extension;
+    use std::ffi::OsStr;
+
+    #[test]
+    fn it_finds_a_file_with_an_extension() -> Result<(), failure::Error> {
+        let dir = &tempfile::tempdir()?;
+        let file = tempfile::Builder::new()
+            .prefix("test_file")
+            .suffix(".example")
+            .tempfile_in(dir)?;
+
+        assert!(file_with_extension(dir, file.path().extension().unwrap()).is_ok());
+
+        Ok(())
+    }
+
+    #[test]
+    fn it_errors_with_multiple_files_of_same_extension_are_present() -> Result<(), failure::Error> {
+        let dir = &tempfile::tempdir()?;
+        let _file_1 = tempfile::Builder::new()
+            .prefix("test_file_one")
+            .suffix(".example")
+            .tempfile_in(dir)?;
+        let _file_2 = tempfile::Builder::new()
+            .prefix("test_file_two")
+            .suffix(".example")
+            .tempfile_in(dir)?;
+
+        assert!(file_with_extension(dir, OsStr::new("example")).is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn it_returns_none_when_no_files_with_the_extension_are_present() -> Result<(), failure::Error>
+    {
+        let dir = tempfile::tempdir()?;
+
+        assert!(file_with_extension(dir, OsStr::new("example"))?.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn it_errors_when_path_is_not_dir() -> Result<(), failure::Error> {
+        let path = &tempfile::NamedTempFile::new()?.into_temp_path();
+
+        assert!(file_with_extension(path, OsStr::new("test")).is_err());
+
+        Ok(())
+    }
 }
