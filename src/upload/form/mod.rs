@@ -113,6 +113,7 @@ pub fn build(
 
             build_form(&assets, session_config)
         }
+        TargetType::Bundler => todo!(),
     }
 }
 

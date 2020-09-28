@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
+use crate::settings::toml::bundle::Bundle;
 use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
@@ -34,6 +35,7 @@ pub struct Manifest {
     #[serde(default, with = "string_empty_as_none")]
     pub zone_id: Option<String>,
     pub webpack_config: Option<String>,
+    pub bundle_config: Option<Bundle>,
     pub private: Option<bool>,
     // TODO: maybe one day, serde toml support will allow us to serialize sites
     // as a TOML inline table (this would prevent confusion with environments too!)
@@ -221,6 +223,7 @@ impl Manifest {
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // MUST NOT inherit
             site: self.site.clone(), // MUST NOT inherit
             vars: self.vars.clone(), // MAY inherit,
+            bundle_config: self.bundle_config.clone(), // lol idk what this inherit stuff means
         };
 
         let environment = self.get_environment(environment_name)?;

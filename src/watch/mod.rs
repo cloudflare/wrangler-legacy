@@ -3,7 +3,7 @@ use ignore::overrides::OverrideBuilder;
 use ignore::WalkBuilder;
 pub use watcher::wait_for_changes;
 
-use crate::build::command;
+use crate::build::{build_target, command};
 use crate::settings::toml::{Target, TargetType};
 use crate::terminal::message::{Message, StdOut};
 use crate::wranglerjs;
@@ -103,6 +103,33 @@ pub fn watch_and_build(
         }
         TargetType::Webpack => {
             wranglerjs::run_build_and_watch(target, tx)?;
+        }
+        TargetType::Bundler => {
+            let (tx, rx) = mpsc::channel::<notify::DebouncedEvent>();
+            let mut watcher = notify::watcher(tx, COOLDOWN_PERIOD)?;
+
+            watcher.watch(
+                &target.bundle_config.clone().unwrap().src_dir()?,
+                notify::RecursiveMode::Recursive,
+            )?;
+
+            let mut is_first = true;
+
+            loop {
+                match rx.recv() {
+                    Ok(_) => {
+                        if is_first {
+                            is_first = false;
+                            StdOut::info("Ignoring stale first change");
+                            continue;
+                        } else {
+                            let output = build_target(target)?;
+                            StdOut::success(&format!("{}\nUploading...", output));
+                        }
+                    }
+                    Err(_) => StdOut::user_error("Something went wrong while watching."),
+                }
+            }
         }
     }
 
