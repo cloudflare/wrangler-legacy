@@ -48,17 +48,16 @@ pub fn build_target(target: &Target) -> Result<String, failure::Error> {
             Err(e) => Err(e),
         },
 
-        TargetType::Bundler => match target.bundle_config {
+        TargetType::Bundler => match &target.bundle_config {
             None => Err(failure::err_msg("Please specify bundler options!")),
             Some(config) => {
-                if !config.build_command().spawn()?.wait()?.success() {
-                    Err(failure::err_msg(&format!(
-                        "Command {:?} failed!",
-                        config.build_command()
-                    )))
+                if config.build_command().spawn()?.wait()?.success() {
+                    check::check_output_dir(config.output_dir()?)
                 } else {
-                    // build command exited successfully
-                    check::full_check(config.output_dir()?)
+                    Err(failure::format_err!(
+                        "Command `{:?}` failed!",
+                        config.build_command()
+                    ))
                 }
             }
         },
