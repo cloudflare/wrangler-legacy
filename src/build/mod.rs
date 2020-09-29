@@ -9,6 +9,8 @@ use std::process::Command;
 
 mod check;
 
+use check::BundlerOutput;
+
 // Internal build logic, called by both `build` and `publish`
 // TODO: return a struct containing optional build info and construct output at command layer
 pub fn build_target(target: &Target) -> Result<String, failure::Error> {
@@ -52,10 +54,11 @@ pub fn build_target(target: &Target) -> Result<String, failure::Error> {
             None => Err(failure::err_msg("Please specify bundler options!")),
             Some(config) => {
                 if config.build_command().spawn()?.wait()?.success() {
-                    check::check_output_dir(config.output_dir()?)
+                    let checker = BundlerOutput::new(config.output_dir()?)?;
+                    checker.check()
                 } else {
                     Err(failure::format_err!(
-                        "Command `{:?}` failed!",
+                        "Command `{:?}` exited with non-zero exit code!",
                         config.build_command()
                     ))
                 }

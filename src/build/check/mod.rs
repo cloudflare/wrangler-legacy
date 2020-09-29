@@ -4,48 +4,83 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use bytesize::ByteSize;
+use tokio::{runtime::Runtime, try_join};
+
 mod js;
 mod wasm;
 
 use js::check_js;
 use wasm::check_wasm;
 
-/// Run some sanity checks on a given output directory before
-/// uploading. Namely:
-///
-/// 1. Is there a single JS file named worker.js?
-/// 2. Is worker.js small enough?
-/// 3. Is worker.js using only explicitly allowed features?
-/// 4. Is there optionally a single WASM file named `TODO: wasm file name`?
-/// 5. If so, is the file being imported correctly?
-///
-/// Most of these can be fixed, but some (multiple JS files, file too big, and banned functionality)
-/// can't. Encountering anything unfixable will result in an error.
-/// If everything goes smoothly, an Ok(String) will be returned with some info
-/// about the check process.
-///
-pub fn check_output_dir<P: AsRef<Path> + Debug>(dir: P) -> Result<String, failure::Error> {
-    let wasm_file = file_with_extension(&dir, OsStr::new("wasm"))?;
-    let js_file = file_with_extension(&dir, OsStr::new("js"))?;
+const JS_FILE_NAME: &str = "worker.js";
+const JS_SOURCEMAP_FILE_NAME: &str = "worker.js.map";
+const WASM_FILE_NAME: &str = "wasm.wasm"; // ? seems silly lol "wasm.wasm" but ok
 
-    let js_result = if let Some(path) = js_file {
-        check_js(path)?
-    } else {
-        return Err(failure::format_err!(
-            "Failed to find any JS files in ${:?}",
-            dir,
-        ));
-    };
+pub struct BundlerOutput {
+    js_file: PathBuf,
+    wasm_file: Option<PathBuf>,
+    sourcemap_file: Option<PathBuf>,
+}
 
-    // TODO: depending on what the Cloudflare team says, this could be completely unnecessary
-    let wasm_result = if let Some(path) = wasm_file {
-        check_wasm(path)?
-    } else {
-        // TODO this should be like an info-level warning
-        format!("No .wasm files found in {:?}", dir)
-    };
+impl BundlerOutput {
+    pub fn new<P: AsRef<Path> + Debug>(output_dir: P) -> Result<Self, failure::Error> {
+        if let Some(js_file) = find_and_normalize(&output_dir, JS_FILE_NAME)? {
+            let wasm_file = find_and_normalize(&output_dir, JS_SOURCEMAP_FILE_NAME)?;
+            let sourcemap_file = find_and_normalize(&output_dir, WASM_FILE_NAME)?;
 
-    Ok(format!("{}\n{}", js_result, wasm_result))
+            Ok(Self {
+                js_file,
+                wasm_file,
+                sourcemap_file,
+            })
+        } else {
+            Err(failure::format_err!(
+                "There doesn't appear to be any javascript in {:?}",
+                output_dir
+            ))
+        }
+    }
+
+    pub fn check(&self) -> Result<String, failure::Error> {
+        // i felt like this should be async but this implementation is probably terrible
+        let mut rt = Runtime::new()?;
+        let result: Result<(String, String), failure::Error> = rt.block_on(async {
+            // as_ref converts &Option<T> into Option<&T>
+            try_join!(
+                check_js(&self.js_file, self.sourcemap_file.as_ref()),
+                check_wasm(self.wasm_file.as_ref())
+            )
+        });
+
+        match result {
+            Ok((js_result, wasm_result)) => Ok(format!("{}\n{}", js_result, wasm_result)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+fn find_and_normalize<P, S>(dir: P, file_name: S) -> Result<Option<PathBuf>, failure::Error>
+where
+    P: AsRef<Path> + Debug,
+    S: Into<String> + Debug,
+{
+    // i guess it has to be done at some point
+    let name: String = file_name.into();
+
+    // This just panics if it cant find a period. If only we could
+    // coerce NoneErrors into our error handling.......anyhow.......
+    let extension = OsStr::new(name.rsplit('.').take(1).next().unwrap());
+    let canonical_name = OsStr::new(&name);
+
+    // path to the file of the given extension as output by the bundler
+    let bundler_output_path = file_with_extension(dir, extension)?;
+
+    // normalized filename to what wrangler expects
+    Ok(match bundler_output_path {
+        None => None,
+        Some(file_path) => Some(normalize_filename(file_path, canonical_name)?),
+    })
 }
 
 /// Returns either Ok(Some(PathBuf)) if one file with the given extension was found
@@ -55,16 +90,19 @@ fn file_with_extension<P: AsRef<Path> + Debug>(
     dir: P,
     extension: &OsStr,
 ) -> Result<Option<PathBuf>, failure::Error> {
-    let mut path: Option<PathBuf> = None;
+    // path to the file of the given extension as output by the bundler
+    let mut bundler_output_path: Option<PathBuf> = None;
 
+    // let's see if we can find a file matching the extension we want
     for entry in fs::read_dir(&dir)? {
         let entry = entry?;
 
-        // yo dawg, i heard you like conditionals
-        // so we put some conditionals in your conditionals so you can `if` while you `if`
+        // ideally, this syntax would look like
+        // `if let Some(ext) = entry.path().extension() && ext == extension { ... }`
+        // but i'm not sure if that's possible. or like, how even...to do that...
         if let Some(ext) = entry.path().extension() {
             if ext == extension {
-                match path {
+                match bundler_output_path {
                     Some(_) => {
                         return Err(failure::format_err!(
                             "Found multiple files with extension {:?} in {:?}!",
@@ -72,13 +110,55 @@ fn file_with_extension<P: AsRef<Path> + Debug>(
                             &dir
                         ));
                     }
-                    None => path = Some(entry.path()),
+                    None => bundler_output_path = Some(entry.path()),
                 };
             }
         }
     }
 
-    Ok(path)
+    Ok(bundler_output_path)
+}
+
+fn normalize_filename(
+    file_path: PathBuf,
+    canonical_name: &OsStr,
+) -> Result<PathBuf, failure::Error> {
+    match file_path.file_name() {
+        // why have u done this
+        None => Err(failure::format_err!(
+            "{:?} is not a valid path because it ends in \"..\"",
+            file_path
+        )),
+
+        // oh hey nice!
+        Some(name) if name == canonical_name => Ok(file_path),
+
+        // cmon now let's...let's be nice to wrangler and save us all some writes to disk
+        Some(name) => {
+            // TODO this warning message should be better and not like...a println
+            println!("Renaming {:?} to {:?}", name, canonical_name);
+            // i hate unwraps...maybe this could or_else to a tempdir()?
+            let canon_file = file_path.parent().unwrap().join(canonical_name);
+            fs::rename(&file_path, &canon_file)?;
+            Ok(canon_file)
+        }
+    }
+}
+
+/// I didn't feel like this deserved its own `common.rs` but uh...i guess
+/// the visibility is technically an issue?
+fn check_file_size(file: &PathBuf) -> Result<String, failure::Error> {
+    let size = ByteSize::b(file.metadata()?.len());
+    if size > ByteSize::mb(1) {
+        Err(failure::format_err!(
+            "{:?} is {}, which exceeds the 1 MB limit!",
+            // i hate unwrap so much but we can't coerce NoneError into failure::Error...anyhow...
+            file.file_name().unwrap(),
+            size
+        ))
+    } else {
+        Ok(size.to_string())
+    }
 }
 
 #[cfg(test)]
