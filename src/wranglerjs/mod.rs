@@ -23,7 +23,7 @@ use semver::Version;
 
 use crate::install;
 use crate::settings::toml::Target;
-use crate::terminal::message::{Message, StdOut};
+use crate::terminal::message::{Message, StdErr, StdOut};
 use crate::upload::package::Package;
 use crate::watch::{wait_for_changes, COOLDOWN_PERIOD};
 
@@ -126,7 +126,7 @@ fn write_wranglerjs_output(
     custom_webpack: bool,
 ) -> Result<(), failure::Error> {
     if output.has_errors() {
-        StdOut::user_error(output.get_errors().as_str());
+        StdErr::user_error(output.get_errors().as_str());
         if custom_webpack {
             failure::bail!(
             "webpack returned an error. Try configuring `entry` in your webpack config relative to the current working directory, or setting `context = __dirname` in your webpack config."

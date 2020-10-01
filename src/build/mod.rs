@@ -1,5 +1,5 @@
 use crate::settings::toml::{Target, TargetType};
-use crate::terminal::message::{Message, StdOut};
+use crate::terminal::message::{Message, StdErr};
 use crate::terminal::styles;
 use crate::wranglerjs;
 use crate::{commands, install};
@@ -68,7 +68,7 @@ pub fn build_target(target: &Target) -> Result<String, failure::Error> {
 }
 
 pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
-    StdOut::working("Compiling your project to WebAssembly...");
+    StdErr::working("Compiling your project to WebAssembly...");
 
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
