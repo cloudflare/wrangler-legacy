@@ -1,11 +1,11 @@
-use std::{ffi::OsStr, fs};
 use std::{
+    ffi::OsStr,
     fmt::Debug,
+    fs,
     path::{Path, PathBuf},
 };
 
 use bytesize::ByteSize;
-use tokio::{runtime::Runtime, try_join};
 
 mod js;
 mod wasm;
@@ -17,23 +17,38 @@ const JS_FILE_NAME: &str = "worker.js";
 const JS_SOURCEMAP_FILE_NAME: &str = "worker.js.map";
 const WASM_FILE_NAME: &str = "wasm.wasm"; // ? seems silly lol "wasm.wasm" but ok
 
-pub struct BundlerOutput {
-    js_file: PathBuf,
-    wasm_file: Option<PathBuf>,
-    sourcemap_file: Option<PathBuf>,
+enum FileType {
+    JavaScript(PathBuf),
+    WebAssembly(Option<PathBuf>),
+    JavaScriptSourceMap(Option<PathBuf>),
 }
 
+impl FileType {
+    pub fn check(&self) -> Result<Option<String>, failure::Error> {
+        Ok(match self {
+            FileType::JavaScript(path) => Some(check_js(path)?),
+            FileType::WebAssembly(Some(path)) => Some(check_wasm(path)?),
+            FileType::JavaScriptSourceMap(Some(path)) => Some(check_file_size(path)?),
+            _ => None,
+        })
+    }
+}
+
+pub struct BundlerOutput(Vec<FileType>);
+
 impl BundlerOutput {
+    // it would be cool if this was TryFrom but we need them to
+    // stabilize generic associated traits <3
     pub fn new<P: AsRef<Path> + Debug>(output_dir: P) -> Result<Self, failure::Error> {
         if let Some(js_file) = find_and_normalize(&output_dir, JS_FILE_NAME)? {
             let wasm_file = find_and_normalize(&output_dir, JS_SOURCEMAP_FILE_NAME)?;
             let sourcemap_file = find_and_normalize(&output_dir, WASM_FILE_NAME)?;
 
-            Ok(Self {
-                js_file,
-                wasm_file,
-                sourcemap_file,
-            })
+            Ok(Self(vec![
+                FileType::JavaScript(js_file),
+                FileType::WebAssembly(wasm_file),
+                FileType::JavaScriptSourceMap(sourcemap_file),
+            ]))
         } else {
             Err(failure::format_err!(
                 "There doesn't appear to be any javascript in {:?}",
@@ -43,20 +58,28 @@ impl BundlerOutput {
     }
 
     pub fn check(&self) -> Result<String, failure::Error> {
-        // i felt like this should be async but this implementation is probably terrible
-        let mut rt = Runtime::new()?;
-        let result: Result<(String, String), failure::Error> = rt.block_on(async {
-            // as_ref converts &Option<T> into Option<&T>
-            try_join!(
-                check_js(&self.js_file, self.sourcemap_file.as_ref()),
-                check_wasm(self.wasm_file.as_ref())
-            )
-        });
+        // this looks really intimidating but i promise it's not! all we're doing is
+        // 1. creating an iterator over the files
+        // 2. executing each file's "check" impl
+        // 3. Running an accumulator on the results
+        // 3a. if the check failed, short-circuiting with the error
+        // 3b. if the check succeeded, checking if there was a message
+        // 3c. if there is a message, appending it to the output
+        // 4. Storing the combined check messages into the "output" string
+        // TODO use rayon::par_iter instead of iter if it takes too long
+        // TODO use the nice formatting instead of \n
+        let output = self.0.iter().map(|file| file.check()).try_fold(
+            "".to_string(),
+            |output, result| -> Result<String, failure::Error> {
+                if let Some(message) = result? {
+                    Ok(format!("{}\n{}", output, message))
+                } else {
+                    Ok(output)
+                }
+            },
+        )?;
 
-        match result {
-            Ok((js_result, wasm_result)) => Ok(format!("{}\n{}", js_result, wasm_result)),
-            Err(e) => Err(e),
-        }
+        Ok(output)
     }
 }
 
@@ -65,12 +88,15 @@ where
     P: AsRef<Path> + Debug,
     S: Into<String> + Debug,
 {
-    // i guess it has to be done at some point
     let name: String = file_name.into();
 
     // This just panics if it cant find a period. If only we could
     // coerce NoneErrors into our error handling.......anyhow.......
-    let extension = OsStr::new(name.rsplit('.').take(1).next().unwrap());
+    let extension = if let Some(slice) = name.rsplit('.').take(1).next() {
+        OsStr::new(slice)
+    } else {
+        return Err(failure::format_err!("Failed to find a period in {}", name));
+    };
     let canonical_name = OsStr::new(&name);
 
     // path to the file of the given extension as output by the bundler
