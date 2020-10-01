@@ -171,8 +171,7 @@ fn normalize_filename(
     }
 }
 
-/// I didn't feel like this deserved its own `common.rs` but uh...i guess
-/// the visibility is technically an issue?
+/// I didn't feel like this deserved its own `common.rs`
 fn check_file_size(file: &PathBuf) -> Result<String, failure::Error> {
     let size = ByteSize::b(file.metadata()?.len());
     if size > ByteSize::mb(1) {
@@ -189,55 +188,132 @@ fn check_file_size(file: &PathBuf) -> Result<String, failure::Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::file_with_extension;
-    use std::ffi::OsStr;
 
-    #[test]
-    fn it_finds_a_file_with_an_extension() -> Result<(), failure::Error> {
-        let dir = &tempfile::tempdir()?;
-        let file = tempfile::Builder::new()
-            .prefix("test_file")
-            .suffix(".example")
-            .tempfile_in(dir)?;
+    #[cfg(test)]
+    mod file_with_extension {
+        use super::super::file_with_extension;
+        use std::ffi::OsStr;
 
-        assert!(file_with_extension(dir, file.path().extension().unwrap()).is_ok());
+        #[test]
+        fn it_finds_a_file_with_an_extension() -> Result<(), failure::Error> {
+            let dir = &tempfile::tempdir()?;
+            let file = tempfile::Builder::new()
+                .prefix("test_file")
+                .suffix(".example")
+                .tempfile_in(dir)?;
 
-        Ok(())
+            assert!(file_with_extension(dir, file.path().extension().unwrap()).is_ok());
+
+            Ok(())
+        }
+
+        #[test]
+        fn it_errors_with_multiple_files_of_same_extension_are_present(
+        ) -> Result<(), failure::Error> {
+            let dir = &tempfile::tempdir()?;
+            let _file_1 = tempfile::Builder::new()
+                .prefix("test_file_one")
+                .suffix(".example")
+                .tempfile_in(dir)?;
+            let _file_2 = tempfile::Builder::new()
+                .prefix("test_file_two")
+                .suffix(".example")
+                .tempfile_in(dir)?;
+
+            assert!(file_with_extension(dir, OsStr::new("example")).is_err());
+
+            Ok(())
+        }
+
+        #[test]
+        fn it_returns_none_when_no_files_with_the_extension_are_present(
+        ) -> Result<(), failure::Error> {
+            let dir = tempfile::tempdir()?;
+
+            assert!(file_with_extension(dir, OsStr::new("example"))?.is_none());
+
+            Ok(())
+        }
+
+        #[test]
+        fn it_errors_when_path_is_not_dir() -> Result<(), failure::Error> {
+            let path = &tempfile::NamedTempFile::new()?.into_temp_path();
+
+            assert!(file_with_extension(path, OsStr::new("test")).is_err());
+
+            Ok(())
+        }
     }
 
-    #[test]
-    fn it_errors_with_multiple_files_of_same_extension_are_present() -> Result<(), failure::Error> {
-        let dir = &tempfile::tempdir()?;
-        let _file_1 = tempfile::Builder::new()
-            .prefix("test_file_one")
-            .suffix(".example")
-            .tempfile_in(dir)?;
-        let _file_2 = tempfile::Builder::new()
-            .prefix("test_file_two")
-            .suffix(".example")
-            .tempfile_in(dir)?;
+    #[cfg(test)]
+    mod normalize_filename {
+        use super::super::normalize_filename;
+        use std::ffi::OsStr;
 
-        assert!(file_with_extension(dir, OsStr::new("example")).is_err());
+        #[test]
+        fn it_renames_files_when_necessary() -> Result<(), failure::Error> {
+            let file = tempfile::NamedTempFile::new()?;
+            let file_path = file.path().to_path_buf();
 
-        Ok(())
+            let canonical_name = OsStr::new("nice_file_name.example");
+
+            let final_file = normalize_filename(file_path, canonical_name)?;
+
+            assert_eq!(final_file.file_name().unwrap(), canonical_name);
+
+            Ok(())
+        }
+
+        #[test]
+        fn it_does_nothing_to_correctly_named_files() -> Result<(), failure::Error> {
+            let file = tempfile::NamedTempFile::new()?;
+            let file_path = file.path().to_path_buf();
+
+            let canonical_name = file_path.file_name().unwrap();
+
+            assert_eq!(file_path.file_name().unwrap(), canonical_name);
+
+            let final_file = normalize_filename(file_path.clone(), canonical_name)?;
+
+            assert_eq!(final_file.file_name().unwrap(), canonical_name);
+
+            Ok(())
+        }
     }
 
-    #[test]
-    fn it_returns_none_when_no_files_with_the_extension_are_present() -> Result<(), failure::Error>
-    {
-        let dir = tempfile::tempdir()?;
+    #[cfg(test)]
+    mod check_file_size {
+        use super::super::check_file_size;
+        use bytesize::MB;
+        use rand::{distributions::Alphanumeric, thread_rng, Rng};
+        use std::{convert::TryInto, io::Write};
 
-        assert!(file_with_extension(dir, OsStr::new("example"))?.is_none());
+        #[test]
+        fn its_ok_with_small_files() -> Result<(), failure::Error> {
+            let file = tempfile::NamedTempFile::new()?;
+            let path_buf = file.path().to_path_buf();
 
-        Ok(())
-    }
+            assert!(check_file_size(&path_buf).is_ok());
 
-    #[test]
-    fn it_errors_when_path_is_not_dir() -> Result<(), failure::Error> {
-        let path = &tempfile::NamedTempFile::new()?.into_temp_path();
+            Ok(())
+        }
 
-        assert!(file_with_extension(path, OsStr::new("test")).is_err());
+        #[test]
+        fn it_errors_when_file_is_too_big() -> Result<(), failure::Error> {
+            let mut file = tempfile::NamedTempFile::new()?;
 
-        Ok(())
+            let data = thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take((2 * MB).try_into().unwrap())
+                .collect::<String>();
+
+            writeln!(file, "{}", data)?;
+
+            let path_buf = file.path().to_path_buf();
+
+            assert!(check_file_size(&path_buf).is_err());
+
+            Ok(())
+        }
     }
 }

@@ -54,8 +54,7 @@ pub fn build_target(target: &Target) -> Result<String, failure::Error> {
             None => Err(failure::err_msg("Please specify bundler options!")),
             Some(config) => {
                 if config.build_command().spawn()?.wait()?.success() {
-                    let checker = BundlerOutput::new(config.output_dir()?)?;
-                    checker.check()
+                    BundlerOutput::new(config.output_dir()?)?.check()
                 } else {
                     Err(failure::format_err!(
                         "Command `{:?}` exited with non-zero exit code!",
