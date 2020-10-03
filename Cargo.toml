@@ -51,6 +51,8 @@ semver = "0.11.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
 serde_with = "1.4.0"
+sourcemap = "6.0.1"
+swc_atoms = "0.2.3"
 swc_common = { version = "0.10.3", features = ["concurrent"] }
 swc_ecma_ast = "0.32.0"
 swc_ecma_parser = "0.38.0"
@@ -65,6 +67,8 @@ toml = "0.5.6"
 twox-hash = "1.5.0"
 url = "2.1.1"
 uuid = { version = "0.8", features = ["v4"] }
+wasmparser = "0.63.0"
+wast = "24.0.0"
 which = "4.0.2"
 ws = "0.9.1"
 

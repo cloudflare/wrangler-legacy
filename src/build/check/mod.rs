@@ -6,82 +6,213 @@ use std::{
 };
 
 use bytesize::ByteSize;
+use wasmparser::WasmFeatures;
 
+mod config;
 mod js;
 mod wasm;
 
-use js::check_js;
-use wasm::check_wasm;
+use self::config::MAX_FILE_SIZE;
+use js::{JavaScript, JavaScriptLinterArgs};
+use wasm::WebAssembly;
 
 const JS_FILE_NAME: &str = "worker.js";
 const JS_SOURCEMAP_FILE_NAME: &str = "worker.js.map";
 const WASM_FILE_NAME: &str = "wasm.wasm"; // ? seems silly lol "wasm.wasm" but ok
+const WASM_TEXT_FILE_NAME: &str = "wasm.wat"; // in the spec
+const WASM_TEXT_EXTENDED_FILE_NAME: &str = "wasm.wast"; // not in the spec, but commonly used and easier to read.
 
-enum FileType {
-    JavaScript(PathBuf),
-    WebAssembly(Option<PathBuf>),
-    JavaScriptSourceMap(Option<PathBuf>),
+// this would simplify a lot of this code
+// https://github.com/rust-lang/rust/issues/63063
+// type PathLike = impl AsRef<Path> + Debug;
+
+/// If a struct is Parseable, that means that it is able to parse some
+/// some given input into Self, with the potential for failure.
+/// ```
+/// # trait Parseable<ParserInput>: Sized {
+/// #    fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
+/// # }
+/// struct SmallNumber(u8);
+/// impl Parseable<u8> for SmallNumber {
+///     fn parse(input: &u8) -> Result<Self, failure::Error> {
+///         Ok(Self(*input))
+///     }
+/// }
+///
+/// let n = SmallNumber::parse(&8);
+///
+/// assert!(n.is_ok());
+/// ```
+pub trait Parseable<ParserInput>: Sized {
+    fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
 }
 
-impl FileType {
-    pub fn check(&self) -> Result<Option<String>, failure::Error> {
-        Ok(match self {
-            FileType::JavaScript(path) => Some(check_js(path)?),
-            FileType::WebAssembly(Some(path)) => Some(check_wasm(path)?),
-            FileType::JavaScriptSourceMap(Some(path)) => Some(check_file_size(path)?),
-            _ => None,
+/// If a struct is Lintable, that means that when given some parameters,
+/// it's able to check itself according to those criteria and fail if
+/// any are not met.
+/// ```
+/// # trait Lintable<ArgsType> {
+/// #     fn lint(&self, args: ArgsType) -> Result<(), failure::Error>;
+/// # }
+/// struct SmallNumber(u8);
+/// impl Lintable<u8> for SmallNumber {
+///     fn lint(&self, max_size: u8) -> Result<(), failure::Error> {
+///         if self.0 > max_size {
+///             Err(failure::err_msg("Number is too big!"))
+///         } else {
+///             Ok(())
+///         }
+///     }
+/// }
+///
+/// let n = SmallNumber(3);
+///
+/// assert!(n.lint(6).is_ok());
+/// assert!(n.lint(1).is_err());
+/// ```
+pub trait Lintable<ArgsType> {
+    fn lint(&self, args: ArgsType) -> Result<(), failure::Error>;
+}
+
+/// If a struct can Validate, then it must also be Parseable and Lintable.
+/// Typically, this acts as a wrapper for self.lint(), and allows any
+/// top level args to lint() to be hidden from whoever is calling .validate(),
+/// which accepts no arguments.
+/// ```
+/// # trait Parseable<ParserInput>: Sized {
+/// #    fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
+/// # }
+/// # trait Lintable<ArgsType> {
+/// #     fn lint(&self, args: ArgsType) -> Result<(), failure::Error>;
+/// # }
+/// # pub trait Validate<LinterArgsType, ParserInput>:
+/// #     Lintable<LinterArgsType> + Parseable<ParserInput>
+/// # {
+/// #     fn validate(&self) -> Result<(), failure::Error>;
+/// # }
+/// struct SmallNumber(u8);
+/// const TOO_BIG: u8 = 5;
+///
+/// impl Parseable<u8> for SmallNumber {
+///     fn parse(input: &u8) -> Result<Self, failure::Error> {
+///         Ok(Self(*input))
+///     }
+/// }
+///
+/// impl Lintable<u8> for SmallNumber {
+///     fn lint(&self, max_size: u8) -> Result<(), failure::Error> {
+///         if self.0 > max_size {
+///             Err(failure::err_msg("Number is too big!"))
+///         } else {
+///             Ok(())
+///         }
+///     }
+/// }
+///
+/// impl Validate<u8, u8> for SmallNumber {
+///     fn validate(&self) -> Result<(), failure::Error> {
+///         self.lint(TOO_BIG)
+///     }
+/// }
+///
+/// let small = SmallNumber::parse(&4).unwrap();
+/// let big = SmallNumber::parse(&6).unwrap();
+///
+/// assert!(small.validate().is_ok());
+/// assert!(big.validate().is_err());
+/// ```
+pub trait Validate<LinterArgsType, ParserInput>:
+    Lintable<LinterArgsType> + Parseable<ParserInput>
+{
+    fn validate(&self) -> Result<(), failure::Error>;
+}
+
+/// Represents the output of any tool capable of (com|trans)piling source code
+/// to javascript and webassembly. See [JavaScript] and [WebAssembly] for more details
+/// on their respective implementations.
+pub struct BundlerOutput {
+    javascript: JavaScript,
+    webassembly: Option<WebAssembly>,
+}
+
+impl<P> Parseable<P> for BundlerOutput
+where
+    P: AsRef<Path> + Debug,
+{
+    fn parse(input: &P) -> Result<Self, failure::Error> {
+        // there needs to be javascript, so err right away if we don't find any
+        let js_file = match find_and_normalize(input, JS_FILE_NAME)? {
+            Some(path) => path,
+            None => {
+                return Err(failure::format_err!(
+                    "There doesn't appear to be any javascript in {:?}",
+                    input
+                ))
+            }
+        };
+        // we want to fail as soon as possible if anything is too big
+        check_file_size(&js_file, MAX_FILE_SIZE)?;
+
+        // source map is optional
+        let source_map_file = find_and_normalize(input, JS_SOURCEMAP_FILE_NAME)?;
+
+        if let Some(file) = &source_map_file {
+            check_file_size(file, MAX_FILE_SIZE)?
+        };
+
+        let javascript = JavaScript::parse(&(js_file, source_map_file))?;
+
+        let webassembly = if let Some(wasm_file) = find_and_normalize(input, WASM_FILE_NAME)? {
+            check_file_size(&wasm_file, MAX_FILE_SIZE)?;
+            // we only need to parse one of these, even if they're both present. i guess we should prefer WAST over WAT.
+            let text_file =
+                if let Some(wast) = find_and_normalize(input, WASM_TEXT_EXTENDED_FILE_NAME)? {
+                    Some(wast)
+                } else if let Some(wat) = find_and_normalize(input, WASM_TEXT_FILE_NAME)? {
+                    Some(wat)
+                } else {
+                    None
+                };
+
+            Some(WebAssembly::parse(&(wasm_file, text_file))?)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            javascript,
+            webassembly,
         })
     }
 }
 
-pub struct BundlerOutput(Vec<FileType>);
-
-impl BundlerOutput {
-    // it would be cool if this was TryFrom but we need them to
-    // stabilize generic associated traits <3
-    pub fn new<P: AsRef<Path> + Debug>(output_dir: P) -> Result<Self, failure::Error> {
-        if let Some(js_file) = find_and_normalize(&output_dir, JS_FILE_NAME)? {
-            let wasm_file = find_and_normalize(&output_dir, JS_SOURCEMAP_FILE_NAME)?;
-            let sourcemap_file = find_and_normalize(&output_dir, WASM_FILE_NAME)?;
-
-            Ok(Self(vec![
-                FileType::JavaScript(js_file),
-                FileType::WebAssembly(wasm_file),
-                FileType::JavaScriptSourceMap(sourcemap_file),
-            ]))
+type BundlerOutputLinterArgs = (JavaScriptLinterArgs, WasmFeatures);
+impl Lintable<BundlerOutputLinterArgs> for BundlerOutput {
+    fn lint(&self, (js_args, wasm_args): BundlerOutputLinterArgs) -> Result<(), failure::Error> {
+        self.javascript.lint(js_args)?;
+        if let Some(webassembly) = &self.webassembly {
+            webassembly.lint(wasm_args)
         } else {
-            Err(failure::format_err!(
-                "There doesn't appear to be any javascript in {:?}",
-                output_dir
-            ))
+            Ok(())
         }
     }
+}
 
-    pub fn check(&self) -> Result<String, failure::Error> {
-        // this looks really intimidating but i promise it's not! all we're doing is
-        // 1. creating an iterator over the files
-        // 2. executing each file's "check" impl
-        // 3. Running an accumulator on the results
-        // 3a. if the check failed, short-circuiting with the error
-        // 3b. if the check succeeded, checking if there was a message
-        // 3c. if there is a message, appending it to the output
-        // 4. Storing the combined check messages into the "output" string
-        // TODO use rayon::par_iter instead of iter if it takes too long
-        // TODO use the nice formatting instead of \n
-        let output = self.0.iter().map(|file| file.check()).try_fold(
-            "".to_string(),
-            |output, result| -> Result<String, failure::Error> {
-                if let Some(message) = result? {
-                    Ok(format!("{}\n{}", output, message))
-                } else {
-                    Ok(output)
-                }
-            },
-        )?;
+// i hate to end the AsRef<Path> generic-ness here, but i really
+// and truly cannot for the life of me how to specify
+// the type parameters when calling output.validate()
+impl Validate<BundlerOutputLinterArgs, PathBuf> for BundlerOutput {
+    fn validate(&self) -> Result<(), failure::Error> {
+        self.javascript.validate()?;
+        if let Some(wasm) = &self.webassembly {
+            wasm.validate()?
+        };
 
-        Ok(output)
+        Ok(())
     }
 }
+
+// helper functions
 
 fn find_and_normalize<P, S>(dir: P, file_name: S) -> Result<Option<PathBuf>, failure::Error>
 where
@@ -90,13 +221,12 @@ where
 {
     let name: String = file_name.into();
 
-    // This just panics if it cant find a period. If only we could
-    // coerce NoneErrors into our error handling.......anyhow.......
     let extension = if let Some(slice) = name.rsplit('.').take(1).next() {
         OsStr::new(slice)
     } else {
         return Err(failure::format_err!("Failed to find a period in {}", name));
     };
+
     let canonical_name = OsStr::new(&name);
 
     // path to the file of the given extension as output by the bundler
@@ -171,18 +301,17 @@ fn normalize_filename(
     }
 }
 
-/// I didn't feel like this deserved its own `common.rs`
-fn check_file_size(file: &PathBuf) -> Result<String, failure::Error> {
-    let size = ByteSize::b(file.metadata()?.len());
-    if size > ByteSize::mb(1) {
+fn check_file_size(file: &PathBuf, max_size: ByteSize) -> Result<(), failure::Error> {
+    let file_size = ByteSize::b(file.metadata()?.len());
+    if file_size > max_size {
         Err(failure::format_err!(
-            "{:?} is {}, which exceeds the 1 MB limit!",
-            // i hate unwrap so much but we can't coerce NoneError into failure::Error...anyhow...
-            file.file_name().unwrap(),
-            size
+            "{:?} is {}, which exceeds the {} limit!",
+            file.file_name().unwrap_or_else(|| OsStr::new("file")),
+            file_size,
+            max_size
         ))
     } else {
-        Ok(size.to_string())
+        Ok(())
     }
 }
 
@@ -284,7 +413,7 @@ mod tests {
     #[cfg(test)]
     mod check_file_size {
         use super::super::check_file_size;
-        use bytesize::MB;
+        use bytesize::{ByteSize, MB};
         use rand::{distributions::Alphanumeric, thread_rng, Rng};
         use std::{convert::TryInto, io::Write};
 
@@ -293,7 +422,7 @@ mod tests {
             let file = tempfile::NamedTempFile::new()?;
             let path_buf = file.path().to_path_buf();
 
-            assert!(check_file_size(&path_buf).is_ok());
+            assert!(check_file_size(&path_buf, ByteSize::mb(1)).is_ok());
 
             Ok(())
         }
@@ -311,7 +440,7 @@ mod tests {
 
             let path_buf = file.path().to_path_buf();
 
-            assert!(check_file_size(&path_buf).is_err());
+            assert!(check_file_size(&path_buf, ByteSize::mb(1)).is_err());
 
             Ok(())
         }

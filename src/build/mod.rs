@@ -9,7 +9,7 @@ use std::process::Command;
 
 mod check;
 
-use check::BundlerOutput;
+use check::{BundlerOutput, Parseable, Validate};
 
 // Internal build logic, called by both `build` and `publish`
 // TODO: return a struct containing optional build info and construct output at command layer
@@ -54,7 +54,10 @@ pub fn build_target(target: &Target) -> Result<String, failure::Error> {
             None => Err(failure::err_msg("Please specify bundler options!")),
             Some(config) => {
                 if config.build_command().spawn()?.wait()?.success() {
-                    BundlerOutput::new(config.output_dir()?)?.check()
+                    let input = &config.output_dir()?;
+                    let parsed = BundlerOutput::parse(input)?;
+                    parsed.validate()?;
+                    Ok("Bundler output looks good!".to_string())
                 } else {
                     Err(failure::format_err!(
                         "Command `{:?}` exited with non-zero exit code!",

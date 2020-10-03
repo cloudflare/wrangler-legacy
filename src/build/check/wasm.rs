@@ -1,6 +1,29 @@
-use super::check_file_size;
 use std::path::PathBuf;
 
-pub fn check_wasm(wasm_file: &PathBuf) -> Result<String, failure::Error> {
-    Ok(format!("WASM size: {}", check_file_size(wasm_file)?))
+use wasmparser::{Data, WasmFeatures};
+use wast::Module;
+
+use super::{Lintable, Parseable, Validate};
+
+pub struct WebAssembly {
+    binary: Data<'static>,
+    text: Option<Module<'static>>,
+}
+
+impl Parseable<(PathBuf, Option<PathBuf>)> for WebAssembly {
+    fn parse(input: &(PathBuf, Option<PathBuf>)) -> Result<Self, failure::Error> {
+        todo!()
+    }
+}
+
+impl Lintable<WasmFeatures> for WebAssembly {
+    fn lint(&self, args: WasmFeatures) -> Result<(), failure::Error> {
+        todo!()
+    }
+}
+
+impl Validate<WasmFeatures, (PathBuf, Option<PathBuf>)> for WebAssembly {
+    fn validate(&self) -> Result<(), failure::Error> {
+        todo!()
+    }
 }
