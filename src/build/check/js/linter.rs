@@ -45,9 +45,7 @@ fn match_error_to_source_map(
     Ok(failure::format_err!("Thanks for providing us with a source map! Soon hopefully we will be able to tell you what part of your original source code is bad. Unfortunately, for now, all we can say is\n{}", error))
 }
 
-// TODO all of these need to also take a reference to what's available / unavailable
-
-/// By implementing Lintable for Vec<Stmt>, we can call `ast.lint(false)`
+/// By implementing Lintable for Vec<Stmt>, we can call `ast.lint(args)`
 /// at the top level and recurse through the whole AST
 ///
 /// Note: Ideally, the type signature would actually be more general,
