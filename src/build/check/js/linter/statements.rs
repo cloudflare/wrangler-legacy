@@ -1,58 +1,20 @@
-use sourcemap::SourceMap;
 use swc_ecma_ast::{
-    BlockStmt, Decl, DoWhileStmt, Expr, ExprStmt, ForInStmt, ForOfStmt, ForStmt, IfStmt,
-    LabeledStmt, Pat, ReturnStmt, Script, Stmt, SwitchStmt, ThrowStmt, TryStmt, VarDecl,
-    VarDeclOrExpr, VarDeclOrPat, WhileStmt, WithStmt,
+    BlockStmt, DoWhileStmt, ExprStmt, ForInStmt, ForOfStmt, ForStmt, IfStmt, LabeledStmt,
+    ReturnStmt, Stmt, SwitchStmt, ThrowStmt, TryStmt, VarDeclOrExpr, WhileStmt, WithStmt,
 };
 
-use super::{ExpressionList, Lintable};
-
-// the difference between the args for linting a Script and linting an AstNode
-// is that the script doesn't need to know whether or not it's in the request context,
-// because it's always *not* in the request context. It does, however, take an optional
-// source map that can be used to map errors to the original source to provide more
-// helpful error messages to developers
-type ScriptLinterArgs<'a> = (Option<&'a SourceMap>, ExpressionList, ExpressionList);
-type AstNodeLinterArgs<'a> = (bool, &'a ExpressionList, &'a ExpressionList);
-
-impl<'a> Lintable<ScriptLinterArgs<'a>> for Script {
-    fn lint(
-        &self,
-        (source_map, unavailable, available_in_request_context): ScriptLinterArgs,
-    ) -> Result<(), failure::Error> {
-        if let Err(error) = self
-            .body
-            .lint((false, &unavailable, &available_in_request_context))
-        {
-            Err(match source_map {
-                Some(map) => match_error_to_source_map(error, map)?,
-                None => error,
-            })
-        } else {
-            Ok(())
-        }
-    }
-}
-
-// TODO: it would be cool to have line numbers in the errors
-// and i don't think it would be like extremely hard to do,
-// since every statement has its own associated byte position.
-// But that's a nice-to-have for sure
-fn match_error_to_source_map(
-    error: failure::Error,
-    source_map: &SourceMap,
-) -> Result<failure::Error, failure::Error> {
-    Ok(failure::format_err!("Thanks for providing us with a source map! Soon hopefully we will be able to tell you what part of your original source code is bad. Unfortunately, for now, all we can say is\n{}", error))
-}
+use super::{AstNodeLinterArgs, Lintable};
 
 /// By implementing Lintable for Vec<Stmt>, we can call `ast.lint(args)`
 /// at the top level and recurse through the whole AST
 ///
-/// Note: Ideally, the type signature would actually be more general,
-/// `impl<'a, T> Lintable<AstNodeLinterArgs<'a>> for T where T: Iterator<Item = dyn Lintable<AstNodeLinterArgs<'a>>>,`
+/// Note: Ideally, the type signature would actually be more general, like
+/// `impl<'a, T> Lintable<AstNodeLinterArgs<'a>> for T where T: Iterator<Item = dyn Lintable<AstNodeLinterArgs<'a>>>`,
 /// but rustc is not happy about us implementing this when swc might potentially
 /// implement Iterator for e.g. Stmt. Then we'd have conflicting implementations
 /// of Lintable for any struct that also implemented Iterator.
+/// For practical purposes though, this isn't a problem, as swc just uses Vec
+/// for all groups of AstNodes
 impl<'a> Lintable<AstNodeLinterArgs<'a>> for Vec<Stmt> {
     fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
         // this would be cool if it was par_iter...rayon when?
@@ -285,6 +247,17 @@ impl<'a> Lintable<AstNodeLinterArgs<'a>> for ForStmt {
 }
 
 /// [For...in statements](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in)
+/// have three parts that need linting -- the "left" expression, "right" expression, and the body of the loop.
+/// It's easier to explain with an example.
+///
+/// ```ignore
+/// for (const e in arr) {
+///     // do stuff
+/// }
+///
+/// * `e` is the left expression
+/// * `arr` is the right expression
+/// * `// do stuff` is the body of the loop
 impl<'a> Lintable<AstNodeLinterArgs<'a>> for ForInStmt {
     fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
         self.left.lint(args)?;
@@ -303,41 +276,11 @@ impl<'a> Lintable<AstNodeLinterArgs<'a>> for ForOfStmt {
     }
 }
 
+/// As far as I can tell, the ExprStmt struct is for statements that are just expressions,
+/// like if you made a `fetch()` call without assigning the result to anything. These are
+/// easy to lint because you just have to lint the expression.
 impl<'a> Lintable<AstNodeLinterArgs<'a>> for ExprStmt {
     fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
         self.expr.lint(args)
-    }
-}
-
-impl<'a> Lintable<AstNodeLinterArgs<'a>> for Expr {
-    fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
-        todo!()
-    }
-}
-
-impl<'a> Lintable<AstNodeLinterArgs<'a>> for Decl {
-    fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
-        todo!()
-    }
-}
-
-impl<'a> Lintable<AstNodeLinterArgs<'a>> for Pat {
-    fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
-        todo!()
-    }
-}
-
-impl<'a> Lintable<AstNodeLinterArgs<'a>> for VarDecl {
-    fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
-        todo!()
-    }
-}
-
-impl<'a> Lintable<AstNodeLinterArgs<'a>> for VarDeclOrPat {
-    fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
-        match self {
-            VarDeclOrPat::VarDecl(declaration) => declaration.lint(args),
-            VarDeclOrPat::Pat(pattern) => pattern.lint(args),
-        }
     }
 }

@@ -3564,9 +3564,9 @@ checksum = "57da5d7300428d75d8b3cdfb736e41ee6af8926d69c1de2f201a1a22f234b7b5"
 
 [[package]]
 name = "wast"
-version = "24.0.0"
+version = "25.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ff1e3bd3ad0b2ee7784add89c30dc96b89a54b43e5d6d95d774eda1863b3500"
+checksum = "d8c67a4386e4efe10563552848d8c6a4b7f941e69924a935495645c3f52b32d0"
 dependencies = [
  "leb128",
 ]

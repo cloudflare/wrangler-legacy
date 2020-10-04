@@ -68,7 +68,7 @@ twox-hash = "1.5.0"
 url = "2.1.1"
 uuid = { version = "0.8", features = ["v4"] }
 wasmparser = "0.63.0"
-wast = "24.0.0"
+wast = "25.0.0"
 which = "4.0.2"
 ws = "0.9.1"
 
