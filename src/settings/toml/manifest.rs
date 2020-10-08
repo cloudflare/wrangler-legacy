@@ -335,7 +335,7 @@ impl Manifest {
             let toml_msg = styles::highlight("wrangler.toml");
             let account_id_msg = styles::highlight("account_id");
             let zone_id_msg = styles::highlight("zone_id");
-            let dash_url = styles::url("https://dash.cloudflare.com");
+            let dash_url = styles::url("https://dash.staging.cloudflare.com");
             StdOut::help(
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
             );

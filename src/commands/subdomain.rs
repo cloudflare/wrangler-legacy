@@ -102,7 +102,7 @@ struct Error {
 
 fn subdomain_addr(account_id: &str) -> String {
     format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/subdomain",
+        "https://api.staging.cloudflare.com/client/v4/accounts/{}/workers/subdomain",
         account_id
     )
 }
@@ -216,7 +216,7 @@ fn get_subdomain_scripts(
 
 fn scripts_addr(account_id: &str) -> String {
     format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts",
+        "https://api.staging.cloudflare.com/client/v4/accounts/{}/workers/scripts",
         account_id
     )
 }

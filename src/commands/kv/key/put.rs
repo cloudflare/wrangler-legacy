@@ -26,7 +26,7 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
     kv::validate_target(target)?;
 
     let api_endpoint = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
+        "https://api.staging.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
         target.account_id,
         &data.namespace_id,
         kv::url_encode_key(&data.key)

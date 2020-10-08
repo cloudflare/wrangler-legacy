@@ -33,7 +33,7 @@ pub fn run() -> Result<(), failure::Error> {
     }
 
     open_browser(&format!(
-        "https://dash.cloudflare.com/wrangler?key={0}",
+        "https://dash.staging.cloudflare.com/wrangler?key={0}",
         pubkey_encoded
     ))?;
 
@@ -72,7 +72,7 @@ fn poll_token(token_id: String) -> Result<String, failure::Error> {
 
     for (seconds, _) in timer.enumerate() {
         let res = client
-            .get("https://api.cloudflare.com/client/v4/workers/token")
+            .get("https://api.staging.cloudflare.com/client/v4/workers/token")
             .json(&request_params)
             .send()?;
 

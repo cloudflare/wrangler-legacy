@@ -646,7 +646,7 @@ fn run() -> Result<(), failure::Error> {
     let not_recommended_msg = styles::warning("(Not Recommended)");
     let recommended_cmd_msg = styles::highlight("`wrangler config --api-key`");
     let wrangler_login_msg = styles::highlight("`wrangler login`");
-    let api_token_url = styles::url("https://dash.cloudflare.com/profile/api-tokens");
+    let api_token_url = styles::url("https://dash.staging.cloudflare.com/profile/api-tokens");
     let token_support_url = styles::url(
         "https://support.cloudflare.com/hc/en-us/articles/200167836-Managing-API-Tokens-and-Keys",
     );

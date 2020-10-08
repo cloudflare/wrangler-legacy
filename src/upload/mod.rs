@@ -15,7 +15,7 @@ pub fn script(
     asset_manifest: Option<AssetManifest>,
 ) -> Result<(), failure::Error> {
     let worker_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
+        "https://api.staging.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         target.account_id, target.name,
     );
 
@@ -38,7 +38,7 @@ pub fn script(
 
 fn error_msg(status: reqwest::StatusCode, text: String) -> String {
     if text.contains("\"code\": 10034,") {
-        "You need to verify your account's email address before you can publish. You can do this by checking your email or logging in to https://dash.cloudflare.com.".to_string()
+        "You need to verify your account's email address before you can publish. You can do this by checking your email or logging in to https://dash.staging.cloudflare.com.".to_string()
     } else if text.contains("\"code\":10000,") {
         "Your user configuration is invalid, please run wrangler login or wrangler config and enter a new set of credentials.".to_string()
     } else {
@@ -62,5 +62,5 @@ fn fails_with_good_error_msg_on_verify_email_err() {
 }"#
     .to_string();
     let result = error_msg(status, text);
-    assert!(result.contains("https://dash.cloudflare.com"));
+    assert!(result.contains("https://dash.staging.cloudflare.com"));
 }

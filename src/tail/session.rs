@@ -207,7 +207,7 @@ async fn send_heartbeat(
 }
 
 // tail_help() provides more detailed explanations of Workers KV API error codes.
-// See https://api.cloudflare.com/#workers-kv-namespace-errors for details.
+// See https://api.staging.cloudflare.com/#workers-kv-namespace-errors for details.
 fn tail_help(error_code: u16) -> &'static str {
     match error_code {
         7003 | 7000 => {

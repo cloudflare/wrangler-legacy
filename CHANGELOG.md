@@ -1046,7 +1046,7 @@
 
     Don't worry, current configurations with an email address and a Global API Key will continue to work, but we highly recommend that you switch to API Tokens as they are a much more secure authentication method.
 
-    If you want to use API tokens, create an API token from the "Edit Cloudflare Workers" API token template [here](https://dash.cloudflare.com/profile/api-tokens), and copy/paste it in the `wrangler config` prompt. Alternatively, you can set the `CF_API_TOKEN` environment variable.
+    If you want to use API tokens, create an API token from the "Edit Cloudflare Workers" API token template [here](https://dash.staging.cloudflare.com/profile/api-tokens), and copy/paste it in the `wrangler config` prompt. Alternatively, you can set the `CF_API_TOKEN` environment variable.
 
     [gabbifish]: https://github.com/gabbifish
     [ashleymichal]: https://github.com/ashleymichal

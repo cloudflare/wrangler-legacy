@@ -148,7 +148,7 @@ fn authenticated_upload(
     asset_manifest: Option<AssetManifest>,
 ) -> Result<Preview, failure::Error> {
     let create_address = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
+        "https://api.staging.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
         target.account_id, target.name
     );
     log::info!("address: {}", create_address);

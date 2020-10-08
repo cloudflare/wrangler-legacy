@@ -43,7 +43,7 @@ fn publish_zoneless(
     };
 
     let sd_worker_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
+        "https://api.staging.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
         zoneless_config.account_id, zoneless_config.script_name,
     );
 
