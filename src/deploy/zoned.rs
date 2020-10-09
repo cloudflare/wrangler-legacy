@@ -7,11 +7,70 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{Route, Zoned};
+use crate::settings::toml::{Route, RouteConfig};
+use crate::terminal::message::{Message, StdOut};
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ZonedTarget {
+    pub zone_id: String,
+    pub routes: Vec<Route>,
+}
+
+impl ZonedTarget {
+    pub fn build(script_name: &str, route_config: &RouteConfig) -> Result<Self, failure::Error> {
+        match route_config.zone_id.as_ref() {
+            Some(zone_id) if !zone_id.is_empty() => {
+                let new_route = |route: &String| Route {
+                    id: None,
+                    script: Some(script_name.to_string()),
+                    pattern: route.to_string(),
+                };
+                let routes: Vec<Route> = route_config
+                    .route
+                    .iter()
+                    .map(new_route)
+                    .chain(route_config.routes.iter().flatten().filter_map(|route| {
+                        if route.is_empty() {
+                            StdOut::warn("your configuration file contains an empty route");
+                            None
+                        } else {
+                            Some(new_route(route))
+                        }
+                    }))
+                    .collect();
+
+                if routes.is_empty() {
+                    failure::bail!("No routes specified");
+                }
+
+                Ok(Self {
+                    zone_id: zone_id.to_owned(),
+                    routes,
+                })
+            }
+            _ => failure::bail!("field `zone_id` is required to deploy to routes"),
+        }
+    }
+
+    pub fn deploy(&self, user: &GlobalUser) -> Result<Vec<String>, failure::Error> {
+        log::info!("publishing to zone {}", self.zone_id);
+
+        let published_routes = publish_routes(&user, self)?;
+
+        let display_results: Vec<String> = published_routes.iter().map(|r| r.to_string()).collect();
+
+        StdOut::success(&format!(
+            "Deployed to the following routes:\n{}",
+            display_results.join("\n")
+        ));
+
+        Ok(display_results)
+    }
+}
 
 pub fn publish_routes(
     user: &GlobalUser,
-    zoned_config: &Zoned,
+    zoned_config: &ZonedTarget,
 ) -> Result<Vec<RouteUploadResult>, failure::Error> {
     // For the moment, we'll just make this call once and make all our decisions based on the response.
     // There is a possibility of race conditions, but we just report back the results and allow the

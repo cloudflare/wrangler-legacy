@@ -3,6 +3,7 @@ use super::emoji;
 use billboard::{Billboard, BorderColor, BorderStyle};
 use serde::Serialize;
 
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Output {
     Json,
     PlainText,

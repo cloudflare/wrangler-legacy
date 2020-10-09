@@ -10,15 +10,21 @@ use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
-use crate::settings::toml::deploy_config::{DeployConfig, RouteConfig};
+use crate::deploy::{self, DeployTarget, DeploymentSet};
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
+use crate::settings::toml::route::RouteConfig;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
+use crate::settings::toml::triggers::Triggers;
 use crate::settings::toml::Target;
-use crate::terminal::message::{Message, StdOut};
-use crate::terminal::{emoji, styles};
+use crate::terminal::{
+    emoji,
+    message::{Message, StdOut},
+    styles,
+};
+
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Manifest {
     #[serde(default)]
@@ -43,6 +49,7 @@ pub struct Manifest {
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
     pub vars: Option<HashMap<String, String>>,
+    pub triggers: Option<Triggers>,
 }
 
 impl Manifest {
@@ -156,28 +163,86 @@ impl Manifest {
         }
     }
 
-    pub fn deploy_config(&self, env: Option<&str>) -> Result<DeployConfig, failure::Error> {
+    pub fn get_deployments(&self, env: Option<&str>) -> Result<DeploymentSet, failure::Error> {
         let script = self.worker_name(env);
         validate_worker_name(&script)?;
 
-        if let Some(environment) = self.get_environment(env)? {
-            // if there is an environment level deploy target, try to return that
-            if let Some(env_route_config) =
-                environment.route_config(self.account_id.clone(), self.zone_id.clone())
+        let mut deployments = DeploymentSet::new();
+
+        let env = self.get_environment(env)?;
+
+        let mut add_routed_deployments =
+            |route_config: &RouteConfig| -> Result<(), failure::Error> {
+                if route_config.is_zoned() {
+                    let zoned = deploy::ZonedTarget::build(&script, route_config)?;
+                    // This checks all of the configured routes for the wildcard ending and warns
+                    // the user that their site may not work as expected without it.
+                    if self.site.is_some() {
+                        let no_star_routes = zoned
+                            .routes
+                            .iter()
+                            .filter(|r| !r.pattern.ends_with('*'))
+                            .map(|r| r.pattern.as_str())
+                            .collect::<Vec<_>>();
+                        if !no_star_routes.is_empty() {
+                            StdOut::warn(&format!(
+                            "The following routes in your configuration file should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\n{}",
+                            no_star_routes.join("\n"))
+                        );
+                        }
+                    }
+
+                    deployments.push(DeployTarget::Zoned(zoned));
+                }
+
+                if route_config.is_zoneless() {
+                    let zoneless = deploy::ZonelessTarget::build(&script, route_config)?;
+                    deployments.push(DeployTarget::Zoneless(zoneless));
+                }
+
+                Ok(())
+            };
+
+        if let Some(env) = env {
+            if let Some(env_route_cfg) =
+                env.route_config(self.account_id.clone(), self.zone_id.clone())
             {
-                DeployConfig::build(&script, &env_route_config)
+                add_routed_deployments(&env_route_cfg)
             } else {
-                // If the top level config is Zoned, the user needs to specify new route config
-                let top_level_config = DeployConfig::build(&script, &self.route_config())?;
-                match top_level_config {
-                    DeployConfig::Zoned(_) => failure::bail!(
-                        "you must specify route(s) per environment for zoned deploys."
-                    ),
-                    DeployConfig::Zoneless(_) => Ok(top_level_config),
+                let config = self.route_config();
+                if config.is_zoned() {
+                    failure::bail!("you must specify route(s) per environment for zoned deploys.");
+                } else {
+                    add_routed_deployments(&config)
                 }
             }
         } else {
-            DeployConfig::build(&script, &self.route_config())
+            add_routed_deployments(&self.route_config())
+        }?;
+
+        let crons = match env {
+            Some(e) => {
+                let account_id = e.account_id.as_ref().unwrap_or(&self.account_id);
+                e.triggers
+                    .as_ref()
+                    .map(|t| (t.crons.as_slice(), account_id))
+            }
+            None => self
+                .triggers
+                .as_ref()
+                .map(|t| (t.crons.as_slice(), &self.account_id)),
+        };
+
+        if let Some((crons, account)) = crons {
+            let scheduled =
+                deploy::ScheduleTarget::build(account.clone(), script.clone(), crons.to_vec())?;
+            deployments.push(DeployTarget::Schedule(scheduled));
+        }
+
+        if !deployments.is_empty() {
+            Ok(deployments)
+        } else {
+            failure::bail!("No deployments specified!")
         }
     }
 

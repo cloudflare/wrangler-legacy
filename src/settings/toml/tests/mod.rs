@@ -1,4 +1,4 @@
-mod deploy_config;
+mod deployments;
 
 use super::*;
 
