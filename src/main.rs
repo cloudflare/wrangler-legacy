@@ -19,7 +19,7 @@ use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
-use wrangler::terminal::message::{Message, StdOut};
+use wrangler::terminal::message::{Message, Output, StdOut};
 use wrangler::terminal::{emoji, interactive, styles};
 use wrangler::version::background_check_for_updates;
 
@@ -511,7 +511,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("host")
-                        .help("Host to forward or requests to, defaults to the zone of project or to tutorial.cloudflareworkers.com if unauthenticated.")
+                        .help("Host to forward requests to, defaults to the zone of project or to tutorial.cloudflareworkers.com if unauthenticated.")
                         .short("h")
                         .long("host")
                         .takes_value(true)
@@ -559,6 +559,13 @@ fn run() -> Result<(), failure::Error> {
                         .long("release")
                         .takes_value(false)
                         .help("[deprecated] alias of wrangler publish")
+                )
+                .arg(
+                    Arg::with_name("output")
+                    .short("o")
+                    .long("output")
+                    .takes_value(true)
+                    .possible_value("json")
                 ),
         )
         .subcommand(
@@ -855,8 +862,11 @@ fn run() -> Result<(), failure::Error> {
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env, is_preview)?;
         let deploy_config = manifest.deploy_config(env)?;
-
-        commands::publish(&user, &mut target, deploy_config)?;
+        if matches.is_present("output") && matches.value_of("output") == Some("json") {
+            commands::publish(&user, &mut target, deploy_config, Output::Json)?;
+        } else {
+            commands::publish(&user, &mut target, deploy_config, Output::PlainText)?;
+        }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
         let config_path = Path::new(
