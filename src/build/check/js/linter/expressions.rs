@@ -1,5 +1,5 @@
 use super::{AstNodeLinterArgs, Lintable};
-use swc_ecma_ast::Expr;
+use swc_ecma_ast::{ArrayLit, Expr, ObjectLit};
 
 /// [Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Expressions)
 /// are the things we actually care about linting. From MDN:
@@ -83,5 +83,22 @@ impl<'a> Lintable<AstNodeLinterArgs<'a>> for Expr {
             // whatever it's called and throw that here instead of just failure::Error
             Expr::Invalid(_) => Err(failure::err_msg("Failed to parse expression!")),
         }
+    }
+}
+
+impl<'a> Lintable<AstNodeLinterArgs<'a>> for ArrayLit {
+    fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
+        self.elems
+            .iter()
+            .filter_map(|elem| elem.as_ref())
+            .try_for_each(|expression_or_spread| expression_or_spread.expr.lint(args))
+    }
+}
+
+impl<'a> Lintable<AstNodeLinterArgs<'a>> for ObjectLit {
+    fn lint(&self, args: AstNodeLinterArgs<'a>) -> Result<(), failure::Error> {
+        self.props
+            .iter()
+            .try_for_each(|prop_or_spread| prop_or_spread.lint(args))
     }
 }

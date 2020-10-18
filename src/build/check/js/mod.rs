@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use sourcemap::SourceMap;
 use swc_common::{sync::Lrc, SourceMap as SwcSourceMap};
-use swc_ecma_ast::{Expr, Script};
+use swc_ecma_ast::{Expr, Module};
 use swc_ecma_parser::{Parser, StringInput};
 
 use super::{Lintable, Parseable, Validate};
@@ -17,7 +17,7 @@ use super::config::{
 };
 
 pub struct JavaScript {
-    script: Script,
+    module: Module,
     source_map: Option<SourceMap>,
 }
 
@@ -31,7 +31,7 @@ impl Lintable<JavaScriptLinterArgs> for JavaScript {
         &self,
         (unavailable, available_in_request_context): JavaScriptLinterArgs,
     ) -> Result<(), failure::Error> {
-        self.script.lint((
+        self.module.lint((
             self.source_map.as_ref(),
             unavailable,
             available_in_request_context,
@@ -81,9 +81,9 @@ impl Parseable<(PathBuf, Option<PathBuf>)> for JavaScript {
         // dollar company and swc is one guy
         let _ = parser.take_errors();
 
-        match parser.parse_script() {
-            Ok(script) => Ok(JavaScript {
-                script,
+        match parser.parse_module() {
+            Ok(module) => Ok(JavaScript {
+                module,
                 // TODO: parse source map
                 source_map: None,
             }),

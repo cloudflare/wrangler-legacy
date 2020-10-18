@@ -1,5 +1,5 @@
 use sourcemap::SourceMap;
-use swc_ecma_ast::Script;
+use swc_ecma_ast::{Module, Script};
 
 use super::{ExpressionList, Lintable};
 
@@ -19,6 +19,25 @@ impl<'a> Lintable<ScriptLinterArgs<'a>> for Script {
     fn lint(
         &self,
         (source_map, unavailable, available_in_request_context): ScriptLinterArgs,
+    ) -> Result<(), failure::Error> {
+        if let Err(error) = self
+            .body
+            .lint((false, &unavailable, &available_in_request_context))
+        {
+            Err(match source_map {
+                Some(map) => match_error_to_source_map(error, map)?,
+                None => error,
+            })
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl<'a> Lintable<ScriptLinterArgs<'a>> for Module {
+    fn lint(
+        &self,
+        (source_map, unavailable, available_in_request_context): ScriptLinterArgs<'a>,
     ) -> Result<(), failure::Error> {
         if let Err(error) = self
             .body

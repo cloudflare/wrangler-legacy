@@ -5,23 +5,6 @@ use swc_ecma_ast::{
 
 use super::{AstNodeLinterArgs, Lintable};
 
-/// By implementing Lintable for Vec<Stmt>, we can call `ast.lint(args)`
-/// at the top level and recurse through the whole AST
-///
-/// Note: Ideally, the type signature would actually be more general, like
-/// `impl<'a, T> Lintable<AstNodeLinterArgs<'a>> for T where T: Iterator<Item = dyn Lintable<AstNodeLinterArgs<'a>>>`,
-/// but rustc is not happy about us implementing this when swc might potentially
-/// implement Iterator for e.g. Stmt. Then we'd have conflicting implementations
-/// of Lintable for any struct that also implemented Iterator.
-/// For practical purposes though, this isn't a problem, as swc just uses Vec
-/// for all groups of AstNodes
-impl<'a> Lintable<AstNodeLinterArgs<'a>> for Vec<Stmt> {
-    fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
-        // this would be cool if it was par_iter...rayon when?
-        self.iter().try_for_each(|statement| statement.lint(args))
-    }
-}
-
 impl<'a> Lintable<AstNodeLinterArgs<'a>> for Stmt {
     fn lint(&self, args: AstNodeLinterArgs) -> Result<(), failure::Error> {
         // tremendous shoutout to MDN, shame they shut it down
