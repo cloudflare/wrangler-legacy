@@ -8,17 +8,11 @@ pub enum Protocol {
 
 impl Protocol {
     pub fn is_http(self) -> bool {
-        match self {
-            Protocol::Http => true,
-            _ => false,
-        }
+        matches!(self, Protocol::Http)
     }
 
     pub fn is_https(self) -> bool {
-        match self {
-            Protocol::Https => true,
-            _ => false,
-        }
+        matches!(self, Protocol::Https)
     }
 }
 
