@@ -1,3 +1,4 @@
+use crate::terminal::message::{Message, StdOut};
 use std::process::{Command, Stdio};
 
 pub fn open_browser(url: &str) -> Result<(), failure::Error> {
@@ -27,5 +28,7 @@ pub fn open_browser(url: &str) -> Result<(), failure::Error> {
             .spawn()?;
     };
 
+    let msg = format!("Opened a link in your default browser: {}", url);
+    StdOut::info(&msg);
     Ok(())
 }
