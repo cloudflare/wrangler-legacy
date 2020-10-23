@@ -5,11 +5,11 @@ use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 
 use crate::build::build_target;
-use crate::deploy;
+use crate::deploy::{self, DeploymentSet};
 use crate::http::{self, Feature};
 use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, Target};
+use crate::settings::toml::Target;
 use crate::sites;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, Output, StdErr, StdOut};
@@ -20,15 +20,48 @@ pub struct PublishOutput {
     pub success: bool,
     pub name: String,
     pub urls: Vec<String>,
+    pub schedules: Vec<String>,
 }
 
 pub fn publish(
     user: &GlobalUser,
     target: &mut Target,
-    deploy_config: DeployConfig,
+    deployments: DeploymentSet,
     out: Output,
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
+
+    let deploy = |target: &Target| match deploy::worker(&user, &deployments) {
+        Ok(deploy::DeployResults { urls, schedules }) => {
+            let result_msg = match (urls.as_slice(), schedules.as_slice()) {
+                ([], []) => "Successfully published your script".to_owned(),
+                ([], schedules) => format!(
+                    "Successfully published your script with this schedule\n {}",
+                    schedules.join("\n ")
+                ),
+                (urls, []) => format!(
+                    "Successfully published your script to\n {}",
+                    urls.join("\n ")
+                ),
+                (urls, schedules) => format!(
+                    "Successfully published your script to\n {}\nwith this schedule\n {}",
+                    urls.join("\n "),
+                    schedules.join("\n ")
+                ),
+            };
+            StdErr::success(&result_msg);
+            if out == Output::Json {
+                StdOut::as_json(&PublishOutput {
+                    success: true,
+                    name: target.name.clone(),
+                    urls,
+                    schedules,
+                });
+            }
+            Ok(())
+        }
+        Err(e) => Err(e),
+    };
 
     // Build the script before uploading and log build result
     let build_result = build_target(&target);
@@ -42,7 +75,6 @@ pub fn publish(
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
         validate_bucket_location(path)?;
-        warn_site_incompatible_route(&deploy_config);
 
         let site_namespace = sites::add_namespace(user, target, false)?;
 
@@ -77,26 +109,7 @@ pub fn publish(
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&upload_client, &target, Some(asset_manifest))?;
 
-        match deploy::worker(&user, &deploy_config) {
-            Ok(urls) => {
-                let result_msg = format!("Successfully published your script to {}", urls[0]);
-                match out {
-                    Output::Json => {
-                        let mut jsonout = PublishOutput::default();
-                        jsonout.success = true;
-                        jsonout.name = target.name.clone();
-                        jsonout.urls = urls;
-                        StdErr::success(&result_msg);
-                        StdOut::as_json(&jsonout);
-                    }
-                    Output::PlainText => {
-                        StdOut::success(&result_msg);
-                    }
-                }
-                Ok(())
-            }
-            Err(e) => Err(e),
-        }?;
+        deploy(target)?;
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
@@ -128,49 +141,10 @@ pub fn publish(
         let upload_client = http::legacy_auth_client(user);
 
         upload::script(&upload_client, &target, None)?;
-        match deploy::worker(&user, &deploy_config) {
-            Ok(urls) => {
-                let result_msg = format!("Successfully published your script to {}", urls[0]);
-                match out {
-                    Output::Json => {
-                        let mut jsonout = PublishOutput::default();
-                        jsonout.success = true;
-                        jsonout.name = target.name.clone();
-                        jsonout.urls = urls;
-                        StdErr::success(&result_msg);
-                        StdOut::as_json(&jsonout);
-                    }
-                    Output::PlainText => {
-                        StdOut::success(&result_msg);
-                    }
-                }
-                Ok(())
-            }
-            Err(e) => Err(e),
-        }?;
+        deploy(target)?;
     }
 
     Ok(())
-}
-
-// This checks all of the configured routes for the wildcard ending and warns
-// the user that their site may not work as expected without it.
-fn warn_site_incompatible_route(deploy_config: &DeployConfig) {
-    if let DeployConfig::Zoned(zoned) = &deploy_config {
-        let mut no_star_routes = Vec::new();
-        for route in &zoned.routes {
-            if !route.pattern.ends_with('*') {
-                no_star_routes.push(route.pattern.to_string());
-            }
-        }
-
-        if !no_star_routes.is_empty() {
-            StdOut::warn(&format!(
-                "The following routes in your configuration file should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\n{}",
-                no_star_routes.join("\n"))
-            );
-        }
-    }
 }
 
 // We don't want folks setting their bucket to the top level directory,
