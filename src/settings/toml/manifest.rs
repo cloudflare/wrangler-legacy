@@ -225,6 +225,7 @@ impl Manifest {
                 let account_id = e.account_id.as_ref().unwrap_or(&self.account_id);
                 e.triggers
                     .as_ref()
+                    .or_else(|| self.triggers.as_ref())
                     .map(|t| (t.crons.as_slice(), account_id))
             }
             None => self

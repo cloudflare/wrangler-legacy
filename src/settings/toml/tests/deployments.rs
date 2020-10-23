@@ -224,12 +224,12 @@ fn it_can_get_a_scheduled_in_env_no_workers_dev_no_zoned() {
     assert_eq!(actual_deployments, expected_deployments);
 }
 #[test]
-fn it_errors_on_no_schedules_in_env() {
+fn it_cat_get_inherited_env_schedules() {
     // with no zoned, zoneless, or schedule targets in environment, we error
     let script_name = "single_schedule";
 
     let crons = vec!["0 * * * *".to_owned()];
-    let env = EnvConfig::custom_script_name("no_schedule");
+    let env = EnvConfig::custom_script_name("inherited_schedule");
 
     let mut test_toml = WranglerToml::webpack(script_name);
     test_toml.account_id = Some(ACCOUNT_ID);
@@ -245,7 +245,14 @@ fn it_errors_on_no_schedules_in_env() {
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
     let environment = Some("b");
-    assert!(manifest.get_deployments(environment).is_err());
+    let expected_deployments = vec![DeployTarget::Schedule(ScheduleTarget {
+        account_id: ACCOUNT_ID.to_owned(),
+        script_name: "inherited_schedule".to_owned(),
+        crons,
+    })];
+    let actual_deployments = manifest.get_deployments(environment).unwrap();
+
+    assert_eq!(actual_deployments, expected_deployments);
 }
 
 #[test]
