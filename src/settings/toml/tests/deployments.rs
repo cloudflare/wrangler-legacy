@@ -24,7 +24,7 @@ fn it_errors_on_empty_get_deployments() {
 }
 
 #[test]
-fn it_errors_on_conflicting_get_deploymentss() {
+fn it_can_get_multiple_deployments() {
     let script_name = "workers_dev_true_and_zoned_config";
     let workers_dev = true;
 
@@ -367,6 +367,38 @@ fn it_can_get_a_multi_route_zoned_get_deployments_workers_dev_false() {
 }
 
 #[test]
+fn it_can_get_multi_route_with_route() {
+    let script_name = "multi_route_with_route";
+    let patterns = [PATTERN];
+
+    let mut test_toml = WranglerToml::webpack(script_name);
+    test_toml.workers_dev = Some(false);
+    test_toml.routes = Some(patterns.to_vec());
+    test_toml.route = Some("blog.hostname.tld/*");
+    test_toml.zone_id = Some(ZONE_ID);
+    let toml_string = toml::to_string(&test_toml).unwrap();
+    let manifest = Manifest::from_str(&toml_string).unwrap();
+
+    let expected_routes = std::iter::once("blog.hostname.tld/*")
+        .chain(patterns.iter().copied())
+        .map(|p| Route {
+            script: Some(script_name.to_string()),
+            pattern: (*p).to_string(),
+            id: None,
+        })
+        .collect();
+    let expected_deployments = vec![DeployTarget::Zoned(ZonedTarget {
+        zone_id: ZONE_ID.to_string(),
+        routes: expected_routes,
+    })];
+
+    let environment = None;
+    let actual_deployments = manifest.get_deployments(environment).unwrap();
+
+    assert_eq!(actual_deployments, expected_deployments);
+}
+
+#[test]
 fn it_errors_on_multi_route_get_deployments_empty_zone_id() {
     let script_name = "multi_route_empty_zone_id";
     let patterns = [PATTERN, "blog.hostname.tld/*"];
@@ -427,7 +459,7 @@ fn it_errors_on_multi_route_get_deployments_empty_route() {
 }
 
 #[test]
-fn it_errors_on_get_deployments_route_and_routes() {
+fn it_can_get_a_route_with_routes() {
     let script_name = "route_and_routes";
     let patterns = ["blog.hostname.tld/*"];
 
@@ -456,7 +488,7 @@ fn it_errors_on_get_deployments_route_and_routes() {
 }
 
 #[test]
-fn it_errors_on_get_deployments_route_and_workers_dev_true() {
+fn it_gets_deployments_with_route_and_workers_dev_true() {
     let script_name = "route_and_workers_dev";
 
     let mut test_toml = WranglerToml::zoned_single_route(script_name, ZONE_ID, PATTERN);
@@ -470,7 +502,7 @@ fn it_errors_on_get_deployments_route_and_workers_dev_true() {
 }
 
 #[test]
-fn it_errors_on_get_deployments_routes_and_workers_dev_true() {
+fn it_gets_deployments_with_routes_and_workers_dev_true() {
     let script_name = "routes_and_workers_dev";
     let patterns = [PATTERN];
 

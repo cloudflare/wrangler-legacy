@@ -59,11 +59,6 @@ impl ZonedTarget {
 
         let display_results: Vec<String> = published_routes.iter().map(|r| r.to_string()).collect();
 
-        StdOut::success(&format!(
-            "Deployed to the following routes:\n{}",
-            display_results.join("\n")
-        ));
-
         Ok(display_results)
     }
 }

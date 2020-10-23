@@ -239,11 +239,11 @@ impl Manifest {
             deployments.push(DeployTarget::Schedule(scheduled));
         }
 
-        if !deployments.is_empty() {
-            Ok(deployments)
-        } else {
+        if deployments.is_empty() {
             failure::bail!("No deployments specified!")
         }
+
+        Ok(deployments)
     }
 
     pub fn get_account_id(&self, environment_name: Option<&str>) -> Result<String, failure::Error> {

@@ -20,6 +20,7 @@ pub struct PublishOutput {
     pub success: bool,
     pub name: String,
     pub urls: Vec<String>,
+    pub schedules: Vec<String>,
 }
 
 pub fn publish(
@@ -31,11 +32,22 @@ pub fn publish(
     validate_target_required_fields_present(target)?;
 
     let deploy = |target: &Target| match deploy::worker(&user, &deployments) {
-        Ok(urls) => {
-            let result_msg = if !urls.is_empty() {
-                format!("Successfully published your script to {}", urls[0])
-            } else {
-                "Successfully published your script".to_owned()
+        Ok(deploy::DeployResults { urls, schedules }) => {
+            let result_msg = match (urls.as_slice(), schedules.as_slice()) {
+                ([], []) => "Successfully published your script".to_owned(),
+                ([], schedules) => format!(
+                    "Successfully published your script with this schedule\n {}",
+                    schedules.join("\n ")
+                ),
+                (urls, []) => format!(
+                    "Successfully published your script to\n {}",
+                    urls.join("\n ")
+                ),
+                (urls, schedules) => format!(
+                    "Successfully published your script to\n {}\nwith this schedule\n {}",
+                    urls.join("\n "),
+                    schedules.join("\n ")
+                ),
             };
             StdErr::success(&result_msg);
             if out == Output::Json {
@@ -43,6 +55,7 @@ pub fn publish(
                     success: true,
                     name: target.name.clone(),
                     urls,
+                    schedules,
                 });
             }
             Ok(())

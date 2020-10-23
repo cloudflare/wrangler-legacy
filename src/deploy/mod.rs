@@ -20,22 +20,31 @@ pub enum DeployTarget {
 
 pub fn worker(
     user: &GlobalUser,
-    deployment: &[DeployTarget],
-) -> Result<Vec<String>, failure::Error> {
-    let mut urls = Vec::new();
-    for target in deployment {
+    deploy_targets: &[DeployTarget],
+) -> Result<DeployResults, failure::Error> {
+    let mut results = DeployResults::default();
+    for target in deploy_targets {
         match target {
             DeployTarget::Zoned(zoned) => {
                 let route_urls = zoned.deploy(user)?;
-                urls.extend_from_slice(&route_urls);
+                results.urls.extend(route_urls);
             }
             DeployTarget::Zoneless(zoneless) => {
                 let worker_dev = zoneless.deploy(user)?;
-                urls.push(worker_dev);
+                results.urls.push(worker_dev);
             }
-            DeployTarget::Schedule(schedule) => schedule.deploy(user)?,
+            DeployTarget::Schedule(schedule) => {
+                let schedules = schedule.deploy(user)?;
+                results.schedules.extend(schedules);
+            }
         }
     }
 
-    Ok(urls)
+    Ok(results)
+}
+
+#[derive(Default)]
+pub struct DeployResults {
+    pub urls: Vec<String>,
+    pub schedules: Vec<String>,
 }

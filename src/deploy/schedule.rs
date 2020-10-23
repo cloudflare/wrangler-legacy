@@ -1,6 +1,5 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::terminal::message::{Message, StdOut};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScheduleTarget {
@@ -24,7 +23,7 @@ impl ScheduleTarget {
         })
     }
 
-    pub fn deploy(&self, user: &GlobalUser) -> Result<(), failure::Error> {
+    pub fn deploy(&self, user: &GlobalUser) -> Result<Vec<String>, failure::Error> {
         log::info!("publishing schedules");
         let schedule_worker_addr = format!(
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/schedules",
@@ -48,9 +47,7 @@ impl ScheduleTarget {
             )
         }
 
-        StdOut::success("Uploaded schedules");
-
-        Ok(())
+        Ok(self.crons.clone())
     }
 }
 

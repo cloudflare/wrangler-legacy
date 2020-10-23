@@ -2,7 +2,6 @@ use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::RouteConfig;
-use crate::terminal::message::{Message, StdOut};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ZonelessTarget {
@@ -54,11 +53,6 @@ impl ZonelessTarget {
         }
 
         let deploy_address = format!("https://{}.{}.workers.dev", self.script_name, subdomain);
-
-        StdOut::success(&format!(
-            "Successfully published your script to {}",
-            deploy_address
-        ));
 
         Ok(deploy_address)
     }
