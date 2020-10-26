@@ -58,7 +58,7 @@ tokio-native-tls = "0.1.0"
 tokio-rustls = "0.14.1"
 tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
 toml = "0.5.7"
-twox-hash = "1.5.0"
+twox-hash = "1.6.0"
 url = "2.1.1"
 uuid = { version = "0.8", features = ["v4"] }
 which = "4.0.2"
