@@ -1,5 +1,5 @@
 mod wrangler_toml;
-pub use wrangler_toml::{EnvConfig, KvConfig, SiteConfig, WranglerToml, TEST_ENV_NAME};
+pub use wrangler_toml::{EnvConfig, KvConfig, SiteConfig, Triggers, WranglerToml, TEST_ENV_NAME};
 
 use std::fs;
 use std::fs::File;

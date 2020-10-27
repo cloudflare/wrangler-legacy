@@ -17,6 +17,11 @@ pub struct KvConfig {
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
+pub struct Triggers {
+    pub crons: Option<Vec<String>>,
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct SiteConfig {
     pub bucket: Option<&'static str>,
     #[serde(rename = "entry-point")]
@@ -39,6 +44,7 @@ pub struct EnvConfig {
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<KvConfig>>,
     pub vars: Option<HashMap<&'static str, &'static str>>,
+    pub triggers: Option<Triggers>,
 }
 
 impl EnvConfig {
@@ -98,6 +104,7 @@ pub struct WranglerToml {
     pub kv_namespaces: Option<Vec<KvConfig>>,
     pub site: Option<SiteConfig>,
     pub vars: Option<HashMap<&'static str, &'static str>>,
+    pub triggers: Option<Triggers>,
 }
 
 impl WranglerToml {
