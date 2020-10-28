@@ -48,23 +48,34 @@ pub async fn https(
                 let req_method = parts.method.to_string();
                 let now: DateTime<Local> = Local::now();
                 let path = get_path_as_str(&parts.uri);
+                let mut full_host = host;
+                if let Some(host) = parts.uri.host() {
+                    if let Some(last_dot) = host.rfind('.') {
+                        full_host.insert_str(0, &host[..=last_dot]);
+                    }
+                } else {
+                    println!(
+                        "Request has no host header. Going to use base host {}",
+                        full_host
+                    );
+                }
                 async move {
                     let mut resp = preview_request(
                         Request::from_parts(parts, body),
                         client,
                         preview_token.to_owned(),
-                        host.clone(),
+                        full_host.clone(),
                         Protocol::Https,
                     )
                     .await?;
 
-                    rewrite_redirect(&mut resp, &host, &local_host, true);
+                    rewrite_redirect(&mut resp, &full_host, &local_host, true);
 
                     println!(
                         "[{}] {} {}{} {:?} {}",
                         now.format("%Y-%m-%d %H:%M:%S"),
                         req_method,
-                        host,
+                        full_host,
                         path,
                         version,
                         resp.status()
