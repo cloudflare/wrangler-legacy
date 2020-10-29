@@ -21,41 +21,38 @@ pub fn check_file_size(file: &PathBuf, max_size: ByteSize) -> Result<(), failure
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
 
-    #[cfg(test)]
-    mod check_file_size {
-        use super::super::check_file_size;
-        use bytesize::{ByteSize, MB};
-        use rand::{distributions::Alphanumeric, thread_rng, Rng};
-        use std::{convert::TryInto, io::Write};
+    use super::check_file_size;
+    use bytesize::{ByteSize, MB};
+    use rand::{distributions::Alphanumeric, thread_rng, Rng};
+    use std::{convert::TryInto, io::Write};
 
-        #[test]
-        fn its_ok_with_small_files() -> Result<(), failure::Error> {
-            let file = tempfile::NamedTempFile::new()?;
-            let path_buf = file.path().to_path_buf();
+    #[test]
+    fn its_ok_with_small_files() -> Result<(), failure::Error> {
+        let file = tempfile::NamedTempFile::new()?;
+        let path_buf = file.path().to_path_buf();
 
-            assert!(check_file_size(&path_buf, ByteSize::mb(1)).is_ok());
+        assert!(check_file_size(&path_buf, ByteSize::mb(1)).is_ok());
 
-            Ok(())
-        }
+        Ok(())
+    }
 
-        #[test]
-        fn it_errors_when_file_is_too_big() -> Result<(), failure::Error> {
-            let mut file = tempfile::NamedTempFile::new()?;
+    #[test]
+    fn it_errors_when_file_is_too_big() -> Result<(), failure::Error> {
+        let mut file = tempfile::NamedTempFile::new()?;
 
-            let data = thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take((2 * MB).try_into().unwrap())
-                .collect::<String>();
+        let data = thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take((2 * MB).try_into().unwrap())
+            .collect::<String>();
 
-            writeln!(file, "{}", data)?;
+        writeln!(file, "{}", data)?;
 
-            let path_buf = file.path().to_path_buf();
+        let path_buf = file.path().to_path_buf();
 
-            assert!(check_file_size(&path_buf, ByteSize::mb(1)).is_err());
+        assert!(check_file_size(&path_buf, ByteSize::mb(1)).is_err());
 
-            Ok(())
-        }
+        Ok(())
     }
 }

@@ -5,13 +5,14 @@ use swc_common::{sync::Lrc, SourceMap as SwcSourceMap};
 use swc_ecma_ast::{ImportDecl, Module};
 use swc_ecma_visit::{Node, Visit, VisitWith};
 
-use super::{Lintable, Parseable, Validate};
+use super::{config::V8_SUPPORTED_JS_FEATURES, Lintable, Parseable, Validate};
 
-pub mod lint;
-pub mod parse;
+// bring implemntations of Lintable and Parseable into scope
+mod lint;
+mod parse;
 
-use super::config::V8_SUPPORTED_JS_FEATURES;
-
+/// A representation of a JS file (+ an optional source map)
+/// produced by a bundler's output
 pub struct JavaScript {
     module: Module,
     swc_source_map: Lrc<SwcSourceMap>,
@@ -31,6 +32,7 @@ impl std::fmt::Debug for JavaScript {
 }
 
 impl JavaScript {
+    /// Find any other files imported by this JS file
     pub fn find_imports(&self) -> Vec<String> {
         let mut import_finder = ImportFinder { imports: vec![] };
         self.module.visit_children_with(&mut import_finder);
@@ -38,6 +40,7 @@ impl JavaScript {
     }
 }
 
+#[doc = "hidden"]
 struct ImportFinder {
     pub imports: Vec<String>,
 }

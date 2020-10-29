@@ -55,7 +55,20 @@ impl JavaScriptLinter {
     }
 }
 
+/// TODO: this still needs to be done
+/// basically the way this works is that by implementing `Visit` on `JavaScriptLinter`,
+/// we can then visit every node in SWC's AST with an instance of JavaScriptLinter.
+/// So what we need to do is pick the nodes we want to lint, and then implement their
+/// respective trait functions to check them and add errors via `JavaScriptLinter::error()`.
+///
+/// So, for example, when visiting a ModuleDecl, we might check to make sure that if it's
+/// and export, that export is either a Class (meaning its a durable object) or a default
+/// export that has a `fetch` handler, or something like that.
+/// This is essentially the actual bulk of the work, the rest has just been plumbing.
+///
+/// It's been a lot of plumbing, though :sweat_smile:
 impl Visit for JavaScriptLinter {
+    // this is an incomplete example of what the linter will look like
     fn visit_module_decl(&mut self, n: &ModuleDecl, _parent: &dyn Node) {
         match n {
             ModuleDecl::Import(import) => {

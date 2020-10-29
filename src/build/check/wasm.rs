@@ -5,33 +5,30 @@ use wasmparser::Validator;
 use super::{config::V8_SUPPORTED_WASM_FEATURES, Lintable, Parseable, Validate};
 
 #[derive(Debug)]
-pub struct WebAssembly;
+pub struct WebAssembly {
+    bytes: Vec<u8>,
+}
 
 impl Parseable<(PathBuf, Option<PathBuf>)> for WebAssembly {
     fn parse(
-        (_binary_path, _text_path_opt): &(PathBuf, Option<PathBuf>),
+        (binary_path, _text_path_opt): &(PathBuf, Option<PathBuf>),
     ) -> Result<Self, failure::Error> {
-        unimplemented!()
+        let mut bytes: Vec<u8> = Vec::new();
+        File::open(binary_path)?.read_to_end(&mut bytes)?;
+        Ok(Self { bytes })
     }
 }
 
 impl Lintable for WebAssembly {
     fn lint(&self) -> Result<(), failure::Error> {
-        unimplemented!()
-    }
-}
-
-impl Validate<(PathBuf, Option<PathBuf>)> for WebAssembly {
-    fn validate((binary_path, _): (PathBuf, Option<PathBuf>)) -> Result<(), failure::Error> {
         let mut validator = Validator::new();
-        let mut bytes: Vec<u8> = Vec::new();
-
-        File::open(binary_path)?.read_to_end(&mut bytes)?;
         validator.wasm_features(V8_SUPPORTED_WASM_FEATURES);
 
-        match validator.validate_all(&bytes) {
+        match validator.validate_all(&self.bytes) {
             Ok(_) => Ok(()),
             Err(e) => Err(e.into()),
         }
     }
 }
+
+impl Validate<(PathBuf, Option<PathBuf>)> for WebAssembly {}

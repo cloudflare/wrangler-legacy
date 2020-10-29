@@ -6,7 +6,7 @@ use wasmparser::WasmFeatures;
 /// Check the [SWC docs](https://swc.rs/rustdoc/swc_ecma_parser/struct.EsConfig.html) for the available options.
 #[doc(inline)]
 pub const V8_SUPPORTED_JS_FEATURES: Syntax = Syntax::Es(EsConfig {
-    // sir, this is a wendy's...
+    // sir, this is a wendy's...(we don't allow JSX because V8 doesn't parse JSX)
     jsx: false,
     // https://v8.dev/blog/v8-release-75#numeric-separators
     num_sep: true,
@@ -18,7 +18,7 @@ pub const V8_SUPPORTED_JS_FEATURES: Syntax = Syntax::Es(EsConfig {
     class_props: true,
     // https://chromium.googlesource.com/v8/v8/+/3.0.12.1/test/mjsunit/function-bind.js
     fn_bind: true,
-    // AFAIK this is still...due to be presented? it is now october but
+    // AFAIK this is still...due to be presented? it is now ~~september october~~ november but
     // applies to both decorators and decorators_before_export
     // rfc: https://github.com/tc39/proposal-decorators
     // V8 team's feedback: https://docs.google.com/document/d/1GMp938qlmJlGkBZp6AerL-ewL1MWUDU8QzHBiNvs3MM/edit
@@ -49,7 +49,7 @@ pub const V8_SUPPORTED_JS_FEATURES: Syntax = Syntax::Es(EsConfig {
 
 /// The features we allow during our validation of WebAssembly, as per V8 stable.
 /// Check the [wasmparser](https://docs.rs/wasmparser/0.63.0/wasmparser/struct.WasmFeatures.html)
-/// for more.
+/// docs for more info.
 #[doc(inline)]
 pub const V8_SUPPORTED_WASM_FEATURES: WasmFeatures = WasmFeatures {
     // https://www.chromestatus.com/feature/5166497248837632
@@ -60,8 +60,6 @@ pub const V8_SUPPORTED_WASM_FEATURES: WasmFeatures = WasmFeatures {
     // https://v8.dev/blog/webassembly-experimental
     // so i'm not sure what the right answer for this is.
     // either way, i wasn't able to find a chromestatus page for it.
-    // based on the name, though, i don't think it matters
-    // because Workers only supports one WASM file anyway
     module_linking: false,
     // https://www.chromestatus.com/feature/6533147810332672
     simd: false,

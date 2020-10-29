@@ -69,8 +69,10 @@ pub trait Lintable {
     fn lint(&self) -> Result<(), failure::Error>;
 }
 
-/// If a struct is both Parseable and Lintable, then a blanket implementation
-/// is provided for that struct to Validate, which simply combines both steps.
+/// If a struct is both Parseable and Lintable, then it may also implement
+/// Validate, which should serve as a one-stop-shop to go from un-parsed
+/// input to linted output. A default implmenetation is provided which
+/// simply calls `Self::parse(&input).lint()`
 /// ```
 /// # trait Parseable<ParserInput>: Sized {
 /// #    fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
@@ -123,15 +125,16 @@ pub trait Validate<ParserInput>: Lintable + Parseable<ParserInput> {
 ///
 /// I'm not 100% on the format of this struct because I don't
 /// have access to the durable objects beta
-/// but it seems as though the format is basically one .mjs file
-/// that serves as the entrypoint to the worker,
-/// and any number other arbitrary files that can be imported into
-/// the worker. The example on GitHub, for example, imports HTML,
+/// but it seems as though the format is basically:
+/// * one `.mjs` file that serves as the entrypoint to the worker,
+/// * any number other arbitrary files that can be imported into the worker.
+///
+/// The example on GitHub, for example, imports HTML,
 /// so I think that's fair to assume.
 ///
 /// The ones we execute server-side are JS and WebAssembly, so those
 /// get their own `HashMap`s, and any other files can just be assumed
-/// to be static e.g. HTML.
+/// to be static e.g. HTML which means they don't need to be `Validate`d.
 #[derive(Debug)]
 pub struct BundlerOutput {
     /// A PathBuf pointing to worker.mjs, the entrypoint of the worker
@@ -146,8 +149,15 @@ pub struct BundlerOutput {
     other_files: Vec<PathBuf>,
 }
 
-/// Starting by parsing the entrypoint to the worker, traverse the imports
-/// and add those to the bundle as necessary.
+/// Construct an in-memory representation of a bundler's output given
+/// the output dir.
+///
+/// Starting by parsing <output_dir>/worker.mjs, work through its
+/// imports and add those files to the output as necessary.
+///
+/// Notably, any file emitted by the bundler which is not touched by either
+/// worker.mjs or any of its imports (or any of its imports' imports, etc.)
+/// will not be added to the resulting BundlerOutput
 impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
     fn parse(output_dir: &P) -> Result<Self, failure::Error> {
         let entry_file = output_dir.as_ref().join(WORKER_FILE_NAME);
@@ -157,8 +167,10 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
         let mut webassembly = HashMap::new();
         let mut other_files = vec![];
 
+        // Create a stack of the imports in the worker entrypoint
         let mut imports = entry.find_imports();
 
+        // Work through the stack, adding more imports as necessary
         while let Some(import) = imports.pop() {
             let import_path = output_dir.as_ref().join(&import);
 
@@ -172,7 +184,7 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
                 Some(extension) => {
                     if let Some(ext_str) = extension.to_str() {
                         match ext_str {
-                            "js" => {
+                            "js" | "mjs" => {
                                 if !javascript.contains_key(&import_path) {
                                     let js_import = JavaScript::parse(&import_path)?;
                                     imports.extend(js_import.find_imports());
@@ -201,6 +213,8 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
                                 }
                             }
                             _ => {
+                                // Since all we execute server-side is javascript and webassembly,
+                                // we can assume these files aren't actually executed.
                                 if !other_files.contains(&import_path) {
                                     other_files.push(import_path);
                                 }
@@ -221,6 +235,10 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
     }
 }
 
+/// Check the sizes of all the files the user wants to upload,
+/// and then lint them all. I suspect this would be a good
+/// use case for rayon, but I'm reluctant to add more dependencies
+/// than are absolutely necessary for this PR
 impl Lintable for BundlerOutput {
     fn lint(&self) -> Result<(), failure::Error> {
         // Check file sizes

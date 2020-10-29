@@ -18,7 +18,7 @@ impl Parseable<PathBuf> for JavaScript {
         // TODO ask in the slack
         let mut parser = Parser::new(V8_SUPPORTED_JS_FEATURES, StringInput::from(&*fm), None);
 
-        // TODO
+        // TODO: need feedback
         // ok so these errors are recoverable, like we can successfully parse it.
         // if we wanted to be stricter, we could just Err here
         // we could also warn the user about these, but i think
