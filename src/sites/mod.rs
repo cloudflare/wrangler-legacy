@@ -68,23 +68,43 @@ pub fn add_namespace(
 pub fn directory_keys_values(
     target: &Target,
     directory: &Path,
-) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
+) -> Result<(Vec<KeyValuePair>, AssetManifest, Vec<String>), failure::Error> {
     match &fs::metadata(directory) {
         Ok(file_type) if file_type.is_dir() => {
             let mut upload_vec: Vec<KeyValuePair> = Vec::new();
             let mut asset_manifest = AssetManifest::new();
-
+            let mut file_list: Vec<String> = Vec::new();
             let dir_walker = get_dir_iterator(target, directory)?;
             let spinner_style =
                 ProgressStyle::default_spinner().template("{spinner}   Preparing {msg}...");
             let spinner = ProgressBar::new_spinner().with_style(spinner_style);
+            let regexset: regex::RegexSet;
+            if cfg!(windows) {
+                regexset = regex::RegexSet::new(&[
+                    r"^.*(\\.(.)*)+(\\.*)*$",    // Hidden files
+                    r"^.*\\.well-known(\\.*)*$", // Well-known
+                ])?;
+            } else {
+                regexset = regex::RegexSet::new(&[
+                    r"^.*(/\.(.)*)+(/.*)*$",   // Hidden files
+                    r"^.*\.well-known(/.*)*$", // Well-known
+                ])?;
+            }
+
             for entry in dir_walker {
                 spinner.tick();
                 let entry = entry.unwrap();
                 let path = entry.path();
                 if path.is_file() {
                     spinner.set_message(&format!("{}", path.display()));
+                    let str_path = path.to_str().unwrap();
 
+                    let matches = regexset.matches(str_path);
+                    //Catch hidden files which are NOT .well-known and don't upload
+                    if matches.matched(0) && !matches.matched(1) {
+                        continue;
+                    }
+                    file_list.push(path.to_str().unwrap().to_string());
                     validate_file_size(&path)?;
 
                     let value = std::fs::read(path)?;
@@ -108,7 +128,7 @@ pub fn directory_keys_values(
                     asset_manifest.insert(url_safe_path, key);
                 }
             }
-            Ok((upload_vec, asset_manifest))
+            Ok((upload_vec, asset_manifest, file_list))
         }
         Ok(_file_type) => {
             // any other file types (files, symlinks)
@@ -165,6 +185,7 @@ fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::
     let ignore = build_ignore(target, directory)?;
     Ok(WalkBuilder::new(directory)
         .git_ignore(false)
+        .hidden(false)
         .overrides(ignore)
         .build())
 }
@@ -333,7 +354,7 @@ mod tests {
     }
 
     #[test]
-    fn it_can_ignore_hidden() {
+    fn it_can_ignore_hidden_except_wellknown() {
         let mut site = Site::default();
         site.bucket = PathBuf::from("fake");
         let target = make_target(site);
@@ -345,16 +366,21 @@ mod tests {
         }
 
         fs::create_dir(test_dir).unwrap();
-        let test_pathname = format!("{}/.ignore_me.txt", test_dir);
-        let test_path = PathBuf::from(&test_pathname);
-        fs::File::create(&test_path).unwrap();
-
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
-            .unwrap()
-            .map(|entry| entry.unwrap().path().to_owned())
-            .collect();
-
-        assert!(!files.contains(&test_path));
+        fs::create_dir(format!("{}/.well-known", test_dir)).unwrap();
+        fs::File::create(&PathBuf::from(&format!("{}/.ignore_me.txt", test_dir))).unwrap();
+        fs::File::create(&PathBuf::from(&format!(
+            "{}/.well-known/dontignoreme.txt",
+            test_dir
+        )))
+        .unwrap();
+        let (_, _, file_list) = directory_keys_values(&target, Path::new(test_dir)).unwrap();
+        if cfg!(windows) {
+            assert!(!file_list.contains(&format!("{}\\.ignore_me.txt", test_dir)));
+            assert!(file_list.contains(&format!("{}\\.well-known\\dontignoreme.txt", test_dir)));
+        } else {
+            assert!(!file_list.contains(&format!("{}/.ignore_me.txt", test_dir)));
+            assert!(file_list.contains(&format!("{}/.well-known/dontignoreme.txt", test_dir)));
+        }
 
         fs::remove_dir_all(test_dir).unwrap();
     }

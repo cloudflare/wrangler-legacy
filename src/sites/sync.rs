@@ -38,7 +38,7 @@ pub fn sync(
         }
     }
 
-    let (pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) =
+    let (pairs, asset_manifest, _): (Vec<KeyValuePair>, AssetManifest, _) =
         directory_keys_values(target, path)?;
 
     let to_upload = filter_files(pairs.clone(), &remote_keys);

@@ -1,14 +1,14 @@
 use std::sync::{mpsc, Arc, Mutex};
 
 use crate::commands::dev::edge::setup;
-
+use crate::deploy::DeployTarget;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, Target};
+use crate::settings::toml::Target;
 use crate::watch::watch_and_build;
 
 pub fn watch_for_changes(
     target: Target,
-    deploy_config: &DeployConfig,
+    deploy_target: &DeployTarget,
     user: &GlobalUser,
     preview_token: Arc<Mutex<String>>,
     session_token: String,
@@ -20,7 +20,7 @@ pub fn watch_for_changes(
     while receiver.recv().is_ok() {
         let user = user.clone();
         let target = target.clone();
-        let deploy_config = deploy_config.clone();
+        let deploy_target = deploy_target.clone();
         let session_token = session_token.clone();
         let mut target = target;
 
@@ -32,7 +32,7 @@ pub fn watch_for_changes(
         //
         // this allows the server to route subsequent requests
         // to the proper script
-        *preview_token = setup::upload(&mut target, &deploy_config, &user, session_token, verbose)?;
+        *preview_token = setup::upload(&mut target, &deploy_target, &user, session_token, verbose)?;
     }
 
     Ok(())
