@@ -1,4 +1,5 @@
 use std::{
+    collections::hash_map::Entry,
     collections::HashMap,
     fmt::Debug,
     iter,
@@ -184,15 +185,17 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
                 Some(extension) => {
                     if let Some(ext_str) = extension.to_str() {
                         match ext_str {
-                            "js" | "mjs" => {
-                                if !javascript.contains_key(&import_path) {
+                            "js" | "mjs" => match javascript.entry(import_path.clone()) {
+                                Entry::Occupied(_) => continue,
+                                Entry::Vacant(entry) => {
                                     let js_import = JavaScript::parse(&import_path)?;
                                     imports.extend(js_import.find_imports());
-                                    javascript.insert(import_path, js_import);
+                                    entry.insert(js_import);
                                 }
-                            }
-                            "wasm" => {
-                                if !webassembly.contains_key(&import_path) {
+                            },
+                            "wasm" => match webassembly.entry(import_path.clone()) {
+                                Entry::Occupied(_) => continue,
+                                Entry::Vacant(entry) => {
                                     let wast =
                                         output_dir.as_ref().join(import.replace("wasm", "wast"));
                                     let wat =
@@ -209,9 +212,9 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
                                     let wasm =
                                         WebAssembly::parse(&(import_path.clone(), text_file))?;
 
-                                    webassembly.insert(import_path, wasm);
+                                    entry.insert(wasm);
                                 }
-                            }
+                            },
                             _ => {
                                 // Since all we execute server-side is javascript and webassembly,
                                 // we can assume these files aren't actually executed.
