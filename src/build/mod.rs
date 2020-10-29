@@ -9,7 +9,7 @@ use std::process::Command;
 
 mod check;
 
-use check::{BundlerOutput, Parseable, Validate};
+use check::{BundlerOutput, Validate};
 
 // Internal build logic, called by both `build` and `publish`
 // TODO: return a struct containing optional build info and construct output at command layer
@@ -55,8 +55,7 @@ pub fn build_target(target: &Target) -> Result<String, failure::Error> {
             Some(config) => {
                 if config.build_command().spawn()?.wait()?.success() {
                     let input = &config.output_dir()?;
-                    let parsed = BundlerOutput::parse(input)?;
-                    parsed.validate()?;
+                    BundlerOutput::validate(input)?;
                     Ok("Bundler output looks good!".to_string())
                 } else {
                     Err(failure::format_err!(

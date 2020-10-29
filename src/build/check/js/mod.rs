@@ -2,93 +2,48 @@ use std::path::PathBuf;
 
 use sourcemap::SourceMap;
 use swc_common::{sync::Lrc, SourceMap as SwcSourceMap};
-use swc_ecma_ast::{Expr, Module};
-use swc_ecma_parser::{Parser, StringInput};
+use swc_ecma_ast::{ImportDecl, Module};
+use swc_ecma_visit::{Node, Visit, VisitWith};
 
 use super::{Lintable, Parseable, Validate};
 
-mod linter;
+pub mod lint;
+pub mod parse;
 
-#[cfg(test)]
-mod tests;
-
-use super::config::{
-    AVAILABLE_WITHIN_REQUEST_CONTEXT, UNAVAILABLE_BUILTINS, V8_SUPPORTED_JS_FEATURES,
-};
+use super::config::V8_SUPPORTED_JS_FEATURES;
 
 pub struct JavaScript {
     module: Module,
-    source_map: Option<SourceMap>,
+    swc_source_map: Lrc<SwcSourceMap>,
+    js_source_map: Option<SourceMap>,
 }
 
-// https://github.com/rust-lang/rust/issues/63063
-// type ExpressionList = impl Iterator<Item = Expr>;
-type ExpressionList = Vec<Expr>;
-pub type JavaScriptLinterArgs = (ExpressionList, ExpressionList);
+impl Validate<PathBuf> for JavaScript {}
 
-impl Lintable<JavaScriptLinterArgs> for JavaScript {
-    fn lint(
-        &self,
-        (unavailable, available_in_request_context): JavaScriptLinterArgs,
-    ) -> Result<(), failure::Error> {
-        self.module.lint((
-            self.source_map.as_ref(),
-            unavailable,
-            available_in_request_context,
-        ))
+impl std::fmt::Debug for JavaScript {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("JavaScript")
+            .field("module", &self.module)
+            .field("js_source_map", &self.js_source_map)
+            // .finish_non_exhaustive()
+            .finish()
     }
 }
 
-impl Validate<(ExpressionList, ExpressionList), (PathBuf, Option<PathBuf>)> for JavaScript {
-    fn validate(&self) -> Result<(), failure::Error> {
-        self.lint((
-            UNAVAILABLE_BUILTINS.into(),
-            AVAILABLE_WITHIN_REQUEST_CONTEXT.into(),
-        ))
+impl JavaScript {
+    pub fn find_imports(&self) -> Vec<String> {
+        let mut import_finder = ImportFinder { imports: vec![] };
+        self.module.visit_children_with(&mut import_finder);
+        import_finder.imports
     }
 }
 
-impl Parseable<(PathBuf, Option<PathBuf>)> for JavaScript {
-    fn parse(
-        (js_file, _source_map_file): &(PathBuf, Option<PathBuf>),
-    ) -> Result<Self, failure::Error> {
-        // while i remain unsure what "cm" and "fm" are short for, i sure do see
-        // them a lot. "Content Manager" and "File Manager" maybe?
-        // TODO lol ask in the slack what "cm" and "fm" are short for
-        //
-        // Lrc is just aliased to Arc or Rc depending on concurrency.
-        // https://github.com/swc-project/swc/blob/master/common/src/sync.rs#L14
-        //
-        // also, it's worth noting that the SourceMap struct has nothing to do
-        // with javascript source maps. it refers to a map of like, the in-memory
-        // representation of the javascript as held on to by SWC
-        let cm: Lrc<SwcSourceMap> = Default::default();
+struct ImportFinder {
+    pub imports: Vec<String>,
+}
 
-        let fm = cm.load_file(js_file)?;
-
-        // should we actually do something about the comments?
-        // TODO ask in the slack
-        let mut parser = Parser::new(V8_SUPPORTED_JS_FEATURES, StringInput::from(&*fm), None);
-
-        // TODO
-        // ok so these errors are recoverable, like we can successfully parse it.
-        // if we wanted to be stricter, we could just Err here
-        // we could also warn the user about these, but i think
-        // we should first do some testing and figure out what level
-        // of verbosity is appropriate.
-        // my guess is that the V8 parser is better at recovering than swc
-        // but i also know nothing about that. i just know google is a multi-billion
-        // dollar company and swc is one guy
-        let _ = parser.take_errors();
-
-        match parser.parse_module() {
-            Ok(module) => Ok(JavaScript {
-                module,
-                // TODO: parse source map
-                source_map: None,
-            }),
-            // if only there was a better error handling library...anyhow...
-            Err(e) => Err(failure::format_err!("{:?}", e)),
-        }
+impl Visit for ImportFinder {
+    fn visit_import_decl(&mut self, n: &ImportDecl, _parent: &dyn Node) {
+        self.imports.push(n.src.value.to_string());
     }
 }

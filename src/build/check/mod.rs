@@ -1,38 +1,31 @@
 use std::{
-    ffi::OsStr,
+    collections::HashMap,
     fmt::Debug,
-    fs,
+    iter,
     path::{Path, PathBuf},
 };
 
-use bytesize::ByteSize;
-use wasmparser::WasmFeatures;
-
 mod config;
 mod js;
+mod util;
 mod wasm;
 
 use self::config::MAX_FILE_SIZE;
-use js::{JavaScript, JavaScriptLinterArgs};
+use js::JavaScript;
+use util::*;
 use wasm::WebAssembly;
 
-const JS_FILE_NAME: &str = "worker.js";
-const JS_SOURCEMAP_FILE_NAME: &str = "worker.js.map";
-const WASM_FILE_NAME: &str = "wasm.wasm"; // ? seems silly lol "wasm.wasm" but ok
-const WASM_TEXT_FILE_NAME: &str = "wasm.wat"; // in the spec
-const WASM_TEXT_EXTENDED_FILE_NAME: &str = "wasm.wast"; // not in the spec, but commonly used and easier to read.
-
-// this would simplify a lot of this code
-// https://github.com/rust-lang/rust/issues/63063
-// type PathLike = impl AsRef<Path> + Debug;
+const WORKER_FILE_NAME: &str = "worker.mjs";
 
 /// If a struct is Parseable, that means that it is able to parse some
 /// some given input into Self, with the potential for failure.
 /// ```
-/// # trait Parseable<ParserInput>: Sized {
-/// #    fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
-/// # }
+/// trait Parseable<ParserInput>: Sized {
+///    fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
+/// }
+///
 /// struct SmallNumber(u8);
+///
 /// impl Parseable<u8> for SmallNumber {
 ///     fn parse(input: &u8) -> Result<Self, failure::Error> {
 ///         Ok(Self(*input))
@@ -47,17 +40,18 @@ pub trait Parseable<ParserInput>: Sized {
     fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
 }
 
-/// If a struct is Lintable, that means that when given some parameters,
-/// it's able to check itself according to those criteria and fail if
-/// any are not met.
+/// If a struct is Lintable, that means it's able to check itself according to some
+/// criteria. It can be linted -- it's lintable!
 /// ```
-/// # trait Lintable<ArgsType> {
-/// #     fn lint(&self, args: ArgsType) -> Result<(), failure::Error>;
-/// # }
+/// trait Lintable {
+///     fn lint(&self) -> Result<(), failure::Error>;
+/// }
+///
 /// struct SmallNumber(u8);
-/// impl Lintable<u8> for SmallNumber {
-///     fn lint(&self, max_size: u8) -> Result<(), failure::Error> {
-///         if self.0 > max_size {
+///
+/// impl Lintable for SmallNumber {
+///     fn lint(&self) -> Result<(), failure::Error> {
+///         if self.0 > 4 {
 ///             Err(failure::err_msg("Number is too big!"))
 ///         } else {
 ///             Ok(())
@@ -65,33 +59,37 @@ pub trait Parseable<ParserInput>: Sized {
 ///     }
 /// }
 ///
-/// let n = SmallNumber(3);
+/// let three = SmallNumber(3);
+/// let seven = SmallNumber(7);
 ///
-/// assert!(n.lint(6).is_ok());
-/// assert!(n.lint(1).is_err());
+/// assert!(three.lint().is_ok());
+/// assert!(seven.lint().is_err());
 /// ```
-pub trait Lintable<ArgsType> {
-    fn lint(&self, args: ArgsType) -> Result<(), failure::Error>;
+pub trait Lintable {
+    fn lint(&self) -> Result<(), failure::Error>;
 }
 
-/// If a struct can Validate, then it must also be Parseable and Lintable.
-/// Typically, this acts as a wrapper for self.lint(), and allows any
-/// top level args to lint() to be hidden from whoever is calling .validate(),
-/// which accepts no arguments.
+/// If a struct is both Parseable and Lintable, then a blanket implementation
+/// is provided for that struct to Validate, which simply combines both steps.
 /// ```
 /// # trait Parseable<ParserInput>: Sized {
 /// #    fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
 /// # }
-/// # trait Lintable<ArgsType> {
-/// #     fn lint(&self, args: ArgsType) -> Result<(), failure::Error>;
+/// #
+/// # trait Lintable {
+/// #     fn lint(&self) -> Result<(), failure::Error>;
 /// # }
-/// # pub trait Validate<LinterArgsType, ParserInput>:
-/// #     Lintable<LinterArgsType> + Parseable<ParserInput>
-/// # {
-/// #     fn validate(&self) -> Result<(), failure::Error>;
-/// # }
+/// #
+/// pub trait Validate<ParserInput>:
+///     Lintable + Parseable<ParserInput>
+/// {
+///         fn validate(input: ParserInput) -> Result<(), failure::Error> {
+///             let t = Self::parse(&input)?;
+///             t.lint()
+///     }
+/// }
+///
 /// struct SmallNumber(u8);
-/// const TOO_BIG: u8 = 5;
 ///
 /// impl Parseable<u8> for SmallNumber {
 ///     fn parse(input: &u8) -> Result<Self, failure::Error> {
@@ -99,9 +97,9 @@ pub trait Lintable<ArgsType> {
 ///     }
 /// }
 ///
-/// impl Lintable<u8> for SmallNumber {
-///     fn lint(&self, max_size: u8) -> Result<(), failure::Error> {
-///         if self.0 > max_size {
+/// impl Lintable for SmallNumber {
+///     fn lint(&self) -> Result<(), failure::Error> {
+///         if self.0 > 4 {
 ///             Err(failure::err_msg("Number is too big!"))
 ///         } else {
 ///             Ok(())
@@ -109,340 +107,135 @@ pub trait Lintable<ArgsType> {
 ///     }
 /// }
 ///
-/// impl Validate<u8, u8> for SmallNumber {
-///     fn validate(&self) -> Result<(), failure::Error> {
-///         self.lint(TOO_BIG)
-///     }
-/// }
+/// impl Validate<u8> for SmallNumber {};
 ///
-/// let small = SmallNumber::parse(&4).unwrap();
-/// let big = SmallNumber::parse(&6).unwrap();
-///
-/// assert!(small.validate().is_ok());
-/// assert!(big.validate().is_err());
+/// assert!(SmallNumber::validate(3).is_ok());
+/// assert!(SmallNumber::validate(6).is_err());
 /// ```
-pub trait Validate<LinterArgsType, ParserInput>:
-    Lintable<LinterArgsType> + Parseable<ParserInput>
-{
-    fn validate(&self) -> Result<(), failure::Error>;
+pub trait Validate<ParserInput>: Lintable + Parseable<ParserInput> {
+    fn validate(input: ParserInput) -> Result<(), failure::Error> {
+        let t = Self::parse(&input)?;
+        t.lint()
+    }
 }
 
-/// Represents the output of any tool capable of (com|trans)piling source code
-/// to javascript and webassembly. See [JavaScript] and [WebAssembly] for more details
-/// on their respective implementations.
+/// Represents the output of any bundler tool.
+///
+/// I'm not 100% on the format of this struct because I don't
+/// have access to the durable objects beta
+/// but it seems as though the format is basically one .mjs file
+/// that serves as the entrypoint to the worker,
+/// and any number other arbitrary files that can be imported into
+/// the worker. The example on GitHub, for example, imports HTML,
+/// so I think that's fair to assume.
+///
+/// The ones we execute server-side are JS and WebAssembly, so those
+/// get their own `HashMap`s, and any other files can just be assumed
+/// to be static e.g. HTML.
+#[derive(Debug)]
 pub struct BundlerOutput {
-    javascript: JavaScript,
-    webassembly: Option<WebAssembly>,
+    /// A PathBuf pointing to worker.mjs, the entrypoint of the worker
+    entry_file: PathBuf,
+    /// An in-memory representation of the worker entrypoint
+    entry: JavaScript,
+    /// Other JS files that are executed in the Worker
+    javascript: HashMap<PathBuf, JavaScript>,
+    /// WebAssembly that gets executed in the Worker
+    webassembly: HashMap<PathBuf, WebAssembly>,
+    /// Any other files that are imported in the worker (e.g. HTML)
+    other_files: Vec<PathBuf>,
 }
 
-impl<P> Parseable<P> for BundlerOutput
-where
-    P: AsRef<Path> + Debug,
-{
-    fn parse(input: &P) -> Result<Self, failure::Error> {
-        // there needs to be javascript, so err right away if we don't find any
-        let js_file = match find_and_normalize(input, JS_FILE_NAME)? {
-            Some(path) => path,
-            None => {
-                return Err(failure::format_err!(
-                    "There doesn't appear to be any javascript in {:?}",
-                    input
-                ))
+/// Starting by parsing the entrypoint to the worker, traverse the imports
+/// and add those to the bundle as necessary.
+impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
+    fn parse(output_dir: &P) -> Result<Self, failure::Error> {
+        let entry_file = output_dir.as_ref().join(WORKER_FILE_NAME);
+        let entry = JavaScript::parse(&entry_file)?;
+
+        let mut javascript = HashMap::new();
+        let mut webassembly = HashMap::new();
+        let mut other_files = vec![];
+
+        let mut imports = entry.find_imports();
+
+        while let Some(import) = imports.pop() {
+            let import_path = output_dir.as_ref().join(&import);
+
+            match import_path.extension() {
+                None => {
+                    // The import is javascript, just without the extension
+                    // specified. Add `.js` to the end of it and push it
+                    // back on the stack
+                    imports.push(format!("{}.js", import));
+                }
+                Some(extension) => {
+                    if let Some(ext_str) = extension.to_str() {
+                        match ext_str {
+                            "js" => {
+                                if !javascript.contains_key(&import_path) {
+                                    let js_import = JavaScript::parse(&import_path)?;
+                                    imports.extend(js_import.find_imports());
+                                    javascript.insert(import_path, js_import);
+                                }
+                            }
+                            "wasm" => {
+                                if !webassembly.contains_key(&import_path) {
+                                    let wast =
+                                        output_dir.as_ref().join(import.replace("wasm", "wast"));
+                                    let wat =
+                                        output_dir.as_ref().join(import.replace("wasm", "wat"));
+
+                                    let text_file = if wast.is_file() {
+                                        Some(wast)
+                                    } else if wat.is_file() {
+                                        Some(wat)
+                                    } else {
+                                        None
+                                    };
+
+                                    let wasm =
+                                        WebAssembly::parse(&(import_path.clone(), text_file))?;
+
+                                    webassembly.insert(import_path, wasm);
+                                }
+                            }
+                            _ => {
+                                if !other_files.contains(&import_path) {
+                                    other_files.push(import_path);
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        };
-        // we want to fail as soon as possible if anything is too big
-        check_file_size(&js_file, MAX_FILE_SIZE)?;
-
-        // source map is optional
-        let source_map_file = find_and_normalize(input, JS_SOURCEMAP_FILE_NAME)?;
-
-        if let Some(file) = &source_map_file {
-            check_file_size(file, MAX_FILE_SIZE)?
-        };
-
-        let javascript = JavaScript::parse(&(js_file, source_map_file))?;
-
-        let webassembly = if let Some(wasm_file) = find_and_normalize(input, WASM_FILE_NAME)? {
-            check_file_size(&wasm_file, MAX_FILE_SIZE)?;
-            // we only need to parse one of these, even if they're both present. i guess we should prefer WAST over WAT.
-            let text_file =
-                if let Some(wast) = find_and_normalize(input, WASM_TEXT_EXTENDED_FILE_NAME)? {
-                    Some(wast)
-                } else if let Some(wat) = find_and_normalize(input, WASM_TEXT_FILE_NAME)? {
-                    Some(wat)
-                } else {
-                    None
-                };
-
-            Some(WebAssembly::parse(&(wasm_file, text_file))?)
-        } else {
-            None
-        };
+        }
 
         Ok(Self {
+            entry_file,
+            entry,
             javascript,
             webassembly,
+            other_files,
         })
     }
 }
 
-type BundlerOutputLinterArgs = (JavaScriptLinterArgs, WasmFeatures);
-impl Lintable<BundlerOutputLinterArgs> for BundlerOutput {
-    fn lint(&self, (js_args, wasm_args): BundlerOutputLinterArgs) -> Result<(), failure::Error> {
-        self.javascript.lint(js_args)?;
-        if let Some(webassembly) = &self.webassembly {
-            webassembly.lint(wasm_args)
-        } else {
-            Ok(())
-        }
+impl Lintable for BundlerOutput {
+    fn lint(&self) -> Result<(), failure::Error> {
+        // Check file sizes
+        iter::once(&self.entry_file)
+            .chain(self.javascript.keys())
+            .chain(self.webassembly.keys())
+            .chain(&self.other_files)
+            .try_for_each(|file| check_file_size(file, MAX_FILE_SIZE))?;
+
+        // Lint the various files
+        iter::once(&self.entry as &dyn Lintable)
+            .chain(self.javascript.values().map(|js| js as &dyn Lintable))
+            .chain(self.webassembly.values().map(|wasm| wasm as &dyn Lintable))
+            .try_for_each(|file| file.lint())
     }
 }
 
-// i hate to end the AsRef<Path> generic-ness here, but i really
-// and truly cannot for the life of me how to specify
-// the type parameters when calling output.validate()
-impl Validate<BundlerOutputLinterArgs, PathBuf> for BundlerOutput {
-    fn validate(&self) -> Result<(), failure::Error> {
-        self.javascript.validate()?;
-        if let Some(wasm) = &self.webassembly {
-            wasm.validate()?
-        };
-
-        Ok(())
-    }
-}
-
-// helper functions
-
-fn find_and_normalize<P, S>(dir: P, file_name: S) -> Result<Option<PathBuf>, failure::Error>
-where
-    P: AsRef<Path> + Debug,
-    S: Into<String> + Debug,
-{
-    let name: String = file_name.into();
-
-    let extension = if let Some(slice) = name.rsplit('.').take(1).next() {
-        OsStr::new(slice)
-    } else {
-        return Err(failure::format_err!("Failed to find a period in {}", name));
-    };
-
-    let canonical_name = OsStr::new(&name);
-
-    // path to the file of the given extension as output by the bundler
-    let bundler_output_path = file_with_extension(dir, extension)?;
-
-    // normalized filename to what wrangler expects
-    Ok(match bundler_output_path {
-        None => None,
-        Some(file_path) => Some(normalize_filename(file_path, canonical_name)?),
-    })
-}
-
-/// Returns either Ok(Some(PathBuf)) if one file with the given extension was found
-/// in the directory, or Ok(None) if there weren't any. If multiple files are found
-/// with the given extension, returns failure::Error
-fn file_with_extension<P: AsRef<Path> + Debug>(
-    dir: P,
-    extension: &OsStr,
-) -> Result<Option<PathBuf>, failure::Error> {
-    // path to the file of the given extension as output by the bundler
-    let mut bundler_output_path: Option<PathBuf> = None;
-
-    // let's see if we can find a file matching the extension we want
-    for entry in fs::read_dir(&dir)? {
-        let entry = entry?;
-
-        // ideally, this syntax would look like
-        // `if let Some(ext) = entry.path().extension() && ext == extension { ... }`
-        // but i'm not sure if that's possible. or like, how even...to do that...
-        if let Some(ext) = entry.path().extension() {
-            if ext == extension {
-                match bundler_output_path {
-                    Some(_) => {
-                        return Err(failure::format_err!(
-                            "Found multiple files with extension {:?} in {:?}!",
-                            extension,
-                            &dir
-                        ));
-                    }
-                    None => bundler_output_path = Some(entry.path()),
-                };
-            }
-        }
-    }
-
-    Ok(bundler_output_path)
-}
-
-fn normalize_filename(
-    file_path: PathBuf,
-    canonical_name: &OsStr,
-) -> Result<PathBuf, failure::Error> {
-    match file_path.file_name() {
-        // why have u done this
-        None => Err(failure::format_err!(
-            "{:?} is not a valid path because it ends in \"..\"",
-            file_path
-        )),
-
-        // oh hey nice!
-        Some(name) if name == canonical_name => Ok(file_path),
-
-        // cmon now let's...let's be nice to wrangler and save us all some writes to disk
-        Some(name) => {
-            // TODO this warning message should be better and not like...a println
-            println!("Renaming {:?} to {:?}", name, canonical_name);
-            // i hate unwraps...maybe this could or_else to a tempdir()?
-            let canon_file = file_path.parent().unwrap().join(canonical_name);
-            fs::rename(&file_path, &canon_file)?;
-            Ok(canon_file)
-        }
-    }
-}
-
-fn check_file_size(file: &PathBuf, max_size: ByteSize) -> Result<(), failure::Error> {
-    let file_size = ByteSize::b(file.metadata()?.len());
-    if file_size > max_size {
-        Err(failure::format_err!(
-            "{:?} is {}, which exceeds the {} limit!",
-            file.file_name().unwrap_or_else(|| OsStr::new("file")),
-            file_size,
-            max_size
-        ))
-    } else {
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[cfg(test)]
-    mod file_with_extension {
-        use super::super::file_with_extension;
-        use std::ffi::OsStr;
-
-        #[test]
-        fn it_finds_a_file_with_an_extension() -> Result<(), failure::Error> {
-            let dir = &tempfile::tempdir()?;
-            let file = tempfile::Builder::new()
-                .prefix("test_file")
-                .suffix(".example")
-                .tempfile_in(dir)?;
-
-            assert!(file_with_extension(dir, file.path().extension().unwrap()).is_ok());
-
-            Ok(())
-        }
-
-        #[test]
-        fn it_errors_with_multiple_files_of_same_extension_are_present(
-        ) -> Result<(), failure::Error> {
-            let dir = &tempfile::tempdir()?;
-            let _file_1 = tempfile::Builder::new()
-                .prefix("test_file_one")
-                .suffix(".example")
-                .tempfile_in(dir)?;
-            let _file_2 = tempfile::Builder::new()
-                .prefix("test_file_two")
-                .suffix(".example")
-                .tempfile_in(dir)?;
-
-            assert!(file_with_extension(dir, OsStr::new("example")).is_err());
-
-            Ok(())
-        }
-
-        #[test]
-        fn it_returns_none_when_no_files_with_the_extension_are_present(
-        ) -> Result<(), failure::Error> {
-            let dir = tempfile::tempdir()?;
-
-            assert!(file_with_extension(dir, OsStr::new("example"))?.is_none());
-
-            Ok(())
-        }
-
-        #[test]
-        fn it_errors_when_path_is_not_dir() -> Result<(), failure::Error> {
-            let path = &tempfile::NamedTempFile::new()?.into_temp_path();
-
-            assert!(file_with_extension(path, OsStr::new("test")).is_err());
-
-            Ok(())
-        }
-    }
-
-    #[cfg(test)]
-    mod normalize_filename {
-        use super::super::normalize_filename;
-        use std::ffi::OsStr;
-
-        #[test]
-        fn it_renames_files_when_necessary() -> Result<(), failure::Error> {
-            let file = tempfile::NamedTempFile::new()?;
-            let file_path = file.path().to_path_buf();
-
-            let canonical_name = OsStr::new("nice_file_name.example");
-
-            let final_file = normalize_filename(file_path, canonical_name)?;
-
-            assert_eq!(final_file.file_name().unwrap(), canonical_name);
-
-            Ok(())
-        }
-
-        #[test]
-        fn it_does_nothing_to_correctly_named_files() -> Result<(), failure::Error> {
-            let file = tempfile::NamedTempFile::new()?;
-            let file_path = file.path().to_path_buf();
-
-            let canonical_name = file_path.file_name().unwrap();
-
-            assert_eq!(file_path.file_name().unwrap(), canonical_name);
-
-            let final_file = normalize_filename(file_path.clone(), canonical_name)?;
-
-            assert_eq!(final_file.file_name().unwrap(), canonical_name);
-
-            Ok(())
-        }
-    }
-
-    #[cfg(test)]
-    mod check_file_size {
-        use super::super::check_file_size;
-        use bytesize::{ByteSize, MB};
-        use rand::{distributions::Alphanumeric, thread_rng, Rng};
-        use std::{convert::TryInto, io::Write};
-
-        #[test]
-        fn its_ok_with_small_files() -> Result<(), failure::Error> {
-            let file = tempfile::NamedTempFile::new()?;
-            let path_buf = file.path().to_path_buf();
-
-            assert!(check_file_size(&path_buf, ByteSize::mb(1)).is_ok());
-
-            Ok(())
-        }
-
-        #[test]
-        fn it_errors_when_file_is_too_big() -> Result<(), failure::Error> {
-            let mut file = tempfile::NamedTempFile::new()?;
-
-            let data = thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take((2 * MB).try_into().unwrap())
-                .collect::<String>();
-
-            writeln!(file, "{}", data)?;
-
-            let path_buf = file.path().to_path_buf();
-
-            assert!(check_file_size(&path_buf, ByteSize::mb(1)).is_err());
-
-            Ok(())
-        }
-    }
-}
+impl<P: AsRef<Path> + Debug> Validate<P> for BundlerOutput {}

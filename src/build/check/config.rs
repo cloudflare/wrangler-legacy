@@ -1,6 +1,4 @@
 use bytesize::ByteSize;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::{Expr, ThisExpr};
 use swc_ecma_parser::{EsConfig, Syntax};
 use wasmparser::WasmFeatures;
 
@@ -86,24 +84,6 @@ pub const V8_SUPPORTED_WASM_FEATURES: WasmFeatures = WasmFeatures {
     memory64: false,
 };
 
-/// For security reasons, [some javascript standards are unavailable](https://developers.cloudflare.com/workers/runtime-apis/web-standards#javascript-standards) in the Workers runtime.
-#[doc(inline)]
-pub const UNAVAILABLE_BUILTINS: [Expr; 1] = [Expr::This(ThisExpr { span: DUMMY_SP })];
-/// Asynchronous operations are only available in the [request context](https://developers.cloudflare.com/workers/runtime-apis/request#the-request-context)
-#[doc(inline)]
-pub const AVAILABLE_WITHIN_REQUEST_CONTEXT: [Expr; 1] = [Expr::This(ThisExpr { span: DUMMY_SP })];
-
-// TODO: these need to be...expressions? ask in the slack abt the best way to do this
-// pub const UNAVAILABLE_BUILTINS: [&str; 2] = ["eval", "new Function"];
-// pub const AVAILABLE_WITHIN_REQUEST_CONTEXT: [&str; 5] = [
-//     "setInterval",
-//     "clearInterval",
-//     "setTimeout",
-//     "clearTimeout",
-//     "fetch",
-// ];
-
-// TODO: is this...like does this mean JS + Sourcemap + WASM + WAST < 1mb, or each individual file?
-/// The [maximum bundle size](https://developers.cloudflare.com/workers/platform/limits#script-size) we allow.
+/// The [maximum file size](https://developers.cloudflare.com/workers/platform/limits#script-size) we allow.
 #[doc(inline)]
 pub const MAX_FILE_SIZE: ByteSize = ByteSize(1_000_000);
