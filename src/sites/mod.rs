@@ -25,7 +25,7 @@ use crate::settings::toml::{KvNamespace, Target};
 use crate::terminal::message::{Message, StdErr};
 pub const KEY_MAX_SIZE: usize = 512;
 // Oddly enough, metadata.len() returns a u64, not usize.
-pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
+pub const VALUE_MAX_SIZE: u64 = 25 * 1024 * 1024;
 
 // Updates given Target with kv_namespace binding for a static site assets KV namespace.
 pub fn add_namespace(
