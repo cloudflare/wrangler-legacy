@@ -277,16 +277,24 @@ impl Manifest {
             None => self.target_type.clone(),
         };
 
+        /*
+        From https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys
+        Top level: required to be configured at the top level of your wrangler.toml only; multiple environments on the same project must share this property
+
+        Inherited: Can be configured at the top level and/or environment. If the property is defined only at the top level, the environment will use the property value from the top level. If the property is defined in the environment, the environment value will override the top level value.
+
+        Not inherited: Must be defined for every environment individually.
+        */
         let mut target = Target {
-            target_type,                                 // MUST inherit
-            account_id: self.account_id.clone(),         // MAY inherit
-            webpack_config: self.webpack_config.clone(), // MAY inherit
+            target_type,                                 // Top level
+            account_id: self.account_id.clone(),         // Inherited
+            webpack_config: self.webpack_config.clone(), // Inherited
             // importantly, the top level name will be modified
             // to include the name of the environment
-            name: self.name.clone(), // MAY inherit
-            kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // MUST NOT inherit
-            site: self.site.clone(), // MUST NOT inherit
-            vars: self.vars.clone(), // MAY inherit,
+            name: self.name.clone(), // Inherited
+            kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
+            site: self.site.clone(), // Inherited
+            vars: self.vars.clone(), // Not inherited
         };
 
         let environment = self.get_environment(environment_name)?;
@@ -302,6 +310,10 @@ impl Manifest {
 
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
             target.kv_namespaces = get_namespaces(environment.kv_namespaces.clone(), preview)?;
+
+            if let Some(site) = &environment.site {
+                target.site = Some(site.clone());
+            }
 
             // don't inherit vars
             target.vars = environment.vars.clone();
