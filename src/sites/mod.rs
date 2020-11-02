@@ -78,6 +78,18 @@ pub fn directory_keys_values(
             let spinner_style =
                 ProgressStyle::default_spinner().template("{spinner}   Preparing {msg}...");
             let spinner = ProgressBar::new_spinner().with_style(spinner_style);
+            let regexset: regex::RegexSet;
+            if cfg!(windows) {
+                regexset = regex::RegexSet::new(&[
+                    r"^.*(\\.(.)*)+(\\.*)*$",    // Hidden files
+                    r"^.*\\.well-known(\\.*)*$", // Well-known
+                ])?;
+            } else {
+                regexset = regex::RegexSet::new(&[
+                    r"^.*(/\.(.)*)+(/.*)*$",   // Hidden files
+                    r"^.*\.well-known(/.*)*$", // Well-known
+                ])?;
+            }
 
             for entry in dir_walker {
                 spinner.tick();
@@ -85,7 +97,13 @@ pub fn directory_keys_values(
                 let path = entry.path();
                 if path.is_file() {
                     spinner.set_message(&format!("{}", path.display()));
+                    let str_path = path.to_str().unwrap();
 
+                    let matches = regexset.matches(str_path);
+                    //Catch hidden files which are NOT .well-known and don't upload
+                    if matches.matched(0) && !matches.matched(1) {
+                        continue;
+                    }
                     file_list.push(path.to_str().unwrap().to_string());
                     validate_file_size(&path)?;
 
@@ -153,7 +171,7 @@ fn validate_key_size(key: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-const REQUIRED_IGNORE_FILES: &[&str] = &[NODE_MODULES];
+const REQUIRED_IGNORE_FILES: &[&str] = &["node_modules"];
 const NODE_MODULES: &str = "node_modules";
 
 fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
@@ -166,48 +184,32 @@ fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::
 
     let ignore = build_ignore(target, directory)?;
     Ok(WalkBuilder::new(directory)
-        .standard_filters(false)
+        .git_ignore(false)
+        .hidden(false)
         .overrides(ignore)
         .build())
 }
 
 fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
     let mut required_override = OverrideBuilder::new(directory);
-    let required_ignore = |builder: &mut OverrideBuilder| -> Result<(), failure::Error> {
-        for ignored in REQUIRED_IGNORE_FILES {
-            builder.add(&format!("!{}", ignored))?;
-            log::info!("Ignoring {}", ignored);
-        }
+    // First include files that must be ignored.
+    for ignored in REQUIRED_IGNORE_FILES {
+        required_override.add(&format!("!{}", ignored))?;
+        log::info!("Ignoring {}", ignored);
+    }
 
-        Ok(())
-    };
     if let Some(site) = &target.site {
         // If `include` present, use it and don't touch the `exclude` field
         if let Some(included) = &site.include {
-            required_ignore(&mut required_override)?;
             for i in included {
                 required_override.add(&i)?;
                 log::info!("Including {}", i);
             }
-        } else {
-            // allow all files. This is required since without this the `.well-known`
-            // override would act as a allowlist
-            required_override.add("*")?;
-            // add this AFTER since the `*` override would have precedence over this,
-            // making it useless
-            required_ignore(&mut required_override)?;
-            // ignore hidden files and folders
-            required_override.add("!**/.*")?;
-            // but allow .well-known, this has precedence over hidden files since it's later
-            required_override.add(".well-known")?;
-
-            // add any other excludes specified
-            if let Some(excluded) = &site.exclude {
-                required_ignore(&mut required_override)?;
-                for e in excluded {
-                    required_override.add(&format!("!{}", e))?;
-                    log::info!("Ignoring {}", e);
-                }
+        // If `exclude` only present, ignore anything in it.
+        } else if let Some(excluded) = &site.exclude {
+            for e in excluded {
+                required_override.add(&format!("!{}", e))?;
+                log::info!("Ignoring {}", e);
             }
         }
     }
