@@ -193,13 +193,13 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::
             // allow all files. This is required since without this the `.well-known`
             // override would act as a allowlist
             required_override.add("*")?;
+            // ignore hidden files and folders
+            required_override.add("!.*")?;
+            // but allow .well-known, this has precedence over hidden files since it's later
+            required_override.add(".well-known")?;
             // add this AFTER since the `*` override would have precedence over this,
             // making it useless
             required_ignore(&mut required_override)?;
-            // ignore hidden files and folders
-            required_override.add("!**/.*")?;
-            // but allow .well-known, this has precedence over hidden files since it's later
-            required_override.add(".well-known")?;
 
             // add any other excludes specified
             if let Some(excluded) = &site.exclude {
