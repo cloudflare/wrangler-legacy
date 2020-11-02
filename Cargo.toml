@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.12.1"
+version = "1.12.2"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>", "Nat Davidson <davidson@cloudflare.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
