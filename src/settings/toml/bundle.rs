@@ -14,11 +14,13 @@ const BUILD_COMMAND: &str = "npm run build";
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Bundle {
-    #[serde(rename = "build-command")]
+    // are these renames necessary? I'm not super well versed in serde
+    // so i'm not sure how the annotations work
+    #[serde(rename = "build_command")]
     build_command: Option<String>,
-    #[serde(rename = "output-dir")]
+    #[serde(rename = "output_dir")]
     output_dir: Option<PathBuf>,
-    #[serde(rename = "src-dir")]
+    #[serde(rename = "src_dir")]
     src_dir: Option<PathBuf>,
 }
 

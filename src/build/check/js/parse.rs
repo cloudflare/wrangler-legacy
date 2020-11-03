@@ -18,15 +18,7 @@ impl Parseable<PathBuf> for JavaScript {
         // TODO ask in the slack
         let mut parser = Parser::new(V8_SUPPORTED_JS_FEATURES, StringInput::from(&*fm), None);
 
-        // TODO: need feedback
-        // ok so these errors are recoverable, like we can successfully parse it.
-        // if we wanted to be stricter, we could just Err here
-        // we could also warn the user about these, but i think
-        // we should first do some testing and figure out what level
-        // of verbosity is appropriate.
-        // my guess is that the V8 parser is better at recovering than swc
-        // but i also know nothing about that. i just know google is a multi-billion
-        // dollar company and swc is one guy
+        // these errors are recoverable
         let _ = parser.take_errors();
 
         let js_extension = js_file.extension().unwrap().to_str().unwrap();
@@ -35,6 +27,7 @@ impl Parseable<PathBuf> for JavaScript {
         let js_source_map = if map.is_file() {
             Some(SourceMap::from_reader(File::open(map)?)?)
         } else {
+            // inline source map support when??
             None
         };
 

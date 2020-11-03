@@ -283,12 +283,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4cec68f03f32e44924783795810fa50a7035d8c8ebe78580ad7e6c703fba38"
 
 [[package]]
-name = "bytesize"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81a18687293a1546b67c246452202bbbf143d239cb43494cc163da14979082da"
-
-[[package]]
 name = "bzip2"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3665,7 +3659,6 @@ dependencies = [
  "base64 0.13.0",
  "billboard",
  "binary-install",
- "bytesize",
  "chrome-devtools-rs",
  "chrono",
  "clap",

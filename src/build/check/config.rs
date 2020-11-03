@@ -1,4 +1,3 @@
-use bytesize::ByteSize;
 use swc_ecma_parser::{EsConfig, Syntax};
 use wasmparser::WasmFeatures;
 
@@ -36,14 +35,9 @@ pub const V8_SUPPORTED_JS_FEATURES: Syntax = Syntax::Es(EsConfig {
     optional_chaining: true,
     // https://v8.dev/features/modules#import-meta
     import_meta: true,
-    // ok so for top-level await, V8 says there's no support in
-    // "classic scripts", which i think is how workers are executed.
-    // i mean, they're certainly not modules.
     // https://v8.dev/features/top-level-await#new
-    top_level_await: false,
-    // i literally cannot find a source on this
-    // i don't...is it `console.assert?`
-    // TODO: ask in the slack about this one
+    top_level_await: true,
+    // https://bugs.chromium.org/p/v8/issues/detail?id=10958
     import_assertions: false,
 });
 
@@ -82,6 +76,6 @@ pub const V8_SUPPORTED_WASM_FEATURES: WasmFeatures = WasmFeatures {
     memory64: false,
 };
 
-/// The [maximum file size](https://developers.cloudflare.com/workers/platform/limits#script-size) we allow.
+/// We allow a [maximum bundle size](https://developers.cloudflare.com/workers/platform/limits#script-size) of 1MiB.
 #[doc(inline)]
-pub const MAX_FILE_SIZE: ByteSize = ByteSize(1_000_000);
+pub const MAX_BUNDLE_SIZE: u64 = 1 << 20;

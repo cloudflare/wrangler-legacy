@@ -2,7 +2,7 @@ use std::{fs::File, io::Read, path::PathBuf};
 
 use wasmparser::Validator;
 
-use super::{config::V8_SUPPORTED_WASM_FEATURES, Lintable, Parseable, Validate};
+use super::{config::V8_SUPPORTED_WASM_FEATURES, Lintable, Parseable};
 
 #[derive(Debug)]
 pub struct WebAssembly {
@@ -30,5 +30,3 @@ impl Lintable for WebAssembly {
         }
     }
 }
-
-impl Validate<(PathBuf, Option<PathBuf>)> for WebAssembly {}

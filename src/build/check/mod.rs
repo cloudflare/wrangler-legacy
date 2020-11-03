@@ -2,18 +2,21 @@ use std::{
     collections::hash_map::Entry,
     collections::HashMap,
     fmt::Debug,
+    fs::File,
+    io::{Read, Write},
     iter,
     path::{Path, PathBuf},
 };
 
+use flate2::{write::ZlibEncoder, Compression};
+use number_prefix::NumberPrefix;
+
 mod config;
 mod js;
-mod util;
 mod wasm;
 
-use self::config::MAX_FILE_SIZE;
+use self::config::MAX_BUNDLE_SIZE;
 use js::JavaScript;
-use util::*;
 use wasm::WebAssembly;
 
 const WORKER_FILE_NAME: &str = "worker.mjs";
@@ -70,10 +73,8 @@ pub trait Lintable {
     fn lint(&self) -> Result<(), failure::Error>;
 }
 
-/// If a struct is both Parseable and Lintable, then it may also implement
-/// Validate, which should serve as a one-stop-shop to go from un-parsed
-/// input to linted output. A default implmenetation is provided which
-/// simply calls `Self::parse(&input).lint()`
+/// If a struct is both Parseable and Lintable, then a blanket implementation
+/// of Validate is provided to combine the steps of Parsing and Linting.
 /// ```
 /// # trait Parseable<ParserInput>: Sized {
 /// #    fn parse(input: &ParserInput) -> Result<Self, failure::Error>;
@@ -83,12 +84,17 @@ pub trait Lintable {
 /// #     fn lint(&self) -> Result<(), failure::Error>;
 /// # }
 /// #
-/// pub trait Validate<ParserInput>:
-///     Lintable + Parseable<ParserInput>
+/// pub trait Validate<ParserInput>: Lintable + Parseable<ParserInput> {
+///     fn validate(input: ParserInput) -> Result<(), failure::Error>;
+/// }
+///
+/// impl<T, Input> Validate<Input> for T
+/// where
+///     T: Parseable<Input> + Lintable,
 /// {
-///         fn validate(input: ParserInput) -> Result<(), failure::Error> {
-///             let t = Self::parse(&input)?;
-///             t.lint()
+///     fn validate(input: Input) -> Result<(), failure::Error> {
+///         let t = Self::parse(&input)?;
+///         t.lint()
 ///     }
 /// }
 ///
@@ -110,13 +116,20 @@ pub trait Lintable {
 ///     }
 /// }
 ///
-/// impl Validate<u8> for SmallNumber {};
+/// // Validate is provided automatically!
 ///
 /// assert!(SmallNumber::validate(3).is_ok());
 /// assert!(SmallNumber::validate(6).is_err());
 /// ```
 pub trait Validate<ParserInput>: Lintable + Parseable<ParserInput> {
-    fn validate(input: ParserInput) -> Result<(), failure::Error> {
+    fn validate(input: ParserInput) -> Result<(), failure::Error>;
+}
+
+impl<T, Input> Validate<Input> for T
+where
+    T: Parseable<Input> + Lintable,
+{
+    fn validate(input: Input) -> Result<(), failure::Error> {
         let t = Self::parse(&input)?;
         t.lint()
     }
@@ -139,9 +152,9 @@ pub trait Validate<ParserInput>: Lintable + Parseable<ParserInput> {
 #[derive(Debug)]
 pub struct BundlerOutput {
     /// A PathBuf pointing to worker.mjs, the entrypoint of the worker
-    entry_file: PathBuf,
+    module_path: PathBuf,
     /// An in-memory representation of the worker entrypoint
-    entry: JavaScript,
+    module: JavaScript,
     /// Other JS files that are executed in the Worker
     javascript: HashMap<PathBuf, JavaScript>,
     /// WebAssembly that gets executed in the Worker
@@ -161,15 +174,15 @@ pub struct BundlerOutput {
 /// will not be added to the resulting BundlerOutput
 impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
     fn parse(output_dir: &P) -> Result<Self, failure::Error> {
-        let entry_file = output_dir.as_ref().join(WORKER_FILE_NAME);
-        let entry = JavaScript::parse(&entry_file)?;
+        let module_path = output_dir.as_ref().join(WORKER_FILE_NAME);
+        let module = JavaScript::parse(&module_path)?;
 
         let mut javascript = HashMap::new();
         let mut webassembly = HashMap::new();
         let mut other_files = vec![];
 
         // Create a stack of the imports in the worker entrypoint
-        let mut imports = entry.find_imports();
+        let mut imports = module.find_imports();
 
         // Work through the stack, adding more imports as necessary
         while let Some(import) = imports.pop() {
@@ -229,8 +242,8 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
         }
 
         Ok(Self {
-            entry_file,
-            entry,
+            module_path,
+            module,
             javascript,
             webassembly,
             other_files,
@@ -244,19 +257,48 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
 /// than are absolutely necessary for this PR
 impl Lintable for BundlerOutput {
     fn lint(&self) -> Result<(), failure::Error> {
-        // Check file sizes
-        iter::once(&self.entry_file)
+        // Check the bundle size
+        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+        let mut buffer = Vec::new();
+
+        iter::once(&self.module_path)
             .chain(self.javascript.keys())
             .chain(self.webassembly.keys())
             .chain(&self.other_files)
-            .try_for_each(|file| check_file_size(file, MAX_FILE_SIZE))?;
+            .try_for_each(|path: &PathBuf| -> Result<(), failure::Error> {
+                let mut file = File::open(path)?;
+                file.read_to_end(&mut buffer)?;
+                Ok(())
+            })?;
+
+        encoder.write_all(&mut buffer)?;
+
+        let compressed_size = encoder.finish()?.len() as u64;
+        let human_compressed_size = match NumberPrefix::binary(compressed_size as f64) {
+            NumberPrefix::Standalone(bytes) => format!("{} bytes", bytes),
+            NumberPrefix::Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
+        };
+
+        // i wish this was a const but
+        // "caLlS IN cOnSTAntS ArE LiMITed TO CoNstaNt fUNCtIoNs, TupLE sTrUCts aND TUpLE VaRiANTs"
+        // or whatever
+        let human_max_size = match NumberPrefix::binary(MAX_BUNDLE_SIZE as f64) {
+            NumberPrefix::Standalone(bytes) => format!("{} bytes", bytes),
+            NumberPrefix::Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
+        };
+
+        // warn, but continue
+        if compressed_size > MAX_BUNDLE_SIZE {
+            println!(
+                "Your project ({}) has exceeded the {} limit and may fail to deploy.",
+                human_compressed_size, human_max_size
+            );
+        }
 
         // Lint the various files
-        iter::once(&self.entry as &dyn Lintable)
+        iter::once(&self.module as &dyn Lintable)
             .chain(self.javascript.values().map(|js| js as &dyn Lintable))
             .chain(self.webassembly.values().map(|wasm| wasm as &dyn Lintable))
             .try_for_each(|file| file.lint())
     }
 }
-
-impl<P: AsRef<Path> + Debug> Validate<P> for BundlerOutput {}

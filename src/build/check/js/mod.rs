@@ -1,11 +1,9 @@
-use std::path::PathBuf;
-
 use sourcemap::SourceMap;
 use swc_common::{sync::Lrc, SourceMap as SwcSourceMap};
 use swc_ecma_ast::{ImportDecl, Module};
 use swc_ecma_visit::{Node, Visit, VisitWith};
 
-use super::{config::V8_SUPPORTED_JS_FEATURES, Lintable, Parseable, Validate};
+use super::{config::V8_SUPPORTED_JS_FEATURES, Lintable, Parseable};
 
 // bring implemntations of Lintable and Parseable into scope
 mod lint;
@@ -14,12 +12,14 @@ mod parse;
 /// A representation of a JS file (+ an optional source map)
 /// produced by a bundler's output
 pub struct JavaScript {
+    /// A JavaScript module, as parsed by SWC
     module: Module,
+    /// SWC's `SourceMap` struct refers to an in-memory representation of the JS,
+    /// and has nothing to do with actual javascript source maps
     swc_source_map: Lrc<SwcSourceMap>,
+    /// This, on the other hand, is a javascript source map
     js_source_map: Option<SourceMap>,
 }
-
-impl Validate<PathBuf> for JavaScript {}
 
 impl std::fmt::Debug for JavaScript {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
