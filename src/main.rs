@@ -47,7 +47,7 @@ fn main() -> Result<(), ExitFailure> {
         );
         let update_message = "You can learn more about updating here:".to_string();
         let update_docs_url =
-            styles::url("https://developers.cloudflare.com/workers/quickstart#updating-the-cli");
+            styles::url("https://developers.cloudflare.com/workers/cli-wrangler/install-update#update");
 
         StdOut::billboard(&format!(
             "{}\n{}\n{}",
