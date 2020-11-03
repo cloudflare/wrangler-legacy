@@ -251,7 +251,7 @@ impl<P: AsRef<Path> + Debug> Parseable<P> for BundlerOutput {
     }
 }
 
-/// Check the sizes of all the files the user wants to upload,
+/// Check the bundle size of the files the user wants to upload,
 /// and then lint them all. I suspect this would be a good
 /// use case for rayon, but I'm reluctant to add more dependencies
 /// than are absolutely necessary for this PR
@@ -259,38 +259,46 @@ impl Lintable for BundlerOutput {
     fn lint(&self) -> Result<(), failure::Error> {
         // Check the bundle size
         let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-        let mut buffer = Vec::new();
 
-        iter::once(&self.module_path)
+        let buffer = iter::once(&self.module_path)
             .chain(self.javascript.keys())
             .chain(self.webassembly.keys())
             .chain(&self.other_files)
-            .try_for_each(|path: &PathBuf| -> Result<(), failure::Error> {
+            .map(|path| -> Result<Vec<u8>, failure::Error> {
                 let mut file = File::open(path)?;
-                file.read_to_end(&mut buffer)?;
-                Ok(())
+                let mut buf = Vec::new();
+                file.read_to_end(&mut buf)?;
+                Ok(buf)
+            })
+            .try_fold(Vec::new(), |mut buffer, read_result| match read_result {
+                Ok(file_buf) => {
+                    buffer.extend(file_buf);
+                    Ok(buffer)
+                }
+                Err(e) => Err(e),
             })?;
 
         encoder.write_all(&buffer)?;
 
         let compressed_size = encoder.finish()?.len() as u64;
-        let human_compressed_size = match NumberPrefix::binary(compressed_size as f64) {
-            NumberPrefix::Standalone(bytes) => format!("{} bytes", bytes),
-            NumberPrefix::Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
-        };
-
-        // i wish this was a const but
-        // "caLlS IN cOnSTAntS ArE LiMITed TO CoNstaNt fUNCtIoNs, TupLE sTrUCts aND TUpLE VaRiANTs"
-        // or whatever
-        let human_max_size = match NumberPrefix::binary(MAX_BUNDLE_SIZE as f64) {
-            NumberPrefix::Standalone(bytes) => format!("{} bytes", bytes),
-            NumberPrefix::Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
-        };
 
         // warn, but continue
         if compressed_size > MAX_BUNDLE_SIZE {
+            let human_compressed_size = match NumberPrefix::binary(compressed_size as f64) {
+                NumberPrefix::Standalone(bytes) => format!("{} bytes", bytes),
+                NumberPrefix::Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
+            };
+
+            // i wish this was a const but
+            // "caLlS IN cOnSTAntS ArE LiMITed TO CoNstaNt fUNCtIoNs, TupLE sTrUCts aND TUpLE VaRiANTs"
+            // or whatever
+            let human_max_size = match NumberPrefix::binary(MAX_BUNDLE_SIZE as f64) {
+                NumberPrefix::Standalone(bytes) => format!("{} bytes", bytes),
+                NumberPrefix::Prefixed(prefix, n) => format!("{:.0} {}B", n, prefix),
+            };
+
             println!(
-                "Your project ({}) has exceeded the {} limit and may fail to deploy.",
+                "Your project ({}) exceeds the {} limit and may fail to deploy.",
                 human_compressed_size, human_max_size
             );
         }
