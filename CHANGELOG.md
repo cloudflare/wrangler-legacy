@@ -1,5 +1,30 @@
 # Changelog
 
+## ❗️ 1.12.2
+
+- ### Fixes
+
+  - **Fix issue which caused `wrangler publish` to nuke sites - [ObsidianMinor], [issue/1625] [pull/1631] [pull/1635]**
+
+    Y'all, we messed up and applied the wrong fix. The change which caused this problem was [this](https://github.com/cloudflare/wrangler/pull/1566).
+
+    [ObsidianMinor]: https://github.com/ObsidianMinor
+    [issue/1625]: https://github.com/cloudflare/wrangler/issues/1625
+    [pull/1631]: https://github.com/cloudflare/wrangler/pull/1631
+    [pull/1635]: https://github.com/cloudflare/wrangler/pull/1635
+
+## ❗️ 1.12.1
+
+- ### Fixes
+
+  - **Revert "allow site to be configured by environment - [nataliescottdavidson], [issue/1625] [pull/1626]**
+
+    previous pr caused an issue.
+
+    [nataliescottdavidson]: https://github.com/nataliescottdavidson
+    [issue/1625]: https://github.com/cloudflare/wrangler/issues/1625
+    [pull/1626]: https://github.com/cloudflare/wrangler/pull/1626
+
 ## ⏰ 1.12.0
 
 - ### Features
