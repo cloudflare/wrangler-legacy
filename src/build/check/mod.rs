@@ -271,7 +271,7 @@ impl Lintable for BundlerOutput {
                 Ok(())
             })?;
 
-        encoder.write_all(&mut buffer)?;
+        encoder.write_all(&buffer)?;
 
         let compressed_size = encoder.finish()?.len() as u64;
         let human_compressed_size = match NumberPrefix::binary(compressed_size as f64) {
