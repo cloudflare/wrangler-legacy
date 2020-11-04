@@ -25,7 +25,7 @@ use crate::settings::toml::{KvNamespace, Target};
 use crate::terminal::message::{Message, StdErr};
 pub const KEY_MAX_SIZE: usize = 512;
 // Oddly enough, metadata.len() returns a u64, not usize.
-pub const VALUE_MAX_SIZE: u64 = 10 * 1024 * 1024;
+pub const VALUE_MAX_SIZE: u64 = 25 * 1024 * 1024;
 
 // Updates given Target with kv_namespace binding for a static site assets KV namespace.
 pub fn add_namespace(
@@ -68,16 +68,17 @@ pub fn add_namespace(
 pub fn directory_keys_values(
     target: &Target,
     directory: &Path,
-) -> Result<(Vec<KeyValuePair>, AssetManifest), failure::Error> {
+) -> Result<(Vec<KeyValuePair>, AssetManifest, Vec<String>), failure::Error> {
     match &fs::metadata(directory) {
         Ok(file_type) if file_type.is_dir() => {
             let mut upload_vec: Vec<KeyValuePair> = Vec::new();
             let mut asset_manifest = AssetManifest::new();
-
+            let mut file_list: Vec<String> = Vec::new();
             let dir_walker = get_dir_iterator(target, directory)?;
             let spinner_style =
                 ProgressStyle::default_spinner().template("{spinner}   Preparing {msg}...");
             let spinner = ProgressBar::new_spinner().with_style(spinner_style);
+
             for entry in dir_walker {
                 spinner.tick();
                 let entry = entry.unwrap();
@@ -85,6 +86,7 @@ pub fn directory_keys_values(
                 if path.is_file() {
                     spinner.set_message(&format!("{}", path.display()));
 
+                    file_list.push(path.to_str().unwrap().to_string());
                     validate_file_size(&path)?;
 
                     let value = std::fs::read(path)?;
@@ -108,7 +110,7 @@ pub fn directory_keys_values(
                     asset_manifest.insert(url_safe_path, key);
                 }
             }
-            Ok((upload_vec, asset_manifest))
+            Ok((upload_vec, asset_manifest, file_list))
         }
         Ok(_file_type) => {
             // any other file types (files, symlinks)
@@ -151,7 +153,7 @@ fn validate_key_size(key: &str) -> Result<(), failure::Error> {
     Ok(())
 }
 
-const REQUIRED_IGNORE_FILES: &[&str] = &["node_modules"];
+const REQUIRED_IGNORE_FILES: &[&str] = &[NODE_MODULES];
 const NODE_MODULES: &str = "node_modules";
 
 fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
@@ -164,31 +166,48 @@ fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::
 
     let ignore = build_ignore(target, directory)?;
     Ok(WalkBuilder::new(directory)
-        .git_ignore(false)
+        .standard_filters(false)
         .overrides(ignore)
         .build())
 }
 
 fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
     let mut required_override = OverrideBuilder::new(directory);
-    // First include files that must be ignored.
-    for ignored in REQUIRED_IGNORE_FILES {
-        required_override.add(&format!("!{}", ignored))?;
-        log::info!("Ignoring {}", ignored);
-    }
+    let required_ignore = |builder: &mut OverrideBuilder| -> Result<(), failure::Error> {
+        for ignored in REQUIRED_IGNORE_FILES {
+            builder.add(&format!("!{}", ignored))?;
+            log::info!("Ignoring {}", ignored);
+        }
 
+        Ok(())
+    };
     if let Some(site) = &target.site {
         // If `include` present, use it and don't touch the `exclude` field
         if let Some(included) = &site.include {
+            required_ignore(&mut required_override)?;
             for i in included {
                 required_override.add(&i)?;
                 log::info!("Including {}", i);
             }
-        // If `exclude` only present, ignore anything in it.
-        } else if let Some(excluded) = &site.exclude {
-            for e in excluded {
-                required_override.add(&format!("!{}", e))?;
-                log::info!("Ignoring {}", e);
+        } else {
+            // allow all files. This is required since without this the `.well-known`
+            // override would act as a allowlist
+            required_override.add("*")?;
+            // ignore hidden files and folders
+            required_override.add("!.*")?;
+            // but allow .well-known, this has precedence over hidden files since it's later
+            required_override.add(".well-known")?;
+            // add this AFTER since the `*` override would have precedence over this,
+            // making it useless
+            required_ignore(&mut required_override)?;
+
+            // add any other excludes specified
+            if let Some(excluded) = &site.exclude {
+                required_ignore(&mut required_override)?;
+                for e in excluded {
+                    required_override.add(&format!("!{}", e))?;
+                    log::info!("Ignoring {}", e);
+                }
             }
         }
     }
@@ -332,7 +351,7 @@ mod tests {
     }
 
     #[test]
-    fn it_can_ignore_hidden() {
+    fn it_can_ignore_hidden_except_wellknown() {
         let mut site = Site::default();
         site.bucket = PathBuf::from("fake");
         let target = make_target(site);
@@ -344,16 +363,21 @@ mod tests {
         }
 
         fs::create_dir(test_dir).unwrap();
-        let test_pathname = format!("{}/.ignore_me.txt", test_dir);
-        let test_path = PathBuf::from(&test_pathname);
-        fs::File::create(&test_path).unwrap();
-
-        let files: Vec<_> = get_dir_iterator(&target, Path::new(test_dir))
-            .unwrap()
-            .map(|entry| entry.unwrap().path().to_owned())
-            .collect();
-
-        assert!(!files.contains(&test_path));
+        fs::create_dir(format!("{}/.well-known", test_dir)).unwrap();
+        fs::File::create(&PathBuf::from(&format!("{}/.ignore_me.txt", test_dir))).unwrap();
+        fs::File::create(&PathBuf::from(&format!(
+            "{}/.well-known/dontignoreme.txt",
+            test_dir
+        )))
+        .unwrap();
+        let (_, _, file_list) = directory_keys_values(&target, Path::new(test_dir)).unwrap();
+        if cfg!(windows) {
+            assert!(!file_list.contains(&format!("{}\\.ignore_me.txt", test_dir)));
+            assert!(file_list.contains(&format!("{}\\.well-known\\dontignoreme.txt", test_dir)));
+        } else {
+            assert!(!file_list.contains(&format!("{}/.ignore_me.txt", test_dir)));
+            assert!(file_list.contains(&format!("{}/.well-known/dontignoreme.txt", test_dir)));
+        }
 
         fs::remove_dir_all(test_dir).unwrap();
     }

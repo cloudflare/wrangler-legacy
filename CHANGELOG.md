@@ -1,5 +1,136 @@
 # Changelog
 
+## ❗️ 1.12.2
+
+- ### Fixes
+
+  - **Fix issue which caused `wrangler publish` to nuke sites - [ObsidianMinor], [issue/1625] [pull/1631] [pull/1635]**
+
+    Y'all, we messed up and applied the wrong fix. The change which caused this problem was [this](https://github.com/cloudflare/wrangler/pull/1566).
+
+    [ObsidianMinor]: https://github.com/ObsidianMinor
+    [issue/1625]: https://github.com/cloudflare/wrangler/issues/1625
+    [pull/1631]: https://github.com/cloudflare/wrangler/pull/1631
+    [pull/1635]: https://github.com/cloudflare/wrangler/pull/1635
+
+## ❗️ 1.12.1
+
+- ### Fixes
+
+  - **Revert "allow site to be configured by environment - [nataliescottdavidson], [issue/1625] [pull/1626]**
+
+    previous pr caused an issue.
+
+    [nataliescottdavidson]: https://github.com/nataliescottdavidson
+    [issue/1625]: https://github.com/cloudflare/wrangler/issues/1625
+    [pull/1626]: https://github.com/cloudflare/wrangler/pull/1626
+
+## ⏰ 1.12.0
+
+- ### Features
+
+  - **Add support for Cron triggers - [ObsidianMinor], [issue/1574] [pull/1592]**
+
+    Cron triggers are a [new Cloudflare Workers feature](https://developers.cloudflare.com/workers/platform/cron-triggers)
+    which allow you to schedule execution times to call your workers.
+
+    [ObsidianMinor]: https://github.com/ObsidianMinor
+    [pull/1592]: https://github.com/cloudflare/wrangler/pull/1592
+    [issue/1574]: https://github.com/cloudflare/wrangler/issues/1574
+
+  - **Structured output for `wrangler publish` - [nataliescottdavidson], [issue/1460] [pull/1538] [pull/1528] [pull/1522]**
+
+    `wrangler publish --output json` produces structured json output which can be parsed with tools such as jq.
+
+    [nataliescottdavidson]: https://github.com/nataliescottdavidson
+    [pull/1538]: https://github.com/cloudflare/wrangler/pull/1538
+    [pull/1528]: https://github.com/cloudflare/wrangler/pull/1528
+    [pull/1522]: https://github.com/cloudflare/wrangler/pull/1522
+    [issue/1460]: https://github.com/cloudflare/wrangler/issues/1460
+
+  - **Upload .well-known dotfiles - [nataliescottdavidson], [issue/980] [pull/1566]**
+
+    Wrangler sites users requested the ability to include the .well-known folder
+    without including all hidden files.
+
+    [nataliescottdavidson]: https://github.com/nataliescottdavidson
+    [pull/1566]: https://github.com/cloudflare/wrangler/pull/1566
+    [issue/980]: https://github.com/cloudflare/wrangler/issues/980
+
+  - **Print url for wrangler login - [encadyma], [issue/1544] [pull/1611]**
+
+    [encadyma]: https://github.com/encadyma
+    [pull/1611]: https://github.com/cloudflare/wrangler/pull/1611
+    [issue/1544]: https://github.com/cloudflare/wrangler/issues/1544
+
+  - **Allow site key to be configured by environment - [oliverpool], [issue/1567] [pull/1573]**
+
+    [oliverpool]: https://github.com/oliverpool
+    [pull/1573]: https://github.com/cloudflare/wrangler/pull/1573
+    [issue/1567]: https://github.com/cloudflare/wrangler/issues/1567
+
+- ### Fixes
+
+  - **Handle leading slashes in KV keys - [koeninger], [issue/1560] [pull/1559]**
+
+    [koeninger]: https://github.com/koeninger
+    [pull/1559]: https://github.com/cloudflare/wrangler/pull/1559
+    [issue/1560]: https://github.com/cloudflare/wrangler/issues/1560
+
+- ### Maintenance
+
+  - **Update stalebot settings - [ispivey], [pull/1561]**
+
+    Stalebot now waits 180 days to mark stale, it marks 'timed out' instead of 'wontfix', and added 'never stale' tag.
+
+    [ispivey]: https://github.com/ispivey
+    [pull/1561]: https://github.com/cloudflare/wrangler/pull/1561
+
+  - **Pin Rust to 1.47 and fix clippy lints - [ObsidianMinor], [pull/1609]**
+
+    [ObsidianMinor]: https://github.com/ObsidianMinor
+    [pull/1609]: https://github.com/cloudflare/wrangler/pull/1609
+
+  - **Copy edit on --host argument description - [thmsdnnr], [issue/1545] [pull/1564]**
+
+    [thmsdnnr]: https://github.com/thmsdnnr
+    [pull/1564]: https://github.com/cloudflare/wrangler/pull/1564
+    [issue/1545]: https://github.com/cloudflare/wrangler/issues/1545
+
+  - **Hide stderr from browser process - [jspspike], [pull/1516]**
+
+    Wrangler login had the potential to cause random terminal output.
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1516]: https://github.com/cloudflare/wrangler/pull/1516
+
+- ### Docs
+
+  - **Instruct users to install Node with nvm - [JasonCoombs], [issue/1517] [pull/1518]**
+
+    Permissions errors occur when users install Node or npm with a different package
+    manager.
+
+    [jasoncoombs]: https://github.com/JasonCoombs
+    [pull/1518]: https://github.com/cloudflare/wrangler/pull/1518
+    [issue/1517]: https://github.com/cloudflare/wrangler/issues/1517
+
+  - **Update links to new docs- [stof] [tuladhar] [ispivey] [rita3ko], [pull/1552] [pull/1532] [pull/1526] [pull/1519]**
+
+    [ispivey]: https://github.com/ispivey
+    [stof]: https://github.com/stof
+    [tuladhar]: https://github.com/tuladhar
+    [rita3ko]: https://github.com/rita3ko
+    [pull/1552]: https://github.com/cloudflare/wrangler/pull/1552
+    [pull/1532]: https://github.com/cloudflare/wrangler/pull/1532
+    [pull/1526]: https://github.com/cloudflare/wrangler/pull/1526
+    [pull/1519]: https://github.com/cloudflare/wrangler/pull/1519
+
+  - **Docs for ARM users - [rathboma], [pull/1499]**
+
+    [rathboma]: https://github.com/rathboma
+    [pull/1499]: https://github.com/cloudflare/wrangler/pull/1499
+
 ## 🌊 1.11.0
 
 - ### Features
