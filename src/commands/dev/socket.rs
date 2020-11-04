@@ -8,7 +8,6 @@ use futures_util::stream::{SplitStream, StreamExt};
 
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
-use tokio::time::delay_for;
 use tokio_native_tls::TlsStream;
 use tokio_tungstenite::stream::Stream;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, WebSocketStream};
@@ -95,9 +94,10 @@ async fn print_ws_messages(
     Ok(())
 }
 
+//TODO(nat): refactor to use tokio::time::interval
 async fn keep_alive(tx: mpsc::UnboundedSender<Message>) -> Result<(), failure::Error> {
     let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
-    let mut delay = delay_for(duration);
+    let mut delay = tokio::time::sleep(duration);
 
     // this is set to 2 because we have already sent an id of 1 to enable the runtime
     // eventually this logic should be moved to the chrome-devtools-rs library
@@ -111,6 +111,6 @@ async fn keep_alive(tx: mpsc::UnboundedSender<Message>) -> Result<(), failure::E
         let keep_alive_message = Message::Text(keep_alive_message);
         tx.send(keep_alive_message).unwrap();
         id += 1;
-        delay = delay_for(duration);
+        delay = tokio::time::sleep(duration);
     }
 }
