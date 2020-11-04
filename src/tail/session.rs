@@ -4,7 +4,6 @@ use std::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
 use regex::Regex;
 use tokio::sync::oneshot::{Receiver, Sender};
-use tokio::time::{delay_for, Delay};
 
 use cloudflare::endpoints::workers::{CreateTail, CreateTailParams, DeleteTail, SendTailHeartbeat};
 use cloudflare::framework::HttpApiClientConfig;
@@ -102,7 +101,7 @@ impl Session {
                 // This should loop forever until SIGINT is issued or Wrangler process is killed
                 // through other means.
                 let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
-                let mut delay = delay_for(duration);
+                let mut delay = tokio::time::sleep(duration);
 
                 loop {
                     delay.await;
@@ -110,7 +109,7 @@ impl Session {
                     if heartbeat_result.is_err() {
                         return heartbeat_result;
                     }
-                    delay = delay_for(duration);
+                    delay = tokio::time::sleep(duration);
                 }
             }
             Err(e) => {
@@ -126,7 +125,7 @@ async fn get_tunnel_url(metrics_port: u16) -> Result<String, failure::Error> {
     let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
 
     struct RetryDelay {
-        delay: Delay,
+        delay: tokio::time::Sleep,
         attempt: u64,
         max_attempts: u64,
     }
@@ -136,7 +135,7 @@ async fn get_tunnel_url(metrics_port: u16) -> Result<String, failure::Error> {
     impl RetryDelay {
         fn new(max_attempts: u64) -> RetryDelay {
             RetryDelay {
-                delay: delay_for(Duration::from_millis(0)),
+                delay: tokio::time::sleep(Duration::from_millis(0)),
                 attempt: 0,
                 max_attempts,
             }
@@ -146,7 +145,7 @@ async fn get_tunnel_url(metrics_port: u16) -> Result<String, failure::Error> {
         // which simply waits twice as long between each attempt to avoid hammering the LogServer.
         fn reset(self) -> RetryDelay {
             let attempt = self.attempt + 1;
-            let delay = delay_for(Duration::from_millis(attempt * attempt * 1000));
+            let delay = tokio::time::sleep(Duration::from_millis(attempt * attempt * 1000));
             let max_attempts = self.max_attempts;
 
             RetryDelay {
