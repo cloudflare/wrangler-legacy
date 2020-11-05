@@ -1109,7 +1109,7 @@ dependencies = [
  "rustls",
  "rustls-native-certs",
  "tokio 0.2.22",
- "tokio-rustls",
+ "tokio-rustls 0.14.1",
  "webpki",
 ]
 
@@ -1454,17 +1454,6 @@ dependencies = [
  "log 0.4.11",
  "mio 0.6.22",
  "slab",
-]
-
-[[package]]
-name = "mio-uds"
-version = "0.6.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afcb699eb26d4332647cc848492bbc15eafb26f08d0304550d5aa1f612e066f0"
-dependencies = [
- "iovec",
- "libc",
- "mio 0.6.22",
 ]
 
 [[package]]
@@ -2647,10 +2636,8 @@ dependencies = [
  "futures-core",
  "iovec",
  "lazy_static",
- "libc",
  "memchr",
  "mio 0.6.22",
- "mio-uds",
  "num_cpus",
  "pin-project-lite",
  "slab",
@@ -2691,12 +2678,12 @@ dependencies = [
 
 [[package]]
 name = "tokio-native-tls"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd608593a919a8e05a7d1fc6df885e40f6a88d3a70a3a7eff23ff27964eda069"
+checksum = "501c8252b73bd01379aaae1521523c2629ff1bc6ea46c29e0baff515cee60f1b"
 dependencies = [
  "native-tls",
- "tokio 0.2.22",
+ "tokio 0.3.3",
 ]
 
 [[package]]
@@ -2708,6 +2695,17 @@ dependencies = [
  "futures-core",
  "rustls",
  "tokio 0.2.22",
+ "webpki",
+]
+
+[[package]]
+name = "tokio-rustls"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ba3f045b4a15afc543ffe6e02bae7ecf372e89a0f9f8c4b15b13f0ceed4f105"
+dependencies = [
+ "rustls",
+ "tokio 0.3.3",
  "webpki",
 ]
 
@@ -2724,14 +2722,13 @@ dependencies = [
 [[package]]
 name = "tokio-tungstenite"
 version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d9e878ad426ca286e4dcae09cbd4e1973a7f8987d97570e2469703dd7f5720c"
+source = "git+https://github.com/snapview/tokio-tungstenite#3c6d4280d77fdff3e25f68ad703d94e89f38dae2"
 dependencies = [
  "futures-util",
  "log 0.4.11",
  "native-tls",
- "pin-project 0.4.27",
- "tokio 0.2.22",
+ "pin-project 1.0.1",
+ "tokio 0.3.3",
  "tokio-native-tls",
  "tungstenite",
 ]
@@ -3207,7 +3204,7 @@ dependencies = [
  "text_io",
  "tokio 0.3.3",
  "tokio-native-tls",
- "tokio-rustls",
+ "tokio-rustls 0.20.0",
  "tokio-tungstenite",
  "toml",
  "twox-hash",
