@@ -75,32 +75,13 @@ pub async fn https(
         }
     });
 
-    let mut tcp = TcpListener::bind(&listening_address).await?;
-    let tls_acceptor = &tls::get_tls_acceptor()?;
-    let incoming_tls_stream = tcp
-        .incoming()
-        .filter_map(move |s| async move {
-            let client = match s {
-                Ok(x) => x,
-                Err(e) => {
-                    eprintln!("Failed to accept client {}", e);
-                    return None;
-                }
-            };
-            match tls_acceptor.accept(client).await {
-                Ok(x) => Some(Ok(x)),
-                Err(e) => {
-                    eprintln!("Client connection error {}", e);
-                    StdOut::info("Make sure to use https and `--insecure` with curl");
-                    None
-                }
-            }
-        })
-        .boxed();
-    let server = Server::builder(tls::HyperAcceptor {
-        acceptor: incoming_tls_stream,
-    })
-    .serve(service);
+     // Create a TCP listener via tokio.
+     let tcp = TcpListener::bind(&listening_address).await?;
+     // I may have nuked part of the TLS operation. 
+     let tls_acceptor = &tls::get_tls_acceptor()?;
+     let (_socket, addr) = tcp.accept().await.unwrap();
+     let server = Server::bind(&addr)
+     .serve(service);
 
     println!("{} Listening on https://{}", emoji::EAR, listening_address);
     StdOut::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
