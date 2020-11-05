@@ -98,11 +98,10 @@ pub async fn https(
 
     // Create a TCP listener via tokio.
     let tcp = TcpListener::bind(&listening_address).await?;
-    // I may have nuked part of the TLS operation. 
+    // I may have nuked part of the TLS operation.
     let tls_acceptor = &tls::get_tls_acceptor()?;
     let (_socket, addr) = tcp.accept().await.unwrap();
-    let server = Server::bind(&addr)
-    .serve(service);
+    let server = Server::bind(&addr).serve(service);
     println!(
         "{} Listening on https://{}",
         emoji::EAR,

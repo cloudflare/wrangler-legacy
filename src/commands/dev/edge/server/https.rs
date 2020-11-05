@@ -6,8 +6,6 @@ use crate::terminal::message::{Message, StdOut};
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
-use futures_util::stream::StreamExt;
-
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
 use hyper_rustls::HttpsConnector;
@@ -75,13 +73,12 @@ pub async fn https(
         }
     });
 
-     // Create a TCP listener via tokio.
-     let tcp = TcpListener::bind(&listening_address).await?;
-     // I may have nuked part of the TLS operation. 
-     let tls_acceptor = &tls::get_tls_acceptor()?;
-     let (_socket, addr) = tcp.accept().await.unwrap();
-     let server = Server::bind(&addr)
-     .serve(service);
+    // Create a TCP listener via tokio.
+    let tcp = TcpListener::bind(&listening_address).await?;
+    // I may have nuked part of the TLS operation.
+    let tls_acceptor = &tls::get_tls_acceptor()?;
+    let (_socket, addr) = tcp.accept().await.unwrap();
+    let server = Server::bind(&addr).serve(service);
 
     println!("{} Listening on https://{}", emoji::EAR, listening_address);
     StdOut::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");

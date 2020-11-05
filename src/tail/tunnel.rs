@@ -50,8 +50,8 @@ impl Tunnel {
     /// by the team who maintains cloudflared as safe practice.
     pub async fn shutdown(mut self) -> Result<(), failure::Error> {
         let pid = self.child.id();
-        if let Err(e) = self.child.kill() {
-            failure::bail!("failed to kill cloudflared: {}\ncloudflared will eventually exit, or you can explicitly kill it by running `kill {}`", e, pid)
+        if let Err(e) = self.child.kill().await {
+            failure::bail!("failed to kill cloudflared: {}\ncloudflared will eventually exit, or you can explicitly kill it by running `kill {:?}`", e, pid)
         } else {
             self.child.wait_with_output().await?;
 
