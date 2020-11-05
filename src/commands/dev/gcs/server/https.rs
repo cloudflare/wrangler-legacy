@@ -5,12 +5,12 @@ use crate::commands::dev::tls;
 use crate::commands::dev::utils::{get_path_as_str, rewrite_redirect};
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
-use std::sync::{Arc, Mutex};
-
 use chrono::prelude::*;
+use futures_util::stream::StreamExt;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Response, Server};
 use hyper_rustls::HttpsConnector;
+use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
 
 /// performs all logic that takes an incoming request
@@ -99,9 +99,36 @@ pub async fn https(
     // Create a TCP listener via tokio.
     let tcp = TcpListener::bind(&listening_address).await?;
     // I may have nuked part of the TLS operation.
+    // So, you can get a TcpStream and socketaddr from .accept
+    // TcpStream is not a rust stream
+    // .next, .map, and .filter map come from StreamExt trait 
     let tls_acceptor = &tls::get_tls_acceptor()?;
-    let (_socket, addr) = tcp.accept().await.unwrap();
-    let server = Server::bind(&addr).serve(service);
+    //let (_socket, addr) = tcp.accept().await.unwrap();a
+    let incoming_tls_stream = tcp
+        .filter_map(move |s| async move {
+            let client = match s {
+                Ok(x) => x,
+                Err(e) => {
+                    eprintln!("Failed to accept client");
+                    return None;
+                }
+            };
+            match tls_acceptor.accept(client).await {
+                Ok(x) => Some(Ok(x)),
+                Err(e) => {
+                    eprintln!("Client connection error {}", e);
+                    StdOut::info("Make sure to use https and `--insecure` with curl");
+                    None
+                }
+            }
+        })
+        .boxed();
+       
+    let server = Server::builder(tls::HyperAcceptor {
+        acceptor: incoming_tls_stream,
+    })
+    .serve(service);
+    
     println!(
         "{} Listening on https://{}",
         emoji::EAR,
