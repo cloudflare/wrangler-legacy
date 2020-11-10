@@ -1,6 +1,6 @@
 ---
 name: "\U0001F41B Bug report"
-about: Something's not quite right? You're in the right place!
+about: Something's not working quite as expected with Wrangler? You're in the right place! Having trouble and looking for help troubleshooting, but not sure if it's a bug? [Contact Cloudflare support](https://support.cloudflare.com/hc/en-us/articles/200172476-Contacting-Cloudflare-Support). 
 title: ''
 labels: user report
 assignees: ''
