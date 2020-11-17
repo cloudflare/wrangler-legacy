@@ -15,7 +15,7 @@ atty = "0.2.14"
 base64 = "0.13.0"
 billboard = "0.1.0"
 binary-install = "0.0.3-alpha.1"
-chrome-devtools-rs = { version = "0.0.0-alpha.1", features = ["color"] }
+chrome-devtools-rs = { version = "0.0.0-alpha.2", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
 cloudflare = "0.6.6"
