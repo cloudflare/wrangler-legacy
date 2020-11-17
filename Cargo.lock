@@ -287,8 +287,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrome-devtools-rs"
-version = "0.0.0-alpha.1"
-source = "git+https://github.com/cloudflare/chrome-devtools-rs?branch=fix/devlinenums#3941ebec2aaf61575184eb32326139a96c91300c"
+version = "0.0.0-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26a79dc4759f70819397d2e4281c8bc2991f9207d6abcbdb9f2279a512bf78e4"
 dependencies = [
  "console 0.11.3",
  "log 0.4.11",
