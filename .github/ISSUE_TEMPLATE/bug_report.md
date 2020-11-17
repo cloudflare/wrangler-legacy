@@ -15,7 +15,7 @@ assignees: ''
   Before opening a new issue, please:
   * search for existing issues: https://github.com/cloudflare/wrangler/issues
   * make sure you are using the latest release: https://developers.cloudflare.com/workers/cli-wrangler/install-update#update
-  * if you're having trouble and looking for help troubleshooting, but not sure if it's a bug please [contact Cloudflare support](https://support.cloudflare.com/hc/en-us/articles/200172476-Contacting-Cloudflare-Support) for help 
+  * if you're having trouble and looking for help troubleshooting, but not sure if it's a bug please email Cloudflare support: support@cloudflare.com
   
   Thanks! -->
 
