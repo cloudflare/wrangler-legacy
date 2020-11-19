@@ -19,7 +19,7 @@ use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
-use wrangler::terminal::message::{Message, StdOut};
+use wrangler::terminal::message::{Message, Output, StdOut};
 use wrangler::terminal::{emoji, interactive, styles};
 use wrangler::version::background_check_for_updates;
 
@@ -46,8 +46,9 @@ fn main() -> Result<(), ExitFailure> {
             latest_version
         );
         let update_message = "You can learn more about updating here:".to_string();
-        let update_docs_url =
-            styles::url("https://developers.cloudflare.com/workers/quickstart#updating-the-cli");
+        let update_docs_url = styles::url(
+            "https://developers.cloudflare.com/workers/cli-wrangler/install-update#update",
+        );
 
         StdOut::billboard(&format!(
             "{}\n{}\n{}",
@@ -511,7 +512,7 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("host")
-                        .help("Host to forward or requests to, defaults to the zone of project or to tutorial.cloudflareworkers.com if unauthenticated.")
+                        .help("Host to forward requests to, defaults to the zone of project or to tutorial.cloudflareworkers.com if unauthenticated.")
                         .short("h")
                         .long("host")
                         .takes_value(true)
@@ -525,18 +526,16 @@ fn run() -> Result<(), failure::Error> {
                 )
                 .arg(
                     Arg::with_name("local-protocol")
-                    .help("sets the protocol on which the wrangler dev listens, by default this is http but can be set to https")
-                    .long("local-protocol")
-                    .takes_value(true)
-                    )
+                        .help("sets the protocol on which the wrangler dev listens, by default this is http but can be set to https")
+                        .long("local-protocol")
+                        .takes_value(true)
+                )
                 .arg(
                     Arg::with_name("upstream-protocol")
-                    .help("sets the protocol on which requests are sent to the host, by default this is https but can be set to http")
-                    .long("upstream-protocol")
-                    .takes_value(true)
-                    )
-                .arg(verbose_arg.clone())
-                .arg(wrangler_file.clone())
+                        .help("sets the protocol on which requests are sent to the host, by default this is https but can be set to http")
+                        .long("upstream-protocol")
+                        .takes_value(true)
+                )
         )
         .subcommand(
             SubCommand::with_name("publish")
@@ -559,6 +558,13 @@ fn run() -> Result<(), failure::Error> {
                         .long("release")
                         .takes_value(false)
                         .help("[deprecated] alias of wrangler publish")
+                )
+                .arg(
+                    Arg::with_name("output")
+                    .short("o")
+                    .long("output")
+                    .takes_value(true)
+                    .possible_value("json")
                 ),
         )
         .subcommand(
@@ -765,6 +771,8 @@ fn run() -> Result<(), failure::Error> {
 
         commands::preview(target, user, options, verbose)?;
     } else if let Some(matches) = matches.subcommand_matches("dev") {
+        use commands::dev::Protocol;
+
         log::info!("Starting dev server");
 
         let config_path = Path::new(
@@ -780,31 +788,20 @@ fn run() -> Result<(), failure::Error> {
             .value_of("port")
             .map(|p| p.parse().expect("--port expects a number"));
 
-        type Protocol = commands::dev::Protocol;
         let mut local_protocol_str: Option<&str> = matches.value_of("local-protocol");
         let mut upstream_protocol_str: Option<&str> = matches.value_of("upstream-protocol");
 
         // Check if arg not given but present in wrangler.toml
         if let Some(d) = &manifest.dev {
-            if ip.is_none() && d.ip.is_some() {
-                ip = d.ip.as_deref();
-            }
-
-            if port.is_none() && d.port.is_some() {
-                port = d.port;
-            }
-
-            if local_protocol_str.is_none() && d.local_protocol.is_some() {
-                local_protocol_str = d.local_protocol.as_deref();
-            }
-
-            if upstream_protocol_str.is_none() && d.upstream_protocol.is_some() {
-                upstream_protocol_str = d.upstream_protocol.as_deref();
-            }
+            ip = ip.or_else(|| d.ip.as_deref());
+            port = port.or(d.port);
+            local_protocol_str = local_protocol_str.or_else(|| d.local_protocol.as_deref());
+            upstream_protocol_str =
+                upstream_protocol_str.or_else(|| d.upstream_protocol.as_deref());
         }
 
         let env = matches.value_of("env");
-        let deploy_config = manifest.deploy_config(env)?;
+        let deployments = manifest.get_deployments(env)?;
         is_preview = true;
         let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new().ok();
@@ -817,7 +814,7 @@ fn run() -> Result<(), failure::Error> {
 
         commands::dev::dev(
             target,
-            deploy_config,
+            deployments,
             user,
             server_config,
             local_protocol,
@@ -854,9 +851,12 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env, is_preview)?;
-        let deploy_config = manifest.deploy_config(env)?;
-
-        commands::publish(&user, &mut target, deploy_config)?;
+        let deploy_config = manifest.get_deployments(env)?;
+        if matches.is_present("output") && matches.value_of("output") == Some("json") {
+            commands::publish(&user, &mut target, deploy_config, Output::Json)?;
+        } else {
+            commands::publish(&user, &mut target, deploy_config, Output::PlainText)?;
+        }
     } else if let Some(matches) = matches.subcommand_matches("subdomain") {
         log::info!("Getting project settings");
         let config_path = Path::new(

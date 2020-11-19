@@ -9,8 +9,9 @@ pub use server_config::Protocol;
 pub use server_config::ServerConfig;
 
 use crate::build::build_target;
+use crate::deploy::{DeployTarget, DeploymentSet};
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, Target};
+use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::styles;
 
@@ -18,7 +19,7 @@ use crate::terminal::styles;
 /// to a Cloudflare Workers runtime and returns HTTP responses
 pub fn dev(
     target: Target,
-    deploy_config: DeployConfig,
+    deployments: DeploymentSet,
     user: Option<GlobalUser>,
     server_config: ServerConfig,
     local_protocol: Protocol,
@@ -27,6 +28,28 @@ pub fn dev(
 ) -> Result<(), failure::Error> {
     // before serving requests we must first build the Worker
     build_target(&target)?;
+
+    let deploy_target = {
+        let valid_targets = deployments
+            .into_iter()
+            .filter(|t| matches!(t, DeployTarget::Zoned(_) | DeployTarget::Zoneless(_)))
+            .collect::<Vec<_>>();
+
+        let valid_target = valid_targets
+            .iter()
+            .find(|&t| matches!(t, DeployTarget::Zoned(_)))
+            .or_else(|| {
+                valid_targets
+                    .iter()
+                    .find(|&t| matches!(t, DeployTarget::Zoneless(_)))
+            });
+
+        if let Some(target) = valid_target {
+            target.clone()
+        } else {
+            failure::bail!("No valid deployment targets: `wrangler dev` can only be used to develop zoned and zoneless deployments")
+        }
+    };
 
     let host_str = styles::highlight("--host");
     let local_str = styles::highlight("--local-protocol");
@@ -48,7 +71,7 @@ pub fn dev(
                 target,
                 user,
                 server_config,
-                deploy_config,
+                deploy_target,
                 local_protocol,
                 upstream_protocol,
                 verbose,

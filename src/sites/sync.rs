@@ -10,7 +10,7 @@ use crate::http;
 use crate::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
-use crate::terminal::message::{Message, StdOut};
+use crate::terminal::message::{Message, StdErr};
 
 pub fn sync(
     target: &Target,
@@ -38,7 +38,7 @@ pub fn sync(
         }
     }
 
-    let (pairs, asset_manifest): (Vec<KeyValuePair>, AssetManifest) =
+    let (pairs, asset_manifest, _): (Vec<KeyValuePair>, AssetManifest, _) =
         directory_keys_values(target, path)?;
 
     let to_upload = filter_files(pairs.clone(), &remote_keys);
@@ -57,7 +57,7 @@ pub fn sync(
         .map(|key| key.to_owned())
         .collect();
 
-    StdOut::success("Success");
+    StdErr::success("Success");
     Ok((to_upload, to_delete, asset_manifest))
 }
 

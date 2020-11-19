@@ -1,7 +1,13 @@
 use super::emoji;
 
 use billboard::{Billboard, BorderColor, BorderStyle};
+use serde::Serialize;
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Output {
+    Json,
+    PlainText,
+}
 pub trait Message {
     fn message(msg: &str);
 
@@ -42,6 +48,9 @@ pub trait Message {
 
     fn billboard(msg: &str);
     fn deprecation_warning(msg: &str);
+    fn as_json<T>(value: &T)
+    where
+        T: ?Sized + Serialize;
 }
 
 pub struct StdOut;
@@ -68,6 +77,13 @@ impl Message for StdOut {
             .build();
         bb.display(msg);
     }
+
+    fn as_json<T>(value: &T)
+    where
+        T: ?Sized + Serialize,
+    {
+        println!("{}", &serde_json::to_string(value).unwrap());
+    }
 }
 
 pub struct StdErr;
@@ -83,5 +99,11 @@ impl Message for StdErr {
 
     fn deprecation_warning(_msg: &str) {
         panic!("Can't display billboard warning to stderr.")
+    }
+    fn as_json<T>(_value: &T)
+    where
+        T: ?Sized + Serialize,
+    {
+        panic!("Json output intended for stdout, not stderr.")
     }
 }

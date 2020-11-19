@@ -1,82 +1,50 @@
-mod route;
-use route::publish_routes;
+mod schedule;
+mod zoned;
+mod zoneless;
 
-use crate::commands::subdomain::Subdomain;
-use crate::http;
+pub use schedule::ScheduleTarget;
+pub use zoned::ZonedTarget;
+pub use zoneless::ZonelessTarget;
+
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, Zoneless};
-use crate::terminal::message::{Message, StdOut};
-pub fn worker(user: &GlobalUser, deploy_config: &DeployConfig) -> Result<(), failure::Error> {
-    match deploy_config {
-        DeployConfig::Zoneless(zoneless_config) => {
-            // this is a zoneless deploy
-            log::info!("publishing to workers.dev subdomain");
-            let deploy_address = publish_zoneless(user, zoneless_config)?;
 
-            StdOut::success(&format!(
-                "Successfully published your script to {}",
-                deploy_address
-            ));
+/// A set of deploy targets.
+pub type DeploymentSet = Vec<DeployTarget>;
 
-            Ok(())
-        }
-        DeployConfig::Zoned(zoned_config) => {
-            // this is a zoned deploy
-            log::info!("publishing to zone {}", zoned_config.zone_id);
-
-            let published_routes = publish_routes(&user, zoned_config)?;
-
-            let display_results: Vec<String> =
-                published_routes.iter().map(|r| format!("{}", r)).collect();
-
-            StdOut::success(&format!(
-                "Deployed to the following routes:\n{}",
-                display_results.join("\n")
-            ));
-
-            Ok(())
-        }
-    }
+#[derive(Debug, PartialEq, Clone)]
+pub enum DeployTarget {
+    Zoned(ZonedTarget),
+    Zoneless(ZonelessTarget),
+    Schedule(ScheduleTarget),
 }
 
-fn publish_zoneless(
+pub fn worker(
     user: &GlobalUser,
-    zoneless_config: &Zoneless,
-) -> Result<String, failure::Error> {
-    log::info!("checking that subdomain is registered");
-    let subdomain = match Subdomain::get(&zoneless_config.account_id, user)? {
-        Some(subdomain) => subdomain,
-        None => failure::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
-    };
-
-    let sd_worker_addr = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
-        zoneless_config.account_id, zoneless_config.script_name,
-    );
-
-    let client = http::legacy_auth_client(user);
-
-    log::info!("Making public on subdomain...");
-    let res = client
-        .post(&sd_worker_addr)
-        .header("Content-type", "application/json")
-        .body(build_subdomain_request())
-        .send()?;
-
-    if !res.status().is_success() {
-        failure::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
+    deploy_targets: &[DeployTarget],
+) -> Result<DeployResults, failure::Error> {
+    let mut results = DeployResults::default();
+    for target in deploy_targets {
+        match target {
+            DeployTarget::Zoned(zoned) => {
+                let route_urls = zoned.deploy(user)?;
+                results.urls.extend(route_urls);
+            }
+            DeployTarget::Zoneless(zoneless) => {
+                let worker_dev = zoneless.deploy(user)?;
+                results.urls.push(worker_dev);
+            }
+            DeployTarget::Schedule(schedule) => {
+                let schedules = schedule.deploy(user)?;
+                results.schedules.extend(schedules);
+            }
+        }
     }
 
-    Ok(format!(
-        "https://{}.{}.workers.dev",
-        zoneless_config.script_name, subdomain
-    ))
+    Ok(results)
 }
 
-fn build_subdomain_request() -> String {
-    serde_json::json!({ "enabled": true }).to_string()
+#[derive(Default)]
+pub struct DeployResults {
+    pub urls: Vec<String>,
+    pub schedules: Vec<String>,
 }
