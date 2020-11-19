@@ -7,7 +7,7 @@ use std::process::Command;
 #[test]
 fn it_generates_with_defaults() {
     let name = "worker";
-    generate(None, None, None);
+    generate(None, None, None, None);
 
     assert_eq!(Path::new(name).exists(), true);
 
@@ -20,8 +20,14 @@ fn it_generates_with_defaults() {
 fn it_generates_with_arguments() {
     let name = "example";
     let template = "https://github.com/cloudflare/rustwasm-worker-template";
+    let template_branch = "master";
     let project_type = "webpack";
-    generate(Some(name), Some(template), Some(project_type));
+    generate(
+        Some(name),
+        Some(template),
+        Some(template_branch),
+        Some(project_type),
+    );
 
     assert_eq!(Path::new(name).exists(), true);
 
@@ -32,15 +38,26 @@ fn it_generates_with_arguments() {
     cleanup(name);
 }
 
-pub fn generate(name: Option<&str>, template: Option<&str>, project_type: Option<&str>) {
+pub fn generate(
+    name: Option<&str>,
+    template: Option<&str>,
+    template_branch: Option<&str>,
+    project_type: Option<&str>,
+) {
     let mut wrangler = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    if name.is_none() && template.is_none() && project_type.is_none() {
+    if name.is_none() && template.is_none() && template_branch.is_none() && project_type.is_none() {
         wrangler.arg("generate").assert().success();
-    } else if name.is_some() && template.is_some() && project_type.is_some() {
+    } else if name.is_some()
+        && template.is_some()
+        && template_branch.is_some()
+        && project_type.is_some()
+    {
         wrangler
             .arg("generate")
             .arg(name.unwrap())
             .arg(template.unwrap())
+            .arg("--branch")
+            .arg(template_branch.unwrap())
             .arg("--type")
             .arg(project_type.unwrap())
             .assert()
