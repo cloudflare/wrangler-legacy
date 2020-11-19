@@ -296,7 +296,7 @@ impl Manifest {
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
-            text_blobs: self.text_blobs.clone(), // Not inherited
+            text_blobs: self.text_blobs.clone(), // Inherited
         };
 
         let environment = self.get_environment(environment_name)?;
@@ -319,9 +319,6 @@ impl Manifest {
 
             // don't inherit vars
             target.vars = environment.vars.clone();
-
-            // don't inherit text_blobs
-            target.text_blobs = environment.text_blobs.clone();
         }
 
         Ok(target)
