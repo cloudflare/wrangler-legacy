@@ -1,10 +1,10 @@
-name: Tests
+name: 🧪 Tests
 
 on: [pull_request]
 
 jobs:
   test:
-    name: Test
+    name: 🛂 Test
 
     runs-on: ${{ matrix.os }}
     strategy:
@@ -56,12 +56,12 @@ jobs:
       #     restore-keys: |
       #       ${{ matrix.build }}-target-
 
-      - name: Install Rust
+      - name: 🏗️ Install Rust
         run: |
           rustup update ${{ matrix.rust }} --no-self-update
           rustup default ${{ matrix.rust }}
 
-      - name: Run Tests
+      - name: 🧪 Run Tests
         run: cargo test --features "strict"
         env:
           RUST_BACKTRACE: 1
