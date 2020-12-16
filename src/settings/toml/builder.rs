@@ -18,6 +18,8 @@ pub struct Builder {
     #[serde(default = "upload_dir")]
     pub upload_dir: PathBuf,
     pub upload_format: ScriptFormat,
+    pub upload_include: Option<Vec<String>>,
+    pub upload_exclude: Option<Vec<String>>,
     #[serde(default = "watch_dir")]
     pub watch_dir: PathBuf,
 }
