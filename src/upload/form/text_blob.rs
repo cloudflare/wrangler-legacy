@@ -1,6 +1,9 @@
 use super::binding::Binding;
 use serde::{Deserialize, Serialize};
 
+// Note: This is only used for service-worker scripts.
+// modules scripts use the universal Module class instead of this.
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TextBlob {
     pub data: String,
