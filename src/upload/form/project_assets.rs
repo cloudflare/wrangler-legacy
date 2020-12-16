@@ -11,7 +11,7 @@ use super::wasm_module::WasmModule;
 use crate::settings::toml::KvNamespace;
 
 #[derive(Debug)]
-pub struct ProjectAssets {
+pub struct ServiceWorkerAssets {
     script_name: String,
     script_path: PathBuf,
     pub wasm_modules: Vec<WasmModule>,
@@ -20,7 +20,7 @@ pub struct ProjectAssets {
     pub plain_texts: Vec<PlainText>,
 }
 
-impl ProjectAssets {
+impl ServiceWorkerAssets {
     pub fn new(
         script_path: PathBuf,
         wasm_modules: Vec<WasmModule>,
