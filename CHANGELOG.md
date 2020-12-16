@@ -1,5 +1,13 @@
 # Changelog
 
+## ❗️ 1.12.3
+
+- ### Fixes
+
+  - **Bump OpenSSL version with vulnerability patch  - [pull/1684]**
+
+    [pull/1684]: https://github.com/cloudflare/wrangler/pull/1684
+
 ## ❗️ 1.12.2
 
 - ### Fixes
