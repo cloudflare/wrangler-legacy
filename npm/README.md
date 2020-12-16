@@ -41,6 +41,10 @@ cargo install wrangler
 
 If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](https://developers.cloudflare.com/workers/tooling/wrangler/install/).
 
+### Install on Windows
+
+[perl is an external dependency of crate openssl-sys](https://github.com/sfackler/rust-openssl/blob/b027f1603189919d5f63c6aff483243aaa188568/openssl/src/lib.rs#L11-L15). If installing with cargo, you will need to have it installed. Installing with `npm` is another option if you don't want to install perl.
+
 ## Updating
 
 For information regarding updating Wrangler, click [here](https://developers.cloudflare.com/workers/cli-wrangler/install-update#update).
