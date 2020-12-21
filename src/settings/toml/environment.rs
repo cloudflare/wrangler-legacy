@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use crate::settings::toml::builder::Builder;
+use crate::settings::toml::durable_objects::DurableObjects;
 use crate::settings::toml::kv_namespace::ConfigKvNamespace;
 use crate::settings::toml::route::RouteConfig;
 use crate::settings::toml::site::Site;
@@ -30,6 +31,7 @@ pub struct Environment {
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
+    pub durable_objects: Option<DurableObjects>,
 }
 
 impl Environment {

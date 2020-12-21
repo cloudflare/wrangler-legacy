@@ -13,6 +13,7 @@ use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
 use crate::settings::toml::builder::Builder;
 use crate::settings::toml::dev::Dev;
+use crate::settings::toml::durable_objects::DurableObjects;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
 use crate::settings::toml::route::RouteConfig;
@@ -53,6 +54,7 @@ pub struct Manifest {
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
+    pub durable_objects: Option<DurableObjects>,
 }
 
 impl Manifest {
@@ -274,6 +276,24 @@ impl Manifest {
             deployments.push(DeployTarget::Schedule(scheduled));
         }
 
+        let (account_id, durable_objects) = match env {
+            Some(e) => (
+                e.account_id.as_ref().unwrap_or(&self.account_id),
+                e.durable_objects.as_ref(),
+            ),
+            None => (&self.account_id, self.durable_objects.as_ref()),
+        };
+
+        if let Some(durable_objects) = durable_objects {
+            deployments.push(DeployTarget::DurableObjects(
+                deploy::DurableObjectsTarget::new(
+                    account_id.clone(),
+                    script.clone(),
+                    durable_objects.clone(),
+                ),
+            ));
+        }
+
         if deployments.is_empty() {
             failure::bail!("No deployments specified!")
         }
@@ -328,8 +348,13 @@ impl Manifest {
             // to include the name of the environment
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
-            site: self.site.clone(), // Inherited
-            vars: self.vars.clone(), // Not inherited
+            used_durable_object_namespaces: self // Not inherited
+                .durable_objects
+                .clone()
+                .and_then(|d| d.uses)
+                .unwrap_or_default(),
+            site: self.site.clone(),             // Inherited
+            vars: self.vars.clone(),             // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited
         };
 
@@ -349,6 +374,13 @@ impl Manifest {
 
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
             target.kv_namespaces = get_namespaces(environment.kv_namespaces.clone(), preview)?;
+
+            // don't inherit durable object namespaces
+            target.used_durable_object_namespaces = environment
+                .durable_objects
+                .clone()
+                .and_then(|d| d.uses)
+                .unwrap_or_default();
 
             if let Some(site) = &environment.site {
                 target.site = Some(site.clone());

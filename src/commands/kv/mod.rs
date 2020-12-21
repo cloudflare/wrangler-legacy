@@ -119,6 +119,7 @@ mod tests {
                     binding: "KV".to_string(),
                 },
             ],
+            used_durable_object_namespaces: vec![],
             name: "test-target".to_string(),
             target_type: TargetType::Webpack,
             webpack_config: None,
