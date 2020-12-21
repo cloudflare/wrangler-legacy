@@ -8,7 +8,7 @@ use super::plain_text::PlainText;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
 
-use crate::settings::toml::KvNamespace;
+use crate::settings::toml::{DurableObjectNamespace, KvNamespace};
 
 #[derive(Debug)]
 pub struct ServiceWorkerAssets {
@@ -16,6 +16,7 @@ pub struct ServiceWorkerAssets {
     script_path: PathBuf,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub used_durable_object_namespaces: Vec<DurableObjectNamespace>,
     pub text_blobs: Vec<TextBlob>,
     pub plain_texts: Vec<PlainText>,
 }
@@ -25,6 +26,7 @@ impl ServiceWorkerAssets {
         script_path: PathBuf,
         wasm_modules: Vec<WasmModule>,
         kv_namespaces: Vec<KvNamespace>,
+        used_durable_object_namespaces: Vec<DurableObjectNamespace>,
         text_blobs: Vec<TextBlob>,
         plain_texts: Vec<PlainText>,
     ) -> Result<Self, failure::Error> {
@@ -37,6 +39,7 @@ impl ServiceWorkerAssets {
             script_path,
             wasm_modules,
             kv_namespaces,
+            used_durable_object_namespaces,
             text_blobs,
             plain_texts,
         })
@@ -51,6 +54,10 @@ impl ServiceWorkerAssets {
         }
         for kv in &self.kv_namespaces {
             let binding = kv.binding();
+            bindings.push(binding);
+        }
+        for do_ns in &self.used_durable_object_namespaces {
+            let binding = do_ns.binding().expect("namespace id to be provided");
             bindings.push(binding);
         }
         for blob in &self.text_blobs {
@@ -132,6 +139,7 @@ pub struct ModulesAssets {
     pub main_module: String,
     pub modules: Vec<Module>,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub used_durable_object_namespaces: Vec<DurableObjectNamespace>,
     pub plain_texts: Vec<PlainText>,
 }
 
@@ -140,12 +148,14 @@ impl ModulesAssets {
         main_module: String,
         modules: Vec<Module>,
         kv_namespaces: Vec<KvNamespace>,
+        used_durable_object_namespaces: Vec<DurableObjectNamespace>,
         plain_texts: Vec<PlainText>,
     ) -> Result<Self, failure::Error> {
         Ok(Self {
             main_module,
             modules,
             kv_namespaces,
+            used_durable_object_namespaces,
             plain_texts,
         })
     }
@@ -158,6 +168,10 @@ impl ModulesAssets {
 
         for kv in &self.kv_namespaces {
             let binding = kv.binding();
+            bindings.push(binding);
+        }
+        for do_ns in &self.used_durable_object_namespaces {
+            let binding = do_ns.binding().expect("namespace id to be provided");
             bindings.push(binding);
         }
         for plain_text in &self.plain_texts {

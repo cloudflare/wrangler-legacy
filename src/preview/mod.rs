@@ -36,6 +36,11 @@ pub fn preview(
             failure::bail!("wrangler preview does not support previewing modules scripts. Please use wrangler dev instead.");
         }
     }
+
+    if !target.used_durable_object_namespaces.is_empty() {
+        failure::bail!("wrangler preview does not support previewing scripts that bind to durable object namespaces. Please use wrangler dev instead.");
+    }
+
     build_target(&target)?;
 
     let sites_preview: bool = target.site.is_some();
