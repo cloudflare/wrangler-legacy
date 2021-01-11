@@ -31,7 +31,6 @@ pub fn upsert(
                     log::info!("Namespace {} already exists.", title);
 
                     let namespace = list(&client, target)?
-                        .result
                         .iter()
                         .find(|ns| ns.title == title)
                         .unwrap()
