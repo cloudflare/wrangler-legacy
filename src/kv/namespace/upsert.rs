@@ -30,12 +30,12 @@ pub fn upsert(
                 } else if api_errors.errors.iter().any(|e| e.code == 10014) {
                     log::info!("Namespace {} already exists.", title);
 
-                    let namespace = list(&client, target)?
+                    match list(&client, target)?
                         .iter()
-                        .find(|ns| ns.title == title)
-                        .unwrap()
-                        .to_owned();
-                    Ok(UpsertedNamespace::Reused(namespace))
+                        .find(|ns| ns.title == title) {
+                        Some(namespace) => Ok(UpsertedNamespace::Reused(namespace.to_owned())),
+                        None => failure::bail!("namespace already exists, but could not be found in the API's listed namespaces"),
+                    }
                 } else {
                     failure::bail!("{}", http::format_error(e, Some(&error_suggestions)))
                 }
