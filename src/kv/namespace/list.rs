@@ -42,9 +42,14 @@ pub fn list(
 }
 
 fn get_total(list_response: &ApiSuccess<Vec<WorkersKvNamespace>>) -> Result<usize, failure::Error> {
-    let result_info: ListResponseResultInfo =
-        serde_json::from_value(list_response.result_info.clone().unwrap())?;
-    Ok(result_info.total_count)
+    match list_response.result_info.clone() {
+        Some(r) => {
+            let result_info: ListResponseResultInfo =
+                serde_json::from_value(r)?;
+            Ok(result_info.total_count)
+        },
+        None => failure::bail!("KV list response lacks result_info field")
+    }
 }
 
 #[derive(Deserialize)]
