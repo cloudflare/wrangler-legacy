@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.12.2"
+version = "1.12.3"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>", "Nat Davidson <davidson@cloudflare.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -32,23 +32,23 @@ futures-util = "0.3"
 http = "0.2.1"
 hyper = "0.13.9"
 hyper-rustls = "0.21.0"
-ignore = "0.4.16"
+ignore = "0.4.17"
 indicatif = "0.15.0"
 lazy_static = "1.4.0"
 log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
-openssl = { version = "0.10.29", optional = true }
+openssl = { version = "0.10.32", optional = true }
 percent-encoding = "2.1.0"
 predicates = "1.0.5"
 prettytable-rs = "0.8.0"
 rand = "0.7.3"
 regex = "1.4.1"
-reqwest = { version = "0.10.8", features = ["blocking", "json"] }
+reqwest = { version = "0.10.9", features = ["blocking", "json"] }
 rustls = "0.18.1"
 semver = "0.11.0"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.59"
+serde_json = "1.0.60"
 serde_with = "1.5.1"
 tempfile = "3.1.0"
 term_size = "0.3"
@@ -57,7 +57,7 @@ tokio = { version = "0.2", default-features = false, features = ["io-std", "time
 tokio-native-tls = "0.1.0"
 tokio-rustls = "0.14.1"
 tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
-toml = "0.5.7"
+toml = "0.5.8"
 twox-hash = "1.6.0"
 url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }
@@ -65,7 +65,7 @@ which = "4.0.2"
 ws = "0.9.1"
 
 [dev-dependencies]
-assert_cmd = "1.0.1"
+assert_cmd = "1.0.2"
 fs_extra = "1.2.0"
 predicates = "1.0.5"
 
