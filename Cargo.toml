@@ -57,7 +57,7 @@ tokio = { version = "0.2", default-features = false, features = ["io-std", "time
 tokio-native-tls = "0.1.0"
 tokio-rustls = "0.14.1"
 tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
-toml = "0.5.7"
+toml = "0.5.8"
 twox-hash = "1.6.0"
 url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }
