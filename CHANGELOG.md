@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.13.0
+
+- ### Features
+
+  - **Add support for text blob bindings - [xortive], [pull/1543], [issue/483]**
+    
+    Wrangler now supports text blobs! Text blobs are values to use in your workers, but are read from a file instead of a string in your TOML.
+    
+    Usage:
+
+      `text_blobs = { FOO = "path/to/foo.txt", BAR = "path/to/bar.txt" }`
+
+    [pull/1543]: https://github.com/cloudflare/wrangler/pull/1543
+    [issue/483]: https://github.com/cloudflare/wrangler/issue/483
+
+- ### Fixes
+
+  - **Support accounts with more than 100 kv namespaces - [ags799], [pull/1717]**
+
+    [pull/1717]: https://github.com/cloudflare/wrangler/pull/1717
+    [ags799]: https://github.com/ags799
+
+- ### Maintenance
+
+  - **Remove references to obsolete kv error codes - [ags799], [pull/1727]**
+
+    [pull/1727]: https://github.com/cloudflare/wrangler/pull/1727
+
 ## ❗️ 1.12.3
 
 - ### Fixes
