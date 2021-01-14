@@ -49,6 +49,7 @@ pub struct Manifest {
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub env: Option<HashMap<String, Environment>>,
     pub vars: Option<HashMap<String, String>>,
+    pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
 }
 
@@ -295,6 +296,7 @@ impl Manifest {
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
+            text_blobs: self.text_blobs.clone(), // Inherited
         };
 
         let environment = self.get_environment(environment_name)?;

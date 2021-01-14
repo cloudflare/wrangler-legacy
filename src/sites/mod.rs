@@ -320,6 +320,7 @@ mod tests {
             webpack_config: None,
             site: Some(site),
             vars: None,
+            text_blobs: None,
         }
     }
 
