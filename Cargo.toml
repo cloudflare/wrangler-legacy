@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.12.3"
+version = "1.13.0"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>", "Nat Davidson <davidson@cloudflare.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -38,7 +38,7 @@ lazy_static = "1.4.0"
 log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
-openssl = { version = "0.10.31", optional = true }
+openssl = { version = "0.10.32", optional = true }
 percent-encoding = "2.1.0"
 predicates = "1.0.5"
 prettytable-rs = "0.8.0"
@@ -57,7 +57,7 @@ tokio = { version = "0.2", default-features = false, features = ["io-std", "time
 tokio-native-tls = "0.1.0"
 tokio-rustls = "0.14.1"
 tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
-toml = "0.5.7"
+toml = "0.5.8"
 twox-hash = "1.6.0"
 url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }

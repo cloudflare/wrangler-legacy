@@ -34,8 +34,6 @@ fn kv_help(error_code: u16) -> &'static str {
         // TODO: link to tool for this?
         // legacy namespace errors
         10021 | 10035 | 10038 => "Consider moving this namespace",
-        // cloudflare account errors
-        10017 | 10026 => "Workers KV is a paid feature, please upgrade your account (https://www.cloudflare.com/products/workers-kv/)",
         _ => "",
     }
 }
@@ -126,6 +124,7 @@ mod tests {
             webpack_config: None,
             site: None,
             vars: None,
+            text_blobs: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }
