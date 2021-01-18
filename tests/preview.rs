@@ -227,6 +227,35 @@ fn it_previews_with_config_text() {
     preview_succeeds_with(&fixture, None, test_value);
 }
 
+#[test]
+fn it_previews_with_text_blob() {
+    let fixture = Fixture::new();
+    fixture.create_file(
+        "index.js",
+        r#"
+        addEventListener('fetch', event => {
+            event.respondWith(handleRequest(event.request))
+        })
+
+        async function handleRequest(request) {
+            return new Response(BLOB)
+        }
+    "#,
+    );
+    fixture.create_default_package_json();
+
+    let test_value: &'static str = "sdhftiuyrtdhfjgpoopuyrdfjgkyitudrhf";
+    fixture.create_file("blob.txt", test_value);
+
+    let mut wrangler_toml = WranglerToml::javascript("test-preview-with-config");
+    let mut blobs: HashMap<&'static str, &'static str> = HashMap::new();
+    blobs.insert("BLOB", "blob.txt");
+    wrangler_toml.text_blobs = Some(blobs);
+    fixture.create_wrangler_toml(wrangler_toml);
+
+    preview_succeeds_with(&fixture, None, test_value);
+}
+
 fn preview_succeeds_with(fixture: &Fixture, env: Option<&str>, expected: &str) {
     env::remove_var("CF_ACCOUNT_ID");
     env::remove_var("CF_ZONE_ID");

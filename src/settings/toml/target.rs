@@ -16,6 +16,7 @@ pub struct Target {
     pub webpack_config: Option<String>,
     pub site: Option<Site>,
     pub vars: Option<HashMap<String, String>>,
+    pub text_blobs: Option<HashMap<String, PathBuf>>,
 }
 
 impl Target {
