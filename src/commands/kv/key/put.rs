@@ -13,6 +13,9 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
+use reqwest::blocking::multipart;
+use reqwest::blocking::Body;
+
 pub struct KVMetaData {
     pub namespace_id: String,
     pub key: String,
@@ -20,6 +23,14 @@ pub struct KVMetaData {
     pub is_file: bool,
     pub expiration: Option<String>,
     pub expiration_ttl: Option<String>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+// to be used with clap's Arg::validator
+pub fn metadata_validator(arg: String) -> Result<(), String> {
+    serde_json::from_str::<serde_json::Value>(&arg)
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), failure::Error> {
@@ -41,30 +52,9 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
     if let Some(ttl) = &data.expiration_ttl {
         query_params.push(("expiration_ttl", ttl))
     };
-    let url = Url::parse_with_params(&api_endpoint, query_params);
+    let url = Url::parse_with_params(&api_endpoint, query_params)?;
 
-    let client = http::legacy_auth_client(&user);
-
-    let url_into_str = url?.into_string();
-
-    // If is_file is true, overwrite value to be the contents of the given
-    // filename in the 'value' arg.
-    let res = if data.is_file {
-        match &metadata(&data.value) {
-            Ok(file_type) if file_type.is_file() => {
-                let file = fs::File::open(&data.value)?;
-                client.put(&url_into_str).body(file).send()?
-            }
-            Ok(file_type) if file_type.is_dir() => failure::bail!(
-                "--path argument takes a file, {} is a directory",
-                data.value
-            ),
-            Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", data.value), // last remaining value is symlink
-            Err(e) => failure::bail!("{}", e),
-        }
-    } else {
-        client.put(&url_into_str).body(data.value).send()?
-    };
+    let res = get_response(data, user, &url)?;
 
     let response_status = res.status();
     if response_status.is_success() {
@@ -81,4 +71,79 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
     }
 
     Ok(())
+}
+
+fn get_response(
+    data: KVMetaData,
+    user: &GlobalUser,
+    url: &Url,
+) -> Result<reqwest::blocking::Response, failure::Error> {
+    let url_into_str = url.to_string();
+    let client = http::legacy_auth_client(user);
+    let res = match data.metadata {
+        Some(metadata) => {
+            let part = if data.is_file {
+                multipart::Part::file(&data.value)?
+            } else {
+                multipart::Part::text(data.value)
+            };
+            let form = multipart::Form::new()
+                .part("value", part)
+                .text("metadata", metadata.to_string());
+            client.put(&url_into_str).multipart(form).send()?
+        }
+        None => {
+            let value_body = get_request_body(data)?;
+            client.put(&url_into_str).body(value_body).send()?
+        }
+    };
+    Ok(res)
+}
+
+// If is_file is true, overwrite value to be the contents of the given
+// filename in the 'value' arg.
+fn get_request_body(data: KVMetaData) -> Result<Body, failure::Error> {
+    if data.is_file {
+        match &metadata(&data.value) {
+            Ok(file_type) if file_type.is_file() => {
+                let file = fs::File::open(&data.value)?;
+                Ok(file.into())
+            }
+            Ok(file_type) if file_type.is_dir() => failure::bail!(
+                "--path argument takes a file, {} is a directory",
+                data.value
+            ),
+            // last remaining value is symlink
+            Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", data.value),
+            Err(e) => failure::bail!("{}", e),
+        }
+    } else {
+        Ok(data.value.into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn metadata_validator_legal() {
+        for input in &[
+            "true",
+            "false",
+            "123.456",
+            r#""some string""#,
+            "[1, 2]",
+            "{\"key\": \"value\"}",
+        ] {
+            assert!(metadata_validator(input.to_string()).is_ok());
+        }
+    }
+
+    #[test]
+    fn metadata_validator_illegal() {
+        for input in &["something", "{key: 123}", "[1, 2"] {
+            assert!(metadata_validator(input.to_string()).is_err());
+        }
+    }
 }

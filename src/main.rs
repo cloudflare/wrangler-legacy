@@ -13,7 +13,7 @@ use exitfailure::ExitFailure;
 use url::Url;
 
 use wrangler::commands;
-use wrangler::commands::kv::key::KVMetaData;
+use wrangler::commands::kv::key::{metadata_validator, KVMetaData};
 use wrangler::installer;
 use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
@@ -201,6 +201,15 @@ fn run() -> Result<(), failure::Error> {
                             .long("expiration")
                             .takes_value(true)
                             .value_name("SECONDS")
+                        )
+                        .arg(
+                            Arg::with_name("metadata")
+                            .help("Arbitrary JSON to associate with a key-value pair. Must be no more than 1024 bytes.")
+                            .short("m")
+                            .long("metadata")
+                            .takes_value(true)
+                            .value_name("JSON")
+                            .validator(metadata_validator)
                         )
                         .arg(
                             Arg::with_name("path")
@@ -1045,6 +1054,10 @@ fn run() -> Result<(), failure::Error> {
                 let expiration_ttl = put_key_matches
                     .value_of("expiration-ttl")
                     .map(|t| t.to_string());
+                let metadata = put_key_matches
+                    .value_of("metadata")
+                    .map(serde_json::from_str)
+                    .map(Result::unwrap); // success is guaranteed in the argument's `validator` call
                 let kv_metadata = KVMetaData {
                     namespace_id,
                     key,
@@ -1052,6 +1065,7 @@ fn run() -> Result<(), failure::Error> {
                     is_file,
                     expiration,
                     expiration_ttl,
+                    metadata,
                 };
                 commands::kv::key::put(&target, &user, kv_metadata)?
             }
