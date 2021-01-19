@@ -1,3 +1,4 @@
+use super::builder::Builder;
 use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
@@ -14,6 +15,7 @@ pub struct Target {
     pub name: String,
     pub target_type: TargetType,
     pub webpack_config: Option<String>,
+    pub build: Option<Builder>,
     pub site: Option<Site>,
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
