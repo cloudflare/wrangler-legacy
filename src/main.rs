@@ -12,6 +12,7 @@ use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use exitfailure::ExitFailure;
 use url::Url;
 
+use futures_util::TryStreamExt;
 use wrangler::commands;
 use wrangler::commands::kv::key::{metadata_validator, KVMetaData};
 use wrangler::installer;
@@ -22,7 +23,6 @@ use wrangler::settings::toml::TargetType;
 use wrangler::terminal::message::{Message, Output, StdOut};
 use wrangler::terminal::{emoji, interactive, styles};
 use wrangler::version::background_check_for_updates;
-use futures_util::TryStreamExt;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -1055,9 +1055,8 @@ fn run() -> Result<(), failure::Error> {
                 let expiration_ttl = put_key_matches
                     .value_of("expiration-ttl")
                     .map(|t| t.to_string());
-                let metadata: Option<serde_json::Value> = put_key_matches
-                    .value_of("metadata")
-                    .map(|s| {
+                let metadata: Option<serde_json::Value> =
+                    put_key_matches.value_of("metadata").map(|s| {
                         match serde_json::from_str::<serde_json::Value>(s) {
                             Ok(v) => v,
                             Err(e) => failure::bail!("--metadata is not valid JSON: {}", e),
