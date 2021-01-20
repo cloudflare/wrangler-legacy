@@ -129,8 +129,7 @@ fn get_request_body(data: KVMetaData) -> Result<Body, failure::Error> {
                 "--path argument takes a file, {} is a directory",
                 data.value
             ),
-            // last remaining value is symlink
-            Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", data.value),
+            Ok(_) => failure::bail!("--path argument points to an entity that is not a file or a directory", data.value),
             Err(e) => failure::bail!("{}", e),
         }
     } else {
