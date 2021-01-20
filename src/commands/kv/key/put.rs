@@ -15,6 +15,7 @@ use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
 use reqwest::blocking::multipart;
 use reqwest::blocking::Body;
+use regex::Regex;
 
 pub struct KVMetaData {
     pub namespace_id: String,
@@ -26,11 +27,23 @@ pub struct KVMetaData {
     pub metadata: Option<serde_json::Value>,
 }
 
-// to be used with clap's Arg::validator
-pub fn metadata_validator(arg: String) -> Result<(), String> {
-    serde_json::from_str::<serde_json::Value>(&arg)
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+pub fn parse_metadata(arg: Option<&str>) -> Result<Option<serde_json::Value>, failure::Error> {
+    match arg {
+        None => Ok(None),
+        Some(s) => {
+            match serde_json::from_str(s) {
+                Ok(v) => Ok(Some(v)),
+                Err(e) => {
+                    // try to help users that forget to double-quote a JSON string
+                    let re = Regex::new(r#"^['"]?[^"'{}\[\]]*['"]?$"#)?;
+                    if re.is_match(s) {
+                        failure::bail!("did you remember to double quote strings, like --metadata '\"{}\"'", s)
+                    }
+                    failure::bail!(e.to_string())
+                },
+            }
+        }
+    }
 }
 
 pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), failure::Error> {
@@ -127,8 +140,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn metadata_validator_legal() {
-        for input in &[
+    fn metadata_parser_legal() {
+        for input in vec![
             "true",
             "false",
             "123.456",
@@ -136,14 +149,29 @@ mod tests {
             "[1, 2]",
             "{\"key\": \"value\"}",
         ] {
-            assert!(metadata_validator(input.to_string()).is_ok());
+            assert!(parse_metadata(Some(input)).is_ok());
         }
     }
 
     #[test]
-    fn metadata_validator_illegal() {
-        for input in &["something", "{key: 123}", "[1, 2"] {
-            assert!(metadata_validator(input.to_string()).is_err());
+    fn metadata_parser_illegal() {
+        for input in vec!["something", "{key: 123}", "[1, 2"] {
+            assert!(parse_metadata(Some(input)).is_err());
         }
+    }
+
+    #[test]
+    fn metadata_parser_error_message_unquoted_string_error_message() -> Result<(), &'static str> {
+        for input in vec!["abc", "'abc'", "'abc", "abc'", "\"abc", "abc\""] {
+            match parse_metadata(Some(input)) {
+                Ok(_) => return Err("illegal value was parsed successfully"),
+                Err(e) => {
+                    let expected_message = format!(
+                        "did you remember to double quote strings, like --metadata '\"{}\"'", input);
+                    assert_eq!(expected_message, e.to_string());
+                },
+            }
+        }
+        Ok(())
     }
 }

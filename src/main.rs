@@ -13,7 +13,7 @@ use exitfailure::ExitFailure;
 use url::Url;
 
 use wrangler::commands;
-use wrangler::commands::kv::key::{metadata_validator, KVMetaData};
+use wrangler::commands::kv::key::{parse_metadata, KVMetaData};
 use wrangler::installer;
 use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
@@ -209,7 +209,6 @@ fn run() -> Result<(), failure::Error> {
                             .long("metadata")
                             .takes_value(true)
                             .value_name("JSON")
-                            .validator(metadata_validator)
                         )
                         .arg(
                             Arg::with_name("path")
@@ -1054,13 +1053,9 @@ fn run() -> Result<(), failure::Error> {
                 let expiration_ttl = put_key_matches
                     .value_of("expiration-ttl")
                     .map(|t| t.to_string());
-                let metadata: Option<serde_json::Value> =
-                    put_key_matches.value_of("metadata").map(|s| {
-                        match serde_json::from_str::<serde_json::Value>(s) {
-                            Ok(v) => v,
-                            Err(e) => failure::bail!("--metadata is not valid JSON: {}", e),
-                        }
-                    });
+                let metadata = parse_metadata(put_key_matches
+                    .value_of("metadata"))
+                    .map_err(|e| failure::format_err!("--metadata is not valid JSON: {}", e.to_string()))?;
                 let kv_metadata = KVMetaData {
                     namespace_id,
                     key,
