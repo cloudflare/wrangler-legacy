@@ -104,9 +104,7 @@ fn get_response(
                 .text("metadata", metadata.to_string());
             client.put(&url_into_str).multipart(form).send()?
         }
-        None => {
-            client.put(&url_into_str).body(value_body).send()?
-        }
+        None => client.put(&url_into_str).body(value_body).send()?,
     };
     Ok(res)
 }
@@ -116,14 +114,15 @@ fn get_response(
 fn get_request_body(data: &KVMetaData) -> Result<Vec<u8>, failure::Error> {
     if data.is_file {
         match &metadata(&data.value) {
-            Ok(file_type) if file_type.is_file() => {
-                Ok(fs::read(&data.value)?)
-            }
+            Ok(file_type) if file_type.is_file() => Ok(fs::read(&data.value)?),
             Ok(file_type) if file_type.is_dir() => failure::bail!(
                 "--path argument takes a file, {} is a directory",
                 data.value
             ),
-            Ok(_) => failure::bail!("--path argument points to an entity that is not a file or a directory: {}", data.value),
+            Ok(_) => failure::bail!(
+                "--path argument points to an entity that is not a file or a directory: {}",
+                data.value
+            ),
             Err(e) => failure::bail!("{}", e),
         }
     } else {
