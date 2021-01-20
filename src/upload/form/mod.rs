@@ -33,6 +33,13 @@ pub fn build(
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
 
+    if let Some(blobs) = &target.text_blobs {
+        for (key, blob_path) in blobs.iter() {
+            let blob = fs::read_to_string(blob_path)?;
+            text_blobs.push(TextBlob::new(blob, key.clone())?);
+        }
+    }
+
     if let Some(vars) = &target.vars {
         for (key, value) in vars.iter() {
             plain_texts.push(PlainText::new(key.clone(), value.clone())?)
