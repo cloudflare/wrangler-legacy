@@ -22,6 +22,7 @@ use wrangler::settings::toml::TargetType;
 use wrangler::terminal::message::{Message, Output, StdOut};
 use wrangler::terminal::{emoji, interactive, styles};
 use wrangler::version::background_check_for_updates;
+use futures_util::TryStreamExt;
 
 fn main() -> Result<(), ExitFailure> {
     env_logger::init();
@@ -1054,10 +1055,14 @@ fn run() -> Result<(), failure::Error> {
                 let expiration_ttl = put_key_matches
                     .value_of("expiration-ttl")
                     .map(|t| t.to_string());
-                let metadata = put_key_matches
+                let metadata: Option<serde_json::Value> = put_key_matches
                     .value_of("metadata")
-                    .map(serde_json::from_str)
-                    .map(Result::unwrap); // success is guaranteed in the argument's `validator` call
+                    .map(|s| {
+                        match serde_json::from_str::<serde_json::Value>(s) {
+                            Ok(v) => v,
+                            Err(e) => failure::bail!("--metadata is not valid JSON: {}", e),
+                        }
+                    });
                 let kv_metadata = KVMetaData {
                     namespace_id,
                     key,
