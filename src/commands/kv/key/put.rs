@@ -13,9 +13,9 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
+use regex::Regex;
 use reqwest::blocking::multipart;
 use reqwest::blocking::Body;
-use regex::Regex;
 
 pub struct KVMetaData {
     pub namespace_id: String,
@@ -37,10 +37,13 @@ pub fn parse_metadata(arg: Option<&str>) -> Result<Option<serde_json::Value>, fa
                     // try to help users that forget to double-quote a JSON string
                     let re = Regex::new(r#"^['"]?[^"'{}\[\]]*['"]?$"#)?;
                     if re.is_match(s) {
-                        failure::bail!("did you remember to double quote strings, like --metadata '\"{}\"'", s)
+                        failure::bail!(
+                            "did you remember to double quote strings, like --metadata '\"{}\"'",
+                            s
+                        )
                     }
                     failure::bail!(e.to_string())
-                },
+                }
             }
         }
     }
@@ -167,9 +170,11 @@ mod tests {
                 Ok(_) => return Err("illegal value was parsed successfully"),
                 Err(e) => {
                     let expected_message = format!(
-                        "did you remember to double quote strings, like --metadata '\"{}\"'", input);
+                        "did you remember to double quote strings, like --metadata '\"{}\"'",
+                        input
+                    );
                     assert_eq!(expected_message, e.to_string());
-                },
+                }
             }
         }
         Ok(())

@@ -1053,9 +1053,10 @@ fn run() -> Result<(), failure::Error> {
                 let expiration_ttl = put_key_matches
                     .value_of("expiration-ttl")
                     .map(|t| t.to_string());
-                let metadata = parse_metadata(put_key_matches
-                    .value_of("metadata"))
-                    .map_err(|e| failure::format_err!("--metadata is not valid JSON: {}", e.to_string()))?;
+                let metadata =
+                    parse_metadata(put_key_matches.value_of("metadata")).map_err(|e| {
+                        failure::format_err!("--metadata is not valid JSON: {}", e.to_string())
+                    })?;
                 let kv_metadata = KVMetaData {
                     namespace_id,
                     key,
