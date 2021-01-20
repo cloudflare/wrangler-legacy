@@ -12,7 +12,6 @@ use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
 use exitfailure::ExitFailure;
 use url::Url;
 
-use futures_util::TryStreamExt;
 use wrangler::commands;
 use wrangler::commands::kv::key::{metadata_validator, KVMetaData};
 use wrangler::installer;
