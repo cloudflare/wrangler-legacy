@@ -95,29 +95,6 @@ function filterByExtension(ext) {
   const compiler = webpack(config);
   const fullConfig = compiler.options;
 
-  // Override the {FetchCompileWasmTemplatePlugin} and inject our new runtime.
-  const [
-    fetchCompileWasmTemplatePlugin
-  ] = compiler.hooks.thisCompilation.taps.filter(
-    tap => tap.name === "FetchCompileWasmTemplatePlugin"
-  );
-  fetchCompileWasmTemplatePlugin.fn = function(compilation) {
-    const mainTemplate = compilation.mainTemplate;
-    const generateLoadBinaryCode = () => `
-      // Fake fetch response
-      Promise.resolve({
-        arrayBuffer() { return Promise.resolve(${args["wasm-binding"]}); }
-      });
-    `;
-
-    const plugin = new WasmMainTemplatePlugin({
-      generateLoadBinaryCode,
-      mangleImports: false,
-      supportsStreaming: false
-    });
-    plugin.apply(mainTemplate);
-  };
-
   let lastHash = "";
   const compilerCallback = (err, stats) => {
     if (err) {
