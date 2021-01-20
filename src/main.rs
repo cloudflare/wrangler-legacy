@@ -539,6 +539,7 @@ fn run() -> Result<(), failure::Error> {
         )
         .subcommand(
             SubCommand::with_name("publish")
+                .visible_alias("deploy")
                 .about(&*format!(
                     "{} Publish your worker to the orange cloud",
                     emoji::UP
