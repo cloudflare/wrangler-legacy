@@ -1,6 +1,6 @@
 ---
 name: "\U0001F41B Bug report"
-about: Something's not quite right? You're in the right place!
+about: Something's not working quite as expected with Wrangler? You're in the right place! 
 title: ''
 labels: user report
 assignees: ''
@@ -15,6 +15,7 @@ assignees: ''
   Before opening a new issue, please:
   * search for existing issues: https://github.com/cloudflare/wrangler/issues
   * make sure you are using the latest release: https://developers.cloudflare.com/workers/cli-wrangler/install-update#update
+  * if you're having trouble and looking for help troubleshooting, but not sure if it's a bug please email Cloudflare support: support@cloudflare.com
   
   Thanks! -->
 

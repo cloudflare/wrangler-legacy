@@ -1,8 +1,9 @@
 use std::path::Path;
 
+use crate::deploy::DeployTarget;
 use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::{DeployConfig, Target};
+use crate::settings::toml::Target;
 use crate::sites::{add_namespace, sync};
 use crate::terminal::message::{Message, StdOut};
 use crate::upload;
@@ -13,7 +14,7 @@ use serde_json::json;
 
 pub(super) fn upload(
     target: &mut Target,
-    deploy_config: &DeployConfig,
+    deploy_target: &DeployTarget,
     user: &GlobalUser,
     session_token: String,
     verbose: bool,
@@ -38,7 +39,7 @@ pub(super) fn upload(
         (Vec::new(), None, None)
     };
 
-    let session_config = get_session_config(deploy_config);
+    let session_config = get_session_config(deploy_target);
     let address = get_upload_address(target);
 
     let script_upload_form = upload::form::build(target, asset_manifest, Some(session_config))?;
@@ -76,9 +77,9 @@ impl Session {
     pub fn new(
         target: &Target,
         user: &GlobalUser,
-        deploy_config: &DeployConfig,
+        deploy_target: &DeployTarget,
     ) -> Result<Session, failure::Error> {
-        let exchange_url = get_exchange_url(deploy_config, user)?;
+        let exchange_url = get_exchange_url(deploy_target, user)?;
         let host = match exchange_url.host_str() {
             Some(host) => Ok(host.to_string()),
             None => Err(failure::format_err!(
@@ -86,13 +87,14 @@ impl Session {
             )),
         }?;
 
-        let host = match deploy_config {
-            DeployConfig::Zoned(_) => host,
-            DeployConfig::Zoneless(_) => {
+        let host = match deploy_target {
+            DeployTarget::Zoned(_) => host,
+            DeployTarget::Zoneless(_) => {
                 let namespaces: Vec<&str> = host.as_str().split('.').collect();
                 let subdomain = namespaces[1];
                 format!("{}.{}.workers.dev", target.name, subdomain)
             }
+            _ => unreachable!(),
         };
 
         let client = crate::http::legacy_auth_client(&user);
@@ -114,30 +116,32 @@ impl Session {
     }
 }
 
-fn get_session_config(deploy_config: &DeployConfig) -> serde_json::Value {
-    match deploy_config {
-        DeployConfig::Zoned(config) => {
+fn get_session_config(target: &DeployTarget) -> serde_json::Value {
+    match target {
+        DeployTarget::Zoned(config) => {
             let mut routes: Vec<String> = Vec::new();
             for route in &config.routes {
                 routes.push(route.pattern.clone());
             }
             json!({ "routes": routes })
         }
-        DeployConfig::Zoneless(_) => json!({"workers_dev": true}),
+        DeployTarget::Zoneless(_) => json!({"workers_dev": true}),
+        _ => unreachable!(),
     }
 }
 
-fn get_session_address(deploy_config: &DeployConfig) -> String {
-    match deploy_config {
-        DeployConfig::Zoned(config) => format!(
+fn get_session_address(target: &DeployTarget) -> String {
+    match target {
+        DeployTarget::Zoned(config) => format!(
             "https://api.cloudflare.com/client/v4/zones/{}/workers/edge-preview",
             config.zone_id
         ),
         // TODO: zoneless is probably wrong
-        DeployConfig::Zoneless(config) => format!(
+        DeployTarget::Zoneless(config) => format!(
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/subdomain/edge-preview",
             config.account_id
         ),
+        _ => unreachable!(),
     }
 }
 
@@ -149,11 +153,11 @@ fn get_upload_address(target: &mut Target) -> String {
 }
 
 fn get_exchange_url(
-    deploy_config: &DeployConfig,
+    deploy_target: &DeployTarget,
     user: &GlobalUser,
 ) -> Result<Url, failure::Error> {
     let client = crate::http::legacy_auth_client(&user);
-    let address = get_session_address(deploy_config);
+    let address = get_session_address(deploy_target);
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;
     let text = &response.text()?;

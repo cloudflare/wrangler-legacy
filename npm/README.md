@@ -17,9 +17,14 @@ You have many options to install wrangler!
 
 ### Install with `npm`
 
+We strongly recommend you install `npm` with a Node version manager like [`nvm`](https://github.com/nvm-sh/nvm#installing-and-updating), which will allow `wrangler` to install configuration data in a global `node_modules` directory in your user's home directory, without requiring that you run as `root`. 
+
+Once you've installed `nvm`, run:
+
 ```bash
 npm i @cloudflare/wrangler -g
 ```
+If you are running an ARM based system (eg Raspberry Pi, Pinebook) you'll need to use the `cargo` installation method listed below to build wrangler from source.
 
 #### Specify binary site URL
 
@@ -36,9 +41,13 @@ cargo install wrangler
 
 If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](https://developers.cloudflare.com/workers/tooling/wrangler/install/).
 
+### Install on Windows
+
+[perl is an external dependency of crate openssl-sys](https://github.com/sfackler/rust-openssl/blob/b027f1603189919d5f63c6aff483243aaa188568/openssl/src/lib.rs#L11-L15). If installing with cargo, you will need to have it installed. Installing with `npm` is another option if you don't want to install perl.
+
 ## Updating
 
-For information regarding updating Wrangler, click [here](https://workers.cloudflare.com/docs/quickstart/updating-the-cli/).
+For information regarding updating Wrangler, click [here](https://developers.cloudflare.com/workers/cli-wrangler/install-update#update).
 
 ## Getting Started
 

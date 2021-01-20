@@ -25,18 +25,15 @@ pub fn upsert(
         Ok(success) => Ok(UpsertedNamespace::Created(success.result)),
         Err(e) => match &e {
             ApiFailure::Error(_status, api_errors) => {
-                if api_errors.errors.iter().any(|e| e.code == 10026) {
-                    failure::bail!("{}", http::format_error(e, Some(&error_suggestions)))
-                } else if api_errors.errors.iter().any(|e| e.code == 10014) {
+                if api_errors.errors.iter().any(|e| e.code == 10014) {
                     log::info!("Namespace {} already exists.", title);
 
-                    let namespace = list(&client, target)?
-                        .result
+                    match list(&client, target)?
                         .iter()
-                        .find(|ns| ns.title == title)
-                        .unwrap()
-                        .to_owned();
-                    Ok(UpsertedNamespace::Reused(namespace))
+                        .find(|ns| ns.title == title) {
+                        Some(namespace) => Ok(UpsertedNamespace::Reused(namespace.to_owned())),
+                        None => failure::bail!("namespace already exists, but could not be found in the API's listed namespaces"),
+                    }
                 } else {
                     failure::bail!("{}", http::format_error(e, Some(&error_suggestions)))
                 }
@@ -48,7 +45,6 @@ pub fn upsert(
 
 fn error_suggestions(code: u16) -> &'static str {
     match code {
-        10026 => "You will need to enable Workers Bundled for your account before you can use this feature.",
         10014 => "Namespace already exists, try using a different namespace.",
         10037 => "Edit your API Token to have correct permissions, or use the 'Edit Cloudflare Workers' API Token template.",
         _ => "",
