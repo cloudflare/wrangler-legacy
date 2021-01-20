@@ -15,7 +15,6 @@ use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
 use regex::Regex;
 use reqwest::blocking::multipart;
-use reqwest::blocking::Body;
 
 pub struct KVMetaData {
     pub namespace_id: String,
@@ -96,20 +95,16 @@ fn get_response(
 ) -> Result<reqwest::blocking::Response, failure::Error> {
     let url_into_str = url.to_string();
     let client = http::legacy_auth_client(user);
-    let res = match data.metadata {
+    let value_body = get_request_body(&data)?;
+    let res = match &data.metadata {
         Some(metadata) => {
-            let part = if data.is_file {
-                multipart::Part::file(&data.value)?
-            } else {
-                multipart::Part::text(data.value)
-            };
+            let value_part = multipart::Part::bytes(value_body);
             let form = multipart::Form::new()
-                .part("value", part)
+                .part("value", value_part)
                 .text("metadata", metadata.to_string());
             client.put(&url_into_str).multipart(form).send()?
         }
         None => {
-            let value_body = get_request_body(data)?;
             client.put(&url_into_str).body(value_body).send()?
         }
     };
@@ -118,22 +113,21 @@ fn get_response(
 
 // If is_file is true, overwrite value to be the contents of the given
 // filename in the 'value' arg.
-fn get_request_body(data: KVMetaData) -> Result<Body, failure::Error> {
+fn get_request_body(data: &KVMetaData) -> Result<Vec<u8>, failure::Error> {
     if data.is_file {
         match &metadata(&data.value) {
             Ok(file_type) if file_type.is_file() => {
-                let file = fs::File::open(&data.value)?;
-                Ok(file.into())
+                Ok(fs::read(&data.value)?)
             }
             Ok(file_type) if file_type.is_dir() => failure::bail!(
                 "--path argument takes a file, {} is a directory",
                 data.value
             ),
-            Ok(_) => failure::bail!("--path argument points to an entity that is not a file or a directory", data.value),
+            Ok(_) => failure::bail!("--path argument points to an entity that is not a file or a directory: {}", data.value),
             Err(e) => failure::bail!("{}", e),
         }
     } else {
-        Ok(data.value.into())
+        Ok(data.value.clone().into())
     }
 }
 
