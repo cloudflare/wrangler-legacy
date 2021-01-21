@@ -37,8 +37,7 @@ pub fn parse_metadata(arg: Option<&str>) -> Result<Option<serde_json::Value>, fa
                     let re = Regex::new(r#"^['"]?[^"'{}\[\]]*['"]?$"#)?;
                     if re.is_match(s) {
                         failure::bail!(
-                            "did you remember to double quote strings, like --metadata '\"{}\"'",
-                            s
+                            "did you remember to double quote strings, like --metadata '\"made with 🤠 wrangler\"'"
                         )
                     }
                     failure::bail!(e.to_string())
