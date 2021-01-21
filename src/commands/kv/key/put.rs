@@ -160,10 +160,7 @@ mod tests {
             match parse_metadata(Some(input)) {
                 Ok(_) => return Err("illegal value was parsed successfully"),
                 Err(e) => {
-                    let expected_message = format!(
-                        "did you remember to double quote strings, like --metadata '\"{}\"'",
-                        input
-                    );
+                    let expected_message = "did you remember to double quote strings, like --metadata '\"made with 🤠 wrangler\"'";
                     assert_eq!(expected_message, e.to_string());
                 }
             }
