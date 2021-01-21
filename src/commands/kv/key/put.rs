@@ -13,6 +13,9 @@ use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
+use regex::Regex;
+use reqwest::blocking::multipart;
+
 pub struct KVMetaData {
     pub namespace_id: String,
     pub key: String,
@@ -20,6 +23,28 @@ pub struct KVMetaData {
     pub is_file: bool,
     pub expiration: Option<String>,
     pub expiration_ttl: Option<String>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+pub fn parse_metadata(arg: Option<&str>) -> Result<Option<serde_json::Value>, failure::Error> {
+    match arg {
+        None => Ok(None),
+        Some(s) => {
+            match serde_json::from_str(s) {
+                Ok(v) => Ok(Some(v)),
+                Err(e) => {
+                    // try to help users that forget to double-quote a JSON string
+                    let re = Regex::new(r#"^['"]?[^"'{}\[\]]*['"]?$"#)?;
+                    if re.is_match(s) {
+                        failure::bail!(
+                            "did you remember to double quote strings, like --metadata '\"made with 🤠 wrangler\"'"
+                        )
+                    }
+                    failure::bail!(e.to_string())
+                }
+            }
+        }
+    }
 }
 
 pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), failure::Error> {
@@ -41,30 +66,9 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
     if let Some(ttl) = &data.expiration_ttl {
         query_params.push(("expiration_ttl", ttl))
     };
-    let url = Url::parse_with_params(&api_endpoint, query_params);
+    let url = Url::parse_with_params(&api_endpoint, query_params)?;
 
-    let client = http::legacy_auth_client(&user);
-
-    let url_into_str = url?.into_string();
-
-    // If is_file is true, overwrite value to be the contents of the given
-    // filename in the 'value' arg.
-    let res = if data.is_file {
-        match &metadata(&data.value) {
-            Ok(file_type) if file_type.is_file() => {
-                let file = fs::File::open(&data.value)?;
-                client.put(&url_into_str).body(file).send()?
-            }
-            Ok(file_type) if file_type.is_dir() => failure::bail!(
-                "--path argument takes a file, {} is a directory",
-                data.value
-            ),
-            Ok(_) => failure::bail!("--path argument takes a file, {} is a symlink", data.value), // last remaining value is symlink
-            Err(e) => failure::bail!("{}", e),
-        }
-    } else {
-        client.put(&url_into_str).body(data.value).send()?
-    };
+    let res = get_response(data, user, &url)?;
 
     let response_status = res.status();
     if response_status.is_success() {
@@ -81,4 +85,86 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), f
     }
 
     Ok(())
+}
+
+fn get_response(
+    data: KVMetaData,
+    user: &GlobalUser,
+    url: &Url,
+) -> Result<reqwest::blocking::Response, failure::Error> {
+    let url_into_str = url.to_string();
+    let client = http::legacy_auth_client(user);
+    let value_body = get_request_body(&data)?;
+    let res = match &data.metadata {
+        Some(metadata) => {
+            let value_part = multipart::Part::bytes(value_body);
+            let form = multipart::Form::new()
+                .part("value", value_part)
+                .text("metadata", metadata.to_string());
+            client.put(&url_into_str).multipart(form).send()?
+        }
+        None => client.put(&url_into_str).body(value_body).send()?,
+    };
+    Ok(res)
+}
+
+// If is_file is true, overwrite value to be the contents of the given
+// filename in the 'value' arg.
+fn get_request_body(data: &KVMetaData) -> Result<Vec<u8>, failure::Error> {
+    if data.is_file {
+        match &metadata(&data.value) {
+            Ok(file_type) if file_type.is_file() => Ok(fs::read(&data.value)?),
+            Ok(file_type) if file_type.is_dir() => failure::bail!(
+                "--path argument takes a file, {} is a directory",
+                data.value
+            ),
+            Ok(_) => failure::bail!(
+                "--path argument points to an entity that is not a file or a directory: {}",
+                data.value
+            ),
+            Err(e) => failure::bail!("{}", e),
+        }
+    } else {
+        Ok(data.value.clone().into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn metadata_parser_legal() {
+        for input in vec![
+            "true",
+            "false",
+            "123.456",
+            r#""some string""#,
+            "[1, 2]",
+            "{\"key\": \"value\"}",
+        ] {
+            assert!(parse_metadata(Some(input)).is_ok());
+        }
+    }
+
+    #[test]
+    fn metadata_parser_illegal() {
+        for input in vec!["something", "{key: 123}", "[1, 2"] {
+            assert!(parse_metadata(Some(input)).is_err());
+        }
+    }
+
+    #[test]
+    fn metadata_parser_error_message_unquoted_string_error_message() -> Result<(), &'static str> {
+        for input in vec!["abc", "'abc'", "'abc", "abc'", "\"abc", "abc\""] {
+            match parse_metadata(Some(input)) {
+                Ok(_) => return Err("illegal value was parsed successfully"),
+                Err(e) => {
+                    let expected_message = "did you remember to double quote strings, like --metadata '\"made with 🤠 wrangler\"'";
+                    assert_eq!(expected_message, e.to_string());
+                }
+            }
+        }
+        Ok(())
+    }
 }
