@@ -85,60 +85,91 @@ impl Manifest {
         config_path: &PathBuf,
         site: Option<Site>,
     ) -> Result<Manifest, failure::Error> {
-        let config_file = config_path.join("wrangler.toml");
-        let template_config_content = fs::read_to_string(&config_file);
-        let template_config = match &template_config_content {
-            Ok(content) => {
-                let config: Manifest = toml::from_str(content)?;
-                config.warn_on_account_info();
-                if let Some(target_type) = &target_type {
-                    if config.target_type != *target_type {
-                        StdOut::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
-                    }
-                }
-                Ok(config)
-            }
-            Err(err) => Err(err),
-        };
-        let mut template_config = match template_config {
-            Ok(config) => config,
-            Err(err) => {
-                log::info!("Error parsing template {}", err);
-                log::debug!("template content {:?}", template_config_content);
+        let config_file = &config_path.join("wrangler.toml");
+        let config_template_str = fs::read_to_string(config_file).unwrap_or_else(|err| {
+            log::info!("Error reading config template: {}", err);
+            log::info!("Using default instead");
+            toml::to_string_pretty(&Manifest::default())
+                .expect("serializing the default toml should never fail")
+        });
+
+        let config_template =
+            toml::from_str::<Manifest>(&config_template_str).unwrap_or_else(|err| {
+                log::info!("Error parsing config template: {}", err);
+                log::info!("Using default instead");
                 Manifest::default()
-            }
-        };
+            });
 
-        let default_workers_dev = match &template_config.route {
-            Some(route) => {
-                if route.is_empty() {
-                    Some(true)
-                } else {
-                    None
-                }
-            }
-            None => Some(true),
-        };
-
-        template_config.name = name;
-        template_config.workers_dev = default_workers_dev;
+        config_template.warn_on_account_info();
         if let Some(target_type) = &target_type {
-            template_config.target_type = target_type.clone();
+            if config_template.target_type != *target_type {
+                StdOut::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config_template.target_type, target_type, config_template.target_type));
+            }
         }
 
-        if let Some(arg_site) = site {
-            if template_config.site.is_none() {
-                template_config.site = Some(arg_site);
+        let default_workers_dev = match &config_template.route {
+            Some(route) if route.is_empty() => Some(true),
+            None => Some(true),
+            _ => None,
+        };
+
+        /*
+         * We use toml-edit for actually changing the template provided wrangler.toml,
+         * since toml-edit is a format-preserving parser. Elsewhere, we use only toml-rs,
+         * as only toml-rs supports serde.
+         */
+
+        let mut config_template_doc =
+            config_template_str
+                .parse::<toml_edit::Document>()
+                .map_err(|err| {
+                    failure::err_msg(format!(
+                        "toml_edit failed to parse config template. {}",
+                        err
+                    ))
+                })?;
+
+        config_template_doc["name"] = toml_edit::value(name);
+        if let Some(default_workers_dev) = default_workers_dev {
+            config_template_doc["workers_dev"] = toml_edit::value(default_workers_dev);
+        }
+        if let Some(target_type) = &target_type {
+            config_template_doc["target_type"] = toml_edit::value(target_type.to_string());
+        }
+        if let Some(site) = site {
+            if config_template.site.is_none() {
+                config_template_doc["site"]["bucket"] =
+                    toml_edit::value(site.bucket.to_string_lossy().as_ref());
+
+                if let Some(entry_point) = &site.entry_point {
+                    config_template_doc["site"]["entry_point"] =
+                        toml_edit::value(entry_point.to_string_lossy().as_ref());
+                }
+                if let Some(include) = &site.include {
+                    let mut arr = toml_edit::Array::default();
+                    include.iter().for_each(|i| {
+                        arr.push(i.as_ref()).unwrap();
+                    });
+                    config_template_doc["site"]["include"] = toml_edit::value(arr);
+                }
+                if let Some(exclude) = &site.exclude {
+                    let mut arr = toml_edit::Array::default();
+                    exclude.iter().for_each(|i| {
+                        arr.push(i.as_ref()).unwrap();
+                    });
+                    config_template_doc["site"]["exclude"] = toml_edit::value(arr);
+                }
             }
         }
 
         // TODO: https://github.com/cloudflare/wrangler/issues/773
 
-        let toml = toml::to_string(&template_config)?;
+        let toml = config_template_doc.to_string_in_original_order();
+        let manifest = toml::from_str::<Manifest>(&toml)?;
 
         log::info!("Writing a wrangler.toml file at {}", config_file.display());
         fs::write(&config_file, &toml)?;
-        Ok(template_config)
+        Ok(manifest)
     }
 
     pub fn worker_name(&self, env_arg: Option<&str>) -> String {
