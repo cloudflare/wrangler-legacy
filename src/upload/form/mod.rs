@@ -72,10 +72,10 @@ pub fn build(
         }
         TargetType::JavaScript => {
             log::info!("JavaScript project detected. Publishing...");
-            let build_dir = target.build_dir()?;
-            let package = Package::new(&build_dir)?;
+            let package_dir = target.package_dir()?;
+            let package = Package::new(&package_dir)?;
 
-            let script_path = package.main(&build_dir)?;
+            let script_path = package.main(&package_dir)?;
 
             let assets = ProjectAssets::new(
                 script_path,
@@ -90,8 +90,8 @@ pub fn build(
         TargetType::Webpack => {
             log::info!("webpack project detected. Publishing...");
             // TODO: https://github.com/cloudflare/wrangler/issues/850
-            let build_dir = target.build_dir()?;
-            let bundle = wranglerjs::Bundle::new(&build_dir);
+            let package_dir = target.package_dir()?;
+            let bundle = wranglerjs::Bundle::new(&package_dir);
 
             let script_path = bundle.script_path();
 

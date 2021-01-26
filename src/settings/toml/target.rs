@@ -24,7 +24,7 @@ impl Target {
         self.kv_namespaces.push(kv_namespace);
     }
 
-    pub fn build_dir(&self) -> Result<PathBuf, std::io::Error> {
+    pub fn package_dir(&self) -> Result<PathBuf, std::io::Error> {
         // if `site` is configured, we want to isolate worker code
         // and build artifacts away from static site application code.
         match &self.site {
