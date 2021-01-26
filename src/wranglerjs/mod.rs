@@ -153,13 +153,13 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         env_dep_installed(tool)?;
     }
 
-    let build_dir = target.build_dir()?;
+    let package_dir = target.package_dir()?;
 
     if let Some(site) = &target.site {
         site.scaffold_worker()?;
     }
 
-    run_npm_install(&build_dir).expect("could not run `npm install`");
+    run_npm_install(&package_dir).expect("could not run `npm install`");
 
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
@@ -176,7 +176,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         temp_file.to_str().unwrap().to_string()
     ));
 
-    let bundle = Bundle::new(&build_dir);
+    let bundle = Bundle::new(&package_dir);
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
@@ -196,7 +196,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     if let Some(webpack_config_path) = custom_webpack_config_path {
         build_with_custom_webpack(&mut command, &webpack_config_path);
     } else {
-        build_with_default_webpack(&mut command, &build_dir)?;
+        build_with_default_webpack(&mut command, &package_dir)?;
     }
 
     Ok((command, temp_file, bundle))
@@ -211,11 +211,11 @@ fn build_with_custom_webpack(command: &mut Command, webpack_config_path: &PathBu
 
 fn build_with_default_webpack(
     command: &mut Command,
-    build_dir: &PathBuf,
+    package_dir: &PathBuf,
 ) -> Result<(), failure::Error> {
-    let package = Package::new(&build_dir)?;
-    let package_main = build_dir
-        .join(package.main(&build_dir)?)
+    let package = Package::new(&package_dir)?;
+    let package_main = package_dir
+        .join(package.main(&package_dir)?)
         .to_str()
         .unwrap()
         .to_string();

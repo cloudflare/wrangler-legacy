@@ -9,12 +9,12 @@ pub struct Package {
     main: PathBuf,
 }
 impl Package {
-    pub fn main(&self, build_dir: &PathBuf) -> Result<PathBuf, failure::Error> {
+    pub fn main(&self, package_dir: &PathBuf) -> Result<PathBuf, failure::Error> {
         if self.main == PathBuf::from("") {
             failure::bail!(
                 "The `main` key in your `package.json` file is required; please specify the entry point of your Worker.",
             )
-        } else if !build_dir.join(&self.main).exists() {
+        } else if !package_dir.join(&self.main).exists() {
             failure::bail!(
                 "The entrypoint of your Worker ({}) could not be found.",
                 self.main.display()
