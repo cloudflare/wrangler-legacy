@@ -233,15 +233,21 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
     flock.lock_exclusive()?;
 
     if !dir.join("node_modules").exists() {
-        let mut command = build_npm_command();
-        command.current_dir(dir.clone());
-        command.arg("install");
-        log::info!("Running {:?} in directory {:?}", command, dir);
+        // no dir in current path, search for closest
+        match find_closest_dir("node_modules", dir.as_path()) {
+            Some(_) => log::info!("skipping npm install because node_modules exists in parent dir"),
+            None => {
+                let mut command = build_npm_command();
+                command.current_dir(dir.clone());
+                command.arg("install");
+                log::info!("Running {:?} in directory {:?}", command, dir);
 
-        let status = command.status()?;
+                let status = command.status()?;
 
-        if !status.success() {
-            failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+                if !status.success() {
+                    failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+                }
+            }
         }
     } else {
         log::info!("skipping npm install because node_modules exists");
@@ -254,6 +260,32 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
     flock.unlock()?;
 
     Ok(())
+}
+
+// find closest (up-the-tree) location of a file or dir
+fn find_closest<'a>(name: &str, path: &'a Path) -> Option<&'a Path>{
+    if has_dir(name, path) {
+        return Option::from(path);
+    }
+
+    // If has parent lets check it
+    let parent = path.parent();
+    match parent {
+        Some(parent_path) => find_closest(name, parent_path),
+        None => None
+    }
+}
+
+// check if dir has file with provided name
+fn has_dir(name: &str, path: &Path) -> bool {
+    for entry in fs::read_dir(path).unwrap() {
+        let dir = entry.unwrap();
+        if dir.file_name() == name {
+            return true;
+        }
+    }
+
+    false
 }
 
 // build a Command for npm
