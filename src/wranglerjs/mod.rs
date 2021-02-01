@@ -263,7 +263,7 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
 }
 
 // find closest (bottom-up traversal) location of a file or dir
-fn find_closest<'a>(name: &str, path: &'a Path) -> Option<&'a Path>{
+fn find_closest<'a>(name: &str, path: &'a Path) -> Option<&'a Path> {
     if has_dir(name, path) {
         return Option::from(path);
     }
@@ -272,7 +272,7 @@ fn find_closest<'a>(name: &str, path: &'a Path) -> Option<&'a Path>{
     let parent = path.parent();
     match parent {
         Some(parent_path) => find_closest(name, parent_path),
-        None => None
+        None => None,
     }
 }
 
