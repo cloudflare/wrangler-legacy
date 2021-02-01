@@ -234,7 +234,7 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
 
     if !dir.join("node_modules").exists() {
         // no dir in current path, search for closest
-        match find_closest_dir("node_modules", dir.as_path()) {
+        match find_closest("node_modules", dir.as_path()) {
             Some(_) => log::info!("skipping npm install because node_modules exists in parent dir"),
             None => {
                 let mut command = build_npm_command();
@@ -262,7 +262,7 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
     Ok(())
 }
 
-// find closest (up-the-tree) location of a file or dir
+// find closest (bottom-up traversal) location of a file or dir
 fn find_closest<'a>(name: &str, path: &'a Path) -> Option<&'a Path>{
     if has_dir(name, path) {
         return Option::from(path);
