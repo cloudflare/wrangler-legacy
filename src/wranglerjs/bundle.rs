@@ -42,6 +42,24 @@ impl Bundle {
             wasm_file.write_all(&wasm)?;
         }
 
+        if self.has_wasm() {
+            script_file.write_all(
+                format!(
+                    r#"
+                        WebAssembly.instantiateStreaming =
+                            async function instantiateStreaming(req, importObject) {{
+                          const module = {};
+                          return {{
+                            module,
+                            instance: new WebAssembly.Instance(module, importObject)
+                          }}
+                        }};
+                    "#,
+                    self.get_wasm_binding()
+                )
+                .as_bytes(),
+            )?;
+        }
         script_file.write_all(wranglerjs_output.script.as_bytes())?;
 
         Ok(())
@@ -56,7 +74,7 @@ impl Bundle {
     }
 
     pub fn get_wasm_binding(&self) -> String {
-        "wasm".to_string()
+        "WASM_MODULE".to_string()
     }
 
     pub fn script_path(&self) -> PathBuf {
