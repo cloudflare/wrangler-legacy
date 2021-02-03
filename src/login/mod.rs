@@ -62,7 +62,7 @@ fn poll_token(token_id: String) -> Result<String, failure::Error> {
     let mut request_params = HashMap::new();
     request_params.insert("token-id", token_id);
 
-    let client = reqwest::blocking::Client::new();
+    let client = reqwest::blocking::Client::builder().build()?;
     let timer = Timer::new().interval_ms(1000).iter();
 
     let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
