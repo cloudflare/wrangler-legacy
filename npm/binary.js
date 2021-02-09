@@ -15,14 +15,17 @@ const getPlatform = () => {
   if (type === "Darwin" && arch === "x64") {
     return "x86_64-apple-darwin";
   }
+  if (type === "Darwin" && arch === "arm64") {
+    return "aarch64-apple-darwin";
+  }
 
   throw new Error(`Unsupported platform: ${type} ${arch}`);
 };
 
 const getBinaryURL = (version, platform) => {
   const site = process.env.WRANGLER_BINARY_HOST ||
-      process.env.npm_config_wrangler_binary_host ||
-      'https://workers.cloudflare.com/get-npm-wrangler-binary';
+    process.env.npm_config_wrangler_binary_host ||
+    'https://workers.cloudflare.com/get-npm-wrangler-binary';
   return `${site}/${version}/${platform}`;
 };
 
