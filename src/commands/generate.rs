@@ -15,12 +15,7 @@ pub fn generate(
 ) -> Result<(), failure::Error> {
     validate_worker_name(name)?;
 
-    let dirname_exists = match directory_exists(name) {
-        Ok(val) => val,
-        Err(_) => true,
-    };
-
-    let new_name = if dirname_exists {
+    let new_name = if directory_exists(name).unwrap_or(true) {
         match generate_name(name) {
             Ok(val) => val,
             Err(_) => {

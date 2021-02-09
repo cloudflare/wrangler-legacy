@@ -20,10 +20,10 @@ pub struct Site {
 
 impl Site {
     pub fn new(bucket: &str) -> Site {
-        let mut site = Site::default();
-        site.bucket = PathBuf::from(bucket);
-
-        site
+        Site {
+            bucket: PathBuf::from(bucket),
+            ..Default::default()
+        }
     }
 
     // if the user has configured `site.entry-point`, use that
