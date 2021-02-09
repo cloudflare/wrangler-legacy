@@ -59,11 +59,13 @@ pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
     }
 }
 
-// endlessly retry connecting to the chrome devtools instance with exponential backoff
+// Endlessly retry connecting to the chrome devtools instance with exponential backoff.
+// The backoff maxes out at 60 seconds.
 async fn connect_retry(
     socket_url: &Url,
 ) -> WebSocketStream<Stream<TcpStream, TlsStream<TcpStream>>> {
     let mut wait_seconds = 2;
+    let maximum_wait_seconds = 60;
     let mut failed = false;
     loop {
         match connect_async(socket_url).await {
@@ -83,6 +85,9 @@ async fn connect_retry(
                 ));
                 delay_for(Duration::from_secs(wait_seconds)).await;
                 wait_seconds = wait_seconds.pow(2);
+                if wait_seconds > maximum_wait_seconds { // max out at 60 seconds
+                    wait_seconds = maximum_wait_seconds;
+                }
                 StdErr::working("Retrying...");
             }
         }
