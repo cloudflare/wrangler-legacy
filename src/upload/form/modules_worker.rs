@@ -35,13 +35,10 @@ pub fn build_form(
 
 fn add_files(mut form: Form, assets: &ModulesAssets) -> Result<Form, failure::Error> {
     for module in &assets.modules {
-        let file_name = module
-            .filename()
-            .ok_or_else(|| failure::err_msg("a filename is required for each module"))?;
         let part = Part::reader(File::open(module.path.clone())?)
             .mime_str(module.module_type.content_type())?
-            .file_name(file_name.clone());
-        form = form.part(file_name.clone(), part);
+            .file_name(module.name.clone());
+        form = form.part(module.name.clone(), part);
     }
     Ok(form)
 }

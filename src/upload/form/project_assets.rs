@@ -3,10 +3,10 @@ use std::path::PathBuf;
 use failure::format_err;
 
 use super::binding::Binding;
+use super::filestem_from_path;
 use super::plain_text::PlainText;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
-use super::{filename_from_path, filestem_from_path};
 
 use crate::settings::toml::KvNamespace;
 
@@ -75,12 +75,13 @@ impl ServiceWorkerAssets {
 }
 
 pub struct Module {
+    pub name: String,
     pub path: PathBuf,
     pub module_type: ModuleType,
 }
 
 impl Module {
-    pub fn new(path: PathBuf) -> Result<Module, failure::Error> {
+    pub fn new(name: String, path: PathBuf) -> Result<Module, failure::Error> {
         let extension = path
             .extension()
             .ok_or_else(|| {
@@ -99,11 +100,11 @@ impl Module {
             _ => ModuleType::Data,
         };
 
-        Ok(Module { path, module_type })
-    }
-
-    pub fn filename(&self) -> Option<String> {
-        filename_from_path(&self.path)
+        Ok(Module {
+            name,
+            path,
+            module_type,
+        })
     }
 }
 

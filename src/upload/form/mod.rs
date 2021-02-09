@@ -114,8 +114,14 @@ pub fn build(
                         let entry = entry?;
                         let path = entry.path();
                         if path.is_file() {
-                            log::info!("Adding module {}", path.display());
-                            modules.push(Module::new(path.to_owned())?);
+                            let name = path
+                                .strip_prefix(config.upload_dir.clone())?
+                                .to_owned()
+                                .as_path()
+                                .display()
+                                .to_string();
+                            log::info!("Adding module {}", name);
+                            modules.push(Module::new(name, path.to_owned())?);
                         }
                     }
 
