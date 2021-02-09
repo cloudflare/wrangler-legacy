@@ -85,7 +85,8 @@ async fn connect_retry(
                 ));
                 delay_for(Duration::from_secs(wait_seconds)).await;
                 wait_seconds = wait_seconds.pow(2);
-                if wait_seconds > maximum_wait_seconds { // max out at 60 seconds
+                if wait_seconds > maximum_wait_seconds {
+                    // max out at 60 seconds
                     wait_seconds = maximum_wait_seconds;
                 }
                 StdErr::working("Retrying...");
