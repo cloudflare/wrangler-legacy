@@ -13,7 +13,7 @@ const SITE_ENTRY_POINT: &str = "workers-site";
 pub struct Site {
     pub bucket: PathBuf,
     #[serde(rename = "entry-point")]
-    entry_point: Option<PathBuf>,
+    pub entry_point: Option<PathBuf>,
     pub include: Option<Vec<String>>,
     pub exclude: Option<Vec<String>>,
 }
