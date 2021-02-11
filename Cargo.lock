@@ -1708,6 +1708,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "path-slash"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3cacbb3c4ff353b534a67fb8d7524d00229da4cb1dc8c79f4db96e375ab5b619"
+
+[[package]]
 name = "percent-encoding"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3253,6 +3259,7 @@ dependencies = [
  "notify",
  "number_prefix 0.4.0",
  "openssl",
+ "path-slash",
  "percent-encoding 2.1.0",
  "predicates",
  "prettytable-rs",

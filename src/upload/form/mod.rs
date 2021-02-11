@@ -5,6 +5,7 @@ mod service_worker;
 mod text_blob;
 mod wasm_module;
 
+use path_slash::PathExt; // Path::to_slash()
 use reqwest::blocking::multipart::Form;
 use std::fs;
 use std::path::Path;
@@ -114,13 +115,15 @@ pub fn build(
                         let entry = entry?;
                         let path = entry.path();
                         if path.is_file() {
-                            let name = path
-                                .strip_prefix(config.upload_dir.clone())?
-                                .to_owned()
-                                .as_path()
-                                .display()
-                                .to_string();
-                            log::info!("Adding module {}", name);
+                            let name = modulename_from_path(&config.upload_dir, path).ok_or_else(
+                                || {
+                                    failure::err_msg(format!(
+                                        "failed to create module name for {}",
+                                        path.display()
+                                    ))
+                                },
+                            )?;
+                            log::info!("Adding module {} at path {}", name, path.display());
                             modules.push(Module::new(name, path.to_owned())?);
                         }
                     }
@@ -200,6 +203,18 @@ fn filestem_from_path(path: &PathBuf) -> Option<String> {
 fn filename_from_path(path: &PathBuf) -> Option<String> {
     path.file_name()
         .map(|filename| filename.to_string_lossy().into_owned())
+}
+
+/// Converts a system path into a Unix-style path, relative to some root.
+///
+/// # Example
+/// let root_path = Path::new("/Users/alice/Desktop/myproject");
+/// let path = Path::new("/Users/alice/Desktop/myproject/src/resources/file.txt");
+/// let result = modulename_from_path(&root_path, &path);
+///
+/// assert_eq!(result, Some(String::new("src/resources/file.txt")));
+fn modulename_from_path(root_path: &Path, path: &Path) -> Option<String> {
+    path.strip_prefix(root_path).ok()?.to_owned().to_slash()
 }
 
 fn build_generated_dir() -> Result<(), failure::Error> {
