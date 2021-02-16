@@ -6,13 +6,14 @@ use futures_util::future::TryFutureExt;
 use futures_util::sink::SinkExt;
 use futures_util::stream::{SplitStream, StreamExt};
 
+use crate::terminal::message::{Message, StdErr, StdOut};
+use protocol::domain::runtime::event::Event::ExceptionThrown;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio::time::delay_for;
 use tokio_native_tls::TlsStream;
 use tokio_tungstenite::stream::Stream;
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, WebSocketStream};
-
+use tokio_tungstenite::{connect_async, tungstenite, WebSocketStream};
 use url::Url;
 
 const KEEP_ALIVE_INTERVAL: u64 = 10;
@@ -23,9 +24,7 @@ pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
-        let (ws_stream, _) = connect_async(&socket_url)
-            .await
-            .expect("Failed to connect to devtools instance");
+        let ws_stream = connect_retry(&socket_url).await;
 
         let (mut write, read) = ws_stream.split();
 
@@ -34,7 +33,7 @@ pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
         // before they will be sent
         let enable_runtime = protocol::runtime::SendMethod::Enable(1.into());
         let enable_runtime = serde_json::to_string(&enable_runtime)?;
-        let enable_runtime = Message::Text(enable_runtime);
+        let enable_runtime = tungstenite::protocol::Message::Text(enable_runtime);
         write.send(enable_runtime).await?;
 
         // if left unattended, the preview service will kill the socket
@@ -60,6 +59,42 @@ pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
     }
 }
 
+// Endlessly retry connecting to the chrome devtools instance with exponential backoff.
+// The backoff maxes out at 60 seconds.
+async fn connect_retry(
+    socket_url: &Url,
+) -> WebSocketStream<Stream<TcpStream, TlsStream<TcpStream>>> {
+    let mut wait_seconds = 2;
+    let maximum_wait_seconds = 60;
+    let mut failed = false;
+    loop {
+        match connect_async(socket_url).await {
+            Ok((ws_stream, _)) => {
+                if failed {
+                    // only report success if there was a failure, otherwise be quiet about it
+                    StdErr::success("Connected!");
+                }
+                return ws_stream;
+            }
+            Err(e) => {
+                failed = true;
+                StdErr::warn(&format!("Failed to connect to devtools instance: {}", e));
+                StdErr::warn(&format!(
+                    "Will retry connection in {} seconds",
+                    wait_seconds
+                ));
+                delay_for(Duration::from_secs(wait_seconds)).await;
+                wait_seconds = wait_seconds.pow(2);
+                if wait_seconds > maximum_wait_seconds {
+                    // max out at 60 seconds
+                    wait_seconds = maximum_wait_seconds;
+                }
+                StdErr::working("Retrying...");
+            }
+        }
+    }
+}
+
 async fn print_ws_messages(
     mut read: SplitStream<WebSocketStream<Stream<TcpStream, TlsStream<TcpStream>>>>,
 ) -> Result<(), failure::Error> {
@@ -67,27 +102,40 @@ async fn print_ws_messages(
         match message {
             Ok(message) => {
                 let message_text = message.into_text().unwrap();
-                log::info!("{}", message_text);
-
                 let parsed_message: Result<protocol::Runtime, failure::Error> =
                     serde_json::from_str(&message_text).map_err(|e| {
                         failure::format_err!("this event could not be parsed:\n{}", e)
                     });
 
-                if let Ok(protocol::Runtime::Event(event)) = parsed_message {
-                    // Try to parse json to pretty print, otherwise just print string
-                    let json_parse: Result<serde_json::Value, serde_json::Error> =
-                        serde_json::from_str(&*event.to_string());
-                    if let Ok(json) = json_parse {
-                        if let Ok(json_str) = serde_json::to_string_pretty(&json) {
-                            println!("{}", json_str);
-                        } else {
-                            println!("{}", &json);
-                        }
-                    } else {
-                        println!("{}", event);
+                match parsed_message {
+                    Ok(protocol::Runtime::Event(ExceptionThrown(params))) => {
+                        StdOut::message(&format!(
+                            "{} at line {:?}, col {:?}",
+                            params.exception_details.exception.description.unwrap(),
+                            params.exception_details.line_number,
+                            params.exception_details.column_number,
+                        ));
                     }
-                }
+                    Ok(protocol::Runtime::Event(event)) => {
+                        // Try to parse json to pretty print, otherwise just print string
+                        let json_parse: Result<serde_json::Value, serde_json::Error> =
+                            serde_json::from_str(&*event.to_string());
+                        if let Ok(json) = json_parse {
+                            if let Ok(json_str) = serde_json::to_string_pretty(&json) {
+                                StdOut::message(&format!("jsonstr {}", json_str));
+                            } else {
+                                StdOut::message(&format!("{}", &json));
+                            }
+                        } else {
+                            StdOut::message(&format!("{:?}", event));
+                        }
+                    }
+                    Ok(other_runtime_event) => {
+                        StdOut::message(&format!("{:?}", other_runtime_event));
+                    }
+                    // No op here because heartbeat and other operations won't deserialize to protocol::Runtime/
+                    Err(_e) => {}
+                };
             }
             Err(error) => return Err(error.into()),
         }
@@ -95,7 +143,9 @@ async fn print_ws_messages(
     Ok(())
 }
 
-async fn keep_alive(tx: mpsc::UnboundedSender<Message>) -> Result<(), failure::Error> {
+async fn keep_alive(
+    tx: mpsc::UnboundedSender<tungstenite::protocol::Message>,
+) -> Result<(), failure::Error> {
     let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
     let mut delay = delay_for(duration);
 
@@ -108,7 +158,7 @@ async fn keep_alive(tx: mpsc::UnboundedSender<Message>) -> Result<(), failure::E
         let keep_alive_message = protocol::runtime::SendMethod::GetIsolateId(id.into());
         let keep_alive_message = serde_json::to_string(&keep_alive_message)
             .expect("Could not convert keep alive message to JSON");
-        let keep_alive_message = Message::Text(keep_alive_message);
+        let keep_alive_message = tungstenite::protocol::Message::Text(keep_alive_message);
         tx.send(keep_alive_message).unwrap();
         id += 1;
         delay = delay_for(duration);

@@ -12,11 +12,10 @@ pub fn run(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
     let client = http::cf_v4_client(user)?;
     let result = list(&client, target);
     match result {
-        Ok(success) => {
-            let namespaces = success.result;
+        Ok(namespaces) => {
             println!("{}", serde_json::to_string(&namespaces)?);
         }
-        Err(e) => failure::bail!("{}", kv::format_error(e)),
+        Err(e) => failure::bail!(e),
     }
     Ok(())
 }

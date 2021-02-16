@@ -1,6 +1,6 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.12.2",
+  "version": "1.13.0",
   "description": "Command-line interface for all things Cloudflare Workers",
   "main": "binary.js",
   "scripts": {
@@ -42,6 +42,6 @@
     "cli"
   ],
   "dependencies": {
-    "binary-install": "0.0.1"
+    "binary-install": "0.1.1"
   }
 }

@@ -203,7 +203,6 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::
 
             // add any other excludes specified
             if let Some(excluded) = &site.exclude {
-                required_ignore(&mut required_override)?;
                 for e in excluded {
                     required_override.add(&format!("!{}", e))?;
                     log::info!("Ignoring {}", e);
@@ -320,6 +319,7 @@ mod tests {
             webpack_config: None,
             site: Some(site),
             vars: None,
+            text_blobs: None,
         }
     }
 
