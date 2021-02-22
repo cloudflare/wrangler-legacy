@@ -6,7 +6,7 @@ use futures_util::future::TryFutureExt;
 use futures_util::sink::SinkExt;
 use futures_util::stream::{SplitStream, StreamExt};
 
-use crate::terminal::message::{Message, StdOut};
+use crate::terminal::message::{Message, StdErr, StdOut};
 use protocol::domain::runtime::event::Event::ExceptionThrown;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
@@ -24,9 +24,7 @@ pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
-        let (ws_stream, _) = connect_async(&socket_url)
-            .await
-            .expect("Failed to connect to devtools instance");
+        let ws_stream = connect_retry(&socket_url).await;
 
         let (mut write, read) = ws_stream.split();
 
@@ -57,6 +55,42 @@ pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
         if tokio::try_join!(heartbeat, keep_alive_to_ws, printer).is_ok() {
             break Ok(());
         } else {
+        }
+    }
+}
+
+// Endlessly retry connecting to the chrome devtools instance with exponential backoff.
+// The backoff maxes out at 60 seconds.
+async fn connect_retry(
+    socket_url: &Url,
+) -> WebSocketStream<Stream<TcpStream, TlsStream<TcpStream>>> {
+    let mut wait_seconds = 2;
+    let maximum_wait_seconds = 60;
+    let mut failed = false;
+    loop {
+        match connect_async(socket_url).await {
+            Ok((ws_stream, _)) => {
+                if failed {
+                    // only report success if there was a failure, otherwise be quiet about it
+                    StdErr::success("Connected!");
+                }
+                return ws_stream;
+            }
+            Err(e) => {
+                failed = true;
+                StdErr::warn(&format!("Failed to connect to devtools instance: {}", e));
+                StdErr::warn(&format!(
+                    "Will retry connection in {} seconds",
+                    wait_seconds
+                ));
+                delay_for(Duration::from_secs(wait_seconds)).await;
+                wait_seconds = wait_seconds.pow(2);
+                if wait_seconds > maximum_wait_seconds {
+                    // max out at 60 seconds
+                    wait_seconds = maximum_wait_seconds;
+                }
+                StdErr::working("Retrying...");
+            }
         }
     }
 }

@@ -134,7 +134,8 @@ fn get_latest_version_from_api(installed_version: &str) -> Result<Version, failu
         installed_version,
         env!("CARGO_PKG_REPOSITORY")
     );
-    let response = reqwest::blocking::Client::new()
+    let client = reqwest::blocking::Client::builder().build()?;
+    let response = client
         .get(url)
         .header(USER_AGENT, user_agent)
         .send()?
