@@ -1,13 +1,50 @@
 # Changelog
 
+## ♻️ 1.14.0
+
+- ### Features
+
+  - **KV Put with metadata - [ags799], [issue/1734] [pull/1740]**
+
+    Wrangler now supports uploading metadata to Workers KV.
+
+    [Author]: https://github.com/ags799
+    [pull/1740]: https://github.com/cloudflare/wrangler/pull/1740
+    [issue/1734]: https://github.com/cloudflare/wrangler/issues/1734
+
+- ### Fixes
+
+  - **don't panic on Client build - [ags799], [issue/1743] [pull/1750]**
+
+    This won't fix the issue #1743 but it should give us some more context.
+
+    [Author]: https://github.com/ags799
+    [pull/1750]: https://github.com/cloudflare/wrangler/pull/1750
+    [issue/1743]: https://github.com/cloudflare/wrangler/issues/1743
+
+  - **endlessly retry connection to devtools websocket - [ags799], [pull/1752], [issue/1510]**
+
+    Endlessly retry connection to preview's devtools websocket on wrangler dev with exponential backoff,
+    to fix issue #1510.
+
+    [Author]: https://github.com/ags799
+    [pull/1752]: https://github.com/cloudflare/wrangler/pull/1752
+    [issue/1510]: https://github.com/cloudflare/wrangler/issues/1510
+
+- ### Maintenance
+
+  - **Remove extra required override call from sites ignore logic - [xortive], [pull/1753]**
+
+  - **Tweak issue templates - [Electroid], [pull/1775]**
+
 ## 1.13.0
 
 - ### Features
 
   - **Add support for text blob bindings - [xortive], [pull/1543], [issue/483]**
-    
+
     Wrangler now supports text blobs! Text blobs are values to use in your workers, but are read from a file instead of a string in your TOML.
-    
+
     Usage:
 
       `text_blobs = { FOO = "path/to/foo.txt", BAR = "path/to/bar.txt" }`
