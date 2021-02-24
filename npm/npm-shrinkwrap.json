@@ -4,6 +4,16 @@
   "lockfileVersion": 1,
   "requires": true,
   "dependencies": {
+    "@cloudflare/binary-install": {
+      "version": "0.2.0",
+      "resolved": "https://registry.npmjs.org/@cloudflare/binary-install/-/binary-install-0.2.0.tgz",
+      "integrity": "sha512-54n9ILgln+qUJc0BtbetEIEi1GrIL88p7ZDJy+BV8EsUqA7pMCMHAUOHjDq+YrIoqJHGJktlQJxBYB+4Umf3ww==",
+      "requires": {
+        "axios": "^0.21.1",
+        "rimraf": "^3.0.2",
+        "tar": "^6.0.2"
+      }
+    },
     "axios": {
       "version": "0.21.1",
       "resolved": "https://registry.npmjs.org/axios/-/axios-0.21.1.tgz",
@@ -16,16 +26,6 @@
       "version": "1.0.0",
       "resolved": "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.0.tgz",
       "integrity": "sha1-ibTRmasr7kneFk6gK4nORi1xt2c="
-    },
-    "binary-install": {
-      "version": "0.1.1",
-      "resolved": "https://registry.npmjs.org/binary-install/-/binary-install-0.1.1.tgz",
-      "integrity": "sha512-DqED0D/6LrS+BHDkKn34vhRqOGjy5gTMgvYZsGK2TpNbdPuz4h+MRlNgGv5QBRd7pWq/jylM4eKNCizgAq3kNQ==",
-      "requires": {
-        "axios": "^0.21.1",
-        "rimraf": "^3.0.2",
-        "tar": "^6.1.0"
-      }
     },
     "brace-expansion": {
       "version": "1.1.11",
