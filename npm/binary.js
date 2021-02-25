@@ -1,4 +1,4 @@
-const { Binary } = require("binary-install");
+const { Binary } = require("@cloudflare/binary-install");
 const os = require("os");
 const { join } = require("path");
 
@@ -20,9 +20,10 @@ const getPlatform = () => {
 };
 
 const getBinaryURL = (version, platform) => {
-  const site = process.env.WRANGLER_BINARY_HOST ||
-      process.env.npm_config_wrangler_binary_host ||
-      'https://workers.cloudflare.com/get-npm-wrangler-binary';
+  const site =
+    process.env.WRANGLER_BINARY_HOST ||
+    process.env.npm_config_wrangler_binary_host ||
+    "https://workers.cloudflare.com/get-npm-wrangler-binary";
   return `${site}/${version}/${platform}`;
 };
 
@@ -30,7 +31,11 @@ const getBinary = () => {
   const platform = getPlatform();
   const version = require("./package.json").version;
   const url = getBinaryURL(version, platform);
-  const installDirectory = join(os.homedir(), ".wrangler");
+
+  const customPath =
+    process.env.WRANGLER_INSTALL_PATH ||
+    process.env.npm_config_wrangler_install_path;
+  const installDirectory = join(customPath || __dirname, "wrangler");
   return new Binary(url, { name: "wrangler", installDirectory });
 };
 
@@ -47,10 +52,10 @@ const install = () => {
 const uninstall = () => {
   const binary = getBinary();
   binary.uninstall();
-}
+};
 
 module.exports = {
   install,
   run,
-  uninstall
+  uninstall,
 };
