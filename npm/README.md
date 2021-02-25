@@ -75,7 +75,7 @@ $ wrangler publish
 
   - `name`: defaults to `worker`
   - `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
-  - `type`: defaults to ["webpack"](https://developers.cloudflare.com/workers/tooling/wrangler/webpack)
+  - `type`: defaults to `javascript` based on the ["worker-template"](https://github.com/cloudflare/worker-template/blob/master/wrangler.toml)
 
 ### 📥 `init`
 
