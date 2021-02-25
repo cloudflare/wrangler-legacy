@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://developers.cloudflare.com/workers
+    about: Learn how to build and deploy with Workers.
+  - name: Discord
+    url: https://discord.com/invite/cloudflaredev
+    about: Hop on Discord to meet others using Workers, ask quick questions, or get feedback.
