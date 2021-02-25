@@ -127,7 +127,7 @@ async fn print_ws_messages(
                                 StdOut::message(&format!("{}", &json));
                             }
                         } else {
-                            StdOut::message(&format!("{:?}", event));
+                            StdOut::message(&format!("{:?}", event.to_string()));
                         }
                     }
                     Ok(other_runtime_event) => {
