@@ -32,10 +32,10 @@ const getBinary = () => {
   const version = require("./package.json").version;
   const url = getBinaryURL(version, platform);
 
-  const useCwd = !!process.env.WRANGLER_USE_CWD;
-  const customPath = process.env.WRANGLER_INSTALL_PATH;
-  const altPath = useCwd ? process.cwd() : !!customPath ? customPath : false;
-  const installDirectory = join(altPath || os.homedir(), ".wrangler");
+  const customPath =
+    process.env.WRANGLER_INSTALL_PATH ||
+    process.env.npm_config_wrangler_install_path;
+  const installDirectory = join(customPath || __dirname, "wrangler");
   return new Binary(url, { name: "wrangler", installDirectory });
 };
 
