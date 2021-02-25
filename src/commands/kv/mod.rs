@@ -125,6 +125,7 @@ mod tests {
             site: None,
             vars: None,
             text_blobs: None,
+            build: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }
