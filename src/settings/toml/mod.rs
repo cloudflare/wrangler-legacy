@@ -10,7 +10,7 @@ mod triggers;
 
 pub use environment::Environment;
 pub use kv_namespace::{ConfigKvNamespace, KvNamespace};
-pub use manifest::Manifest;
+pub use manifest::{display_account_id_maybe, Manifest};
 pub use route::{Route, RouteConfig};
 pub use site::Site;
 pub use target::Target;

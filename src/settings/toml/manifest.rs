@@ -415,7 +415,6 @@ impl Manifest {
         let mut needs_new_line = false;
         if has_top_level_fields || has_env_fields {
             let toml_msg = styles::highlight("wrangler.toml");
-            let account_id_msg = styles::highlight("account_id");
             let zone_id_msg = styles::highlight("zone_id");
             let dash_url = styles::url("https://dash.cloudflare.com");
 
@@ -424,27 +423,7 @@ impl Manifest {
                 zone_id_msg, dash_url
             ));
 
-            // Display the user's account ID's if they exist, otherwise just tell them to check the dash
-            let mut showed_account_id = false;
-            if let Ok(user) = GlobalUser::new() {
-                if let Ok(accounts) = fetch_accounts(&user) {
-                    let mut missing_permissions = Vec::with_capacity(2);
-                    let table = format_accounts(&user, accounts, &mut missing_permissions);
-                    if missing_permissions.is_empty() {
-                        StdOut::help(&format!("You can copy your {} below", account_id_msg));
-                        // table includes a newline so just `print!()` is fine
-                        print!("{}", &table);
-                        showed_account_id = true;
-                    }
-                }
-            }
-
-            if !showed_account_id {
-                StdOut::help(&format!(
-                    "You can find your {} in the right sidebar of your account's Workers page",
-                    account_id_msg
-                ));
-            }
+            display_account_id_maybe();
 
             StdOut::help(
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
@@ -470,6 +449,32 @@ impl Manifest {
                 }
             }
         }
+    }
+}
+
+/// Print information either containing the user's account IDs,
+/// or at least tell them where to get them.
+pub fn display_account_id_maybe() {
+    let account_id_msg = styles::highlight("account_id");
+    let mut showed_account_id = false;
+
+    if let Ok(user) = GlobalUser::new() {
+        if let Ok(accounts) = fetch_accounts(&user) {
+            let mut missing_permissions = Vec::with_capacity(2);
+            let table = format_accounts(&user, accounts, &mut missing_permissions);
+            if missing_permissions.is_empty() {
+                StdOut::help(&format!("You can copy your {} below", account_id_msg));
+                // table includes a newline so just `print!()` is fine
+                print!("{}", &table);
+                showed_account_id = true;
+            }
+        }
+    }
+    if !showed_account_id {
+        StdOut::help(&format!(
+            "You can find your {} in the right sidebar of your account's Workers page",
+            account_id_msg
+        ));
     }
 }
 
