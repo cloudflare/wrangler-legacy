@@ -351,7 +351,7 @@ impl Manifest {
         }
     }
 
-    fn warn_on_account_info(&self) -> () {
+    fn warn_on_account_info(&self) {
         let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
         let zone_id_env = env::var("CF_ZONE_ID").is_ok();
         let mut top_level_fields: Vec<String> = Vec::new();
