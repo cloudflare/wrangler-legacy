@@ -9,8 +9,9 @@ use config::{Config, File};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
+use crate::commands::{self, validate_worker_name, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
+use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
@@ -90,7 +91,7 @@ impl Manifest {
         let template_config = match &template_config_content {
             Ok(content) => {
                 let config: Manifest = toml::from_str(content)?;
-                config.warn_on_account_info();
+                config.warn_on_account_info()?;
                 if let Some(target_type) = &target_type {
                     if config.target_type != *target_type {
                         StdOut::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
@@ -351,7 +352,7 @@ impl Manifest {
         }
     }
 
-    fn warn_on_account_info(&self) {
+    fn warn_on_account_info(&self) -> Result<(), failure::Error> {
         let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
         let zone_id_env = env::var("CF_ZONE_ID").is_ok();
         let mut top_level_fields: Vec<String> = Vec::new();
@@ -416,19 +417,26 @@ impl Manifest {
             let account_id_msg = styles::highlight("account_id");
             let zone_id_msg = styles::highlight("zone_id");
             let dash_url = styles::url("https://dash.cloudflare.com");
+
+            StdOut::help(&format!(
+                "You can find your {} in the right sidebar of a zone's overview tab at {}",
+                zone_id_msg, dash_url
+            ));
+            StdOut::help(&format!("You can find your {} in the right sidebar of your account's Workers page, or copy it below", account_id_msg));
+            let user = GlobalUser::new()?;
+            commands::whoami(&user, false)?;
+
             StdOut::help(
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
             );
-            StdOut::help(&format!(
-                "You can find your {} in the right sidebar of your account's Workers page, and {} in the right sidebar of a zone's overview tab at {}",
-                account_id_msg, zone_id_msg, dash_url
-            ));
+
             if has_top_level_fields {
                 needs_new_line = true;
                 for top_level_field in top_level_fields {
                     println!("- {}", top_level_field);
                 }
             }
+
             if has_env_fields {
                 for (env_name, env_fields) in env_fields {
                     if needs_new_line {
@@ -441,6 +449,10 @@ impl Manifest {
                     }
                 }
             }
+
+            Ok(())
+        } else {
+            Ok(())
         }
     }
 }

@@ -9,7 +9,9 @@ use cloudflare::framework::response::ApiFailure;
 
 use prettytable::{Cell, Row, Table};
 
-pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
+/// Tells the user who they are. Supply an optional greeting to give, otherwise a default one
+/// will be generated based on their authentication.
+pub fn whoami(user: &GlobalUser, show_banner: bool) -> Result<(), failure::Error> {
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {
@@ -52,7 +54,11 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
         }
         msg.push_str(&format!("\n\nPlease generate a new token and authenticate with {} or {}\nfor more information when running {}", login_msg, config_msg, whoami_msg));
     }
-    StdOut::billboard(&msg);
+
+    if show_banner {
+        StdOut::billboard(&msg);
+    }
+
     if table.len() > 1 {
         println!("{}", &table);
     }

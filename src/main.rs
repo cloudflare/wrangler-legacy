@@ -833,7 +833,7 @@ fn run() -> Result<(), failure::Error> {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
 
-        commands::whoami(&user)?;
+        commands::whoami(&user, true)?;
     } else if let Some(matches) = matches.subcommand_matches("publish") {
         log::info!("Getting User settings");
         let user = settings::global_user::GlobalUser::new()?;
