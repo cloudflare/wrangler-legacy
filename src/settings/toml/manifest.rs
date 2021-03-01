@@ -9,7 +9,8 @@ use config::{Config, File};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::commands::{self, validate_worker_name, DEFAULT_CONFIG_PATH};
+use crate::commands::whoami::{fetch_accounts, format_accounts};
+use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::dev::Dev;
@@ -91,7 +92,7 @@ impl Manifest {
         let template_config = match &template_config_content {
             Ok(content) => {
                 let config: Manifest = toml::from_str(content)?;
-                config.warn_on_account_info()?;
+                config.warn_on_account_info();
                 if let Some(target_type) = &target_type {
                     if config.target_type != *target_type {
                         StdOut::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config.target_type, target_type, config.target_type));
@@ -352,7 +353,7 @@ impl Manifest {
         }
     }
 
-    fn warn_on_account_info(&self) -> Result<(), failure::Error> {
+    fn warn_on_account_info(&self) -> () {
         let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
         let zone_id_env = env::var("CF_ZONE_ID").is_ok();
         let mut top_level_fields: Vec<String> = Vec::new();
@@ -422,9 +423,28 @@ impl Manifest {
                 "You can find your {} in the right sidebar of a zone's overview tab at {}",
                 zone_id_msg, dash_url
             ));
-            StdOut::help(&format!("You can find your {} in the right sidebar of your account's Workers page, or copy it below", account_id_msg));
-            let user = GlobalUser::new()?;
-            commands::whoami(&user, false)?;
+
+            // Display the user's account ID's if they exist, otherwise just tell them to check the dash
+            let mut showed_account_id = false;
+            if let Ok(user) = GlobalUser::new() {
+                if let Ok(accounts) = fetch_accounts(&user) {
+                    let mut missing_permissions = Vec::with_capacity(2);
+                    let table = format_accounts(&user, accounts, &mut missing_permissions);
+                    if missing_permissions.is_empty() {
+                        StdOut::help(&format!("You can copy your {} below", account_id_msg));
+                        // table includes a newline so just `print!()` is fine
+                        print!("{}", &table);
+                        showed_account_id = true;
+                    }
+                }
+            }
+
+            if !showed_account_id {
+                StdOut::help(&format!(
+                    "You can find your {} in the right sidebar of your account's Workers page",
+                    account_id_msg
+                ));
+            }
 
             StdOut::help(
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
@@ -449,10 +469,6 @@ impl Manifest {
                     }
                 }
             }
-
-            Ok(())
-        } else {
-            Ok(())
         }
     }
 }

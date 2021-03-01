@@ -9,9 +9,8 @@ use cloudflare::framework::response::ApiFailure;
 
 use prettytable::{Cell, Row, Table};
 
-/// Tells the user who they are. Supply an optional greeting to give, otherwise a default one
-/// will be generated based on their authentication.
-pub fn whoami(user: &GlobalUser, show_banner: bool) -> Result<(), failure::Error> {
+/// Tells the user who they are
+pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {
@@ -55,9 +54,7 @@ pub fn whoami(user: &GlobalUser, show_banner: bool) -> Result<(), failure::Error
         msg.push_str(&format!("\n\nPlease generate a new token and authenticate with {} or {}\nfor more information when running {}", login_msg, config_msg, whoami_msg));
     }
 
-    if show_banner {
-        StdOut::billboard(&msg);
-    }
+    StdOut::billboard(&msg);
 
     if table.len() > 1 {
         println!("{}", &table);
@@ -86,7 +83,8 @@ fn fetch_api_token_email(
     }
 }
 
-fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
+/// Fetch the accounts associated with a user
+pub fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&account::ListAccounts { params: None });
     match response {
@@ -95,7 +93,8 @@ fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
     }
 }
 
-fn format_accounts(
+/// Format a user's accounts into a nice table
+pub fn format_accounts(
     user: &GlobalUser,
     accounts: Vec<Account>,
     missing_permissions: &mut Vec<String>,
