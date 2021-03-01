@@ -9,10 +9,8 @@ use config::{Config, File};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::commands::whoami::{fetch_accounts, format_accounts};
-use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
+use crate::commands::{validate_worker_name, whoami, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
-use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
@@ -423,7 +421,7 @@ impl Manifest {
                 zone_id_msg, dash_url
             ));
 
-            display_account_id_maybe();
+            whoami::display_account_id_maybe();
 
             StdOut::help(
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
@@ -449,32 +447,6 @@ impl Manifest {
                 }
             }
         }
-    }
-}
-
-/// Print information either containing the user's account IDs,
-/// or at least tell them where to get them.
-pub fn display_account_id_maybe() {
-    let account_id_msg = styles::highlight("account_id");
-    let mut showed_account_id = false;
-
-    if let Ok(user) = GlobalUser::new() {
-        if let Ok(accounts) = fetch_accounts(&user) {
-            let mut missing_permissions = Vec::with_capacity(2);
-            let table = format_accounts(&user, accounts, &mut missing_permissions);
-            if missing_permissions.is_empty() {
-                StdOut::help(&format!("You can copy your {} below", account_id_msg));
-                // table includes a newline so just `print!()` is fine
-                print!("{}", &table);
-                showed_account_id = true;
-            }
-        }
-    }
-    if !showed_account_id {
-        StdOut::help(&format!(
-            "You can find your {} in the right sidebar of your account's Workers page",
-            account_id_msg
-        ));
     }
 }
 

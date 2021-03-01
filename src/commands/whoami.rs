@@ -62,6 +62,32 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
     Ok(())
 }
 
+/// Print information either containing the user's account IDs,
+/// or at least tell them where to get them.
+pub fn display_account_id_maybe() {
+    let account_id_msg = styles::highlight("account_id");
+    let mut showed_account_id = false;
+
+    if let Ok(user) = GlobalUser::new() {
+        if let Ok(accounts) = fetch_accounts(&user) {
+            let mut missing_permissions = Vec::with_capacity(2);
+            let table = format_accounts(&user, accounts, &mut missing_permissions);
+            if missing_permissions.is_empty() {
+                StdOut::help(&format!("You can copy your {} below", account_id_msg));
+                // table includes a newline so just `print!()` is fine
+                print!("{}", &table);
+                showed_account_id = true;
+            }
+        }
+    }
+    if !showed_account_id {
+        StdOut::help(&format!(
+            "You can find your {} in the right sidebar of your account's Workers page",
+            account_id_msg
+        ));
+    }
+}
+
 fn fetch_api_token_email(
     user: &GlobalUser,
     missing_permissions: &mut Vec<String>,
@@ -84,7 +110,7 @@ fn fetch_api_token_email(
 }
 
 /// Fetch the accounts associated with a user
-pub fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
+fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&account::ListAccounts { params: None });
     match response {
@@ -94,7 +120,7 @@ pub fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error>
 }
 
 /// Format a user's accounts into a nice table
-pub fn format_accounts(
+fn format_accounts(
     user: &GlobalUser,
     accounts: Vec<Account>,
     missing_permissions: &mut Vec<String>,

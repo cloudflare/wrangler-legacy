@@ -1,7 +1,6 @@
-use crate::commands::subdomain::Subdomain;
+use crate::commands::{subdomain::Subdomain, whoami::display_account_id_maybe};
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::display_account_id_maybe;
 use crate::settings::toml::RouteConfig;
 
 #[derive(Clone, Debug, PartialEq)]
