@@ -24,7 +24,7 @@ impl ShutdownHandler {
             _ = short_circuit => {}
         }
 
-        eprintln!("Closing tail session...");
+        eprintln!("Stopping logs...");
         for tx in self.txs {
             // if `tx.send()` returns an error, it is because the receiver has gone out of scope,
             // likely due to the task returning early for some reason, in which case we don't need

@@ -1126,16 +1126,7 @@ fn run() -> Result<(), failure::Error> {
         let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new()?;
 
-        let tunnel_port: Option<u16> = matches
-            .value_of("tunnel_port")
-            .map(|p| p.parse().expect("--port expects a number"));
-        let metrics_port: Option<u16> = matches
-            .value_of("metrics_port")
-            .map(|p| p.parse().expect("--metrics expects a number"));
-
-        let verbose = matches.is_present("verbose");
-
-        commands::tail::start(&target, &user, tunnel_port, metrics_port, verbose)?;
+        commands::tail::start(&target, &user)?;
     } else if matches.subcommand_matches("login").is_some() {
         commands::login::run()?;
     }
