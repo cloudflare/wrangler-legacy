@@ -1,13 +1,141 @@
 # Changelog
 
+## 🍎 1.14.0
+
+- ### Features
+
+  - **Support for Apple silicon/M1 laptops - [nilslice], [pull/1763]**
+
+    Work to compile a version of wrangler for apple silicon machines. This should mean wrangler will support M1 machines once we setup infrastructure for downloading M1 versions of `cargo-generate` and `wasm-pack`.
+
+  - **Display account ID's when possible - [caass], [pull/1786]**
+
+    Previously, users had to log in to their dash to view their account IDs. This PR extracts some of the code used in `whoami` to log their account IDs to the terminal, instead. If for some reason that doesn't work, it'll fall back to telling them to look at the dashboard
+
+    [caass]: https://github.com/caass
+    [pull/1786]: https://github.com/cloudflare/wrangler/pull/1786
+
+  - **Feature/monorepo support - [thefill], [pull/1748]**
+
+    Improvement of the detection of node_modules dir - adds bottom-up traversing to find it in parent dirs.
+
+    This should resolve some issues experienced with monorepos (e.g. with nx).
+
+    [thefill]: https://github.com/thefill
+    [pull/1748]: https://github.com/cloudflare/wrangler/pull/1748
+
+  - **fix installer - [xortive], [pull/1780]**
+
+    binary-install@0.1.1 broke semver, this PR changes our installer to use a cloudflare-owned version of binary-install with updated dependencies to resolve the previous vulnerability warnings from the old version of axios that was being used.
+
+    This is also a feature, since we now install the `wrangler` binary in `node_modules` instead of `~/.wrangler`.
+    This means installing wrangler as a dev dependency works as expected -- `npx wrangler` will run the version
+    in your dev dependencies, not the globally installed wrangler.
+
+    Wrangler will now also support setting the `WRANGLER_INSTALL_PATH` environment variable to choose where you install the wrangler binary.
+    This environment variable must be set when running wrangler, as well as when installing it.
+
+    [xortive]: https://github.com/xortive
+    [pull/1780]: https://github.com/cloudflare/wrangler/pull/1780
+
+  - **kv put with metadata - [ags799], [pull/1740]**
+
+    Closes #1734
+
+    [ags799]: https://github.com/ags799
+    [pull/1740]: https://github.com/cloudflare/wrangler/pull/1740
+- ### Fixes
+
+  - **don't panic on Client build - [ags799], [pull/1750]**
+
+    This won't fix the issue #1743 but it should give us some more context.
+
+    [ags799]: https://github.com/ags799
+    [pull/1750]: https://github.com/cloudflare/wrangler/pull/1750
+
+  - **endlessly retry connection to devtools websocket - [ags799], [pull/1752]**
+
+    Endlessly retry connection to preview's devtools websocket on `wrangler dev`. With exponential backoff.
+
+    Keeps us from panicking in [issue/1510](https://github.com/cloudflare/wrangler/issues/1510).
+
+    [ags799]: https://github.com/ags799
+    [pull/1752]: https://github.com/cloudflare/wrangler/pull/1752
+
+  - **fix console formatting - [mdycz], [pull/1749]**
+
+    Fixes #1707
+
+    [mdycz]: https://github.com/mdycz
+    [pull/1749]: https://github.com/cloudflare/wrangler/pull/1749
+
+- ### Maintenance
+
+  - **Bump futures-util from 0.3.11 to 0.3.13 - [dependabot], [pull/1778]**
+
+    [dependabot]: https://dependabot.com/
+    [pull/1778]: https://github.com/cloudflare/wrangler/pull/1778
+
+  - **Remove extra required_override call from sites ignore logic - [xortive], [pull/1754]**
+
+    [xortive]: https://github.com/xortive
+    [pull/1754]: https://github.com/cloudflare/wrangler/pull/1754
+
+  - **remove webpack specific change - [xtuc], [pull/1730]**
+
+    We used to hook directly into webpack internals to rewrite the runtime
+    that loads Wasm to make it point to the Worker binding instead of a
+    network fetch.
+
+    This change removes the webpack specific change and injects a generic
+    runtime to
+    ... truncated
+
+    [xtuc]: https://github.com/xtuc
+    [pull/1730]: https://github.com/cloudflare/wrangler/pull/1730
+
+  - **Set panic to abort in release mode - [ObsidianMinor], [pull/1762]**
+
+    This should fix cases where we spawn threads that panic and get us in an invalid state that requires us to get killed anyway.
+
+    [obsidianminor]: https://github.com/ObsidianMinor
+    [pull/1762]: https://github.com/cloudflare/wrangler/pull/1762
+
+  - **Tweak issue templates - [Electroid], [pull/1776]**
+
+    Made minor edits to the issue templates
+
+    [electroid]: https://github.com/Electroid
+    [pull/1776]: https://github.com/cloudflare/wrangler/pull/1776
+
+  - **update binary-install to avoid vulnerable axios version - [simonhaenisch], [pull/1726]**
+
+    Fixes the security warnings when installing the wrangler npm package!
+
+    [simonhaenisch]: https://github.com/simonhaenisch
+    [pull/1726]: https://github.com/cloudflare/wrangler/pull/1726
+
+  - **Update README.md for windows install - [koeninger], [pull/1779]**
+
+    note about https://github.com/cloudflare/wrangler/issues/1765
+
+    [koeninger]: https://github.com/koeninger
+    [pull/1779]: https://github.com/cloudflare/wrangler/pull/1779
+
+  - **Update release.yml - [xortive], [pull/1783]**
+
+    thanks @rajatsharma for spotting this :)
+
+    [xortive]: https://github.com/xortive
+    [pull/1783]: https://github.com/cloudflare/wrangler/pull/1783
 ## 1.13.0
 
 - ### Features
 
   - **Add support for text blob bindings - [xortive], [pull/1543], [issue/483]**
-    
+
     Wrangler now supports text blobs! Text blobs are values to use in your workers, but are read from a file instead of a string in your TOML.
-    
+
     Usage:
 
       `text_blobs = { FOO = "path/to/foo.txt", BAR = "path/to/bar.txt" }`
