@@ -57,8 +57,7 @@ fn strip_response_headers_prefix(parts: &mut ResponseParts) -> Result<(), failur
     for header in &parts.headers {
         let (name, value) = header;
         let name = name.as_str();
-        if name.starts_with(HEADER_PREFIX) {
-            let header_name = &name[HEADER_PREFIX.len()..];
+        if let Some(header_name) = name.strip_prefix(HEADER_PREFIX) {
             let header_name = HeaderName::from_bytes(header_name.as_bytes())?;
             headers.append(header_name, value.clone());
         }

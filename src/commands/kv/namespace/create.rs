@@ -110,7 +110,7 @@ fn toml_modification_instructions(
         }
         inline_msg.push_str(" = \"");
         inline_msg.push_str(&new_namespace.id);
-        inline_msg.push_str("\"");
+        inline_msg.push('\"');
     };
     inline_msg.push_str(" }");
 

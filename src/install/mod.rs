@@ -151,6 +151,8 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
             "x86_64-apple-darwin"
         } else if target::WINDOWS && target::x86_64 {
             "x86_64-pc-windows-msvc"
+        } else if target::MACOS && target::aarch64 {
+            "aarch64-apple-darwin"
         } else {
             return None;
         };

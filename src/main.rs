@@ -761,11 +761,7 @@ fn run() -> Result<(), failure::Error> {
 
         // Validate the URL scheme
         failure::ensure!(
-            match url.scheme() {
-                "http" => true,
-                "https" => true,
-                _ => false,
-            },
+            matches!(url.scheme(), "http" | "https"),
             "Invalid URL scheme (use either \"https\" or \"http\")"
         );
 

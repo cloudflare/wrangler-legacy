@@ -25,7 +25,7 @@ entry-point = "workers-site"
         }
     }
     let dirname = get_current_dirname()?;
-    let name = name.unwrap_or_else(|| &dirname);
+    let name = name.unwrap_or(&dirname);
     validate_worker_name(name)?;
 
     let target_type = target_type.unwrap_or_default();

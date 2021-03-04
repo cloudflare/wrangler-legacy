@@ -11,6 +11,7 @@ env:
   GITHUB_REF: "${{ github.ref }}"
   WINDOWS_TARGET: x86_64-pc-windows-msvc
   MACOS_TARGET: x86_64-apple-darwin
+  MACOS_AARCH64_TARGET: aarch64-apple-darwin
   LINUX_TARGET: x86_64-unknown-linux-musl
 
   # Space separated paths to include in the archive.
@@ -105,6 +106,13 @@ jobs:
           mv ${{ env.RELEASE_ADDS }} ./dist
           7z a -ttar -so -an ./dist | 7z a -si ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz
 
+      - name: Create tarball (MacOS M1)
+        if: matrix.build == 'macos'
+        run: |
+          mv ./target/release/${{ env.RELEASE_BIN }} ./dist/${{ env.RELEASE_BIN }}
+          mv ${{ env.RELEASE_ADDS }} ./dist
+          7z a -ttar -so -an ./dist | 7z a -si ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_AARCH64_TARGET }}.tar.gz      
+
       - name: Create tarball (wranglerjs)
         if: matrix.build == 'wranglerjs'
         run: 7z a -ttar -so -an ./wranglerjs | 7z a -si ./${{ env.RELEASE_DIR }}/wranglerjs-${{ steps.get_version.outputs.VERSION }}.tar.gz
@@ -156,6 +164,11 @@ jobs:
         with:
           name: macos
 
+      - name: Download MacOS (M1) tarball
+        uses: actions/download-artifact@v1
+        with:
+          name: macos-aarch64
+
       - name: Release wranglerjs tarball
         uses: actions/upload-release-asset@v1
         env:
@@ -195,3 +208,13 @@ jobs:
           asset_path: ./macos/wrangler-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz
           asset_content_type: application/gzip
           asset_name: wrangler-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz
+
+      - name: Release MacOS (M1) tarball
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./macos-aarch64/wrangler-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_AARCH64_TARGET }}.tar.gz
+          asset_content_type: application/gzip
+          asset_name: wrangler-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_AARCH64_TARGET }}.tar.gz
