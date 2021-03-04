@@ -154,7 +154,7 @@ jobs:
         with:
           name: linux
 
-      - name: Download MacOS tarball
+      - name: Download Windows tarball
         uses: actions/download-artifact@v1
         with:
           name: windows

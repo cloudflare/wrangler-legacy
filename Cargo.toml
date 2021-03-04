@@ -79,3 +79,6 @@ strict = ['openssl/vendored']
 sys-openssl = ['openssl']
 # Keeping feature for users already using this feature flag
 vendored-openssl = ['openssl/vendored']
+
+[profile.release]
+panic = "abort"

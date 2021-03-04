@@ -1,4 +1,4 @@
-use crate::commands::subdomain::Subdomain;
+use crate::commands::{subdomain::Subdomain, whoami::display_account_id_maybe};
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::RouteConfig;
@@ -18,7 +18,10 @@ impl ZonelessTarget {
                 script_name: script_name.to_string(),
                 account_id: account_id.to_string(),
             }),
-            _ => failure::bail!("field `account_id` is required to deploy to workers.dev"),
+            _ => {
+                display_account_id_maybe();
+                failure::bail!("field `account_id` is required to deploy to workers.dev")
+            }
         }
     }
 

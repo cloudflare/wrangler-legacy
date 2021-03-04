@@ -9,7 +9,7 @@ use config::{Config, File};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
-use crate::commands::{validate_worker_name, DEFAULT_CONFIG_PATH};
+use crate::commands::{validate_worker_name, whoami, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::environment::Environment;
@@ -413,22 +413,27 @@ impl Manifest {
         let mut needs_new_line = false;
         if has_top_level_fields || has_env_fields {
             let toml_msg = styles::highlight("wrangler.toml");
-            let account_id_msg = styles::highlight("account_id");
             let zone_id_msg = styles::highlight("zone_id");
             let dash_url = styles::url("https://dash.cloudflare.com");
+
+            StdOut::help(&format!(
+                "You can find your {} in the right sidebar of a zone's overview tab at {}",
+                zone_id_msg, dash_url
+            ));
+
+            whoami::display_account_id_maybe();
+
             StdOut::help(
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
             );
-            StdOut::help(&format!(
-                "You can find your {} in the right sidebar of your account's Workers page, and {} in the right sidebar of a zone's overview tab at {}",
-                account_id_msg, zone_id_msg, dash_url
-            ));
+
             if has_top_level_fields {
                 needs_new_line = true;
                 for top_level_field in top_level_fields {
                     println!("- {}", top_level_field);
                 }
             }
+
             if has_env_fields {
                 for (env_name, env_fields) in env_fields {
                     if needs_new_line {
