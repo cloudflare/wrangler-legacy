@@ -111,7 +111,7 @@ jobs:
         run: |
           mv ./target/${{ env.MACOS_AARCH64_TARGET }}/release/${{ env.RELEASE_BIN }} ./dist/${{ env.RELEASE_BIN }}
           mv ${{ env.RELEASE_ADDS }} ./dist
-          7z a -ttar -so -an ./dist | 7z a -si ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_AARCH64_TARGET }}.tar.gz      
+          7z a -ttar -so -an ./dist | 7z a -si ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_AARCH64_TARGET }}.tar.gz
 
       - name: Create tarball (wranglerjs)
         if: matrix.build == 'wranglerjs'
@@ -164,7 +164,7 @@ jobs:
         with:
           name: macos
 
-      - name: Download MacOS (M1) tarball
+      - name: Download MacOS (Apple Silicon) tarball
         uses: actions/download-artifact@v1
         with:
           name: macos-aarch64
@@ -209,7 +209,7 @@ jobs:
           asset_content_type: application/gzip
           asset_name: wrangler-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz
 
-      - name: Release MacOS (M1) tarball
+      - name: Release MacOS (Apple Silicon) tarball
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
