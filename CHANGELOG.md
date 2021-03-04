@@ -1,12 +1,8 @@
 # Changelog
 
-## 🍎 1.14.0
+## 1.14.0
 
 - ### Features
-
-  - **Support for Apple silicon/M1 laptops - [nilslice], [pull/1763]**
-
-    Work to compile a version of wrangler for apple silicon machines. This should mean wrangler will support M1 machines once we setup infrastructure for downloading M1 versions of `cargo-generate` and `wasm-pack`.
 
   - **Display account ID's when possible - [caass], [pull/1786]**
 
@@ -1085,7 +1081,7 @@
 
   - **Plain text binding support - [EverlastingBugstopper] - [issue/993] [pull/1014]**
 
-    In addition to secrets, Wrangler now also supports setting "plain text" bindings – values that will be available as constants in your Workers code, but aren't encrypted. This can be done by passing values in `wrangler.toml` under the `vars` key:
+    In addition to secrets, Wrangler now also supports setting "plain text" bindings – values that will be available as constants in your Workers code, but aren't encrypted. This can be done by passing values in `wrangler.toml` under the `vars` key:
 
     ```toml
     name = "worker"
@@ -1118,7 +1114,7 @@
 
   - **Upload "draft" worker if secret is created before initial worker script has been uploaded - [gabbifish], [issue/913] [pull/1087]**
 
-    If your script hasn't yet been deployed to the Workers platform, creating and deleting secrets will also create a "draft" Worker – allowing you to still manage secret bindings before you deploy the first version of your script.
+    If your script hasn't yet been deployed to the Workers platform, creating and deleting secrets will also create a "draft" Worker – allowing you to still manage secret bindings before you deploy the first version of your script.
 
     [issue/913]: https://github.com/cloudflare/wrangler/issues/913
     [pull/1087]: https://github.com/cloudflare/wrangler/pull/1087
@@ -1767,7 +1763,7 @@
 
   - **Make install actually fail if the release can't be downloaded - [zackbloom], [pull/672]**
 
-    When Wrangler's installation shim attempts to install Wrangler on your machine, there's the possibility that the installation can fail – instead of failing silently, the installation shim now properly throws an error, allowing us to better diagnose installation failures.
+    When Wrangler's installation shim attempts to install Wrangler on your machine, there's the possibility that the installation can fail – instead of failing silently, the installation shim now properly throws an error, allowing us to better diagnose installation failures.
 
     [zackbloom]: https://github.com/zackbloom
     [pull/672]: https://github.com/cloudflare/wrangler/pull/672
@@ -2222,7 +2218,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
 
   - **Use stdin instead of arguments for wrangler config - [xtuc], [pull/329]**
 
-    We've made the `wrangler config` command interactive – the previous version of the command, `wrangler config $email $apiKey`, would be captured by your terminal's history, often exposing that information in a `~/.bash_history` or a similar file. The new version of `wrangler config` will prompt you for your `email` and `api_key` via `stdin`.
+    We've made the `wrangler config` command interactive – the previous version of the command, `wrangler config $email $apiKey`, would be captured by your terminal's history, often exposing that information in a `~/.bash_history` or a similar file. The new version of `wrangler config` will prompt you for your `email` and `api_key` via `stdin`.
 
     In addition, this PR also adds support for a `WRANGLER_HOME` environment variable, which will be the location for Wrangler's "home" directory, if you need to customize where Wrangler saves its configuration information.
 
@@ -2292,7 +2288,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
 
   - **Adds more descriptive subdomain errors - [EverlastingBugstopper], [issue/207][pull/259]**
 
-    It's super easy to grab a workers.dev subdomain using the `subdomain` command in `wrangler` – so easy, in fact, that many people were trying to use it without even having a Cloudflare account! `wrangler` now warns users when they attempt to add a subdomain without configuring their `account_id` in `wrangler.toml`, as well as when you've already registered a subdomain, or if the subdomain you're trying to register has already been claimed.
+    It's super easy to grab a workers.dev subdomain using the `subdomain` command in `wrangler` – so easy, in fact, that many people were trying to use it without even having a Cloudflare account! `wrangler` now warns users when they attempt to add a subdomain without configuring their `account_id` in `wrangler.toml`, as well as when you've already registered a subdomain, or if the subdomain you're trying to register has already been claimed.
 
     [everlastingbugstopper]: https://github.com/EverlastingBugstopper
     [issue/207]: https://github.com/cloudflare/wrangler/issue/207
@@ -2372,7 +2368,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
 
   - **Enforce one Webpack entry in configuration - [xtuc], [pull/245]**
 
-    `wrangler` now returns an error during the build process if you use a webpack configuration with more than one export – `wrangler` needs to have a single known export from webpack to know what to build!
+    `wrangler` now returns an error during the build process if you use a webpack configuration with more than one export – `wrangler` needs to have a single known export from webpack to know what to build!
 
     [xtuc]: https://github.com/xtuc
     [pull/245]: https://github.com/cloudflare/wrangler/pull/245
