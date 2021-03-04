@@ -17,14 +17,23 @@ You have many options to install wrangler!
 
 ### Install with `npm`
 
-We strongly recommend you install `npm` with a Node version manager like [`nvm`](https://github.com/nvm-sh/nvm#installing-and-updating), which will allow `wrangler` to install configuration data in a global `node_modules` directory in your user's home directory, without requiring that you run as `root`. 
+We strongly recommend you install `npm` with a Node version manager like [`nvm`](https://github.com/nvm-sh/nvm#installing-and-updating), which puts the global `node_modules` in your home directory to eliminate permissions issues with `npm install -g`. Distribution-packaged `npm` installs often use `/usr/lib/node_modules` (which is root) for globally installed `npm` packages, and running `npm install -g` as `root` prevents `wrangler` from installing properly.
 
-Once you've installed `nvm`, run:
+
+Once you've installed `nvm` and configured your system to use the `nvm` managed node install, run:
 
 ```bash
 npm i @cloudflare/wrangler -g
 ```
+
 If you are running an ARM based system (eg Raspberry Pi, Pinebook) you'll need to use the `cargo` installation method listed below to build wrangler from source.
+
+#### Specify binary location
+
+In case you need `wrangler`'s npm installer to place the binary in a non-default location (such as when using `wrangler` in CI), you can use the following configuration options to specify an install location:
+
+- Environment variable: `WRANGLER_INSTALL_PATH`
+- NPM configuration: `wrangler_install_path`
 
 #### Specify binary site URL
 
@@ -43,7 +52,7 @@ If you don't have `cargo` or `npm` installed, you will need to follow these [add
 
 ### Install on Windows
 
-[perl is an external dependency of crate openssl-sys](https://github.com/sfackler/rust-openssl/blob/b027f1603189919d5f63c6aff483243aaa188568/openssl/src/lib.rs#L11-L15). If installing with cargo, you will need to have it installed. Installing with `npm` is another option if you don't want to install perl.
+[perl is an external dependency of crate openssl-sys](https://github.com/sfackler/rust-openssl/blob/b027f1603189919d5f63c6aff483243aaa188568/openssl/src/lib.rs#L11-L15). If installing wrangler with cargo, you will need to have perl installed. We've tested with [Strawberry Perl](https://www.perl.org/get.html). If you instead install perl via scoop, you may need to also run `scoop install openssl` in order to get the necessary openssl dlls. Installing wrangler with `npm` instead of cargo is another option if you don't want to install perl.
 
 ## Updating
 
