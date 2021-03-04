@@ -6,19 +6,16 @@ This is a list of the things that need to happen during a release.
 
 ### Prepare the Changelog (Full release only)
 
-1. Open the associated milestone. All issues and PRs should be closed. If
+1. Open the associated milestone, if it exists. All issues and PRs should be closed. If
    they are not you should reassign all open issues and PRs to future
    milestones.
-1. Go through the commit history since the last release. Ensure that all PRs
-   that have landed are marked with the milestone. You can use this to
-   show all the PRs that are merged on or after YYY-MM-DD:
-   `https://github.com/issues?q=repo%3Acloudflare%2Fwrangler+base%3Amaster+merged%3A%3E%3DYYYY-MM-DD`
-1. Go through the closed PRs in the milestone. Each should have a changelog
-   label indicating if the change is docs, fix, feature, or maintenance. If
-   there is a missing label, please add one.
+1. Run the changelog generator in `./changelog-generator`.
+   1. Get the date after the most recent release,
+   1. run `cd ./changelog-generator && npm install && node index.js cloudflare wrangler YYYY-MM-DD`
+   1. the generated changelog is in `./changelog-generator/output.md`. Open it, and add the version at the top, and move the entries to their proper category.
 1. Choose an emoji for the release. Try to make it semi-related to something that's been included in the release (point releases can be a little weirder).
-1. Add this release to the `CHANGELOG.md`. Use the structure of previous
-   entries. If you use VS Code, you can use [this snippet](https://gist.github.com/EverlastingBugstopper/04d1adb99506388ff9d7abd8d0a82bc3) to insert new changelog sections. If it is a release candidate, no official changelog is needed, but testing instructions will be added later in the process.
+1. Add the contents of `output.md` to the top of `CHANGELOG.md`, matching the structure of previous
+   entries. If it is a release candidate, no official changelog is needed, but testing instructions will be added later in the process.
 
 ### Update cargo manifest
 
