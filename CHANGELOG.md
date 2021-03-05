@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.14.1
+
+- ### Fixes
+
+  - **revert default install location change - [xortive], [pull/1798]**
+
+    In 1.14.0, we changed the default install location from `~/.wrangler` to `node_modules`,
+    to allow `npx wrangler` to use the pinned version in a project's dependencies. It seems that
+    this is causing issues, so we're rolling it back in favor of having folks who want this behavior,
+    to specify a the install location in the `config` section of package.json. We'll document this soon.
+
+    [xortive]: https://github.com/xortive
+    [pull/1798]: https://github.com/cloudflare/wrangler/pull/1798
+
 ## 1.14.0
 
 - ### Features

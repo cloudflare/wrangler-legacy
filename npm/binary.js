@@ -38,7 +38,7 @@ const getBinary = () => {
   const customPath =
     process.env.WRANGLER_INSTALL_PATH ||
     process.env.npm_config_wrangler_install_path;
-  const installDirectory = join(customPath || __dirname, "wrangler");
+  const installDirectory = join(customPath || os.homedir(), ".wrangler");
   return new Binary(url, { name: "wrangler", installDirectory });
 };
 

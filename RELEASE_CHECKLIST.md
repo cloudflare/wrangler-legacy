@@ -43,14 +43,21 @@ Most of your comments will be about the changelog. Once the PR is finalized and 
 
 1. If you made changes, squash or fixup all changes into a single commit.
 1. Run `git push` and wait for CI to pass.
+## Merge
+
+1. Hit the big green Merge button on the release PR.
+1. `git checkout master` and `git pull --rebase origin master`
 
 ### Tag and build release
 
 This part of the release process is handled by GitHub Actions, and our binaries are distributed as GitHub Releases. When you push a version tag, it kicks off an action that creates a new GitHub release for that tag, builds release binaries and attaches them to the release.
 
-1. Once ready to merge, tag the commit by running either `git tag -a v#.#.# -m #.#.#` (release), or `git tag -a v#.#.#-rc.# -m #.#.#` (release candidate)
+1. After pulling `master` in the step above, tag the commit by running either `git tag -a v#.#.# -m #.#.#` (release), or `git tag -a v#.#.#-rc.# -m #.#.#` (release candidate)
 1. Run `git push --tags`.
 1. Wait for CI to pass.
+1. If CI fails, delete the tag locally and remotely
+1. Fix whatever caused the CI failure
+1. Re-tag the healthy commit, and wait for CI to pass again.
 
 ### Edit the release
 
@@ -73,11 +80,6 @@ After CI builds the release binaries and they appear on the [releases page](http
    ```
 
    The new release candidate should then include updated testing instructions with a small changelog at the top to get folks who installed the old release candidate up to speed.
-
-## Publish
-
-1. Hit the big green Merge button on the release PR.
-1. `git checkout master` and `git pull --rebase origin master`
 
 ### Publish to crates.io (full release only)
 
