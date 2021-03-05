@@ -13,6 +13,7 @@ env:
   MACOS_TARGET: x86_64-apple-darwin
   MACOS_AARCH64_TARGET: aarch64-apple-darwin
   LINUX_TARGET: x86_64-unknown-linux-musl
+  SELECT_XCODE: /Applications/Xcode_12.2.app
 
   # Space separated paths to include in the archive.
   RELEASE_ADDS: README.md
@@ -76,6 +77,7 @@ jobs:
       - name: Build (MacOS Apple Silicon)
         if: matrix.build == 'macos'
         run: |
+          sudo xcode-select -s "${SELECT_XCODE}"
           rustup target add ${{ env.MACOS_AARCH64_TARGET }}
           cargo build --release --target ${{ env.MACOS_AARCH64_TARGET }}
 
