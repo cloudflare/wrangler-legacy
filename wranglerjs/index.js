@@ -1,7 +1,6 @@
 const webpack = require("webpack");
 const { join } = require("path");
 const fs = require("fs");
-const WasmMainTemplatePlugin = require("webpack/lib/wasm/WasmMainTemplatePlugin");
 
 const WEBPACK_OUTPUT_FILENAME = "worker.js";
 const WEBPACK_OUTPUT_SOURCEMAPFILENAME = WEBPACK_OUTPUT_FILENAME + ".map";
@@ -16,10 +15,10 @@ function warn(...msg) {
 }
 
 function filterByExtension(ext) {
-  return v => v.indexOf("." + ext) !== -1;
+  return (v) => v.indexOf("." + ext) !== -1;
 }
 
-(async function() {
+(async function () {
   const rawArgs = process.argv.slice(2);
   const args = rawArgs.reduce((obj, e) => {
     if (e.indexOf("--") === -1 && e.indexOf("=") === -1) {
@@ -107,7 +106,7 @@ function filterByExtension(ext) {
       const bundle = {
         wasm: null,
         script: "",
-        errors: jsonStats.errors
+        errors: jsonStats.errors,
       };
 
       const wasmModuleAsset = Object.keys(assets).find(
