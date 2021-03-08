@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.15.0
+
+- ### Fixes
+
+  - **fix: remove unused import of WasmMainTemplatePlugin - [jasikpark], [pull/1802]**
+
+    This should improve #1721. https://github.com/cloudflare/wrangler/issues/1721#issuecomment-791974664
+
+    [jasikpark]: https://github.com/jasikpark
+    [pull/1802]: https://github.com/cloudflare/wrangler/pull/1802
+
+  - **Revert [pull/1748] - [xortive], [pull/1804]**
+
+    [pull/1748] turned out to interact poorly with workers-sites projects, causing `npm install` to not be run, breaking the build.
+
+    We're going to revert this change. Folks already depending on it should use custom builds ([pull/1677]) once it makes it into a release candidate.
+
+    We incremented the minor version number instead of making a patch release, as this change is more significant than a simple bugfix.
+
+    [xortive]: https://github.com/xortive
+    [pull/1748]: https://github.com/cloudflare/wrangler/pull/1748
+    [pull/1804]: https://github.com/cloudflare/wrangler/pull/1804
+    [pull/1677]: https://github.com/cloudflare/wrangler/pull/1677
+
 ## 1.14.1
 
 - ### Fixes
