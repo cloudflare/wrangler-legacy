@@ -22,6 +22,7 @@ pub struct Target {
     pub site: Option<Site>,
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
+    pub wasm_modules: Option<HashMap<String, PathBuf>>,
 }
 
 impl Target {

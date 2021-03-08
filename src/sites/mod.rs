@@ -323,6 +323,7 @@ mod tests {
             build: None,
             vars: None,
             text_blobs: None,
+            wasm_modules: None,
         }
     }
 

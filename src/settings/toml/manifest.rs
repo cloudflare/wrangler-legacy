@@ -53,6 +53,7 @@ pub struct Manifest {
     pub env: Option<HashMap<String, Environment>>,
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
+    pub wasm_modules: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
     pub durable_objects: Option<DurableObjects>,
 }
@@ -340,6 +341,7 @@ impl Manifest {
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited
+            wasm_modules: self.wasm_modules.clone(),
         };
 
         let environment = self.get_environment(environment_name)?;
