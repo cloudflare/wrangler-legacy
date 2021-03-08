@@ -1,13 +1,14 @@
 {
-  "name": "changelog-interactive",
+  "name": "changelog-generator",
+  "private": true,
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "wrangler@cloudflare.com",
+  "license": "MIT OR Apache-2.0",
   "dependencies": {
     "@octokit/rest": "^18.3.2",
     "commander": "^7.1.0",
