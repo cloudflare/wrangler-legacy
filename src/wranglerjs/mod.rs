@@ -4,6 +4,7 @@ pub mod output;
 
 pub use bundle::Bundle;
 
+use std::env;
 use std::fs;
 use std::fs::File;
 use std::iter;
@@ -12,7 +13,6 @@ use std::process::Command;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
-use std::{env, io};
 
 use fs2::FileExt;
 use notify::{self, RecursiveMode, Watcher};
@@ -233,29 +233,15 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
     flock.lock_exclusive()?;
 
     if !dir.join("node_modules").exists() {
-        // no dir in current path, search for closest
-        match find_closest_dir("node_modules", dir.as_path()) {
-            Ok(result) => match result {
-                Some(_) => {
-                    log::info!("skipping npm install because node_modules exists in parent dir")
-                }
-                None => {
-                    let mut command = build_npm_command();
-                    command.current_dir(dir.clone());
-                    command.arg("install");
-                    log::info!("Running {:?} in directory {:?}", command, dir);
+        let mut command = build_npm_command();
+        command.current_dir(dir.clone());
+        command.arg("install");
+        log::info!("Running {:?} in directory {:?}", command, dir);
 
-                    let status = command.status()?;
+        let status = command.status()?;
 
-                    if !status.success() {
-                        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
-                    }
-                }
-            },
-            Err(error) => failure::bail!(
-                "failed to find closest node_modules due to error: {:?}",
-                error
-            ),
+        if !status.success() {
+            failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
         }
     } else {
         log::info!("skipping npm install because node_modules exists");
@@ -268,35 +254,6 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
     flock.unlock()?;
 
     Ok(())
-}
-
-// find closest (bottom-up traversal) location of a file or dir
-fn find_closest_dir<'a>(name: &str, path: &'a Path) -> Result<Option<&'a Path>, io::Error> {
-    match has_dir(name, path) {
-        Ok(result) => {
-            if result {
-                return Ok(Option::from(path));
-            }
-            // If has parent lets check it
-            match path.parent() {
-                Some(parent_path) => find_closest_dir(name, parent_path),
-                None => Ok(None),
-            }
-        }
-        Err(e) => Err(e),
-    }
-}
-
-// check if dir has file with provided name
-fn has_dir(name: &str, path: &Path) -> Result<bool, io::Error> {
-    for entry in fs::read_dir(path)? {
-        let dir = entry?;
-        if dir.file_name() == name {
-            return Ok(true);
-        }
-    }
-
-    Ok(false)
 }
 
 // build a Command for npm
