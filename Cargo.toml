@@ -39,6 +39,7 @@ log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
 openssl = { version = "0.10.32", optional = true }
+path-slash = "0.1.4"
 percent-encoding = "2.1.0"
 predicates = "1.0.5"
 prettytable-rs = "0.8.0"
@@ -58,6 +59,7 @@ tokio-native-tls = "0.1.0"
 tokio-rustls = "0.14.1"
 tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
 toml = "0.5.8"
+toml_edit = "0.2.0"
 twox-hash = "1.6.0"
 url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }

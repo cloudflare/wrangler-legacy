@@ -1,26 +1,33 @@
+mod modules_worker;
 mod plain_text;
 mod project_assets;
+mod service_worker;
 mod text_blob;
 mod wasm_module;
 
-use reqwest::blocking::multipart::{Form, Part};
+use path_slash::PathExt; // Path::to_slash()
+use reqwest::blocking::multipart::Form;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
+use ignore::overrides::{Override, OverrideBuilder};
+use ignore::WalkBuilder;
+
 use crate::settings::binding;
-use crate::settings::metadata::Metadata;
-use crate::settings::toml::{Target, TargetType};
+use crate::settings::toml::{Builder, ScriptFormat, Target, TargetType};
 use crate::sites::AssetManifest;
 use crate::wranglerjs;
 
 use plain_text::PlainText;
-use project_assets::ProjectAssets;
+use project_assets::{ModulesAssets, ServiceWorkerAssets};
 use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
 // TODO: https://github.com/cloudflare/wrangler/issues/1083
 use super::{krate, Package};
+
+use self::project_assets::Module;
 
 pub fn build(
     target: &Target,
@@ -60,7 +67,7 @@ pub fn build(
             wasm_modules.push(wasm_module);
             let script_path = PathBuf::from("./worker/generated/script.js");
 
-            let assets = ProjectAssets::new(
+            let assets = ServiceWorkerAssets::new(
                 script_path,
                 wasm_modules,
                 kv_namespaces.to_vec(),
@@ -68,30 +75,91 @@ pub fn build(
                 plain_texts,
             )?;
 
-            build_form(&assets, session_config)
+            service_worker::build_form(&assets, session_config)
         }
-        TargetType::JavaScript => {
-            log::info!("JavaScript project detected. Publishing...");
-            let build_dir = target.build_dir()?;
-            let package = Package::new(&build_dir)?;
+        TargetType::JavaScript => match &target.build {
+            Some(config) => match &config.upload_format {
+                ScriptFormat::ServiceWorker => {
+                    log::info!("Plain JavaScript project detected. Publishing...");
+                    let package_dir = target.package_dir()?;
+                    let package = Package::new(&package_dir)?;
+                    let script_path = package.main(&package_dir)?;
 
-            let script_path = package.main(&build_dir)?;
+                    let assets = ServiceWorkerAssets::new(
+                        script_path,
+                        wasm_modules,
+                        kv_namespaces.to_vec(),
+                        text_blobs,
+                        plain_texts,
+                    )?;
 
-            let assets = ProjectAssets::new(
-                script_path,
-                wasm_modules,
-                kv_namespaces.to_vec(),
-                text_blobs,
-                plain_texts,
-            )?;
+                    service_worker::build_form(&assets, session_config)
+                }
+                ScriptFormat::Modules => {
+                    let package_dir = target.package_dir()?;
+                    let package = Package::new(&package_dir)?;
+                    let main_module = package.module(&package_dir)?;
+                    let main_module_name = filename_from_path(&main_module)
+                        .ok_or_else(|| failure::err_msg("filename required for main module"))?;
 
-            build_form(&assets, session_config)
-        }
+                    let ignore = build_ignore(config, &package_dir)?;
+                    let modules_iter = WalkBuilder::new(config.upload_dir.clone())
+                        .standard_filters(false)
+                        .hidden(true)
+                        .overrides(ignore)
+                        .build();
+
+                    let mut modules: Vec<Module> = vec![];
+
+                    for entry in modules_iter {
+                        let entry = entry?;
+                        let path = entry.path();
+                        if path.is_file() {
+                            let name = modulename_from_path(&config.upload_dir, path).ok_or_else(
+                                || {
+                                    failure::err_msg(format!(
+                                        "failed to create module name for {}",
+                                        path.display()
+                                    ))
+                                },
+                            )?;
+                            log::info!("Adding module {} at path {}", name, path.display());
+                            modules.push(Module::new(name, path.to_owned())?);
+                        }
+                    }
+
+                    let assets = ModulesAssets::new(
+                        main_module_name,
+                        modules,
+                        kv_namespaces.to_vec(),
+                        plain_texts,
+                    )?;
+
+                    modules_worker::build_form(&assets, session_config)
+                }
+            },
+            None => {
+                log::info!("Plain JavaScript project detected. Publishing...");
+                let package_dir = target.package_dir()?;
+                let package = Package::new(&package_dir)?;
+                let script_path = package.main(&package_dir)?;
+
+                let assets = ServiceWorkerAssets::new(
+                    script_path,
+                    wasm_modules,
+                    kv_namespaces.to_vec(),
+                    text_blobs,
+                    plain_texts,
+                )?;
+
+                service_worker::build_form(&assets, session_config)
+            }
+        },
         TargetType::Webpack => {
             log::info!("webpack project detected. Publishing...");
             // TODO: https://github.com/cloudflare/wrangler/issues/850
-            let build_dir = target.build_dir()?;
-            let bundle = wranglerjs::Bundle::new(&build_dir);
+            let package_dir = target.package_dir()?;
+            let bundle = wranglerjs::Bundle::new(&package_dir);
 
             let script_path = bundle.script_path();
 
@@ -110,7 +178,7 @@ pub fn build(
                 text_blobs.push(text_blob);
             }
 
-            let assets = ProjectAssets::new(
+            let assets = ServiceWorkerAssets::new(
                 script_path,
                 wasm_modules,
                 kv_namespaces.to_vec(),
@@ -118,7 +186,7 @@ pub fn build(
                 plain_texts,
             )?;
 
-            build_form(&assets, session_config)
+            service_worker::build_form(&assets, session_config)
         }
     }
 }
@@ -128,74 +196,25 @@ fn get_asset_manifest_blob(asset_manifest: AssetManifest) -> Result<String, fail
     Ok(asset_manifest)
 }
 
-fn build_form(
-    assets: &ProjectAssets,
-    session_config: Option<serde_json::Value>,
-) -> Result<Form, failure::Error> {
-    let mut form = Form::new();
-
-    // The preview service in particular streams the request form, and requires that the
-    // "metadata" part be set first, so this order is important.
-    form = add_metadata(form, assets)?;
-    form = add_files(form, assets)?;
-    if let Some(session_config) = session_config {
-        form = add_session_config(form, session_config)?
-    }
-
-    log::info!("building form");
-    log::info!("{:?}", &form);
-
-    Ok(form)
-}
-
-fn add_files(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure::Error> {
-    form = form.file(assets.script_name(), assets.script_path())?;
-
-    for wasm_module in &assets.wasm_modules {
-        form = form.file(wasm_module.filename(), wasm_module.path())?;
-    }
-
-    for text_blob in &assets.text_blobs {
-        let part = Part::text(text_blob.data.clone())
-            .file_name(text_blob.binding.clone())
-            .mime_str("text/plain")?;
-
-        form = form.part(text_blob.binding.clone(), part);
-    }
-
-    Ok(form)
-}
-
-fn add_metadata(mut form: Form, assets: &ProjectAssets) -> Result<Form, failure::Error> {
-    let metadata_json = serde_json::json!(&Metadata {
-        body_part: assets.script_name(),
-        bindings: assets.bindings(),
-    });
-
-    let metadata = Part::text((metadata_json).to_string())
-        .file_name("metadata.json")
-        .mime_str("application/json")?;
-
-    form = form.part("metadata", metadata);
-
-    Ok(form)
-}
-
-fn add_session_config(
-    mut form: Form,
-    session_config: serde_json::Value,
-) -> Result<Form, failure::Error> {
-    let wrangler_session_config = Part::text((session_config).to_string())
-        .file_name("")
-        .mime_str("application/json")?;
-
-    form = form.part("wrangler-session-config", wrangler_session_config);
-
-    Ok(form)
+fn filestem_from_path(path: &PathBuf) -> Option<String> {
+    path.file_stem()?.to_str().map(|s| s.to_string())
 }
 
 fn filename_from_path(path: &PathBuf) -> Option<String> {
-    path.file_stem()?.to_str().map(|s| s.to_string())
+    path.file_name()
+        .map(|filename| filename.to_string_lossy().into_owned())
+}
+
+/// Converts a system path into a Unix-style path, relative to some root.
+///
+/// # Example
+/// let root_path = Path::new("/Users/alice/Desktop/myproject");
+/// let path = Path::new("/Users/alice/Desktop/myproject/src/resources/file.txt");
+/// let result = modulename_from_path(&root_path, &path);
+///
+/// assert_eq!(result, Some(String::new("src/resources/file.txt")));
+fn modulename_from_path(root_path: &Path, path: &Path) -> Option<String> {
+    path.strip_prefix(root_path).ok()?.to_owned().to_slash()
 }
 
 fn build_generated_dir() -> Result<(), failure::Error> {
@@ -216,4 +235,22 @@ fn concat_js(name: &str) -> Result<(), failure::Error> {
 
     fs::write("./worker/generated/script.js", js.as_bytes())?;
     Ok(())
+}
+
+fn build_ignore(config: &Builder, directory: &Path) -> Result<Override, failure::Error> {
+    let mut overrides = OverrideBuilder::new(directory);
+    // If `include` present, use it and don't touch the `exclude` field
+    if let Some(included) = &config.upload_include {
+        for i in included {
+            overrides.add(&i)?;
+            log::info!("Including {}", i);
+        }
+    } else if let Some(excluded) = &config.upload_exclude {
+        for e in excluded {
+            overrides.add(&format!("!{}", e))?;
+            log::info!("Ignoring {}", e);
+        }
+    }
+
+    Ok(overrides.build()?)
 }

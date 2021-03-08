@@ -18,9 +18,9 @@ pub struct Bundle {
 // We call a {Bundle} the output of a {Bundler}; representing what {Webpack}
 // produces.
 impl Bundle {
-    pub fn new(build_dir: &PathBuf) -> Bundle {
+    pub fn new(package_dir: &PathBuf) -> Bundle {
         Bundle {
-            out: build_dir.join(BUNDLE_OUT),
+            out: package_dir.join(BUNDLE_OUT),
         }
     }
 

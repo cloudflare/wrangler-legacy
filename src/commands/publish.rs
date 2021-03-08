@@ -72,6 +72,12 @@ pub fn publish(
         }
         Err(e) => Err(e),
     }?;
+
+    // We verify early here, so we don't perform pre-upload tasks if the upload will fail
+    if let Some(build_config) = &target.build {
+        build_config.verify_upload_dir()?;
+    }
+
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
         validate_bucket_location(path)?;
