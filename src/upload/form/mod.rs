@@ -20,7 +20,7 @@ use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
 // TODO: https://github.com/cloudflare/wrangler/issues/1083
-use super::{krate, Package};
+use super::krate;
 
 pub fn build(
     target: &Target,
@@ -72,10 +72,14 @@ pub fn build(
         }
         TargetType::JavaScript => {
             log::info!("JavaScript project detected. Publishing...");
-            let build_dir = target.build_dir()?;
-            let package = Package::new(&build_dir)?;
+            let mut script_path = target.build_dir()?;
 
-            let script_path = package.main(&build_dir)?;
+            // always expects main worker file at index.js
+            script_path.push("index.js");
+
+            if !std::path::Path::new(&script_path).exists() {
+                failure::bail!("Please rename your main JavaScript file to index.js")
+            }
 
             let assets = ProjectAssets::new(
                 script_path,
