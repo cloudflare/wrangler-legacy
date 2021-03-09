@@ -26,7 +26,6 @@ fn it_can_preview_js_project() {
         }
     "#,
     );
-    fixture.create_default_package_json();
 
     let wrangler_toml = WranglerToml::javascript("test-preview-javascript");
     fixture.create_wrangler_toml(wrangler_toml);
