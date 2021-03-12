@@ -4,6 +4,7 @@ use reqwest::blocking::multipart::{Form, Part};
 use serde::Serialize;
 
 use crate::settings::binding::Binding;
+use crate::settings::toml::ApiDurableObjectsMigration;
 
 use super::ModulesAssets;
 
@@ -11,6 +12,7 @@ use super::ModulesAssets;
 struct Metadata {
     pub main_module: String,
     pub bindings: Vec<Binding>,
+    pub migrations: Option<ApiDurableObjectsMigration>,
 }
 
 pub fn build_form(
@@ -47,6 +49,7 @@ fn add_metadata(mut form: Form, assets: &ModulesAssets) -> Result<Form, failure:
     let metadata_json = serde_json::json!(&Metadata {
         main_module: assets.main_module.clone(),
         bindings: assets.bindings(),
+        migrations: assets.durable_object_migration.clone()
     });
 
     let metadata = Part::text(metadata_json.to_string())

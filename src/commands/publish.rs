@@ -31,7 +31,7 @@ pub fn publish(
 ) -> Result<(), failure::Error> {
     validate_target_required_fields_present(target)?;
 
-    let deploy = |target: &Target| match deploy::deploy(&user, &deployments) {
+    let run_deploy = |target: &Target| match deploy::deploy(&user, &deployments) {
         Ok(results) => {
             build_output_message(results, target.name.clone(), out);
             Ok(())
@@ -88,10 +88,11 @@ pub fn publish(
 
         let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
 
+        deploy::pre_upload()?;
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&upload_client, &target, Some(asset_manifest))?;
 
-        deploy(target)?;
+        run_deploy(target)?;
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
@@ -122,8 +123,9 @@ pub fn publish(
     } else {
         let upload_client = http::legacy_auth_client(user);
 
+        deploy::pre_upload()?;
         upload::script(&upload_client, &target, None)?;
-        deploy(target)?;
+        run_deploy(target)?;
     }
 
     Ok(())

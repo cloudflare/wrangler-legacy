@@ -9,7 +9,7 @@ pub use server_config::Protocol;
 pub use server_config::ServerConfig;
 
 use crate::build::build_target;
-use crate::deploy::{DeployTarget, DeploymentSet};
+use crate::deploy::{self, DeployTarget, DeploymentSet};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
@@ -28,6 +28,8 @@ pub fn dev(
 ) -> Result<(), failure::Error> {
     // before serving requests we must first build the Worker
     build_target(&target)?;
+
+    deploy::pre_upload()?;
 
     let deploy_target = {
         let valid_targets = deployments
@@ -88,5 +90,8 @@ pub fn dev(
         );
     }
 
+    if target.durable_objects.is_some() {
+        failure::bail!("Previewing a script that binds to a Durable Object Class is not supported using unauthenticated preview. Please use wrangler login or wrangler config.")
+    }
     gcs::dev(target, server_config, local_protocol, verbose)
 }
