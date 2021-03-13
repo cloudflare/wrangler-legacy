@@ -399,7 +399,7 @@ fn run() -> Result<(), failure::Error> {
                         .short("b")
                         .long("branch")
                         .takes_value(true)
-                        .help("the git branch of the template repository. Defaults to master."),
+                        .help("the git branch of the template repository you wish to checkout."),
                 )
                 .arg(
                     Arg::with_name("type")
@@ -689,7 +689,7 @@ fn run() -> Result<(), failure::Error> {
         let name = matches.value_of("name").unwrap_or("worker");
         let site = matches.is_present("site");
         let template = matches.value_of("template");
-        let template_branch = matches.value_of("branch").unwrap_or("master");
+        let branch = matches.value_of("branch");
         let mut target_type = None;
 
         let template = if site {
@@ -718,7 +718,7 @@ fn run() -> Result<(), failure::Error> {
             name
         );
 
-        commands::generate(name, template, template_branch, target_type, site)?;
+        commands::generate(name, template, branch, target_type, site)?;
     } else if let Some(matches) = matches.subcommand_matches("init") {
         let name = matches.value_of("name");
         let site = matches.is_present("site");

@@ -36,14 +36,9 @@ fn it_generates_with_some_arguments() {
 fn it_generates_with_all_arguments() {
     let name = "example-branch";
     let template = "p-j/worker-eapi-template";
-    let template_branch = "main";
+    let branch = "main";
     let project_type = "webpack";
-    generate(
-        Some(name),
-        Some(template),
-        Some(template_branch),
-        Some(project_type),
-    );
+    generate(Some(name), Some(template), Some(branch), Some(project_type));
 
     assert_eq!(Path::new(name).exists(), true);
 
@@ -57,34 +52,26 @@ fn it_generates_with_all_arguments() {
 pub fn generate(
     name: Option<&str>,
     template: Option<&str>,
-    template_branch: Option<&str>,
+    branch: Option<&str>,
     project_type: Option<&str>,
 ) {
     let mut wrangler = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-    if name.is_none() && template.is_none() && template_branch.is_none() && project_type.is_none() {
+    if name.is_none() && template.is_none() && branch.is_none() && project_type.is_none() {
         wrangler.arg("generate").assert().success();
-    } else if name.is_some()
-        && template.is_some()
-        && template_branch.is_none()
-        && project_type.is_none()
-    {
+    } else if name.is_some() && template.is_some() && branch.is_none() && project_type.is_none() {
         wrangler
             .arg("generate")
             .arg(name.unwrap())
             .arg(template.unwrap())
             .assert()
             .success();
-    } else if name.is_some()
-        && template.is_some()
-        && template_branch.is_some()
-        && project_type.is_some()
-    {
+    } else if name.is_some() && template.is_some() && branch.is_some() && project_type.is_some() {
         wrangler
             .arg("generate")
             .arg(name.unwrap())
             .arg(template.unwrap())
             .arg("--branch")
-            .arg(template_branch.unwrap())
+            .arg(branch.unwrap())
             .arg("--type")
             .arg(project_type.unwrap())
             .assert()
