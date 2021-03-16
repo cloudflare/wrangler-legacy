@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use cloudflare::framework::auth::Credentials;
 use serde::{Deserialize, Serialize};
 
+use crate::settings::http_config::HttpConfig;
 use crate::settings::{get_global_config_path, Environment, QueryEnvironment};
 use crate::terminal::{emoji, styles};
 
@@ -19,8 +20,17 @@ use std::io::Write;
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum GlobalUser {
-    TokenAuth { api_token: String },
-    GlobalKeyAuth { email: String, api_key: String },
+    TokenAuth {
+        api_token: String,
+        #[serde(flatten)]
+        http_config: HttpConfig,
+    },
+    GlobalKeyAuth {
+        email: String,
+        api_key: String,
+        #[serde(flatten)]
+        http_config: HttpConfig,
+    },
 }
 
 impl GlobalUser {
@@ -123,8 +133,10 @@ impl GlobalUser {
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
         match user {
-            GlobalUser::TokenAuth { api_token } => Credentials::UserAuthToken { token: api_token },
-            GlobalUser::GlobalKeyAuth { email, api_key } => Credentials::UserAuthKey {
+            GlobalUser::TokenAuth { api_token, .. } => {
+                Credentials::UserAuthToken { token: api_token }
+            }
+            GlobalUser::GlobalKeyAuth { email, api_key, .. } => Credentials::UserAuthKey {
                 key: api_key,
                 email,
             },
@@ -135,7 +147,7 @@ impl From<GlobalUser> for Credentials {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs::File;
+    use std::{fs::File, time::Duration};
     use tempfile::tempdir;
 
     use crate::settings::{environment::MockEnvironment, DEFAULT_CONFIG_FILE_NAME};
@@ -158,7 +170,8 @@ mod tests {
         assert_eq!(
             user,
             GlobalUser::TokenAuth {
-                api_token: "foo".to_string()
+                api_token: "foo".to_string(),
+                http_config: Default::default(),
             }
         );
     }
@@ -171,10 +184,12 @@ mod tests {
 
         let file_user = GlobalUser::TokenAuth {
             api_token: api_token.to_string(),
+            http_config: Default::default(),
         };
         let env_user = GlobalUser::GlobalKeyAuth {
             api_key: api_key.to_string(),
             email: email.to_string(),
+            http_config: Default::default(),
         };
 
         let mut mock_env = MockEnvironment::default();
@@ -195,6 +210,7 @@ mod tests {
 
         let user = GlobalUser::TokenAuth {
             api_token: "thisisanapitoken".to_string(),
+            http_config: Default::default(),
         };
 
         let tmp_dir = tempdir().unwrap();
@@ -245,6 +261,69 @@ mod tests {
         let new_user = GlobalUser::build(mock_env, dummy_path);
 
         assert!(new_user.is_ok());
+    }
+
+    #[test]
+    fn token_auth_succeeds_with_config_timeouts() {
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .open(&config_dir.as_path())
+            .unwrap();
+        let config = r#"
+api_token = "my_api_token"
+connect_timeout = 3
+bulk_timeout = 16
+"#;
+        file.write_all(config.as_bytes()).unwrap();
+
+        let new_user = GlobalUser::build(MockEnvironment::default(), config_dir).unwrap();
+        let http_config = match new_user {
+            GlobalUser::TokenAuth { http_config, .. } => http_config,
+            _ => panic!("expected TokenAuth user"),
+        };
+
+        assert_eq!(Duration::from_secs(3), http_config.get_connect_timeout());
+        assert_eq!(
+            Duration::from_secs(crate::http::DEFAULT_HTTP_TIMEOUT_SECONDS),
+            http_config.get_http_timeout()
+        );
+        assert_eq!(Duration::from_secs(16), http_config.get_bulk_timeout());
+    }
+
+    #[test]
+    fn global_auth_succeeds_with_config_timeouts() {
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .open(&config_dir.as_path())
+            .unwrap();
+        let config = r#"
+email = "workers@cloudflare.com"
+api_key = "my_api_key"
+http_timeout = 3
+"#;
+        file.write_all(config.as_bytes()).unwrap();
+
+        let new_user = GlobalUser::build(MockEnvironment::default(), config_dir).unwrap();
+        let http_config = match new_user {
+            GlobalUser::GlobalKeyAuth { http_config, .. } => http_config,
+            _ => panic!("expected TokenAuth user"),
+        };
+
+        assert_eq!(
+            Duration::from_secs(crate::http::DEFAULT_CONNECT_TIMEOUT_SECONDS),
+            http_config.get_connect_timeout()
+        );
+        assert_eq!(Duration::from_secs(3), http_config.get_http_timeout());
+        assert_eq!(
+            Duration::from_secs(crate::http::DEFAULT_BULK_TIMEOUT_SECONDS),
+            http_config.get_bulk_timeout()
+        );
     }
 
     fn test_config_dir(
