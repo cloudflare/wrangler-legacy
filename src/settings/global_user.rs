@@ -24,6 +24,8 @@ static ENV_VAR_WHITELIST: [&str; 6] = [
     CF_BULK_TIMEOUT,
 ];
 
+static NON_CF_XXX_TIMEOUT_ENV_VARS: [&str; 3] = [CF_API_TOKEN, CF_API_KEY, CF_EMAIL];
+
 #[cfg(test)]
 use std::io::Write;
 
@@ -58,7 +60,7 @@ impl GlobalUser {
     where
         T: config::Source + Send + Sync,
     {
-        if let Some(user) = Self::from_env(environment) {
+        if let Some(user) = Self::from_env(environment, config_path.clone()) {
             user
         } else {
             Self::from_file(config_path)
@@ -67,6 +69,7 @@ impl GlobalUser {
 
     fn from_env<T: 'static + QueryEnvironment>(
         environment: T,
+        config_path: PathBuf,
     ) -> Option<Result<Self, failure::Error>>
     where
         T: config::Source + Send + Sync,
@@ -78,6 +81,39 @@ impl GlobalUser {
             None
         } else {
             let mut s = config::Config::new();
+
+            // attempt to merge the on disk configuration with the environment
+            // doing this allows users to setup a configuration file with their
+            // api keys, and additionally use environment variables to override
+            // timeouts
+            //
+            // the disk configuration is merged first so that the environment
+            // configuration (merged later) will take priority
+            // see: https://github.com/mehcode/config-rs/blob/fb33478fe6863712a699c258c533a53340d5611f/examples/hierarchical-env/src/settings.rs#L43-L50
+            //
+            // for example:
+            //
+            // ```toml
+            // api_token = "secret_token_here"
+            // ```
+            //
+            // $ CF_HTTP_TIMEOUT=600 wrangler publish
+            //
+            // to support backwards compatibility, this merge is **only** done
+            // if the environment contains only CF_XXX_TIMEOUT variables.
+            // otherwise, we would break test `it_can_prioritize_env_vars`
+            let config_str = config_path
+                .to_str()
+                .expect("global config path should be a string");
+
+            if config_path.exists() && has_only_cf_xxx_timeout_vars(&environment) {
+                log::info!(
+                    "Config path exists. Reading from config file, {}",
+                    config_str
+                );
+                s.merge(config::File::with_name(config_str)).ok();
+            }
+
             s.merge(environment).ok();
 
             Some(GlobalUser::from_config(s))
@@ -152,6 +188,21 @@ impl From<GlobalUser> for Credentials {
             },
         }
     }
+}
+
+fn has_only_cf_xxx_timeout_vars(env: &impl QueryEnvironment) -> bool {
+    for &timeout_var in NON_CF_XXX_TIMEOUT_ENV_VARS.iter() {
+        let has_non_timeout_var = env
+            .get_var(timeout_var)
+            .map(|s| !s.is_empty())
+            .unwrap_or(false);
+
+        if has_non_timeout_var {
+            return false;
+        }
+    }
+
+    true
 }
 
 #[cfg(test)]
@@ -365,6 +416,39 @@ http_timeout = 3
             Duration::from_secs(crate::http::DEFAULT_BULK_TIMEOUT_SECONDS),
             http_config.get_bulk_timeout()
         );
+    }
+
+    #[test]
+    fn environment_timeouts_get_applied_to_config() {
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .open(&config_dir.as_path())
+            .unwrap();
+        let config = r#"
+email = "workers@cloudflare.com"
+api_key = "my_api_key"
+"#;
+        file.write_all(config.as_bytes()).unwrap();
+
+        let mut env = MockEnvironment::default();
+        env.set(CF_HTTP_TIMEOUT, "10000");
+        env.set(CF_BULK_TIMEOUT, "10000");
+
+        let new_user = GlobalUser::build(env, config_dir).unwrap();
+        let http_config = match new_user {
+            GlobalUser::GlobalKeyAuth { http_config, .. } => http_config,
+            _ => panic!("expected TokenAuth user"),
+        };
+
+        assert_eq!(
+            Duration::from_secs(crate::http::DEFAULT_CONNECT_TIMEOUT_SECONDS),
+            http_config.get_connect_timeout()
+        );
+        assert_eq!(Duration::from_secs(10_000), http_config.get_http_timeout());
+        assert_eq!(Duration::from_secs(10_000), http_config.get_bulk_timeout());
     }
 
     fn test_config_dir(
