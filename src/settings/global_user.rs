@@ -53,6 +53,13 @@ impl GlobalUser {
         GlobalUser::build(environment, config_path)
     }
 
+    pub fn get_http_config(&self) -> &HttpConfig {
+        match &self {
+            GlobalUser::TokenAuth { http_config, .. } => http_config,
+            GlobalUser::GlobalKeyAuth { http_config, .. } => http_config,
+        }
+    }
+
     fn build<T: 'static + QueryEnvironment>(
         environment: T,
         config_path: PathBuf,
