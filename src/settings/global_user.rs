@@ -11,8 +11,18 @@ use crate::terminal::{emoji, styles};
 const CF_API_TOKEN: &str = "CF_API_TOKEN";
 const CF_API_KEY: &str = "CF_API_KEY";
 const CF_EMAIL: &str = "CF_EMAIL";
+const CF_CONNECT_TIMEOUT: &str = "CF_CONNECT_TIMEOUT";
+const CF_HTTP_TIMEOUT: &str = "CF_HTTP_TIMEOUT";
+const CF_BULK_TIMEOUT: &str = "CF_BULK_TIMEOUT";
 
-static ENV_VAR_WHITELIST: [&str; 3] = [CF_API_TOKEN, CF_API_KEY, CF_EMAIL];
+static ENV_VAR_WHITELIST: [&str; 6] = [
+    CF_API_TOKEN,
+    CF_API_KEY,
+    CF_EMAIL,
+    CF_CONNECT_TIMEOUT,
+    CF_HTTP_TIMEOUT,
+    CF_BULK_TIMEOUT,
+];
 
 #[cfg(test)]
 use std::io::Write;
@@ -319,6 +329,37 @@ http_timeout = 3
             Duration::from_secs(crate::http::DEFAULT_CONNECT_TIMEOUT_SECONDS),
             http_config.get_connect_timeout()
         );
+        assert_eq!(Duration::from_secs(3), http_config.get_http_timeout());
+        assert_eq!(
+            Duration::from_secs(crate::http::DEFAULT_BULK_TIMEOUT_SECONDS),
+            http_config.get_bulk_timeout()
+        );
+    }
+
+    #[test]
+    fn auth_succeeds_with_env_str_and_num_timeouts() {
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .open(&config_dir.as_path())
+            .unwrap();
+        let config = r#"
+email = "workers@cloudflare.com"
+api_key = "my_api_key"
+connect_timeout = 8
+http_timeout = 3
+"#;
+        file.write_all(config.as_bytes()).unwrap();
+
+        let new_user = GlobalUser::build(MockEnvironment::default(), config_dir).unwrap();
+        let http_config = match new_user {
+            GlobalUser::GlobalKeyAuth { http_config, .. } => http_config,
+            _ => panic!("expected TokenAuth user"),
+        };
+
+        assert_eq!(Duration::from_secs(8), http_config.get_connect_timeout());
         assert_eq!(Duration::from_secs(3), http_config.get_http_timeout());
         assert_eq!(
             Duration::from_secs(crate::http::DEFAULT_BULK_TIMEOUT_SECONDS),
