@@ -83,7 +83,7 @@ where
         where
             E: de::Error,
         {
-            value.parse::<u64>().map(|n| Some(n)).map_err(|_| {
+            value.parse::<u64>().map(Some).map_err(|_| {
                 serde::de::Error::invalid_type(serde::de::Unexpected::Str(value), &self)
             })
         }
