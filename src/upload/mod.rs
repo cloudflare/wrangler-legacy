@@ -2,6 +2,7 @@ pub mod form;
 mod krate;
 pub mod package;
 
+use indicatif::{ProgressBar, ProgressStyle};
 pub use package::Package;
 
 use reqwest::blocking::Client;
@@ -21,10 +22,17 @@ pub fn script(
 
     let script_upload_form = form::build(target, asset_manifest, None)?;
 
+    let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
+    let spinner = ProgressBar::new_spinner().with_style(style);
+    spinner.set_message("Uploading script...");
+    spinner.enable_steady_tick(20);
+
     let res = client
         .put(&worker_addr)
         .multipart(script_upload_form)
         .send()?;
+
+    spinner.finish_and_clear();
 
     let res_status = res.status();
 
