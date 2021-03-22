@@ -1,4 +1,5 @@
 use super::builder::Builder;
+use super::durable_objects::DurableObjects;
 use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
@@ -12,6 +13,7 @@ use std::path::PathBuf;
 pub struct Target {
     pub account_id: String,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub durable_objects: Option<DurableObjects>,
     pub name: String,
     pub target_type: TargetType,
     pub webpack_config: Option<String>,

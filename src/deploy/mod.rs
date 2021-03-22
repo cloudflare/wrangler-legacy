@@ -2,6 +2,7 @@ mod schedule;
 mod zoned;
 mod zoneless;
 
+use indicatif::{ProgressBar, ProgressStyle};
 pub use schedule::ScheduleTarget;
 pub use zoned::ZonedTarget;
 pub use zoneless::ZonelessTarget;
@@ -18,27 +19,40 @@ pub enum DeployTarget {
     Schedule(ScheduleTarget),
 }
 
-pub fn worker(
+pub fn pre_upload() -> Result<(), failure::Error> {
+    // TODO: get current migration tag and update target.durable_objects
+    Ok(())
+}
+
+pub fn deploy(
     user: &GlobalUser,
     deploy_targets: &[DeployTarget],
 ) -> Result<DeployResults, failure::Error> {
+    let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
+    let spinner = ProgressBar::new_spinner().with_style(style);
+    spinner.enable_steady_tick(20);
     let mut results = DeployResults::default();
     for target in deploy_targets {
         match target {
             DeployTarget::Zoned(zoned) => {
+                spinner.set_message("Configuring routes...");
                 let route_urls = zoned.deploy(user)?;
                 results.urls.extend(route_urls);
             }
             DeployTarget::Zoneless(zoneless) => {
+                spinner.set_message("Configuring workers.dev...");
                 let worker_dev = zoneless.deploy(user)?;
                 results.urls.push(worker_dev);
             }
             DeployTarget::Schedule(schedule) => {
+                spinner.set_message("Configuring schedules...");
                 let schedules = schedule.deploy(user)?;
                 results.schedules.extend(schedules);
             }
         }
     }
+
+    spinner.finish_and_clear();
 
     Ok(results)
 }

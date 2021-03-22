@@ -8,7 +8,7 @@ use super::plain_text::PlainText;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
 
-use crate::settings::toml::KvNamespace;
+use crate::settings::toml::{ApiDurableObjectsMigration, DurableObjectsClass, KvNamespace};
 
 #[derive(Debug)]
 pub struct ServiceWorkerAssets {
@@ -16,6 +16,7 @@ pub struct ServiceWorkerAssets {
     script_path: PathBuf,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub durable_object_classes: Vec<DurableObjectsClass>,
     pub text_blobs: Vec<TextBlob>,
     pub plain_texts: Vec<PlainText>,
 }
@@ -25,6 +26,7 @@ impl ServiceWorkerAssets {
         script_path: PathBuf,
         wasm_modules: Vec<WasmModule>,
         kv_namespaces: Vec<KvNamespace>,
+        durable_object_classes: Vec<DurableObjectsClass>,
         text_blobs: Vec<TextBlob>,
         plain_texts: Vec<PlainText>,
     ) -> Result<Self, failure::Error> {
@@ -37,6 +39,7 @@ impl ServiceWorkerAssets {
             script_path,
             wasm_modules,
             kv_namespaces,
+            durable_object_classes,
             text_blobs,
             plain_texts,
         })
@@ -51,6 +54,10 @@ impl ServiceWorkerAssets {
         }
         for kv in &self.kv_namespaces {
             let binding = kv.binding();
+            bindings.push(binding);
+        }
+        for do_ns in &self.durable_object_classes {
+            let binding = do_ns.binding();
             bindings.push(binding);
         }
         for blob in &self.text_blobs {
@@ -97,7 +104,11 @@ impl Module {
             "js" => ModuleType::CommonJS,
             "wasm" => ModuleType::Wasm,
             "txt" => ModuleType::Text,
-            _ => ModuleType::Data,
+            "bin" => ModuleType::Data,
+            unknown => failure::bail!(format!(
+                "unknown extension {}, cannot determine module type",
+                unknown
+            )),
         };
 
         Ok(Module {
@@ -132,6 +143,8 @@ pub struct ModulesAssets {
     pub main_module: String,
     pub modules: Vec<Module>,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub durable_object_classes: Vec<DurableObjectsClass>,
+    pub durable_object_migration: Option<ApiDurableObjectsMigration>,
     pub plain_texts: Vec<PlainText>,
 }
 
@@ -140,12 +153,16 @@ impl ModulesAssets {
         main_module: String,
         modules: Vec<Module>,
         kv_namespaces: Vec<KvNamespace>,
+        durable_object_classes: Vec<DurableObjectsClass>,
+        durable_object_migration: Option<ApiDurableObjectsMigration>,
         plain_texts: Vec<PlainText>,
     ) -> Result<Self, failure::Error> {
         Ok(Self {
             main_module,
             modules,
             kv_namespaces,
+            durable_object_classes,
+            durable_object_migration,
             plain_texts,
         })
     }
@@ -158,6 +175,10 @@ impl ModulesAssets {
 
         for kv in &self.kv_namespaces {
             let binding = kv.binding();
+            bindings.push(binding);
+        }
+        for class in &self.durable_object_classes {
+            let binding = class.binding();
             bindings.push(binding);
         }
         for plain_text in &self.plain_texts {
