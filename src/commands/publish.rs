@@ -89,7 +89,7 @@ pub fn publish(
         let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
 
         // Next, upload and deploy the worker with the updated asset_manifest
-        upload::script(&upload_client, &target, Some(asset_manifest))?;
+        upload::script(&upload_client, &user, &target, Some(asset_manifest))?;
 
         run_deploy(target)?;
 
@@ -122,7 +122,7 @@ pub fn publish(
     } else {
         let upload_client = http::legacy_auth_client(user);
 
-        upload::script(&upload_client, &target, None)?;
+        upload::script(&upload_client, &user, &target, None)?;
         run_deploy(target)?;
     }
 

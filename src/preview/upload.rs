@@ -153,7 +153,9 @@ fn authenticated_upload(
     );
     log::info!("address: {}", create_address);
 
-    let script_upload_form = upload::form::build(target, asset_manifest, None)?;
+    // We're technically authenticated at this point, but the user is used in form::build for getting
+    // the current migration tag, which is irrelevant for preview uploads
+    let script_upload_form = upload::form::build(target, asset_manifest, None, None)?;
 
     let res = client
         .post(&create_address)
@@ -199,7 +201,7 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         target.site = None;
     }
 
-    let script_upload_form = upload::form::build(&target, None, None)?;
+    let script_upload_form = upload::form::build(&target, None, None, None)?;
     let client = http::client();
     let res = client
         .post(create_address)

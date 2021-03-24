@@ -59,7 +59,7 @@ pub fn upload_draft_worker(
             if error.code == 10007 {
                 StdOut::working(&format!("Worker {} doesn't exist in the API yet. Creating a draft Worker so we can create new secret.", target.name));
                 let upload_client = http::legacy_auth_client(user);
-                Some(upload::script(&upload_client, target, None))
+                Some(upload::script(&upload_client, &user, target, None))
             } else {
                 None
             }

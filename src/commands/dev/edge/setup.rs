@@ -42,7 +42,8 @@ pub(super) fn upload(
     let session_config = get_session_config(deploy_target);
     let address = get_upload_address(target);
 
-    let script_upload_form = upload::form::build(target, asset_manifest, Some(session_config))?;
+    let script_upload_form =
+        upload::form::build(target, asset_manifest, Some(session_config), Some(user))?;
 
     let response = client
         .post(&address)

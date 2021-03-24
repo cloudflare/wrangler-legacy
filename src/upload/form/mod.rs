@@ -14,8 +14,8 @@ use std::path::PathBuf;
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::WalkBuilder;
 
-use crate::settings::binding;
 use crate::settings::toml::{Builder, ScriptFormat, Target, TargetType};
+use crate::settings::{binding, global_user::GlobalUser};
 use crate::sites::AssetManifest;
 use crate::wranglerjs;
 
@@ -33,6 +33,7 @@ pub fn build(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
     session_config: Option<serde_json::Value>,
+    user: Option<&GlobalUser>,
 ) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
     let kv_namespaces = &target.kv_namespaces;
@@ -135,9 +136,16 @@ pub fn build(
                         }
                     }
 
-                    let migration = match &target.migrations {
-                        Some(migrations) => Some(migrations.api_migration()?),
-                        None => None,
+                    let migration = match (&target.migrations, user) {
+                        (Some(migrations), Some(user)) => Some(migrations.api_migration(
+                            &target.name,
+                            &target.account_id,
+                            user,
+                        )?),
+                        (Some(_), None) => {
+                            failure::bail!("user not available for checking current migration tag")
+                        }
+                        _ => None,
                     };
 
                     let assets = ModulesAssets::new(

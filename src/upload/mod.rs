@@ -7,11 +7,13 @@ pub use package::Package;
 
 use reqwest::blocking::Client;
 
+use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::sites::AssetManifest;
 
 pub fn script(
     client: &Client,
+    user: &GlobalUser,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
 ) -> Result<(), failure::Error> {
@@ -20,7 +22,7 @@ pub fn script(
         target.account_id, target.name,
     );
 
-    let script_upload_form = form::build(target, asset_manifest, None)?;
+    let script_upload_form = form::build(target, asset_manifest, None, Some(user))?;
 
     let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
     let spinner = ProgressBar::new_spinner().with_style(style);
