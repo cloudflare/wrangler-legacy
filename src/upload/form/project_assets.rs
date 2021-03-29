@@ -8,7 +8,7 @@ use super::plain_text::PlainText;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
 
-use crate::settings::toml::{ApiDurableObjectsMigration, DurableObjectsClass, KvNamespace};
+use crate::settings::toml::{migrations::ApiMigration, DurableObjectsClass, KvNamespace};
 
 #[derive(Debug)]
 pub struct ServiceWorkerAssets {
@@ -144,7 +144,7 @@ pub struct ModulesAssets {
     pub modules: Vec<Module>,
     pub kv_namespaces: Vec<KvNamespace>,
     pub durable_object_classes: Vec<DurableObjectsClass>,
-    pub durable_object_migration: Option<ApiDurableObjectsMigration>,
+    pub migration: Option<ApiMigration>,
     pub plain_texts: Vec<PlainText>,
 }
 
@@ -154,7 +154,7 @@ impl ModulesAssets {
         modules: Vec<Module>,
         kv_namespaces: Vec<KvNamespace>,
         durable_object_classes: Vec<DurableObjectsClass>,
-        durable_object_migration: Option<ApiDurableObjectsMigration>,
+        migration: Option<ApiMigration>,
         plain_texts: Vec<PlainText>,
     ) -> Result<Self, failure::Error> {
         Ok(Self {
@@ -162,7 +162,7 @@ impl ModulesAssets {
             modules,
             kv_namespaces,
             durable_object_classes,
-            durable_object_migration,
+            migration,
             plain_texts,
         })
     }
