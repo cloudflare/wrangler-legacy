@@ -18,8 +18,10 @@ use wrangler::installer;
 use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
+use wrangler::settings::toml::migrations::{
+    DurableObjectsMigration, Migration, MigrationConfig, Migrations, RenameClass, TransferClass,
+};
 use wrangler::settings::toml::TargetType;
-use wrangler::settings::toml::{DurableObjects, DurableObjectsMigration};
 use wrangler::terminal::message::{Message, Output, StdOut};
 use wrangler::terminal::{emoji, interactive, styles};
 use wrangler::version::background_check_for_updates;
@@ -874,20 +876,25 @@ fn run() -> Result<(), failure::Error> {
         let mut target = manifest.get_target(env, is_preview)?;
 
         if matches.is_present("new_class") || matches.is_present("delete_class") {
-            let mut migration = DurableObjectsMigration::default();
+            let mut migration = Migration::default();
 
             for class in matches.values_of("new_class").iter_mut().flatten() {
-                migration.new_classes.push(class.to_owned());
+                migration.durable_objects.new_classes.push(class.to_owned());
             }
 
             for class in matches.values_of("delete_class").iter_mut().flatten() {
-                migration.deleted_classes.push(class.to_owned());
+                migration
+                    .durable_objects
+                    .deleted_classes
+                    .push(class.to_owned());
             }
 
-            target.durable_objects = Some(DurableObjects::merge_config_and_adhoc(
-                target.durable_objects.unwrap_or_default(),
-                migration,
-            )?);
+            target.migrations = Some(Migrations {
+                migrations: vec![MigrationConfig {
+                    tag: None,
+                    migration,
+                }],
+            });
         }
 
         let deploy_config = manifest.get_deployments(env)?;

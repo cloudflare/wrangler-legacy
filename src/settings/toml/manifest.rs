@@ -336,6 +336,7 @@ impl Manifest {
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
             durable_objects: self.durable_objects.clone(), // Not inherited
+            migrations: None,        // TODO(soon) Allow migrations in wrangler.toml
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited

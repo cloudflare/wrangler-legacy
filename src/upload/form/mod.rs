@@ -135,15 +135,17 @@ pub fn build(
                         }
                     }
 
+                    let migration = match &target.migrations {
+                        Some(migrations) => Some(migrations.api_migration()?),
+                        None => None,
+                    };
+
                     let assets = ModulesAssets::new(
                         main_module_name,
                         modules,
                         kv_namespaces.to_vec(),
                         durable_object_classes,
-                        target
-                            .durable_objects
-                            .as_ref()
-                            .and_then(|d| d.api_migrations()),
+                        migration,
                         plain_texts,
                     )?;
 
