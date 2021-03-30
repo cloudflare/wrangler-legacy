@@ -9,7 +9,7 @@ pub use server_config::Protocol;
 pub use server_config::ServerConfig;
 
 use crate::build::build_target;
-use crate::deploy::{self, DeployTarget, DeploymentSet};
+use crate::deploy::{DeployTarget, DeploymentSet};
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
@@ -28,8 +28,6 @@ pub fn dev(
 ) -> Result<(), failure::Error> {
     // before serving requests we must first build the Worker
     build_target(&target)?;
-
-    deploy::pre_upload()?;
 
     let deploy_target = {
         let valid_targets = deployments

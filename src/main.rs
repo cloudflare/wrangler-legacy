@@ -18,10 +18,11 @@ use wrangler::installer;
 use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
+use wrangler::settings::toml::migrations::{MigrationConfig, Migrations};
 use wrangler::settings::toml::TargetType;
-use wrangler::settings::toml::{DurableObjects, DurableObjectsMigration};
 use wrangler::terminal::message::{Message, Output, StdOut};
 use wrangler::terminal::{emoji, interactive, styles};
+use wrangler::util::ApplyToApp;
 use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<(), ExitFailure> {
@@ -575,22 +576,8 @@ fn run() -> Result<(), failure::Error> {
                     .takes_value(true)
                     .possible_value("json")
                 )
-                .arg(
-                    Arg::with_name("new_class")
-                    .help("allow durable objects to be created from a class in your script")
-                    .long("new-class")
-                    .takes_value(true)
-                    .number_of_values(1)
-                    .multiple(true)
-                )
-                .arg(
-                    Arg::with_name("delete_class")
-                    .help("delete all durable objects associated with a class in your script")
-                    .long("delete-class")
-                    .takes_value(true)
-                    .number_of_values(1)
-                    .multiple(true)
-                ),
+                .apply(MigrationConfig::add_to_app)
+            ,
         )
         .subcommand(
             SubCommand::with_name("config")
@@ -872,22 +859,10 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env, is_preview)?;
-
-        if matches.is_present("new_class") || matches.is_present("delete_class") {
-            let mut migration = DurableObjectsMigration::default();
-
-            for class in matches.values_of("new_class").iter_mut().flatten() {
-                migration.new_classes.push(class.to_owned());
-            }
-
-            for class in matches.values_of("delete_class").iter_mut().flatten() {
-                migration.deleted_classes.push(class.to_owned());
-            }
-
-            target.durable_objects = Some(DurableObjects::merge_config_and_adhoc(
-                target.durable_objects.unwrap_or_default(),
-                migration,
-            )?);
+        if let Some(adhoc) = MigrationConfig::from_matches(&matches) {
+            target.migrations = Some(Migrations {
+                migrations: vec![adhoc],
+            });
         }
 
         let deploy_config = manifest.get_deployments(env)?;

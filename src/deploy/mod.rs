@@ -19,11 +19,6 @@ pub enum DeployTarget {
     Schedule(ScheduleTarget),
 }
 
-pub fn pre_upload() -> Result<(), failure::Error> {
-    // TODO: get current migration tag and update target.durable_objects
-    Ok(())
-}
-
 pub fn deploy(
     user: &GlobalUser,
     deploy_targets: &[DeployTarget],

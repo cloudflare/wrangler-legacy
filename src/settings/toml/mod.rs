@@ -4,6 +4,7 @@ mod durable_objects;
 mod environment;
 mod kv_namespace;
 mod manifest;
+pub mod migrations;
 mod route;
 mod script_format;
 mod site;
@@ -12,9 +13,7 @@ mod target_type;
 mod triggers;
 
 pub use builder::Builder;
-pub use durable_objects::{
-    ApiDurableObjectsMigration, DurableObjects, DurableObjectsClass, DurableObjectsMigration,
-};
+pub use durable_objects::{DurableObjects, DurableObjectsClass};
 pub use environment::Environment;
 pub use kv_namespace::{ConfigKvNamespace, KvNamespace};
 pub use manifest::Manifest;

@@ -120,6 +120,7 @@ mod tests {
                 },
             ],
             durable_objects: None,
+            migrations: None,
             name: "test-target".to_string(),
             target_type: TargetType::Webpack,
             webpack_config: None,
