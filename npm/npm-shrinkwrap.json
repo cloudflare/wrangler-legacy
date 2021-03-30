@@ -1,12 +1,12 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.15.0-custom-builds-rc.1",
+  "version": "1.15.0-custom-builds-rc.2",
   "lockfileVersion": 2,
   "requires": true,
   "packages": {
     "": {
       "name": "@cloudflare/wrangler",
-      "version": "1.15.0-custom-builds-rc.1",
+      "version": "1.15.0-custom-builds-rc.2",
       "hasInstallScript": true,
       "license": "MIT OR Apache-2.0",
       "dependencies": {

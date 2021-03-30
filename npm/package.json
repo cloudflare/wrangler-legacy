@@ -1,6 +1,6 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.15.0-custom-builds-rc.1",
+  "version": "1.15.0-custom-builds-rc.2",
   "description": "Command-line interface for all things Cloudflare Workers",
   "main": "binary.js",
   "scripts": {
