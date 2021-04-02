@@ -312,6 +312,33 @@ impl Manifest {
         environment_name: Option<&str>,
         preview: bool,
     ) -> Result<Target, failure::Error> {
+        if self.site.is_some() {
+            match self.target_type {
+                TargetType::Rust => {
+                    failure::bail!(format!(
+                        "{} Workers Sites does not support Rust type projects.",
+                        emoji::WARN
+                    ))
+                }
+                TargetType::JavaScript => {
+                    if let Some(build) = &self.build {
+                        if build.command.is_none() {
+                            failure::bail!(format!(
+                                "{} Workers Sites requires using a bundler, and your configuration indicates that you aren't using one. You can fix this by:\n* setting your project type to \"webpack\" to use our automatically configured webpack bundler.\n* setting your project type to \"javascript\", and configuring a build command in the `[build]` section if you wish to use your choice of bundler.",
+                                emoji::WARN
+                            ))
+                        }
+                    } else {
+                        failure::bail!(format!(
+                            "{} Workers Sites requires using a bundler, and your configuration indicates that you aren't using one. You can fix this by:\n* setting your project type to \"webpack\" to use our automatically configured webpack bundler.\n* setting your project type to \"javascript\", and configuring a build command in the `[build]` section if you wish to use your choice of bundler.",
+                            emoji::WARN
+                        ))
+                    }
+                }
+                _ => {}
+            }
+        }
+
         /*
         From https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys
         Top level: required to be configured at the top level of your wrangler.toml only; multiple environments on the same project must share this property
