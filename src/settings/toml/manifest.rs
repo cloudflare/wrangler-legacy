@@ -312,12 +312,6 @@ impl Manifest {
         environment_name: Option<&str>,
         preview: bool,
     ) -> Result<Target, failure::Error> {
-        // Site projects are always webpack for now; don't let toml override this.
-        let target_type = match self.site {
-            Some(_) => TargetType::Webpack,
-            None => self.target_type.clone(),
-        };
-
         /*
         From https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys
         Top level: required to be configured at the top level of your wrangler.toml only; multiple environments on the same project must share this property
@@ -327,7 +321,7 @@ impl Manifest {
         Not inherited: Must be defined for every environment individually.
         */
         let mut target = Target {
-            target_type,                                 // Top level
+            target_type: self.target_type.clone(),       // Top level
             account_id: self.account_id.clone(),         // Inherited
             webpack_config: self.webpack_config.clone(), // Inherited
             build: self.build.clone(),                   // Inherited
