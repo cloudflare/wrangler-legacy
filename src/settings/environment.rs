@@ -52,12 +52,7 @@ impl Source for Environment {
         for key in &self.whitelist {
             if let Ok(value) = env::var(key) {
                 // remove the `CF` prefix before adding to collection
-                let key = if key.starts_with(PREFIX_PATTERN) {
-                    &key[PREFIX_PATTERN.len()..]
-                } else {
-                    key
-                };
-
+                let key = key.strip_prefix(PREFIX_PATTERN).unwrap_or(key);
                 m.insert(key.to_lowercase(), Value::new(Some(&uri), value));
             }
         }

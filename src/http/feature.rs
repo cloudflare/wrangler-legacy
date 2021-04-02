@@ -26,7 +26,7 @@ fn get_user_agent(feature: Option<Feature>) -> String {
 
     let mut agent = format!("wrangler/{}", version);
     if let Some(feature) = feature {
-        agent.push_str("/");
+        agent.push('/');
         let feat = format!("{:?}", feature).to_lowercase();
         agent.push_str(&feat);
     }
