@@ -7,13 +7,13 @@ use futures_util::sink::SinkExt;
 use futures_util::stream::{SplitStream, StreamExt};
 
 use crate::terminal::message::{Message, StdErr, StdOut};
-use protocol::domain::runtime::event::Event::ExceptionThrown;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio::time::delay_for;
 use tokio_native_tls::TlsStream;
 use tokio_tungstenite::stream::Stream;
 use tokio_tungstenite::{connect_async, tungstenite, WebSocketStream};
+
 use url::Url;
 
 const KEEP_ALIVE_INTERVAL: u64 = 10;
@@ -102,40 +102,27 @@ async fn print_ws_messages(
         match message {
             Ok(message) => {
                 let message_text = message.into_text().unwrap();
+                log::info!("{}", message_text);
+
                 let parsed_message: Result<protocol::Runtime, failure::Error> =
                     serde_json::from_str(&message_text).map_err(|e| {
                         failure::format_err!("this event could not be parsed:\n{}", e)
                     });
 
-                match parsed_message {
-                    Ok(protocol::Runtime::Event(ExceptionThrown(params))) => {
-                        StdOut::message(&format!(
-                            "{} at line {:?}, col {:?}",
-                            params.exception_details.exception.description.unwrap(),
-                            params.exception_details.line_number,
-                            params.exception_details.column_number,
-                        ));
-                    }
-                    Ok(protocol::Runtime::Event(event)) => {
-                        // Try to parse json to pretty print, otherwise just print string
-                        let json_parse: Result<serde_json::Value, serde_json::Error> =
-                            serde_json::from_str(&*event.to_string());
-                        if let Ok(json) = json_parse {
-                            if let Ok(json_str) = serde_json::to_string_pretty(&json) {
-                                StdOut::message(&format!("jsonstr {}", json_str));
-                            } else {
-                                StdOut::message(&format!("{}", &json));
-                            }
+                if let Ok(protocol::Runtime::Event(event)) = parsed_message {
+                    // Try to parse json to pretty print, otherwise just print string
+                    let json_parse: Result<serde_json::Value, serde_json::Error> =
+                        serde_json::from_str(&*event.to_string());
+                    if let Ok(json) = json_parse {
+                        if let Ok(json_str) = serde_json::to_string_pretty(&json) {
+                            println!("{}", json_str);
                         } else {
                             StdOut::message(&format!("{:?}", event.to_string()));
                         }
+                    } else {
+                        println!("{}", event);
                     }
-                    Ok(other_runtime_event) => {
-                        StdOut::message(&format!("{:?}", other_runtime_event));
-                    }
-                    // No op here because heartbeat and other operations won't deserialize to protocol::Runtime/
-                    Err(_e) => {}
-                };
+                }
             }
             Err(error) => return Err(error.into()),
         }
