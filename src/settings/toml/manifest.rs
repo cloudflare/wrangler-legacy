@@ -321,18 +321,16 @@ impl Manifest {
                     ))
                 }
                 TargetType::JavaScript => {
+                    let error_message = format!(
+                        "{} Workers Sites requires using a bundler, and your configuration indicates that you aren't using one. You can fix this by:\n* setting your project type to \"webpack\" to use our automatically configured webpack bundler.\n* setting your project type to \"javascript\", and configuring a build command in the `[build]` section if you wish to use your choice of bundler.",
+                        emoji::WARN
+                    );
                     if let Some(build) = &self.build {
                         if build.command.is_none() {
-                            failure::bail!(format!(
-                                "{} Workers Sites requires using a bundler, and your configuration indicates that you aren't using one. You can fix this by:\n* setting your project type to \"webpack\" to use our automatically configured webpack bundler.\n* setting your project type to \"javascript\", and configuring a build command in the `[build]` section if you wish to use your choice of bundler.",
-                                emoji::WARN
-                            ))
+                            failure::bail!(error_message)
                         }
                     } else {
-                        failure::bail!(format!(
-                            "{} Workers Sites requires using a bundler, and your configuration indicates that you aren't using one. You can fix this by:\n* setting your project type to \"webpack\" to use our automatically configured webpack bundler.\n* setting your project type to \"javascript\", and configuring a build command in the `[build]` section if you wish to use your choice of bundler.",
-                            emoji::WARN
-                        ))
+                        failure::bail!(error_message)
                     }
                 }
                 _ => {}
