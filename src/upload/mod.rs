@@ -33,6 +33,27 @@ pub fn script(
         failure::bail!(error_msg(res_status, res_text))
     }
 
+    if let Some(usage_model) = target.usage_model {
+        let addr = format!(
+            "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/usage-model",
+            target.account_id, target.name,
+        );
+
+        let res = client
+            .put(&addr)
+            .json(&serde_json::json!({
+                "usage_model": usage_model.as_ref()
+            }))
+            .send()?;
+
+        let res_status = res.status();
+
+        if !res_status.is_success() {
+            let res_text = res.text()?;
+            failure::bail!(error_msg(res_status, res_text))
+        }
+    }
+
     Ok(())
 }
 
