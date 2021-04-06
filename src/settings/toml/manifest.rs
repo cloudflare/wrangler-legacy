@@ -146,7 +146,7 @@ impl Manifest {
                     toml_edit::value(site.bucket.to_string_lossy().as_ref());
 
                 if let Some(entry_point) = &site.entry_point {
-                    config_template_doc["site"]["entry_point"] =
+                    config_template_doc["site"]["entry-point"] =
                         toml_edit::value(entry_point.to_string_lossy().as_ref());
                 }
                 if let Some(include) = &site.include {
