@@ -74,7 +74,7 @@ pub fn build(
             log::info!("JavaScript project detected. Publishing...");
             let mut script_path = target.build_dir()?;
 
-            if target.main != "" {
+            if !target.main.is_empty() {
                 // use main key from wrangler.toml
                 script_path.push(&target.main);
 
