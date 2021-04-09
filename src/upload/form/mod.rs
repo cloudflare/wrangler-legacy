@@ -58,6 +58,14 @@ pub fn build(
         }
     }
 
+    if let Some(asset_manifest) = asset_manifest {
+        log::info!("adding __STATIC_CONTENT_MANIFEST");
+        let binding = "__STATIC_CONTENT_MANIFEST".to_string();
+        let asset_manifest_blob = get_asset_manifest_blob(asset_manifest)?;
+        let text_blob = TextBlob::new(asset_manifest_blob, binding)?;
+        text_blobs.push(text_blob);
+    }
+
     match target_type {
         TargetType::Rust => {
             log::info!("Rust project detected. Publishing...");
@@ -89,7 +97,7 @@ pub fn build(
                     log::info!("Plain JavaScript project detected. Publishing...");
                     let package_dir = target.package_dir()?;
                     let package = Package::new(&package_dir)?;
-                    let script_path = package.main(&package_dir)?;
+                    let script_path = package_dir.join(package.main(&package_dir)?);
 
                     let assets = ServiceWorkerAssets::new(
                         script_path,
@@ -183,14 +191,6 @@ pub fn build(
                 let binding = bundle.get_wasm_binding();
                 let wasm_module = WasmModule::new(path, binding)?;
                 wasm_modules.push(wasm_module);
-            }
-
-            if let Some(asset_manifest) = asset_manifest {
-                log::info!("adding __STATIC_CONTENT_MANIFEST");
-                let binding = "__STATIC_CONTENT_MANIFEST".to_string();
-                let asset_manifest_blob = get_asset_manifest_blob(asset_manifest)?;
-                let text_blob = TextBlob::new(asset_manifest_blob, binding)?;
-                text_blobs.push(text_blob);
             }
 
             let assets = ServiceWorkerAssets::new(

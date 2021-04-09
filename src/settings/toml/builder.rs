@@ -12,7 +12,7 @@ const WATCH_DIR: &str = "src";
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Builder {
-    command: Option<String>,
+    pub command: Option<String>,
     #[serde(default = "project_root")]
     pub cwd: PathBuf,
     #[serde(default = "upload_dir")]

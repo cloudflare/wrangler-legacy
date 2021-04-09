@@ -312,11 +312,30 @@ impl Manifest {
         environment_name: Option<&str>,
         preview: bool,
     ) -> Result<Target, failure::Error> {
-        // Site projects are always webpack for now; don't let toml override this.
-        let target_type = match self.site {
-            Some(_) => TargetType::Webpack,
-            None => self.target_type.clone(),
-        };
+        if self.site.is_some() {
+            match self.target_type {
+                TargetType::Rust => {
+                    failure::bail!(format!(
+                        "{} Workers Sites does not support Rust type projects.",
+                        emoji::WARN
+                    ))
+                }
+                TargetType::JavaScript => {
+                    let error_message = format!(
+                        "{} Workers Sites requires using a bundler, and your configuration indicates that you aren't using one. You can fix this by:\n* setting your project type to \"webpack\" to use our automatically configured webpack bundler.\n* setting your project type to \"javascript\", and configuring a build command in the `[build]` section if you wish to use your choice of bundler.",
+                        emoji::WARN
+                    );
+                    if let Some(build) = &self.build {
+                        if build.command.is_none() {
+                            failure::bail!(error_message)
+                        }
+                    } else {
+                        failure::bail!(error_message)
+                    }
+                }
+                _ => {}
+            }
+        }
 
         /*
         From https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys
@@ -327,7 +346,7 @@ impl Manifest {
         Not inherited: Must be defined for every environment individually.
         */
         let mut target = Target {
-            target_type,                                 // Top level
+            target_type: self.target_type.clone(),       // Top level
             account_id: self.account_id.clone(),         // Inherited
             webpack_config: self.webpack_config.clone(), // Inherited
             build: self.build.clone(),                   // Inherited
