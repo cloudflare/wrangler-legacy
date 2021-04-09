@@ -62,6 +62,8 @@ fn error_msg(status: reqwest::StatusCode, text: String) -> String {
         "You need to verify your account's email address before you can publish. You can do this by checking your email or logging in to https://dash.cloudflare.com.".to_string()
     } else if text.contains("\"code\":10000,") {
         "Your user configuration is invalid, please run wrangler login or wrangler config and enter a new set of credentials.".to_string()
+    } else if text.contains("\"code\":10075,") {
+        "Setting a Usage Model requires a Paid plan with Unbound enabled. You can do this in the dash by logging in to https://dash.cloudflare.com/?account=workers/plans".to_string()
     } else {
         format!("Something went wrong! Status: {}, Details {}", status, text)
     }
