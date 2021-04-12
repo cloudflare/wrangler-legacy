@@ -17,13 +17,13 @@ use log::info;
 use url::Url;
 use ws::{Sender, WebSocket};
 
+use crate::build::build_target;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::Target;
+use crate::settings::toml::{Target, UploadFormat};
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::open_browser;
 use crate::watch::watch_and_build;
-use crate::{build::build_target, settings::toml::ScriptFormat};
 
 pub fn preview(
     mut target: Target,
@@ -32,7 +32,7 @@ pub fn preview(
     verbose: bool,
 ) -> Result<(), failure::Error> {
     if let Some(build) = &target.build {
-        if matches!(build.upload_format, ScriptFormat::Modules) {
+        if matches!(build.upload, UploadFormat::Modules { .. }) {
             failure::bail!("wrangler preview does not support previewing modules scripts. Please use wrangler dev instead.");
         }
     }

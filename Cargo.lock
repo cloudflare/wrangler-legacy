@@ -3293,6 +3293,7 @@ dependencies = [
  "fs2",
  "fs_extra",
  "futures-util",
+ "globset",
  "http",
  "hyper",
  "hyper-rustls",

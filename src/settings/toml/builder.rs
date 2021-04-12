@@ -4,9 +4,8 @@ use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 
-use super::ScriptFormat;
+use crate::upload::form::{ModuleConfig, ModuleType};
 
-const UPLOAD_DIR: &str = "dist";
 const WATCH_DIR: &str = "src";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -15,21 +14,32 @@ pub struct Builder {
     pub command: Option<String>,
     #[serde(default = "project_root")]
     pub cwd: PathBuf,
-    #[serde(default = "upload_dir")]
-    pub upload_dir: PathBuf,
-    pub upload_format: ScriptFormat,
-    pub upload_include: Option<Vec<String>>,
-    pub upload_exclude: Option<Vec<String>>,
     #[serde(default = "watch_dir")]
     pub watch_dir: PathBuf,
+    pub upload: UploadFormat,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(tag = "format")]
+#[serde(deny_unknown_fields)]
+pub enum UploadFormat {
+    #[serde(rename = "service-worker")]
+    ServiceWorker,
+    #[serde(rename = "modules")]
+    Modules(ModuleConfig),
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct ModuleRule {
+    pub globs: Vec<String>,
+    #[serde(rename = "type")]
+    pub module_type: ModuleType,
+    #[serde(default)] // false is default
+    pub fallthrough: bool,
 }
 
 fn project_root() -> PathBuf {
     env::current_dir().unwrap()
-}
-
-fn upload_dir() -> PathBuf {
-    project_root().join(UPLOAD_DIR)
 }
 
 fn watch_dir() -> PathBuf {
@@ -64,26 +74,30 @@ impl Builder {
     }
 
     pub fn verify_upload_dir(&self) -> Result<(), failure::Error> {
-        let upload_canonical = match self.upload_dir.canonicalize() {
+        let dir = match &self.upload {
+            UploadFormat::Modules(ModuleConfig { dir, .. }) => dir,
+            UploadFormat::ServiceWorker => return Ok(()),
+        };
+
+        let upload_canonical = match dir.canonicalize() {
             Ok(path) => path,
-            Err(e) if matches!(e.kind(), std::io::ErrorKind::NotFound) => failure::bail!(
-                "Your provided upload_dir {} does not exist.",
-                self.upload_dir.display()
-            ),
+            Err(e) if matches!(e.kind(), std::io::ErrorKind::NotFound) => {
+                failure::bail!("Your provided upload_dir {} does not exist.", dir.display())
+            }
             Err(e) => failure::bail!(
                 "Error encountered when verifying upload_dir: {}, provided path: {}",
                 e,
-                self.upload_dir.display()
+                dir.display()
             ),
         };
         let root_canonical = project_root().canonicalize()?;
         if upload_canonical == root_canonical {
             failure::bail!("Wrangler doesn't support using the project root as the upload_dir.");
         }
-        if !self.upload_dir.is_dir() {
+        if !dir.is_dir() {
             failure::bail!(format!(
                 "A path was provided for upload_dir that is not a directory: {}",
-                self.upload_dir.display()
+                dir.display()
             ));
         }
         Ok(())

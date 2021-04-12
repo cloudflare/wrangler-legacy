@@ -36,18 +36,18 @@ pub fn build_form(
 }
 
 fn add_files(mut form: Form, assets: &ModulesAssets) -> Result<Form, failure::Error> {
-    for module in &assets.modules {
+    for (name, module) in &assets.manifest.modules {
         let part = Part::reader(File::open(module.path.clone())?)
             .mime_str(module.module_type.content_type())?
-            .file_name(module.name.clone());
-        form = form.part(module.name.clone(), part);
+            .file_name(name.clone());
+        form = form.part(name.clone(), part);
     }
     Ok(form)
 }
 
 fn add_metadata(mut form: Form, assets: &ModulesAssets) -> Result<Form, failure::Error> {
     let metadata_json = serde_json::json!(&Metadata {
-        main_module: assets.main_module.clone(),
+        main_module: assets.manifest.main.clone(),
         bindings: assets.bindings(),
         migrations: assets.migration.clone()
     });
