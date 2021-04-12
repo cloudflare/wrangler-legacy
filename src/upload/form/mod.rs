@@ -228,9 +228,9 @@ fn filename_from_path(path: &PathBuf) -> Option<String> {
 /// let path = Path::new("/Users/alice/Desktop/myproject/src/resources/file.txt");
 /// let result = modulename_from_path(&root_path, &path);
 ///
-/// assert_eq!(result, Some(String::new("src/resources/file.txt")));
+/// assert_eq!(result, Some(String::new("./src/resources/file.txt")));
 fn modulename_from_path(root_path: &Path, path: &Path) -> Option<String> {
-    path.strip_prefix(root_path).ok()?.to_owned().to_slash()
+    Some(format!("./{}", path.strip_prefix(root_path).ok()?.to_owned().to_slash()?))
 }
 
 fn build_generated_dir() -> Result<(), failure::Error> {
