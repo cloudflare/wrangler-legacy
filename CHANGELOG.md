@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.15.1
+
+- ### Features
+
+  - **Add config option to switch usage model to unbound - [ObsidianMinor], [pull/1837]**
+
+    [obsidianminor]: https://github.com/ObsidianMinor
+    [pull/1837]: https://github.com/cloudflare/wrangler/pull/1837
+
+- ### Fixes
+
+  - **fix: remove unused import of WasmMainTemplatePlugin - [jasikpark], [pull/1802]**
+
+    This should improve #1721. https://github.com/cloudflare/wrangler/issues/1721#issuecomment-791974664
+
+    [jasikpark]: https://github.com/jasikpark
+    [pull/1802]: https://github.com/cloudflare/wrangler/pull/1802
+
+  - **Hot fix for error message helper not working - [Electroid], [pull/1847]**
+
+    The JSON is pretty printed, which means it contains a space.
+
+    [electroid]: https://github.com/Electroid
+    [pull/1847]: https://github.com/cloudflare/wrangler/pull/1847
+
+  - **Revert "Print line and column numbers for exception thrown (#1645)" - [Electroid], [pull/1835]**
+
+    This reverts commit 74a89f7c383bc22758cbe55096ce3016c5c319d7.
+
+    Closes #1826
+
+    This commit is causing `wrangler dev` to not show uncaught exceptions. Reverting `chrome-devtools-rs` was also necessary.
+
+    [electroid]: https://github.com/Electroid
+    [pull/1835]: https://github.com/cloudflare/wrangler/pull/1835
+
 ## 1.15.0
 
 - ### Fixes
