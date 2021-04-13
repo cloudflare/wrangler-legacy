@@ -320,6 +320,7 @@ mod tests {
             site: Some(site),
             vars: None,
             text_blobs: None,
+            usage_model: None,
         }
     }
 

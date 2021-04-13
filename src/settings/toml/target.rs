@@ -1,6 +1,7 @@
 use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
+use super::UsageModel;
 
 use std::collections::HashMap;
 use std::env;
@@ -17,6 +18,7 @@ pub struct Target {
     pub site: Option<Site>,
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
+    pub usage_model: Option<UsageModel>,
 }
 
 impl Target {
