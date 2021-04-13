@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.15.0"
+version = "1.15.1"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>", "Nat Davidson <davidson@cloudflare.com>", "Steve Manuel <nilslice@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -15,7 +15,7 @@ atty = "0.2.14"
 base64 = "0.13.0"
 billboard = "0.1.0"
 binary-install = "0.0.3-alpha.1"
-chrome-devtools-rs = { version = "0.0.0-alpha.1", features = ["color"] }
+chrome-devtools-rs = { version = "=0.0.0-alpha.1", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
 cloudflare = "0.6.6"
