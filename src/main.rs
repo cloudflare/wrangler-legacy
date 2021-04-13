@@ -622,6 +622,15 @@ fn run() -> Result<(), failure::Error> {
                 .about(&*format!("{} Aggregate logs from production worker", emoji::TAIL))
                 .arg(wrangler_file.clone())
                 .arg(
+                    Arg::with_name("format")
+                        .help("specify an output format")
+                        .short("f")
+                        .long("format")
+                        .takes_value(true)
+                        .default_value("json")
+                        .possible_values(&["json", "pretty"])
+                )
+                .arg(
                     Arg::with_name("env")
                         .help("environment to tail logs from")
                         .short("e")
@@ -1122,6 +1131,7 @@ fn run() -> Result<(), failure::Error> {
                 .unwrap_or(commands::DEFAULT_CONFIG_PATH),
         );
         let manifest = settings::toml::Manifest::new(config_path)?;
+        let format = matches.value_of("format").unwrap().to_owned();
         let env = matches.value_of("env");
         let target = manifest.get_target(env, is_preview)?;
         let user = settings::global_user::GlobalUser::new()?;
@@ -1135,7 +1145,7 @@ fn run() -> Result<(), failure::Error> {
 
         let verbose = matches.is_present("verbose");
 
-        commands::tail::start(&target, &user, tunnel_port, metrics_port, verbose)?;
+        commands::tail::start(&target, &user, format, tunnel_port, metrics_port, verbose)?;
     } else if matches.subcommand_matches("login").is_some() {
         commands::login::run()?;
     }

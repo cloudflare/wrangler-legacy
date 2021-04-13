@@ -10,6 +10,7 @@ const DEFAULT_METRICS_PORT: u16 = 8081;
 pub fn start(
     target: &Target,
     user: &GlobalUser,
+    format: String,
     tunnel_port: Option<u16>,
     metrics_port: Option<u16>,
     verbose: bool,
@@ -20,6 +21,7 @@ pub fn start(
     Tail::run(
         target.clone(),
         user.clone(),
+        format,
         tunnel_port,
         metrics_port,
         verbose,
