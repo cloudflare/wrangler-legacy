@@ -58,7 +58,7 @@ impl Tail {
             let listener = tokio::spawn(shutdown_handler.run(rx));
 
             // Spin up a local http server to receive logs
-            let log_server = tokio::spawn(LogServer::new(tunnel_port, log_rx).run(format));
+            let log_server = tokio::spawn(LogServer::new(tunnel_port, log_rx, format).run());
 
             // Spin up a new cloudflared tunnel to connect trace worker to local server
             let tunnel_process = Tunnel::new(tunnel_port, metrics_port, verbose)?;

@@ -10,12 +10,13 @@ use tokio::sync::oneshot::Receiver;
 pub struct LogServer {
     server: Builder<AddrIncoming>,
     shutdown_rx: Receiver<()>,
+    format: String,
 }
 
 /// LogServer is just a basic HTTP server running locally; it listens for POST requests on the root
 /// path and simply prints the JSON body of each request as its own line to STDOUT.
 impl LogServer {
-    pub fn new(port: u16, shutdown_rx: Receiver<()>) -> LogServer {
+    pub fn new(port: u16, shutdown_rx: Receiver<()>, format: String) -> LogServer {
         // Start HTTP echo server that prints whatever is posted to it.
         let addr = ([127, 0, 0, 1], port).into();
 
@@ -24,14 +25,15 @@ impl LogServer {
         LogServer {
             server,
             shutdown_rx,
+            format,
         }
     }
 
-    pub async fn run(self, format: String) -> Result<(), failure::Error> {
+    pub async fn run(self) -> Result<(), failure::Error> {
         // this is so bad
         // but i also am so bad at types
         // TODO: make this less terrible
-        match format.as_str() {
+        match self.format.as_str() {
             "json" => {
                 let service = make_service_fn(|_| async {
                     Ok::<_, hyper::Error>(service_fn(print_logs_json))
