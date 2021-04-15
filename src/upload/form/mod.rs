@@ -88,7 +88,7 @@ pub fn build(
         }
         TargetType::JavaScript => match &target.build {
             Some(config) => match &config.upload {
-                UploadFormat::ServiceWorker => {
+                UploadFormat::ServiceWorker {} => {
                     log::info!("Plain JavaScript project detected. Publishing...");
                     let package_dir = target.package_dir()?;
                     let package = Package::new(&package_dir)?;

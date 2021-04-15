@@ -25,7 +25,7 @@ pub struct Builder {
 #[serde(deny_unknown_fields)]
 pub enum UploadFormat {
     #[serde(rename = "service-worker")]
-    ServiceWorker,
+    ServiceWorker {},
     #[serde(rename = "modules")]
     Modules {
         main: String, // String since this is a module name, not a path.
@@ -87,7 +87,7 @@ impl Builder {
     pub fn verify_upload_dir(&self) -> Result<(), failure::Error> {
         let dir = match &self.upload {
             UploadFormat::Modules { dir, .. } => dir,
-            UploadFormat::ServiceWorker => return Ok(()),
+            UploadFormat::ServiceWorker {} => return Ok(()),
         };
 
         let upload_canonical = match dir.canonicalize() {
