@@ -87,7 +87,7 @@ impl Session {
             .request(&CreateTail {
                 account_identifier: &target.account_id,
                 script_name: &target.name,
-                params: CreateTailParams { url },
+                params: CreateTailParams { url: Some(url) },
             })
             .await;
 
