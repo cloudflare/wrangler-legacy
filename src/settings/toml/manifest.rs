@@ -15,6 +15,7 @@ use crate::commands::{validate_worker_name, whoami, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
 use crate::settings::toml::builder::Builder;
 use crate::settings::toml::dev::Dev;
+use crate::settings::toml::durable_objects::DurableObjects;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
 use crate::settings::toml::route::RouteConfig;
@@ -56,6 +57,7 @@ pub struct Manifest {
     pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub wasm_modules: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
+    pub durable_objects: Option<DurableObjects>,
     #[serde(default, with = "string_empty_as_none")]
     pub usage_model: Option<UsageModel>,
 }
@@ -272,7 +274,12 @@ impl Manifest {
             deployments.push(DeployTarget::Schedule(scheduled));
         }
 
-        if deployments.is_empty() {
+        let durable_objects = match env {
+            Some(e) => e.durable_objects.as_ref(),
+            None => self.durable_objects.as_ref(),
+        };
+
+        if durable_objects.is_none() && deployments.is_empty() {
             anyhow::bail!("No deployments specified!")
         }
 
@@ -341,6 +348,8 @@ impl Manifest {
             // to include the name of the environment
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
+            durable_objects: self.durable_objects.clone(), // Not inherited
+            migrations: None,        // TODO(soon) Allow migrations in wrangler.toml
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited
@@ -364,6 +373,9 @@ impl Manifest {
 
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
             target.kv_namespaces = get_namespaces(environment.kv_namespaces.clone(), preview)?;
+
+            // don't inherit durable object configuration
+            target.durable_objects = environment.durable_objects.clone();
 
             // inherit site configuration
             if let Some(site) = &environment.site {

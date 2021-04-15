@@ -120,15 +120,17 @@ mod tests {
                     binding: "KV".to_string(),
                 },
             ],
+            durable_objects: None,
+            migrations: None,
             name: "test-target".to_string(),
             target_type: TargetType::Webpack,
             webpack_config: None,
             site: None,
             vars: None,
             text_blobs: None,
-            usage_model: None,
             build: None,
             wasm_modules: None,
+            usage_model: None,
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }
