@@ -10,16 +10,12 @@
 mod log_server;
 mod session;
 mod shutdown;
-mod tunnel;
 
-use log_server::LogServer;
+use log_server::Logger;
 use session::Session;
 use shutdown::ShutdownHandler;
-use tunnel::Tunnel;
 
-use console::style;
 use tokio::runtime::Runtime as TokioRuntime;
-use which::which;
 
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -29,53 +25,53 @@ pub struct Tail;
 
 impl Tail {
     pub fn run(
-        target: Target,
-        user: GlobalUser,
+        target: &Target,
+        user: &GlobalUser,
         format: String,
-        tunnel_port: u16,
-        metrics_port: u16,
         verbose: bool,
     ) -> Result<(), failure::Error> {
-        is_cloudflared_installed()?;
-        print_startup_message(&target.name, tunnel_port, metrics_port);
+        // Note that we use eprintln!() throughout this module; this is because we want any
+        // helpful output to not be mixed with actual log JSON output, so we use this macro
+        // to print messages to stderr instead of stdout (where log output is printed).
+        eprintln!(
+            "{} Setting up log streaming from Worker script \"{}\".",
+            emoji::TAIL,
+            target.name,
+        );
 
         let mut runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
-            // Create three [one-shot](https://docs.rs/tokio/0.2.16/tokio/sync#oneshot-channel)
+            // TODO: replace below with https://detegr.github.io/doc/ctrlc/
+            // Create two [one-shot](https://docs.rs/tokio/0.2.16/tokio/sync#oneshot-channel)
             // channels for handling ctrl-c. Each channel has two parts:
             // tx: Transmitter
             // rx: Receiver
-            let (tx, rx) = tokio::sync::oneshot::channel(); // shutdown short circuit
+            let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel(); // shutdown short circuit
             let mut shutdown_handler = ShutdownHandler::new();
-            let log_rx = shutdown_handler.subscribe();
-            let session_rx = shutdown_handler.subscribe();
-            let tunnel_rx = shutdown_handler.subscribe();
+            let session_shutdown_rx = shutdown_handler.subscribe();
+            let log_shutdown_rx = shutdown_handler.subscribe();
 
-            let listener = tokio::spawn(shutdown_handler.run(rx));
+            // Create a one-shot for passing the Tail ID between the Session and the Logger
+            let (tail_id_tx, tail_id_rx) = tokio::sync::oneshot::channel();
 
-            // Spin up a local http server to receive logs
-            let log_server = tokio::spawn(LogServer::new(tunnel_port, log_rx, format).run());
-
-            // Spin up a new cloudflared tunnel to connect trace worker to local server
-            let tunnel_process = Tunnel::new(tunnel_port, metrics_port, verbose)?;
-            let tunnel = tokio::spawn(tunnel_process.run(tunnel_rx));
+            let shutdown_listener = tokio::spawn(shutdown_handler.run(shutdown_rx));
+            let logger = tokio::spawn(Logger::new(tail_id_rx, log_shutdown_rx, format).run());
 
             // Register the tail with the Workers API and send periodic heartbeats
             let session = tokio::spawn(Session::run(
-                target,
-                user,
-                session_rx,
-                tx,
-                metrics_port,
+                target.clone(),
+                user.clone(),
+                session_shutdown_rx,
+                shutdown_tx,
+                tail_id_tx,
                 verbose,
             ));
 
             let res = tokio::try_join!(
-                async { listener.await? },
-                async { log_server.await? },
+                async { shutdown_listener.await? },
                 async { session.await? },
-                async { tunnel.await? }
+                async { logger.await? },
             );
 
             match res {
@@ -84,29 +80,4 @@ impl Tail {
             }
         })
     }
-}
-
-fn is_cloudflared_installed() -> Result<(), failure::Error> {
-    // this can be removed once we automatically install cloudflared
-    if which("cloudflared").is_err() {
-        let install_url = style("https://developers.cloudflare.com/argo-tunnel/downloads/")
-            .blue()
-            .bold();
-        failure::bail!("You must install cloudflared to use wrangler tail.\n\nInstallation instructions can be found here:\n{}", install_url);
-    } else {
-        Ok(())
-    }
-}
-
-fn print_startup_message(worker_name: &str, tunnel_port: u16, metrics_port: u16) {
-    // Note that we use eprintln!() throughout this module; this is because we want any
-    // helpful output to not be mixed with actual log JSON output, so we use this macro
-    // to print messages to stderr instead of stdout (where log output is printed).
-    eprintln!(
-        "{} Setting up log streaming from Worker script \"{}\". Using ports {} and {}.",
-        emoji::TAIL,
-        worker_name,
-        tunnel_port,
-        metrics_port,
-    );
 }

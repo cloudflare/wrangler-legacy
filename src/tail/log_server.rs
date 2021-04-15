@@ -1,107 +1,94 @@
 use crate::terminal::{emoji, styles};
-use hyper::server::conn::AddrIncoming;
-use hyper::server::Builder;
-use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use tokio::sync::oneshot::Receiver;
+use tokio_tungstenite::{
+    connect_async,
+    tungstenite::{self, Message},
+};
 
-pub struct LogServer {
-    server: Builder<AddrIncoming>,
+pub struct Logger {
+    tail_id_rx: Receiver<String>,
     shutdown_rx: Receiver<()>,
     format: String,
 }
 
 /// LogServer is just a basic HTTP server running locally; it listens for POST requests on the root
 /// path and simply prints the JSON body of each request as its own line to STDOUT.
-impl LogServer {
-    pub fn new(port: u16, shutdown_rx: Receiver<()>, format: String) -> LogServer {
-        // Start HTTP echo server that prints whatever is posted to it.
-        let addr = ([127, 0, 0, 1], port).into();
-
-        let server = Server::bind(&addr);
-
-        LogServer {
-            server,
+impl Logger {
+    pub fn new(tail_id_rx: Receiver<String>, shutdown_rx: Receiver<()>, format: String) -> Logger {
+        Logger {
+            tail_id_rx,
             shutdown_rx,
             format,
         }
     }
 
     pub async fn run(self) -> Result<(), failure::Error> {
-        // this is so bad
-        // but i also am so bad at types
-        // TODO: make this less terrible
-        match self.format.as_str() {
-            "json" => {
-                let service = make_service_fn(|_| async {
-                    Ok::<_, hyper::Error>(service_fn(print_logs_json))
-                });
+        let tail_id = self.tail_id_rx.await?;
+        let url = format!("wss://tail.developers.workers.dev/{}/ws", tail_id);
+        let format = std::sync::Arc::new(self.format);
 
-                let server = self.server.serve(service);
+        let stream = match connect_async(url).await {
+            Ok((web_socket_stream, _)) => web_socket_stream,
+            Err(e) => failure::bail!(e),
+        };
 
-                // The shutdown receiver listens for a one shot message from our sigint handler as a signal
-                // to gracefully shut down the hyper server.
-                let shutdown_rx = self.shutdown_rx;
+        let print_fut = stream.try_for_each(|message| async {
+            let data = match message {
+                Message::Close(_msg) => return Err(tungstenite::Error::ConnectionClosed),
+                Message::Ping(_) | Message::Pong(_) => return Ok(()),
+                Message::Text(text) => text,
+                other => {
+                    eprintln!("Unexpected message {:#?}", other);
+                    return Err(tungstenite::Error::Utf8);
+                }
+            };
 
-                let graceful = server.with_graceful_shutdown(async {
-                    shutdown_rx.await.ok();
-                });
-
-                graceful.await?;
-
-                Ok(())
+            match format.as_str() {
+                "json" => print_logs_json(data),
+                "pretty" => print_logs_pretty(data),
+                _ => unreachable!(),
             }
-            "pretty" => {
-                let service = make_service_fn(|_| async {
-                    Ok::<_, hyper::Error>(service_fn(print_logs_pretty))
-                });
+            .map_err(|e| {
+                eprintln!("{}", e.to_string());
+                tungstenite::Error::Utf8
+            })
+        });
 
-                let server = self.server.serve(service);
+        // TODO close the socket wtf why is this impossible
+        // stream.close(None).await;
 
-                // The shutdown receiver listens for a one shot message from our sigint handler as a signal
-                // to gracefully shut down the hyper server.
-                let shutdown_rx = self.shutdown_rx;
+        let result = tokio::select! {
+            _ = self.shutdown_rx => { Ok(()) }
+            result = print_fut => { result }
+        };
 
-                let graceful = server.with_graceful_shutdown(async {
-                    shutdown_rx.await.ok();
-                });
-
-                graceful.await?;
-
-                Ok(())
+        if result.is_err() {
+            let err = result.unwrap_err();
+            match err {
+                tungstenite::Error::ConnectionClosed | tungstenite::Error::AlreadyClosed => {
+                    // we dgaf about the error at this point from closing the stream
+                    Ok(())
+                }
+                _other => Err(failure::err_msg(
+                    "Encountered an error! There is likely additional output above",
+                )),
             }
-            _ => unreachable!(),
+        } else {
+            Ok(())
         }
     }
 }
 
-async fn print_logs_json(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    match (req.method(), req.uri().path()) {
-        (&Method::POST, "/") => {
-            let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-            println!(
-                "{}",
-                std::str::from_utf8(&whole_body).expect("failed to deserialize tail log body")
-            );
-
-            Ok(Response::new(Body::from("Success")))
-        }
-        _ => {
-            let mut bad_request = Response::default();
-            *bad_request.status_mut() = StatusCode::BAD_REQUEST;
-            Ok(bad_request)
-        }
-    }
+fn print_logs_json(log: String) -> Result<(), failure::Error> {
+    println!("{}", log);
+    Ok(())
 }
 
-async fn print_logs_pretty(req: Request<Body>) -> Result<Response<Body>, failure::Error> {
-    match (req.method(), req.uri().path()) {
-        (&Method::POST, "/") => {
-            let whole_body = hyper::body::to_bytes(req.into_body()).await?;
-
-            let parsed = serde_json::from_slice::<LogResponse>(&whole_body).map_err(|e| {
+fn print_logs_pretty(log: String) -> Result<(), failure::Error> {
+    let parsed = serde_json::from_str::<LogResponse>(&log).map_err(|e| {
                 println!("{}", styles::warning("Error parsing response body!"));
                 println!(
                     "This is not a problem with your worker, it's a problem with Wrangler.\nPlease file an issue on our GitHub page, with a minimal reproducible example of\nthe script that caused this error and a description of what happened."
@@ -109,56 +96,49 @@ async fn print_logs_pretty(req: Request<Body>) -> Result<Response<Body>, failure
                 e
             })?;
 
-            let secs = (parsed.event_timestamp / 1000).try_into().unwrap();
+    let secs = (parsed.event_timestamp / 1000).try_into().unwrap();
 
-            let timestamp = chrono::NaiveDateTime::from_timestamp(secs, 0);
+    let timestamp = chrono::NaiveDateTime::from_timestamp(secs, 0);
 
+    println!(
+        "{}{} {} --> {} @ {} UTC",
+        emoji::EYES,
+        parsed.event.request.method,
+        styles::url(parsed.event.request.url),
+        parsed.outcome.to_uppercase(),
+        timestamp.time()
+    );
+
+    if !parsed.exceptions.is_empty() {
+        println!("  Exceptions:");
+        parsed.exceptions.iter().for_each(|exception| {
             println!(
-                "{}{} {} --> {} @ {} UTC",
-                emoji::EYES,
-                parsed.event.request.method,
-                styles::url(parsed.event.request.url),
-                parsed.outcome.to_uppercase(),
-                timestamp.time()
+                "\t{} {}",
+                emoji::X,
+                styles::warning(format!("{}: {}", exception.name, exception.message))
             );
-
-            if !parsed.exceptions.is_empty() {
-                println!("  Exceptions:");
-                parsed.exceptions.iter().for_each(|exception| {
-                    println!(
-                        "\t{} {}",
-                        emoji::X,
-                        styles::warning(format!("{}: {}", exception.name, exception.message))
-                    );
-                });
-            }
-
-            if !parsed.logs.is_empty() {
-                println!("  Logs:");
-                parsed.logs.iter().for_each(|log| {
-                    let messages = log.message.join(" ");
-
-                    let output = match log.level.as_str() {
-                        "assert" | "error" => format!("{} {}", emoji::X, styles::warning(messages)),
-                        "warn" => format!("{} {}", emoji::WARN, styles::highlight(messages)),
-                        "trace" | "debug" => {
-                            format!("{}{}", emoji::MICROSCOPE, styles::cyan(messages))
-                        }
-                        _ => format!("{} {}", emoji::FILES, styles::bold(messages)),
-                    };
-
-                    println!("\t{}", output);
-                });
-            }
-
-            Ok(Response::new(Body::from("Success")))
-        }
-        _ => {
-            let mut bad_request = Response::default();
-            *bad_request.status_mut() = StatusCode::BAD_REQUEST;
-            Ok(bad_request)
-        }
+        });
     }
+
+    if !parsed.logs.is_empty() {
+        println!("  Logs:");
+        parsed.logs.iter().for_each(|log| {
+            let messages = log.message.join(" ");
+
+            let output = match log.level.as_str() {
+                "assert" | "error" => format!("{} {}", emoji::X, styles::warning(messages)),
+                "warn" => format!("{} {}", emoji::WARN, styles::highlight(messages)),
+                "trace" | "debug" => {
+                    format!("{}{}", emoji::MICROSCOPE, styles::cyan(messages))
+                }
+                _ => format!("{} {}", emoji::FILES, styles::bold(messages)),
+            };
+
+            println!("\t{}", output);
+        });
+    };
+
+    Ok(())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
