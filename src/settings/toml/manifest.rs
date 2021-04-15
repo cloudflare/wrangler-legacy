@@ -9,6 +9,7 @@ use config::{Config, File};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
+use super::UsageModel;
 use crate::commands::{validate_worker_name, whoami, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
 use crate::settings::toml::builder::Builder;
@@ -55,6 +56,8 @@ pub struct Manifest {
     pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
     pub durable_objects: Option<DurableObjects>,
+    #[serde(default, with = "string_empty_as_none")]
+    pub usage_model: Option<UsageModel>,
 }
 
 impl Manifest {
@@ -359,6 +362,7 @@ impl Manifest {
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited
+            usage_model: self.usage_model, // Top level
         };
 
         let environment = self.get_environment(environment_name)?;
