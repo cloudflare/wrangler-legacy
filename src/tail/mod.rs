@@ -1,15 +1,12 @@
-/// `wrangler tail` allows Workers users to collect logs from their deployed Workers.
-/// When a user runs `wrangler tail`, several things happen:
-///     1. A simple HTTP server (LogServer) is started and begins listening for requests on localhost:8080
-///     2. An [Argo Tunnel](https://developers.cloudflare.com/argo-tunnel/) instance (Tunnel) is started
-///        using [cloudflared](https://developers.cloudflare.com/argo-tunnel/downloads/), exposing the
-///        LogServer to the internet on a randomly generated URL.
-///     3. Wrangler initiates a tail Session by making a request to the Workers API /tail endpoint,
-///        providing the Tunnel URL as an argument.
-///     4. The Workers API binds the URL to a [Trace Worker], and directs all `console` and
-///        exception logging to the Trace Worker, which POSTs each batch of logs as a JSON
-///        payload to the provided Tunnel URL.
-///     5. Upon receipt, the LogServer prints the payload of each POST request to STDOUT.
+///! `wrangler tail` allows Workers users to collect logs from their deployed Workers.
+///! When a user runs `wrangler tail`, several things happen:
+///!     1. Wrangler creates a tail by making a request to the Workers API /tail endpoint
+///!     2. The Workers API creates a tail ID and binds it to a [Trace Worker], and directs all `console` and
+///!        exception logging to the Trace Worker. It then returns the tail ID to wrangler.
+///!        - The trace worker consists of a handler for the logging inputs and a [Durable Object]. The handler
+///!          forwards logs to the Durable Object, which then forwards logs (via websocket) to any attached listeners
+///!     3. Wrangler takes the returned tail ID, and instantiates a websocket connection to the trace worker('s durable object)
+///!     4. When a message comes across from the WebSocket, wrangler prints the output to STDOUT (formatted according to `--format`)
 mod log_server;
 mod session;
 mod shutdown;
