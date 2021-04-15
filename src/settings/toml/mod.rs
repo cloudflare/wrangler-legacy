@@ -1,3 +1,4 @@
+mod builder;
 mod dev;
 mod environment;
 mod kv_namespace;
@@ -8,9 +9,7 @@ mod target;
 mod target_type;
 mod triggers;
 
-use serde::{Deserialize, Serialize};
-use std::str::FromStr;
-
+pub use builder::{Builder, ModuleRule, UploadFormat};
 pub use environment::Environment;
 pub use kv_namespace::{ConfigKvNamespace, KvNamespace};
 pub use manifest::Manifest;
@@ -18,6 +17,9 @@ pub use route::{Route, RouteConfig};
 pub use site::Site;
 pub use target::Target;
 pub use target_type::TargetType;
+
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]

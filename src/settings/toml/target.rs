@@ -1,3 +1,4 @@
+use super::builder::Builder;
 use super::kv_namespace::KvNamespace;
 use super::site::Site;
 use super::target_type::TargetType;
@@ -15,6 +16,7 @@ pub struct Target {
     pub name: String,
     pub target_type: TargetType,
     pub webpack_config: Option<String>,
+    pub build: Option<Builder>,
     pub site: Option<Site>,
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
@@ -26,7 +28,7 @@ impl Target {
         self.kv_namespaces.push(kv_namespace);
     }
 
-    pub fn build_dir(&self) -> Result<PathBuf, std::io::Error> {
+    pub fn package_dir(&self) -> Result<PathBuf, std::io::Error> {
         // if `site` is configured, we want to isolate worker code
         // and build artifacts away from static site application code.
         match &self.site {

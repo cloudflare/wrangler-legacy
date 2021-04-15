@@ -573,7 +573,8 @@ fn run() -> Result<(), failure::Error> {
                     .long("output")
                     .takes_value(true)
                     .possible_value("json")
-                ),
+                )
+            ,
         )
         .subcommand(
             SubCommand::with_name("config")
@@ -864,6 +865,7 @@ fn run() -> Result<(), failure::Error> {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env, is_preview)?;
+
         let deploy_config = manifest.get_deployments(env)?;
         if matches.is_present("output") && matches.value_of("output") == Some("json") {
             commands::publish(&user, &mut target, deploy_config, Output::Json)?;
