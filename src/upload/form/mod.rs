@@ -31,11 +31,6 @@ pub fn build(
 ) -> Result<Form, failure::Error> {
     let target_type = &target.target_type;
     let kv_namespaces = &target.kv_namespaces;
-    let durable_object_classes = target
-        .durable_objects
-        .as_ref()
-        .and_then(|d| d.classes.clone())
-        .unwrap_or_default();
     let mut text_blobs: Vec<TextBlob> = Vec::new();
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
@@ -79,7 +74,6 @@ pub fn build(
                 script_path,
                 wasm_modules,
                 kv_namespaces.to_vec(),
-                durable_object_classes,
                 text_blobs,
                 plain_texts,
             )?;
@@ -98,7 +92,6 @@ pub fn build(
                         script_path,
                         wasm_modules,
                         kv_namespaces.to_vec(),
-                        durable_object_classes,
                         text_blobs,
                         plain_texts,
                     )?;
@@ -106,17 +99,10 @@ pub fn build(
                     service_worker::build_form(&assets, session_config)
                 }
                 UploadFormat::Modules { main, dir, rules } => {
-                    let migration = match &target.migrations {
-                        Some(migrations) => Some(migrations.api_migration()?),
-                        None => None,
-                    };
-
                     let module_config = ModuleConfig::new(main, dir, rules);
                     let assets = ModulesAssets::new(
                         module_config.get_modules()?,
                         kv_namespaces.to_vec(),
-                        durable_object_classes,
-                        migration,
                         plain_texts,
                     )?;
 
@@ -133,7 +119,6 @@ pub fn build(
                     script_path,
                     wasm_modules,
                     kv_namespaces.to_vec(),
-                    durable_object_classes,
                     text_blobs,
                     plain_texts,
                 )?;
@@ -160,7 +145,6 @@ pub fn build(
                 script_path,
                 wasm_modules,
                 kv_namespaces.to_vec(),
-                durable_object_classes,
                 text_blobs,
                 plain_texts,
             )?;
