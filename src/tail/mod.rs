@@ -7,11 +7,11 @@
 ///!          forwards logs to the Durable Object, which then forwards logs (via websocket) to any attached listeners
 ///!     3. Wrangler takes the returned tail ID, and instantiates a websocket connection to the trace worker('s durable object)
 ///!     4. When a message comes across from the WebSocket, wrangler prints the output to STDOUT (formatted according to `--format`)
-mod log_server;
+mod logger;
 mod session;
 mod shutdown;
 
-use log_server::Logger;
+use logger::Logger;
 use session::Session;
 use shutdown::ShutdownHandler;
 
