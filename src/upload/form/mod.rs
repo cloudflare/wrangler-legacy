@@ -105,12 +105,13 @@ pub fn build(
 
                     service_worker::build_form(&assets, session_config)
                 }
-                UploadFormat::Modules(module_config) => {
+                UploadFormat::Modules { main, dir, rules } => {
                     let migration = match &target.migrations {
                         Some(migrations) => Some(migrations.api_migration()?),
                         None => None,
                     };
 
+                    let module_config = ModuleConfig::new(main, dir, rules);
                     let assets = ModulesAssets::new(
                         module_config.get_modules()?,
                         kv_namespaces.to_vec(),

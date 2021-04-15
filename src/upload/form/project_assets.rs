@@ -143,17 +143,11 @@ module_type! {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ModuleConfig {
     pub main: String, // String since this is a module name, not a path.
-    #[serde(default = "upload_dir")]
     pub dir: PathBuf,
-    rules: Option<Vec<ModuleRule>>,
-}
-
-const UPLOAD_DIR: &str = "dist";
-fn upload_dir() -> PathBuf {
-    std::env::current_dir().unwrap().join(UPLOAD_DIR)
+    rules: Vec<ModuleRule>,
 }
 
 pub struct ModuleManifest {
@@ -162,11 +156,16 @@ pub struct ModuleManifest {
 }
 
 impl ModuleConfig {
-    pub fn get_modules(&self) -> Result<ModuleManifest, failure::Error> {
-        let matchers = match &self.rules {
-            Some(rules) => build_type_matchers(rules)?,
-            None => build_type_matchers(&[])?
-        };
+    pub fn new(main: &str, dir: &Path, rules: &Option<Vec<ModuleRule>>) -> ModuleConfig {
+        ModuleConfig {
+            main: main.to_string(),
+            dir: dir.to_path_buf(),
+            rules: rules.clone().unwrap_or_default(),
+        }
+    }
+
+    pub fn get_modules(self) -> Result<ModuleManifest, failure::Error> {
+        let matchers = build_type_matchers(self.rules)?;
 
         let candidates_vec = WalkBuilder::new(&self.dir)
             .standard_filters(false)
@@ -290,19 +289,19 @@ fn new_glob(glob: &str) -> Result<Glob, globset::Error> {
         .build()
 }
 
-fn build_type_matchers(rules: &[ModuleRule]) -> Result<Vec<ModuleMatcher>, failure::Error> {
+fn build_type_matchers(rules: Vec<ModuleRule>) -> Result<Vec<ModuleMatcher>, failure::Error> {
     let mut matchers = rules
-        .iter()
+        .into_iter()
         .map(|r| {
             let mut builder = GlobSetBuilder::new();
 
             for glob in &r.globs {
                 let glob = new_glob(&glob)?;
-                builder.add(glob.clone());
+                builder.add(glob);
             }
 
             Ok(ModuleMatcher {
-                globs: r.globs.to_vec(),
+                globs: r.globs,
                 matcher: builder.build()?,
                 module_type: r.module_type,
                 fallthrough: r.fallthrough,
@@ -422,7 +421,7 @@ mod tests {
 
             $(test_data!($path => $result));+;
 
-            let matchers = build_type_matchers(&$config.rules)?;
+            let matchers = build_type_matchers($config.rules)?;
             let modules = ModuleConfig::make_module_manifest(paths.into_iter(), &$config.dir, &matchers)?;
 
             assert_eq!(modules, expected_output);
@@ -514,7 +513,7 @@ mod tests {
 
         println!(
             "{:?}",
-            build_type_matchers(&rules)
+            build_type_matchers(rules)
                 .err()
                 .expect("error on invalid globs")
         );

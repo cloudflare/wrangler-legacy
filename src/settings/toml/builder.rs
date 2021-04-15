@@ -4,9 +4,10 @@ use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 
-use crate::upload::form::{ModuleConfig, ModuleType};
+use crate::upload::form::ModuleType;
 
 const WATCH_DIR: &str = "src";
+const UPLOAD_DIR: &str = "dist";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -26,10 +27,16 @@ pub enum UploadFormat {
     #[serde(rename = "service-worker")]
     ServiceWorker,
     #[serde(rename = "modules")]
-    Modules(ModuleConfig),
+    Modules {
+        main: String, // String since this is a module name, not a path.
+        #[serde(default = "upload_dir")]
+        dir: PathBuf,
+        rules: Option<Vec<ModuleRule>>,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct ModuleRule {
     pub globs: Vec<String>,
     #[serde(rename = "type")]
@@ -44,6 +51,10 @@ fn project_root() -> PathBuf {
 
 fn watch_dir() -> PathBuf {
     project_root().join(WATCH_DIR)
+}
+
+fn upload_dir() -> PathBuf {
+    std::env::current_dir().unwrap().join(UPLOAD_DIR)
 }
 
 impl Builder {
@@ -75,7 +86,7 @@ impl Builder {
 
     pub fn verify_upload_dir(&self) -> Result<(), failure::Error> {
         let dir = match &self.upload {
-            UploadFormat::Modules(ModuleConfig { dir, .. }) => dir,
+            UploadFormat::Modules { dir, .. } => dir,
             UploadFormat::ServiceWorker => return Ok(()),
         };
 
