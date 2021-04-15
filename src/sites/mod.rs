@@ -314,6 +314,8 @@ mod tests {
         Target {
             account_id: "".to_string(),
             kv_namespaces: Vec::new(),
+            durable_objects: None,
+            migrations: None,
             name: "".to_string(),
             target_type: TargetType::JavaScript,
             webpack_config: None,

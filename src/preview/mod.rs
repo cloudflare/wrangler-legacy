@@ -37,6 +37,10 @@ pub fn preview(
         }
     }
 
+    if target.durable_objects.is_some() {
+        failure::bail!("wrangler preview does not support previewing scripts that bind to durable object classes. Please use wrangler dev instead.");
+    }
+
     build_target(&target)?;
 
     let sites_preview: bool = target.site.is_some();
