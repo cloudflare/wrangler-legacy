@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.16.0
+
+- ### Features
+
+  - **Custom Builds and Modules - [xortive], [caass], [pull/1855]**
+
+    Custom Builds and Modules has finally landed in a main release!
+    There's too many new features to write about in a changelog, so here's a
+    [link to the docs](https://developers.cloudflare.com/workers/cli-wrangler/configuration#build).
+
+    [xortive]: https://github.com/xortive
+    [caass]: https://github.com/caass
+    [pull/1855]: https://github.com/cloudflare/wrangler/pull/1855
+
+  - **add `--format` option, including default `json` and new `pretty` - [caass], [pull/1851]**
+
+    You can now pass `--format pretty` to `wrangler tail` to get pretty printed logs!
+    `--format json` is also available, and gives you the existing JSON-formatted logs.
+
+    [caass]: https://github.com/caass
+    [pull/1851]: https://github.com/cloudflare/wrangler/pull/1851
+
+- ### Fixes
+
+  - **Revert "Print line and column numbers for exception thrown (#1645)" - [Electroid], [pull/1835]**
+
+    This reverts commit 74a89f7c383bc22758cbe55096ce3016c5c319d7.
+
+    Closes #1826
+
+    This commit is causing `wrangler dev` to not show uncaught exceptions. Reverting `chrome-devtools-rs` was also necessary.
+
+    We have a fix in progress to fix the underlying issue and re-introduce line and column numbers.
+
+    [electroid]: https://github.com/Electroid
+    [pull/1835]: https://github.com/cloudflare/wrangler/pull/1835
+
+  - **Don't generate `usage_model = ""` by default - [xortive], [issues/1850]**
+
+    Generating `usage_model = ""` by default was violating the toml spec, which broke
+    `wrangler init --site` as `usage_model` came after `[site]`.
+
+    [xortive]: https://github.com/xortive
+    [issues/1850]: https://github.com/cloudflare/wrangler/pull/1850
+
 ## 1.15.1
 
 - ### Features
