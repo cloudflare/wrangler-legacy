@@ -1187,7 +1187,7 @@ dependencies = [
  "futures-util",
  "hyper",
  "log 0.4.14",
- "rustls",
+ "rustls 0.18.1",
  "rustls-native-certs",
  "tokio",
  "tokio-rustls",
@@ -2148,13 +2148,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustls"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35edb675feee39aec9c99fa5ff985081995a06d594114ae14cbe797ad7b7a6d7"
+dependencies = [
+ "base64 0.13.0",
+ "log 0.4.14",
+ "ring",
+ "sct",
+ "webpki",
+]
+
+[[package]]
 name = "rustls-native-certs"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "629d439a7672da82dd955498445e496ee2096fe2117b9f796558a43fdb9e59b8"
 dependencies = [
  "openssl-probe",
- "rustls",
+ "rustls 0.18.1",
  "schannel",
  "security-framework 1.0.0",
 ]
@@ -2781,7 +2794,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e12831b255bcfa39dc0436b01e19fea231a37db570686c06ee72c423479f889a"
 dependencies = [
  "futures-core",
- "rustls",
+ "rustls 0.18.1",
  "tokio",
  "webpki",
 ]
@@ -3311,7 +3324,7 @@ dependencies = [
  "rand 0.7.3",
  "regex",
  "reqwest",
- "rustls",
+ "rustls 0.19.1",
  "semver",
  "serde 1.0.125",
  "serde_json",
