@@ -322,6 +322,7 @@ mod tests {
             vars: None,
             text_blobs: None,
             usage_model: None,
+            wasm_modules: None,
         }
     }
 

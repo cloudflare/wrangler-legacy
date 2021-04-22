@@ -42,6 +42,12 @@ pub fn build(
         }
     }
 
+    if let Some(modules) = &target.wasm_modules {
+        for (key, module_path) in modules.iter() {
+            wasm_modules.push(WasmModule::new(module_path.clone(), key.clone())?);
+        }
+    }
+
     if let Some(vars) = &target.vars {
         for (key, value) in vars.iter() {
             plain_texts.push(PlainText::new(key.clone(), value.clone())?)
