@@ -1,4 +1,4 @@
-const { Binary } = require("@cloudflare/binary-install");
+const { Binary } = require("./binary-install");
 const os = require("os");
 const { join } = require("path");
 
