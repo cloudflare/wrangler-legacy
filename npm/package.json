@@ -42,6 +42,8 @@
     "cli"
   ],
   "dependencies": {
-    "@cloudflare/binary-install": "0.2.0"
+    "axios": "^0.21.1",
+    "rimraf": "^3.0.2",
+    "tar": "^6.0.2"
   }
 }
