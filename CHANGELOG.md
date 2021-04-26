@@ -1,5 +1,47 @@
 # Changelog
 
+## 🍏 v1.16.1
+
+- ### Features
+  - **Add `wasm_modules` config field for bundling arbitrary WebAssembly modules. - [losfair], [pull/1803]**
+
+    Currently it seems that wrangler only supports WebAssembly modules included from a `rust` or `webpack` project.
+
+    This pull request enables the inclusion of arbitrary WebAssembly modules through a `wasm_modules` config field.
+
+    [losfair]: https://github.com/losfair
+    [pull/1803]: https://github.com/cloudflare/wrangler/pull/1803
+
+- ### Fixes
+  - **fix: use x86_64 arch for pre-built downloads on M1 devices - [nilslice], [pull/1876]**
+
+    This PR forces the use of a pre-built x86_64 binary on a aarch64/arm64 Apple system. For M1 devices specifically, it will fix `wrangler generate`, and `wrangler build` for `type = "rust"` wrangler projects.
+
+    There is another semi-related
+    ... truncated
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1876]: https://github.com/cloudflare/wrangler/pull/1876
+
+  - **chore: include @cloudflare/binary-install directly as source - [nilslice], [pull/1877]**
+
+    This PR inlines the `@cloudflare/binary-install` dependency as a quickfix for #1811, in which usage reports indicated that the module occasionally failed to install.
+
+    I tested this by running `npm i && node run-wrangler.js` on both `npm
+    ... truncated
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1877]: https://github.com/cloudflare/wrangler/pull/1877
+
+  - **Stop assuming KV values are UTF8 text - [koeninger], [pull/1878]**
+
+    Implementation of kv:key get is calling text() on the result of the api call, so it's replacing non-utf8 values with ef bf bd, the unicode REPLACEMENT CHAR. KV values can be arbitrary bytes, we shouldn't assume they're UTF8 text, so this p
+    ... truncated
+
+    [koeninger]: https://github.com/koeninger
+    [pull/1878]: https://github.com/cloudflare/wrangler/pull/1878
+
+
 ## 1.16.0
 
 - ### Features
