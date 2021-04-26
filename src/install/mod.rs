@@ -147,12 +147,10 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
     } else {
         let target = if target::LINUX && target::x86_64 {
             "x86_64-unknown-linux-musl"
-        } else if target::MACOS && target::x86_64 {
+        } else if target::MACOS && (target::x86_64 || target::aarch64) {
             "x86_64-apple-darwin"
         } else if target::WINDOWS && target::x86_64 {
             "x86_64-pc-windows-msvc"
-        } else if target::MACOS && target::aarch64 {
-            "aarch64-apple-darwin"
         } else {
             return None;
         };
