@@ -12,6 +12,7 @@ const HEADER_PREFIX: &str = "cf-ew-raw-";
 /// must have the prefix stripped
 use std::str::FromStr;
 
+use anyhow::Result;
 use hyper::header::{HeaderMap, HeaderName};
 use hyper::http::request::Parts as RequestParts;
 use hyper::http::response::Parts as ResponseParts;
@@ -23,7 +24,7 @@ pub fn structure_request(parts: &mut RequestParts) {
 }
 
 /// modify a response from the preview service before returning it to the user
-pub fn destructure_response(parts: &mut ResponseParts) -> Result<(), failure::Error> {
+pub fn destructure_response(parts: &mut ResponseParts) -> Result<()> {
     set_response_status(parts)?;
     strip_response_headers_prefix(parts)
 }
@@ -51,7 +52,7 @@ fn prepend_request_headers_prefix(parts: &mut RequestParts) {
 ///
 /// discard headers without that prefix
 /// strip the prefix from real Workers headers
-fn strip_response_headers_prefix(parts: &mut ResponseParts) -> Result<(), failure::Error> {
+fn strip_response_headers_prefix(parts: &mut ResponseParts) -> Result<()> {
     let mut headers = HeaderMap::new();
 
     for header in &parts.headers {
@@ -68,7 +69,7 @@ fn strip_response_headers_prefix(parts: &mut ResponseParts) -> Result<(), failur
 
 /// parse the response status from headers sent by the preview service
 /// and apply the parsed result to mutable ResponseParts
-fn set_response_status(parts: &mut ResponseParts) -> Result<(), failure::Error> {
+fn set_response_status(parts: &mut ResponseParts) -> Result<()> {
     let status = parts
         .headers
         .get("cf-ew-status")

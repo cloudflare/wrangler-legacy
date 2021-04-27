@@ -1,5 +1,6 @@
 use crate::login;
+use anyhow::Result;
 
-pub fn run() -> Result<(), failure::Error> {
+pub fn run() -> Result<()> {
     login::run()
 }

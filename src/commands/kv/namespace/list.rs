@@ -1,12 +1,12 @@
-extern crate serde_json;
-
 use crate::commands::kv;
 use crate::http;
 use crate::kv::namespace::list;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
-pub fn run(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
+use anyhow::Result;
+
+pub fn run(target: &Target, user: &GlobalUser) -> Result<()> {
     kv::validate_target(target)?;
 
     let client = http::cf_v4_client(user)?;
@@ -15,7 +15,7 @@ pub fn run(target: &Target, user: &GlobalUser) -> Result<(), failure::Error> {
         Ok(namespaces) => {
             println!("{}", serde_json::to_string(&namespaces)?);
         }
-        Err(e) => failure::bail!(e),
+        Err(e) => anyhow::bail!(e),
     }
     Ok(())
 }

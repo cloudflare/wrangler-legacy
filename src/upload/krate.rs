@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::Path;
 
+use anyhow::Result;
 use serde::{self, Deserialize};
 
 #[derive(Debug, Deserialize)]
@@ -14,10 +15,10 @@ struct KrateManifest {
 }
 
 impl Krate {
-    pub fn new(krate_path: &str) -> Result<Krate, failure::Error> {
+    pub fn new(krate_path: &str) -> Result<Krate> {
         let manifest_path = Path::new(krate_path).join("Cargo.toml");
         if !manifest_path.is_file() {
-            failure::bail!(
+            anyhow::bail!(
                 "crate directory is missing a `Cargo.toml` file; is `{}` the \
                  wrong directory?",
                 krate_path

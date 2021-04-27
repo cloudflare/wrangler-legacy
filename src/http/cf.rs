@@ -6,11 +6,13 @@ use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
 use http::StatusCode;
 
+use anyhow::Result;
+
 use crate::http::{feature::headers, Feature, DEFAULT_HTTP_TIMEOUT_SECONDS};
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
-pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
+pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient> {
     let config = HttpApiClientConfig {
         http_timeout: Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS),
         default_headers: headers(None),
@@ -21,13 +23,9 @@ pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> 
         config,
         Environment::Production,
     )
-    .map_err(|e| failure::format_err!("{}", e))
 }
 
-pub fn featured_cf_v4_client(
-    user: &GlobalUser,
-    feature: Feature,
-) -> Result<HttpApiClient, failure::Error> {
+pub fn featured_cf_v4_client(user: &GlobalUser, feature: Feature) -> Result<HttpApiClient> {
     let config = HttpApiClientConfig {
         http_timeout: Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS),
         default_headers: headers(Some(feature)),
@@ -38,19 +36,17 @@ pub fn featured_cf_v4_client(
         config,
         Environment::Production,
     )
-    .map_err(|e| failure::format_err!("{}", e))
 }
 
 pub fn cf_v4_api_client_async(
     user: &GlobalUser,
     config: HttpApiClientConfig,
-) -> Result<async_api::Client, failure::Error> {
+) -> Result<async_api::Client> {
     async_api::Client::new(
         Credentials::from(user.to_owned()),
         config,
         Environment::Production,
     )
-    .map_err(|e| failure::format_err!("{}", e))
 }
 
 // Format errors from the cloudflare-rs cli for printing.

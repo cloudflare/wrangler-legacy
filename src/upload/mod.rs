@@ -5,6 +5,7 @@ pub mod package;
 use indicatif::{ProgressBar, ProgressStyle};
 pub use package::Package;
 
+use anyhow::Result;
 use reqwest::blocking::Client;
 
 use crate::settings::toml::Target;
@@ -14,7 +15,7 @@ pub fn script(
     client: &Client,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
         target.account_id, target.name,
@@ -38,7 +39,7 @@ pub fn script(
 
     if !res_status.is_success() {
         let res_text = res.text()?;
-        failure::bail!(error_msg(res_status, res_text))
+        anyhow::bail!(error_msg(res_status, res_text))
     }
 
     if let Some(usage_model) = target.usage_model {
@@ -58,7 +59,7 @@ pub fn script(
 
         if !res_status.is_success() {
             let res_text = res.text()?;
-            failure::bail!(error_msg(res_status, res_text))
+            anyhow::bail!(error_msg(res_status, res_text))
         }
     }
 

@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 use config::{Config, File};
 
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
@@ -60,22 +61,22 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    pub fn new(config_path: &Path) -> Result<Self, failure::Error> {
+    pub fn new(config_path: &Path) -> Result<Self> {
         let file_name = config_path.file_name().unwrap().to_str().unwrap();
         let mut message = format!("{} not found", file_name);
         if config_path.to_str().unwrap() == DEFAULT_CONFIG_PATH {
             message.push_str("; run `wrangler init` to create one.");
         }
-        failure::ensure!(config_path.exists(), message);
+        anyhow::ensure!(config_path.exists(), message);
         let config = read_config(config_path)?;
 
         let manifest: Manifest = match config.try_into() {
             Ok(m) => m,
             Err(e) => {
                 if e.to_string().contains("unknown field `kv-namespaces`") {
-                    failure::bail!("kv-namespaces should not live under the [site] table in your configuration file; please move it above [site].")
+                    anyhow::bail!("kv-namespaces should not live under the [site] table in your configuration file; please move it above [site].")
                 } else {
-                    failure::bail!(e)
+                    anyhow::bail!(e)
                 }
             }
         };
@@ -90,7 +91,7 @@ impl Manifest {
         target_type: Option<TargetType>,
         config_path: &PathBuf,
         site: Option<Site>,
-    ) -> Result<Manifest, failure::Error> {
+    ) -> Result<Manifest> {
         let config_file = &config_path.join("wrangler.toml");
         let config_template_str = fs::read_to_string(config_file).unwrap_or_else(|err| {
             log::info!("Error reading config template: {}", err);
@@ -125,15 +126,9 @@ impl Manifest {
          * as only toml-rs supports serde.
          */
 
-        let mut config_template_doc =
-            config_template_str
-                .parse::<toml_edit::Document>()
-                .map_err(|err| {
-                    failure::err_msg(format!(
-                        "toml_edit failed to parse config template. {}",
-                        err
-                    ))
-                })?;
+        let mut config_template_doc = config_template_str
+            .parse::<toml_edit::Document>()
+            .map_err(|err| anyhow!("toml_edit failed to parse config template. {}", err))?;
 
         config_template_doc["name"] = toml_edit::value(name);
         if let Some(default_workers_dev) = default_workers_dev {
@@ -201,7 +196,7 @@ impl Manifest {
         }
     }
 
-    pub fn get_deployments(&self, env: Option<&str>) -> Result<DeploymentSet, failure::Error> {
+    pub fn get_deployments(&self, env: Option<&str>) -> Result<DeploymentSet> {
         let script = self.worker_name(env);
         validate_worker_name(&script)?;
 
@@ -209,37 +204,36 @@ impl Manifest {
 
         let env = self.get_environment(env)?;
 
-        let mut add_routed_deployments =
-            |route_config: &RouteConfig| -> Result<(), failure::Error> {
-                if route_config.is_zoned() {
-                    let zoned = deploy::ZonedTarget::build(&script, route_config)?;
-                    // This checks all of the configured routes for the wildcard ending and warns
-                    // the user that their site may not work as expected without it.
-                    if self.site.is_some() {
-                        let no_star_routes = zoned
-                            .routes
-                            .iter()
-                            .filter(|r| !r.pattern.ends_with('*'))
-                            .map(|r| r.pattern.as_str())
-                            .collect::<Vec<_>>();
-                        if !no_star_routes.is_empty() {
-                            StdOut::warn(&format!(
+        let mut add_routed_deployments = |route_config: &RouteConfig| -> Result<()> {
+            if route_config.is_zoned() {
+                let zoned = deploy::ZonedTarget::build(&script, route_config)?;
+                // This checks all of the configured routes for the wildcard ending and warns
+                // the user that their site may not work as expected without it.
+                if self.site.is_some() {
+                    let no_star_routes = zoned
+                        .routes
+                        .iter()
+                        .filter(|r| !r.pattern.ends_with('*'))
+                        .map(|r| r.pattern.as_str())
+                        .collect::<Vec<_>>();
+                    if !no_star_routes.is_empty() {
+                        StdOut::warn(&format!(
                             "The following routes in your configuration file should have a trailing * to apply the Worker on every path, otherwise your site will not behave as expected.\n{}",
                             no_star_routes.join("\n"))
                         );
-                        }
                     }
-
-                    deployments.push(DeployTarget::Zoned(zoned));
                 }
 
-                if route_config.is_zoneless() {
-                    let zoneless = deploy::ZonelessTarget::build(&script, route_config)?;
-                    deployments.push(DeployTarget::Zoneless(zoneless));
-                }
+                deployments.push(DeployTarget::Zoned(zoned));
+            }
 
-                Ok(())
-            };
+            if route_config.is_zoneless() {
+                let zoneless = deploy::ZonelessTarget::build(&script, route_config)?;
+                deployments.push(DeployTarget::Zoneless(zoneless));
+            }
+
+            Ok(())
+        };
 
         if let Some(env) = env {
             if let Some(env_route_cfg) =
@@ -249,7 +243,7 @@ impl Manifest {
             } else {
                 let config = self.route_config();
                 if config.is_zoned() {
-                    failure::bail!("you must specify route(s) per environment for zoned deploys.");
+                    anyhow::bail!("you must specify route(s) per environment for zoned deploys.");
                 } else {
                     add_routed_deployments(&config)
                 }
@@ -279,13 +273,13 @@ impl Manifest {
         }
 
         if deployments.is_empty() {
-            failure::bail!("No deployments specified!")
+            anyhow::bail!("No deployments specified!")
         }
 
         Ok(deployments)
     }
 
-    pub fn get_account_id(&self, environment_name: Option<&str>) -> Result<String, failure::Error> {
+    pub fn get_account_id(&self, environment_name: Option<&str>) -> Result<String> {
         let environment = self.get_environment(environment_name)?;
         let mut result = self.account_id.to_string();
         if let Some(environment) = environment {
@@ -298,21 +292,17 @@ impl Manifest {
             if let Some(environment_name) = environment_name {
                 msg.push_str(&format!(" in [env.{}]", environment_name));
             }
-            failure::bail!("{}", &msg)
+            anyhow::bail!("{}", &msg)
         } else {
             Ok(result)
         }
     }
 
-    pub fn get_target(
-        &self,
-        environment_name: Option<&str>,
-        preview: bool,
-    ) -> Result<Target, failure::Error> {
+    pub fn get_target(&self, environment_name: Option<&str>, preview: bool) -> Result<Target> {
         if self.site.is_some() {
             match self.target_type {
                 TargetType::Rust => {
-                    failure::bail!(format!(
+                    anyhow::bail!(format!(
                         "{} Workers Sites does not support Rust type projects.",
                         emoji::WARN
                     ))
@@ -324,10 +314,10 @@ impl Manifest {
                     );
                     if let Some(build) = &self.build {
                         if build.command.is_none() {
-                            failure::bail!(error_message)
+                            anyhow::bail!(error_message)
                         }
                     } else {
-                        failure::bail!(error_message)
+                        anyhow::bail!(error_message)
                     }
                 }
                 _ => {}
@@ -387,24 +377,21 @@ impl Manifest {
         Ok(target)
     }
 
-    pub fn get_environment(
-        &self,
-        environment_name: Option<&str>,
-    ) -> Result<Option<&Environment>, failure::Error> {
+    pub fn get_environment(&self, environment_name: Option<&str>) -> Result<Option<&Environment>> {
         // check for user-specified environment name
         if let Some(environment_name) = environment_name {
             if let Some(environment_table) = &self.env {
                 if let Some(environment) = environment_table.get(environment_name) {
                     Ok(Some(environment))
                 } else {
-                    failure::bail!(format!(
+                    anyhow::bail!(format!(
                         "{} Could not find environment with name \"{}\"",
                         emoji::WARN,
                         environment_name
                     ))
                 }
             } else {
-                failure::bail!(format!(
+                anyhow::bail!(format!(
                     "{} There are no environments specified in your configuration file",
                     emoji::WARN
                 ))
@@ -521,7 +508,7 @@ impl FromStr for Manifest {
     }
 }
 
-fn read_config(config_path: &Path) -> Result<Config, failure::Error> {
+fn read_config(config_path: &Path) -> Result<Config> {
     let mut config = Config::new();
 
     let config_str = config_path
@@ -535,7 +522,7 @@ fn read_config(config_path: &Path) -> Result<Config, failure::Error> {
     Ok(config)
 }
 
-fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> {
+fn check_for_duplicate_names(manifest: &Manifest) -> Result<()> {
     let mut names: HashSet<String> = HashSet::new();
     let mut duplicate_names: HashSet<String> = HashSet::new();
     names.insert(manifest.name.to_string());
@@ -561,7 +548,7 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
         _ => None,
     };
     if let Some(message) = duplicate_message {
-        failure::bail!(format!(
+        anyhow::bail!(format!(
             "{} Each name in your configuration file must be unique, {}: {}",
             emoji::WARN,
             message,
@@ -574,7 +561,7 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<(), failure::Error> 
 fn get_namespaces(
     kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     preview: bool,
-) -> Result<Vec<KvNamespace>, failure::Error> {
+) -> Result<Vec<KvNamespace>> {
     if let Some(namespaces) = kv_namespaces {
         namespaces.into_iter().map(|ns| {
             if preview {
@@ -589,7 +576,7 @@ fn get_namespaces(
                         binding: ns.binding.to_string(),
                     })
                 } else {
-                    failure::bail!("In order to preview a worker with KV namespaces, you must designate a preview_id in your configuration file for each KV namespace you'd like to preview.")
+                    anyhow::bail!("In order to preview a worker with KV namespaces, you must designate a preview_id in your configuration file for each KV namespace you'd like to preview.")
                 }
             } else if let Some(id) = &ns.id {
                 Ok(KvNamespace {
@@ -597,7 +584,7 @@ fn get_namespaces(
                     binding: ns.binding,
                 })
             } else {
-                failure::bail!("You must specify the namespace ID in the id field for the namespace with binding \"{}\"", &ns.binding)
+                anyhow::bail!("You must specify the namespace ID in the id field for the namespace with binding \"{}\"", &ns.binding)
             }
         }).collect()
     } else {

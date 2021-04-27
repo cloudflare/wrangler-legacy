@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::str::FromStr;
 
 #[derive(Clone, Debug)]
@@ -13,8 +14,8 @@ impl Default for HttpMethod {
 }
 
 impl FromStr for HttpMethod {
-    type Err = failure::Error;
-    fn from_str(s: &str) -> Result<Self, failure::Error> {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self> {
         match s {
             "get" => Ok(HttpMethod::Get),
             "post" => Ok(HttpMethod::Post),

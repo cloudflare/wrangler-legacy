@@ -6,6 +6,7 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
+use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::commands::kv;
@@ -15,12 +16,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
 use crate::terminal::message::{Message, StdOut};
-pub fn run(
-    target: &Target,
-    user: &GlobalUser,
-    namespace_id: &str,
-    filename: &Path,
-) -> Result<(), failure::Error> {
+pub fn run(target: &Target, user: &GlobalUser, namespace_id: &str, filename: &Path) -> Result<()> {
     kv::validate_target(target)?;
 
     match interactive::confirm(&format!(
@@ -32,7 +28,7 @@ pub fn run(
             StdOut::info(&format!("Not deleting keys in {}", filename.display()));
             return Ok(());
         }
-        Err(e) => failure::bail!(e),
+        Err(e) => anyhow::bail!(e),
     }
 
     let keys: Vec<String> = match &metadata(filename) {
@@ -42,11 +38,11 @@ pub fn run(
                 serde_json::from_str(&data);
             match keys_vec {
                 Ok(keys_vec) => keys_vec.iter().map(|kv| { kv.key.to_owned() }).collect(),
-                Err(_) => failure::bail!("Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]")
+                Err(_) => anyhow::bail!("Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]")
             }
         }
-        Ok(_) => failure::bail!("{} should be a JSON file, but is not", filename.display()),
-        Err(e) => failure::bail!("{}", e),
+        Ok(_) => anyhow::bail!("{} should be a JSON file, but is not", filename.display()),
+        Err(e) => anyhow::bail!("{}", e),
     };
 
     let len = keys.len();

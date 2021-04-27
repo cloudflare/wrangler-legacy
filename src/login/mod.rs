@@ -1,3 +1,4 @@
+use anyhow::Result;
 use eventual::Timer;
 use indicatif::{ProgressBar, ProgressStyle};
 use openssl::base64;
@@ -11,7 +12,7 @@ use crate::commands::config::global_config;
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::{interactive, open_browser};
 
-pub fn run() -> Result<(), failure::Error> {
+pub fn run() -> Result<()> {
     let rsa = Rsa::generate(1024)?;
     let pubkey = rsa.public_key_to_pem_pkcs1()?;
 
@@ -29,7 +30,7 @@ pub fn run() -> Result<(), failure::Error> {
     let browser_permission =
         interactive::confirm("Allow Wrangler to open a page in your browser?")?;
     if !browser_permission {
-        failure::bail!("In order to log in you must allow Wrangler to open your browser. If you don't want to do this consider using `wrangler config`");
+        anyhow::bail!("In order to log in you must allow Wrangler to open your browser. If you don't want to do this consider using `wrangler config`");
     }
 
     open_browser(&format!(
@@ -58,7 +59,7 @@ struct TokenResponse {
 }
 
 /// Poll for token, bail after 500 seconds.
-fn poll_token(token_id: String) -> Result<String, failure::Error> {
+fn poll_token(token_id: String) -> Result<String> {
     let mut request_params = HashMap::new();
     request_params.insert("token-id", token_id);
 
@@ -86,7 +87,7 @@ fn poll_token(token_id: String) -> Result<String, failure::Error> {
         }
     }
 
-    failure::bail!(
+    anyhow::bail!(
         "Timed out while waiting for API token. Try using `wrangler config` if login fails to work."
     );
 }

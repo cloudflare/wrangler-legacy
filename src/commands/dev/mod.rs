@@ -15,6 +15,8 @@ use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::styles;
 
+use anyhow::Result;
+
 /// `wrangler dev` starts a server on a dev machine that routes incoming HTTP requests
 /// to a Cloudflare Workers runtime and returns HTTP responses
 pub fn dev(
@@ -25,7 +27,7 @@ pub fn dev(
     local_protocol: Protocol,
     upstream_protocol: Protocol,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     // before serving requests we must first build the Worker
     build_target(&target)?;
 
@@ -47,7 +49,7 @@ pub fn dev(
         if let Some(target) = valid_target {
             target.clone()
         } else {
-            failure::bail!("No valid deployment targets: `wrangler dev` can only be used to develop zoned and zoneless deployments")
+            anyhow::bail!("No valid deployment targets: `wrangler dev` can only be used to develop zoned and zoneless deployments")
         }
     };
 
@@ -56,12 +58,12 @@ pub fn dev(
     let upstream_str = styles::highlight("--upstream-protocol");
 
     if server_config.host.is_https() != upstream_protocol.is_https() {
-        failure::bail!(format!(
+        anyhow::bail!(format!(
             "Protocol mismatch: protocol in {} and protocol in {} must match",
             host_str, upstream_str
         ))
     } else if local_protocol.is_https() && upstream_protocol.is_http() {
-        failure::bail!("{} cannot be https if {} is http", local_str, upstream_str)
+        anyhow::bail!("{} cannot be https if {} is http", local_str, upstream_str)
     }
 
     if let Some(user) = user {

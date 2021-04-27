@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::{env, fs};
 
+use anyhow::Result;
+
 use crate::commands::validate_worker_name;
 use crate::settings::toml::{Manifest, Site, TargetType};
 use crate::{commands, install};
@@ -12,7 +14,7 @@ pub fn generate(
     template: &str,
     target_type: Option<TargetType>,
     site: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     validate_worker_name(name)?;
 
     let new_name = if directory_exists(name).unwrap_or(true) {
@@ -46,7 +48,7 @@ pub fn generate(
     Ok(())
 }
 
-pub fn run_generate(name: &str, template: &str) -> Result<(), failure::Error> {
+pub fn run_generate(name: &str, template: &str) -> Result<()> {
     let binary_path = install::install_cargo_generate()?;
 
     let args = ["generate", "--git", template, "--name", name, "--force"];
@@ -56,7 +58,7 @@ pub fn run_generate(name: &str, template: &str) -> Result<(), failure::Error> {
     commands::run(command, &command_name)
 }
 
-fn generate_name(name: &str) -> Result<String, failure::Error> {
+fn generate_name(name: &str) -> Result<String> {
     let mut num = 1;
     let entry_names = read_current_dir()?;
     let mut new_name = construct_name(&name, num);
@@ -68,7 +70,7 @@ fn generate_name(name: &str) -> Result<String, failure::Error> {
     Ok(new_name)
 }
 
-fn read_current_dir() -> Result<Vec<OsString>, failure::Error> {
+fn read_current_dir() -> Result<Vec<OsString>> {
     let current_dir = env::current_dir()?;
     let mut entry_names = Vec::new();
 
@@ -82,7 +84,7 @@ fn read_current_dir() -> Result<Vec<OsString>, failure::Error> {
     Ok(entry_names)
 }
 
-fn directory_exists(dirname: &str) -> Result<bool, failure::Error> {
+fn directory_exists(dirname: &str) -> Result<bool> {
     let entry_names = read_current_dir()?;
     Ok(entry_names.contains(&OsString::from(dirname)))
 }

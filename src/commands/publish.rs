@@ -1,6 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 
@@ -28,7 +29,7 @@ pub fn publish(
     target: &mut Target,
     deployments: DeploymentSet,
     out: Output,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     validate_target_required_fields_present(target)?;
 
     let run_deploy = |target: &Target| match deploy::deploy(&user, &deployments) {
@@ -153,24 +154,24 @@ fn build_output_message(deploy_results: deploy::DeployResults, target_name: Stri
 
 // We don't want folks setting their bucket to the top level directory,
 // which is where wrangler commands are always called from.
-pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> {
+pub fn validate_bucket_location(bucket: &PathBuf) -> Result<()> {
     // TODO: this should really use a convenience function for "Wrangler Project Root"
     let current_dir = env::current_dir()?;
     if bucket.as_os_str() == current_dir {
-        failure::bail!(
+        anyhow::bail!(
             "{} Your bucket cannot be set to the parent directory of your configuration file",
             emoji::WARN
         )
     }
     let path = Path::new(&bucket);
     if !path.exists() {
-        failure::bail!(
+        anyhow::bail!(
             "{} bucket directory \"{}\" does not exist",
             emoji::WARN,
             path.display()
         )
     } else if !path.is_dir() {
-        failure::bail!(
+        anyhow::bail!(
             "{} bucket \"{}\" is not a directory",
             emoji::WARN,
             path.display()
@@ -180,7 +181,7 @@ pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> 
     Ok(())
 }
 
-fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
+fn validate_target_required_fields_present(target: &Target) -> Result<()> {
     let mut missing_fields = Vec::new();
 
     if target.account_id.is_empty() {
@@ -207,7 +208,7 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
     };
 
     if !missing_fields.is_empty() {
-        failure::bail!(
+        anyhow::bail!(
             "{} Your configuration file is missing the {} {:?} which {} required to publish your worker!",
             emoji::WARN,
             field_pluralization,

@@ -1,4 +1,6 @@
+use anyhow::Result;
 use base64::decode;
+
 #[cfg(test)]
 use std::env;
 use std::fs;
@@ -29,7 +31,7 @@ impl Bundle {
         Bundle { out }
     }
 
-    pub fn write(&self, wranglerjs_output: &WranglerjsOutput) -> Result<(), failure::Error> {
+    pub fn write(&self, wranglerjs_output: &WranglerjsOutput) -> Result<()> {
         if !self.out.exists() {
             fs::create_dir(&self.out)?;
         }

@@ -7,9 +7,11 @@ use crate::{commands, install};
 use std::path::PathBuf;
 use std::process::Command;
 
+use anyhow::{anyhow, Result};
+
 // Internal build logic, called by both `build` and `publish`
 // TODO: return a struct containing optional build info and construct output at command layer
-pub fn build_target(target: &Target) -> Result<String, failure::Error> {
+pub fn build_target(target: &Target) -> Result<String> {
     let target_type = &target.target_type;
     match target_type {
         TargetType::JavaScript => match &target.build {
@@ -24,12 +26,9 @@ pub fn build_target(target: &Target) -> Result<String, failure::Error> {
                     if build_result.success() {
                         Ok(String::from("Build completed successfully!"))
                     } else if let Some(code) = build_result.code() {
-                        Err(failure::err_msg(format!(
-                            "Build failed! Status Code: {}",
-                            code
-                        )))
+                        Err(anyhow!("Build failed! Status Code: {}", code))
                     } else {
-                        Err(failure::err_msg("Build failed."))
+                        Err(anyhow!("Build failed."))
                     }
                 } else {
                     Ok(String::from("No build command specified, skipping build."))
@@ -38,7 +37,7 @@ pub fn build_target(target: &Target) -> Result<String, failure::Error> {
         },
         TargetType::Rust => {
             let _ = which::which("rustc").map_err(|e| {
-                failure::format_err!(
+                anyhow!(
                     "'rustc' not found: {}. Installation documentation can be found here: {}",
                     e,
                     styles::url("https://www.rust-lang.org/tools/install")

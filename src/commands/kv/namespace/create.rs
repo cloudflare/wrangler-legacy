@@ -1,3 +1,4 @@
+use anyhow::Result;
 use regex::Regex;
 
 use crate::commands::kv;
@@ -12,7 +13,7 @@ pub fn run(
     env: Option<&str>,
     user: &GlobalUser,
     binding: &str,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let account_id = manifest.get_account_id(env)?;
     let worker_name = manifest.worker_name(env);
     validate_binding(binding)?;
@@ -50,10 +51,10 @@ pub fn run(
     Ok(())
 }
 
-fn validate_binding(binding: &str) -> Result<(), failure::Error> {
+fn validate_binding(binding: &str) -> Result<()> {
     let re = Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
     if !re.is_match(binding) {
-        failure::bail!(
+        anyhow::bail!(
             "A binding can only have alphanumeric and _ characters, and cannot begin with a number"
         )
     }

@@ -1,4 +1,5 @@
 use super::binding::Binding;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 // Note: This is only used for service-worker scripts.
@@ -11,7 +12,7 @@ pub struct TextBlob {
 }
 
 impl TextBlob {
-    pub fn new(data: String, binding: String) -> Result<Self, failure::Error> {
+    pub fn new(data: String, binding: String) -> Result<Self> {
         Ok(Self { data, binding })
     }
 

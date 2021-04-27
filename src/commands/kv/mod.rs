@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use cloudflare::framework::response::ApiFailure;
 
+use anyhow::Result;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
 use crate::http;
@@ -38,7 +39,7 @@ fn kv_help(error_code: u16) -> &'static str {
     }
 }
 
-pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
+pub fn validate_target(target: &Target) -> Result<()> {
     let mut missing_fields = Vec::new();
 
     if target.account_id.is_empty() {
@@ -46,7 +47,7 @@ pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
     };
 
     if !missing_fields.is_empty() {
-        failure::bail!(
+        anyhow::bail!(
             "Your configuration file is missing the following field(s): {:?}",
             missing_fields
         )
@@ -72,9 +73,9 @@ fn check_duplicate_namespaces(target: &Target) -> bool {
 }
 
 // Get namespace id for a given binding name.
-pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failure::Error> {
+pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String> {
     if check_duplicate_namespaces(&target) {
-        failure::bail!(
+        anyhow::bail!(
             "Namespace binding \"{}\" is duplicated in \"{}\"",
             binding,
             target.name
@@ -87,7 +88,7 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
         }
     }
 
-    failure::bail!(
+    anyhow::bail!(
         "Namespace binding \"{}\" not found in \"{}\"",
         binding,
         target.name

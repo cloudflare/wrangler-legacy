@@ -1,3 +1,4 @@
+use anyhow::Result;
 use reqwest::blocking::multipart::{Form, Part};
 use serde::Serialize;
 
@@ -14,7 +15,7 @@ struct Metadata {
 pub fn build_form(
     assets: &ServiceWorkerAssets,
     session_config: Option<serde_json::Value>,
-) -> Result<Form, failure::Error> {
+) -> Result<Form> {
     let mut form = Form::new();
 
     // The preview service in particular streams the request form, and requires that the
@@ -31,7 +32,7 @@ pub fn build_form(
     Ok(form)
 }
 
-fn add_files(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form, failure::Error> {
+fn add_files(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
     form = form.file(assets.script_name(), assets.script_path())?;
 
     for wasm_module in &assets.wasm_modules {
@@ -49,7 +50,7 @@ fn add_files(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form, failu
     Ok(form)
 }
 
-fn add_metadata(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form, failure::Error> {
+fn add_metadata(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
     let metadata_json = serde_json::json!(&Metadata {
         body_part: assets.script_name(),
         bindings: assets.bindings(),
@@ -64,10 +65,7 @@ fn add_metadata(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form, fa
     Ok(form)
 }
 
-fn add_session_config(
-    mut form: Form,
-    session_config: serde_json::Value,
-) -> Result<Form, failure::Error> {
+fn add_session_config(mut form: Form, session_config: serde_json::Value) -> Result<Form> {
     let wrangler_session_config = Part::text(session_config.to_string())
         .file_name("")
         .mime_str("application/json")?;

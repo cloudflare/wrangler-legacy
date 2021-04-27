@@ -1,6 +1,7 @@
 mod certs;
 pub use certs::generate_cert;
 
+use anyhow::Result;
 use core::task::{Context, Poll};
 use fs::File;
 use futures_util::stream::Stream;
@@ -17,7 +18,7 @@ use tokio_rustls::{server::TlsStream, TlsAcceptor};
 use crate::settings::get_wrangler_home_dir;
 
 // Build TLS configuration
-pub(super) fn get_tls_acceptor() -> Result<TlsAcceptor, failure::Error> {
+pub(super) fn get_tls_acceptor() -> Result<TlsAcceptor> {
     let home = get_wrangler_home_dir()?.join("config");
     let cert = home.join("dev-cert.pem");
     let privkey = home.join("dev-privkey.rsa");

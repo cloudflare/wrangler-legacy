@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use failure::format_err;
+use anyhow::{anyhow, Result};
 use globset::{Candidate, Glob, GlobBuilder, GlobSet, GlobSetBuilder};
 use ignore::WalkBuilder;
 use path_slash::PathExt; // Path::to_slash()
@@ -32,10 +32,9 @@ impl ServiceWorkerAssets {
         kv_namespaces: Vec<KvNamespace>,
         text_blobs: Vec<TextBlob>,
         plain_texts: Vec<PlainText>,
-    ) -> Result<Self, failure::Error> {
-        let script_name = filestem_from_path(&script_path).ok_or_else(|| {
-            format_err!("filename should not be empty: {}", script_path.display())
-        })?;
+    ) -> Result<Self> {
+        let script_name = filestem_from_path(&script_path)
+            .ok_or_else(|| anyhow!("filename should not be empty: {}", script_path.display()))?;
 
         Ok(Self {
             script_name,
@@ -155,7 +154,7 @@ impl ModuleConfig {
         }
     }
 
-    pub fn get_modules(self) -> Result<ModuleManifest, failure::Error> {
+    pub fn get_modules(self) -> Result<ModuleManifest> {
         let matchers = build_type_matchers(self.rules)?;
 
         let candidates_vec = WalkBuilder::new(&self.dir)
@@ -178,7 +177,7 @@ impl ModuleConfig {
         paths: impl Iterator<Item = &'a P>,
         upload_dir: &'a Path,
         matchers: &'a [ModuleMatcher],
-    ) -> Result<HashMap<String, Module>, failure::Error>
+    ) -> Result<HashMap<String, Module>>
     where
         P: AsRef<Path> + ?Sized + 'a,
     {
@@ -280,7 +279,7 @@ fn new_glob(glob: &str) -> Result<Glob, globset::Error> {
         .build()
 }
 
-fn build_type_matchers(rules: Vec<ModuleRule>) -> Result<Vec<ModuleMatcher>, failure::Error> {
+fn build_type_matchers(rules: Vec<ModuleRule>) -> Result<Vec<ModuleMatcher>> {
     let mut matchers = rules
         .into_iter()
         .map(|r| {
@@ -298,7 +297,7 @@ fn build_type_matchers(rules: Vec<ModuleRule>) -> Result<Vec<ModuleMatcher>, fai
                 fallthrough: r.fallthrough,
             })
         })
-        .collect::<Result<Vec<_>, failure::Error>>()?;
+        .collect::<Result<Vec<_>>>()?;
 
     ModuleType::iter().try_for_each::<_, Result<(), globset::Error>>(|t| {
         let mut builder = GlobSetBuilder::new();
@@ -328,7 +327,7 @@ impl ModulesAssets {
         manifest: ModuleManifest,
         kv_namespaces: Vec<KvNamespace>,
         plain_texts: Vec<PlainText>,
-    ) -> Result<Self, failure::Error> {
+    ) -> Result<Self> {
         Ok(Self {
             manifest,
             kv_namespaces,
@@ -411,7 +410,7 @@ mod tests {
     }
 
     #[test]
-    fn default_globs() -> Result<(), failure::Error> {
+    fn default_globs() -> Result<()> {
         init();
         test_success! {
             ModuleConfig {
@@ -460,7 +459,7 @@ mod tests {
     }
 
     #[test]
-    fn custom_globs() -> Result<(), failure::Error> {
+    fn custom_globs() -> Result<()> {
         init();
         test_success! {
             ModuleConfig {

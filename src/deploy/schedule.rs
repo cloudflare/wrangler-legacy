@@ -1,6 +1,8 @@
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 
+use anyhow::Result;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScheduleTarget {
     pub account_id: String,
@@ -9,11 +11,7 @@ pub struct ScheduleTarget {
 }
 
 impl ScheduleTarget {
-    pub fn build(
-        account_id: String,
-        script_name: String,
-        crons: Vec<String>,
-    ) -> Result<Self, failure::Error> {
+    pub fn build(account_id: String, script_name: String, crons: Vec<String>) -> Result<Self> {
         // TODO: add validation for expressions before pushing them to the API
         // we can do this once the cron parser is open sourced
         Ok(Self {
@@ -23,7 +21,7 @@ impl ScheduleTarget {
         })
     }
 
-    pub fn deploy(&self, user: &GlobalUser) -> Result<Vec<String>, failure::Error> {
+    pub fn deploy(&self, user: &GlobalUser) -> Result<Vec<String>> {
         log::info!("publishing schedules");
         let schedule_worker_addr = format!(
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/schedules",
@@ -40,7 +38,7 @@ impl ScheduleTarget {
             .send()?;
 
         if !res.status().is_success() {
-            failure::bail!(
+            anyhow::bail!(
                 "Something went wrong! Status: {}, Details {}",
                 res.status(),
                 res.text()?

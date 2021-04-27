@@ -6,6 +6,8 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::watch::watch_and_build;
 
+use anyhow::Result;
+
 pub fn watch_for_changes(
     target: Target,
     deploy_target: &DeployTarget,
@@ -13,7 +15,7 @@ pub fn watch_for_changes(
     preview_token: Arc<Mutex<String>>,
     session_token: String,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let (sender, receiver) = mpsc::channel();
     watch_and_build(&target, Some(sender))?;
 

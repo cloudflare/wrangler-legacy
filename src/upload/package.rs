@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
+use anyhow::Result;
 use serde::{self, Deserialize};
 
 #[derive(Debug, Deserialize)]
@@ -11,13 +12,13 @@ pub struct Package {
     module: PathBuf,
 }
 impl Package {
-    pub fn main(&self, package_dir: &PathBuf) -> Result<PathBuf, failure::Error> {
+    pub fn main(&self, package_dir: &PathBuf) -> Result<PathBuf> {
         if self.main == PathBuf::from("") {
-            failure::bail!(
+            anyhow::bail!(
                 "The `main` key in your `package.json` file is required; please specify the entry point of your Worker.",
             )
         } else if !package_dir.join(&self.main).exists() {
-            failure::bail!(
+            anyhow::bail!(
                 "The entrypoint of your Worker ({}) could not be found.",
                 self.main.display()
             )
@@ -25,13 +26,13 @@ impl Package {
             Ok(self.main.clone())
         }
     }
-    pub fn module(&self, package_dir: &PathBuf) -> Result<PathBuf, failure::Error> {
+    pub fn module(&self, package_dir: &PathBuf) -> Result<PathBuf> {
         if self.module == PathBuf::from("") {
-            failure::bail!(
+            anyhow::bail!(
                 "The `module` key in your `package.json` file is required when using the module script format; please specify the entry point of your Worker.",
             )
         } else if !package_dir.join(&self.module).exists() {
-            failure::bail!(
+            anyhow::bail!(
                 "The entrypoint of your Worker ({}) could not be found.",
                 self.module.display()
             )
@@ -42,10 +43,10 @@ impl Package {
 }
 
 impl Package {
-    pub fn new(package_dir: &PathBuf) -> Result<Package, failure::Error> {
+    pub fn new(package_dir: &PathBuf) -> Result<Package> {
         let manifest_path = package_dir.join("package.json");
         if !manifest_path.is_file() {
-            failure::bail!(
+            anyhow::bail!(
                 "Your JavaScript project is missing a `package.json` file; is `{}` the \
                  wrong directory?",
                 package_dir.display()

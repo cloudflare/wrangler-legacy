@@ -1,3 +1,4 @@
+use anyhow::Result;
 use tokio::sync::oneshot::{channel, Receiver, Sender};
 
 pub struct ShutdownHandler {
@@ -18,7 +19,7 @@ impl ShutdownHandler {
 
     /// ShutdownHandler waits on a ctrl_c from the system, or a short circuit command from the top
     /// level error handler, and sends messages to each registered transmitter when it is received.
-    pub async fn run(self, short_circuit: Receiver<()>) -> Result<(), failure::Error> {
+    pub async fn run(self, short_circuit: Receiver<()>) -> Result<()> {
         tokio::select! {
             _ = tokio::signal::ctrl_c() => {}
             _ = short_circuit => {}

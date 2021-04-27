@@ -1,5 +1,7 @@
+use anyhow::Result;
 use atty::Stream;
 use std::io::{self, Read};
+
 // For interactively handling reading in a string
 pub fn get_user_input(prompt_string: &str) -> String {
     println!("{}", prompt_string);
@@ -36,7 +38,7 @@ const NO: &str = "n";
 // Input like "yes", "Yes", "no", "No" will be accepted, thanks to the whitespace-stripping
 // and lowercasing logic below.
 // TODO: loop this to retry until valid input is received.
-pub fn confirm(prompt_string: &str) -> Result<bool, failure::Error> {
+pub fn confirm(prompt_string: &str) -> Result<bool> {
     println!("{} [y/n]", prompt_string);
     let mut response: String = read!("{}\n");
     response = response.split_whitespace().collect(); // remove whitespace
@@ -45,7 +47,7 @@ pub fn confirm(prompt_string: &str) -> Result<bool, failure::Error> {
     match response.as_ref() {
         YES => Ok(true),
         NO => Ok(false),
-        _ => failure::bail!("Response must either be \"y\" for yes or \"n\" for no"),
+        _ => anyhow::bail!("Response must either be \"y\" for yes or \"n\" for no"),
     }
 }
 

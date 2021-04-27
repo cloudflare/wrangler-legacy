@@ -14,13 +14,14 @@ use tokio::time::sleep;
 
 use tokio_tungstenite::{connect_async, tungstenite, MaybeTlsStream, WebSocketStream};
 
+use anyhow::{anyhow, Result};
 use url::Url;
 
 const KEEP_ALIVE_INTERVAL: u64 = 10;
 
 /// connect to a Workers runtime WebSocket emitting the Chrome Devtools Protocol
 /// parse all console messages, and print them to stdout
-pub async fn listen(socket_url: Url) -> Result<(), failure::Error> {
+pub async fn listen(socket_url: Url) -> Result<()> {
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
@@ -98,17 +99,15 @@ async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpSt
 
 async fn print_ws_messages(
     mut read: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     while let Some(message) = read.next().await {
         match message {
             Ok(message) => {
                 let message_text = message.into_text().unwrap();
                 log::info!("{}", &message_text);
 
-                let parsed_message: Result<protocol::Runtime, failure::Error> =
-                    serde_json::from_str(&message_text).map_err(|e| {
-                        failure::format_err!("this event could not be parsed:\n{}", e)
-                    });
+                let parsed_message: Result<protocol::Runtime> = serde_json::from_str(&message_text)
+                    .map_err(|e| anyhow!("this event could not be parsed:\n{}", e));
 
                 if let Ok(protocol::Runtime::Event(event)) = parsed_message {
                     // Try to parse json to pretty print, otherwise just print string
@@ -131,9 +130,7 @@ async fn print_ws_messages(
     Ok(())
 }
 
-async fn keep_alive(
-    tx: mpsc::UnboundedSender<tungstenite::protocol::Message>,
-) -> Result<(), failure::Error> {
+async fn keep_alive(tx: mpsc::UnboundedSender<tungstenite::protocol::Message>) -> Result<()> {
     let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
     let mut delay = sleep(duration);
 
