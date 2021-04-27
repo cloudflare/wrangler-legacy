@@ -354,8 +354,9 @@ dependencies = [
 
 [[package]]
 name = "cloudflare"
-version = "0.8.0"
-source = "git+https://github.com/cloudflare/cloudflare-rs?branch=cass/fix-tail-response#0e8c6b7081e7e75a2fc976f6c76098d5dcd001d0"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e825a031f66d001bc76360ea75f818e3b08fc4c337f1486b79f612e22e69b04"
 dependencies = [
  "anyhow",
  "async-trait",
