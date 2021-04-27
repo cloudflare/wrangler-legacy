@@ -53,7 +53,7 @@ pub fn dev(
         });
     }
 
-    let mut runtime = TokioRuntime::new()?;
+    let runtime = TokioRuntime::new()?;
     runtime.block_on(async {
         let devtools_listener = tokio::spawn(socket::listen(session.websocket_url));
         let server = match local_protocol {

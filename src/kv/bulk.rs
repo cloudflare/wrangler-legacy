@@ -33,6 +33,7 @@ fn bulk_api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
         config,
         Environment::Production,
     )
+    .map_err(|e| failure::format_err!("{}", e))
 }
 
 pub fn put(
