@@ -58,7 +58,7 @@ text_io = "0.1.8"
 tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
 tokio-native-tls = "0.1.0"
 tokio-rustls = "0.14.1"
-tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
+tokio-tungstenite = { version = "0.13.0", features = ["tls"] }
 toml = "0.5.8"
 toml_edit = "0.2.0"
 twox-hash = "1.6.0"
