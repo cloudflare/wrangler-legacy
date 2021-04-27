@@ -18,7 +18,7 @@ binary-install = "0.0.3-alpha.1"
 chrome-devtools-rs = { version = "=0.0.0-alpha.1", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
-cloudflare = "0.6.6"
+cloudflare = { git = "https://github.com/cloudflare/cloudflare-rs", branch = "cass/fix-tail-response" }
 config = "0.10.1"
 console = "0.13.0"
 dirs = "3.0.1"
@@ -31,8 +31,8 @@ fs2 = "0.4.3"
 futures-util = "0.3"
 globset = "0.4.6"
 http = "0.2.1"
-hyper = "0.13.9"
-hyper-rustls = "0.21.0"
+hyper = { version = "0.14.7", features = ["http2", "server", "runtime"] }
+hyper-rustls = "0.22.1"
 ignore = "0.4.17"
 indicatif = "0.15.0"
 lazy_static = "1.4.0"
@@ -55,10 +55,10 @@ serde_with = "1.5.1"
 tempfile = "3.1.0"
 term_size = "0.3"
 text_io = "0.1.8"
-tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
-tokio-native-tls = "0.1.0"
-tokio-rustls = "0.14.1"
-tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
+tokio = { version = "1.5.0", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
+tokio-native-tls = "0.3.0"
+tokio-rustls = "0.22.0"
+tokio-tungstenite = "0.14.0"
 toml = "0.5.8"
 toml_edit = "0.2.0"
 twox-hash = "1.6.0"
@@ -74,12 +74,12 @@ predicates = "1.0.5"
 
 [features]
 # OpenSSL is vendored by default, can use system OpenSSL through feature flag.
-default = ['openssl/vendored']
+default = ['openssl/vendored', 'tokio-tungstenite/native-tls-vendored']
 
 # Treat compiler warnings as a build error.
 # This only runs in CI by default
 strict = ['openssl/vendored']
-sys-openssl = ['openssl']
+sys-openssl = ['openssl', 'tokio-tungstenite/native-tls']
 # Keeping feature for users already using this feature flag
 vendored-openssl = ['openssl/vendored']
 
