@@ -17,7 +17,7 @@ pub async fn http(
     upstream_protocol: Protocol,
 ) -> Result<(), failure::Error> {
     // set up https client to connect to the preview service
-    let https = HttpsConnector::new();
+    let https = HttpsConnector::with_native_roots();
     let client = HyperClient::builder().build::<_, Body>(https);
 
     let listening_address = server_config.listening_address;

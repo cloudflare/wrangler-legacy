@@ -42,7 +42,7 @@ impl Tail {
         is_cloudflared_installed()?;
         print_startup_message(&target.name, tunnel_port, metrics_port);
 
-        let mut runtime = TokioRuntime::new()?;
+        let runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
             // Create three [one-shot](https://docs.rs/tokio/0.2.16/tokio/sync#oneshot-channel)

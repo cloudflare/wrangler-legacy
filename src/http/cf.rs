@@ -21,6 +21,7 @@ pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> 
         config,
         Environment::Production,
     )
+    .map_err(|e| failure::format_err!("{}", e))
 }
 
 pub fn featured_cf_v4_client(
@@ -37,6 +38,7 @@ pub fn featured_cf_v4_client(
         config,
         Environment::Production,
     )
+    .map_err(|e| failure::format_err!("{}", e))
 }
 
 pub fn cf_v4_api_client_async(
@@ -48,6 +50,7 @@ pub fn cf_v4_api_client_async(
         config,
         Environment::Production,
     )
+    .map_err(|e| failure::format_err!("{}", e))
 }
 
 // Format errors from the cloudflare-rs cli for printing.

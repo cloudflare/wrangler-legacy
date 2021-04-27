@@ -6,7 +6,7 @@ use crate::terminal::message::{Message, StdOut};
 use std::sync::{Arc, Mutex};
 
 use chrono::prelude::*;
-use futures_util::stream::StreamExt;
+use futures_util::{stream::StreamExt, FutureExt};
 
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
@@ -21,7 +21,7 @@ pub async fn https(
     tls::generate_cert()?;
 
     // set up https client to connect to the preview service
-    let https = HttpsConnector::new();
+    let https = HttpsConnector::with_native_roots();
     let client = HyperClient::builder().build::<_, Body>(https);
 
     let listening_address = server_config.listening_address;
@@ -75,28 +75,32 @@ pub async fn https(
         }
     });
 
-    let mut tcp = TcpListener::bind(&listening_address).await?;
+    let tcp = TcpListener::bind(&listening_address).await?;
     let tls_acceptor = &tls::get_tls_acceptor()?;
-    let incoming_tls_stream = tcp
-        .incoming()
-        .filter_map(move |s| async move {
-            let client = match s {
-                Ok(x) => x,
-                Err(e) => {
-                    eprintln!("Failed to accept client {}", e);
-                    return None;
-                }
-            };
-            match tls_acceptor.accept(client).await {
-                Ok(x) => Some(Ok(x)),
+    let incoming_tls_stream = async {
+        let tcp_stream = match tcp.accept().await {
+            Ok((tcp_stream, _addr)) => Ok(tcp_stream),
+            Err(e) => {
+                eprintln!("Failed to accept client {}", e);
+                Err(e)
+            }
+        };
+
+        match tcp_stream {
+            Ok(stream) => match tls_acceptor.accept(stream).await {
+                Ok(tls_stream) => Ok(tls_stream),
                 Err(e) => {
                     eprintln!("Client connection error {}", e);
                     StdOut::info("Make sure to use https and `--insecure` with curl");
-                    None
+                    Err(e)
                 }
-            }
-        })
-        .boxed();
+            },
+            Err(e) => Err(e),
+        }
+    }
+    .into_stream()
+    .boxed();
+
     let server = Server::builder(tls::HyperAcceptor {
         acceptor: incoming_tls_stream,
     })
