@@ -18,7 +18,7 @@ binary-install = "0.0.3-alpha.1"
 chrome-devtools-rs = { version = "=0.0.0-alpha.1", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
-cloudflare = { git = "https://github.com/cloudflare/cloudflare-rs", branch = "cass/fix-tail-response" }
+cloudflare = "0.8.1"
 config = "0.10.1"
 console = "0.13.0"
 dirs = "3.0.1"
@@ -46,7 +46,7 @@ predicates = "1.0.5"
 prettytable-rs = "0.8.0"
 rand = "0.7.3"
 regex = "1.4.1"
-reqwest = { version = "0.10.9", features = ["blocking", "json"] }
+reqwest = { version = "0.11.3", features = ["blocking", "json", "multipart"] }
 rustls = "0.19.1"
 semver = "0.11.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -57,6 +57,7 @@ term_size = "0.3"
 text_io = "0.1.8"
 tokio = { version = "1.5.0", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
 tokio-native-tls = "0.3.0"
+tokio-retry = "0.3"
 tokio-rustls = "0.22.0"
 tokio-stream = "0.1.5"
 tokio-tungstenite = "0.14.0"
