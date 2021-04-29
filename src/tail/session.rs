@@ -1,10 +1,9 @@
 use std::str;
 use std::time::Duration;
 
-use indicatif::{ProgressBar, ProgressStyle};
 use regex::Regex;
 use tokio::sync::oneshot::{Receiver, Sender};
-use tokio::time::{delay_for, Delay};
+use tokio::time::sleep;
 
 use cloudflare::endpoints::workers::{CreateTail, CreateTailParams, DeleteTail, SendTailHeartbeat};
 use cloudflare::framework::HttpApiClientConfig;
@@ -66,125 +65,72 @@ impl Session {
         user: &GlobalUser,
         tx: Sender<()>,
         metrics_port: u16,
-        verbose: bool,
+        _verbose: bool,
     ) -> Result<(), failure::Error> {
-        let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
-        let spinner = ProgressBar::new_spinner().with_style(style);
-
-        // Verbose output and the spinner don't play well together.
-        if verbose {
-            eprintln!("This may take a few seconds...");
-        } else {
-            spinner.set_message("This may take a few seconds...");
-            spinner.enable_steady_tick(20);
-        }
+        eprintln!("This may take a few seconds...");
 
         let client = http::cf_v4_api_client_async(user, HttpApiClientConfig::default())?;
 
-        // TODO: make Tunnel struct responsible for getting its own port!
-        let url = get_tunnel_url(metrics_port).await?;
-        let response = client
-            .request(&CreateTail {
-                account_identifier: &target.account_id,
-                script_name: &target.name,
-                params: CreateTailParams { url },
-            })
-            .await;
+        // Hit http://localhost:8081/metrics to grab the generated tunnel name. cloudflared
+        // can take a minute to start, so use exponential backoff
+        let retry_strategy = tokio_retry::strategy::ExponentialBackoff::from_millis(100).take(5);
+        let result =
+            tokio_retry::Retry::spawn(retry_strategy, || get_tunnel_url(metrics_port)).await;
 
-        match response {
-            Ok(success) => {
-                spinner.abandon_with_message("Now prepared to stream logs.");
+        if let Ok(url_) = result {
+            let url = Some(url_);
+            let response = client
+                .request(&CreateTail {
+                    account_identifier: &target.account_id,
+                    script_name: &target.name,
+                    params: CreateTailParams { url },
+                })
+                .await;
 
-                let tail_id = success.result.id;
-                self.tail_id = Some(tail_id.clone());
+            match response {
+                Ok(success) => {
+                    eprintln!("Now prepared to stream logs");
 
-                // Loop indefinitely to send "heartbeat" to API and keep log streaming alive.
-                // This should loop forever until SIGINT is issued or Wrangler process is killed
-                // through other means.
-                let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
-                let mut delay = delay_for(duration);
+                    let tail_id = success.result.id;
+                    self.tail_id = Some(tail_id.clone());
 
-                loop {
-                    delay.await;
-                    let heartbeat_result = send_heartbeat(&target, &client, &tail_id).await;
-                    if heartbeat_result.is_err() {
-                        return heartbeat_result;
+                    // Loop indefinitely to send "heartbeat" to API and keep log streaming alive.
+                    // This should loop forever until SIGINT is issued or Wrangler process is killed
+                    // through other means.
+                    let duration = Duration::from_millis(1000 * KEEP_ALIVE_INTERVAL);
+                    let mut delay = sleep(duration);
+
+                    loop {
+                        delay.await;
+                        let heartbeat_result = send_heartbeat(&target, &client, &tail_id).await;
+                        if heartbeat_result.is_err() {
+                            return heartbeat_result;
+                        }
+                        delay = sleep(duration);
                     }
-                    delay = delay_for(duration);
+                }
+                Err(e) => {
+                    tx.send(()).unwrap();
+                    failure::bail!(http::format_error(e, Some(&tail_help)))
                 }
             }
-            Err(e) => {
-                tx.send(()).unwrap();
-                failure::bail!(http::format_error(e, Some(&tail_help)))
-            }
+        } else {
+            failure::bail!("Could not extract tunnel url from cloudflared");
         }
     }
 }
 
 async fn get_tunnel_url(metrics_port: u16) -> Result<String, failure::Error> {
-    // regex for extracting url from cloudflared metrics port.
+    let metrics_url = format!("http://localhost:{}/metrics", metrics_port);
     let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
-
-    struct RetryDelay {
-        delay: Delay,
-        attempt: u64,
-        max_attempts: u64,
+    let body = reqwest::get(metrics_url).await?.text().await?;
+    match url_regex
+        .captures(&body)
+        .and_then(|captures| captures.get(1))
+    {
+        Some(url) => Ok(url.as_str().to_string()),
+        None => Err(failure::format_err!("Failed to extract capture group!")),
     }
-
-    // This retry loop retries retrieving the cloudflared endpoint url from the cloudflared /metrics
-    // until it gets the URL or has tried retrieving the URL over 5 times.
-    impl RetryDelay {
-        fn new(max_attempts: u64) -> RetryDelay {
-            RetryDelay {
-                delay: delay_for(Duration::from_millis(0)),
-                attempt: 0,
-                max_attempts,
-            }
-        }
-
-        // our retry delay is an [exponential backoff](https://en.wikipedia.org/wiki/Exponential_backoff),
-        // which simply waits twice as long between each attempt to avoid hammering the LogServer.
-        fn reset(self) -> RetryDelay {
-            let attempt = self.attempt + 1;
-            let delay = delay_for(Duration::from_millis(attempt * attempt * 1000));
-            let max_attempts = self.max_attempts;
-
-            RetryDelay {
-                attempt,
-                delay,
-                max_attempts,
-            }
-        }
-
-        fn expired(&self) -> bool {
-            self.attempt > self.max_attempts
-        }
-
-        fn is_elapsed(&self) -> bool {
-            self.delay.is_elapsed()
-        }
-    }
-
-    let mut delay = RetryDelay::new(5);
-
-    while !delay.expired() {
-        if delay.is_elapsed() {
-            let metrics_url = format!("http://localhost:{}/metrics", metrics_port);
-            if let Ok(resp) = reqwest::get(&metrics_url).await {
-                let body = resp.text().await?;
-
-                if let Some(capture) = url_regex.captures(&body) {
-                    if let Some(url) = capture.get(1) {
-                        return Ok(url.as_str().to_string());
-                    }
-                }
-            }
-
-            delay = delay.reset();
-        }
-    }
-
-    failure::bail!("Could not extract tunnel url from cloudflared")
 }
 
 async fn send_heartbeat(

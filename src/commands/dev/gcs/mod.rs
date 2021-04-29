@@ -68,7 +68,7 @@ pub fn dev(
     let socket_url = get_socket_url(&session_id)?;
 
     // in order to spawn futures we must create a tokio runtime
-    let mut runtime = TokioRuntime::new()?;
+    let runtime = TokioRuntime::new()?;
 
     // and we must block the main thread on the completion of
     // said futures
