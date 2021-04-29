@@ -15,7 +15,7 @@ function warn(...msg) {
 }
 
 function filterByExtension(ext) {
-  return (v) => v.indexOf("." + ext) !== -1;
+  return (v) => new RegExp(`\\.${ext}$`).test(v);
 }
 
 (async function () {

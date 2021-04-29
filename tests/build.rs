@@ -331,7 +331,7 @@ fn it_builds_with_webpack_name_output() {
     build_creates_assets(&fixture, vec!["script.js"]);
 
     let out = fs::read_to_string(fixture.get_output_path().join("script.js")).unwrap();
-    assert!(out.contains(r#"//# sourceMappingURL=worker.js.map{"version":3,"file":"worker.js""#));
+    assert!(out.contains(r#"//# sourceMappingURL=worker.js.map"#));
 }
 
 #[test]
