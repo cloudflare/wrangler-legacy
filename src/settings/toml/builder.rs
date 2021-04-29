@@ -77,10 +77,10 @@ impl Builder {
             anyhow::bail!("Wrangler doesn't support using the project root as the watch_dir.");
         }
         if !self.watch_dir.is_dir() {
-            anyhow::bail!(format!(
+            anyhow::bail!(
                 "A path was provided for watch_dir that is not a directory: {}",
                 self.watch_dir.display()
-            ));
+            );
         }
         Ok(())
     }
@@ -107,10 +107,10 @@ impl Builder {
             anyhow::bail!("Wrangler doesn't support using the project root as the upload_dir.");
         }
         if !dir.is_dir() {
-            anyhow::bail!(format!(
+            anyhow::bail!(
                 "A path was provided for upload_dir that is not a directory: {}",
                 dir.display()
-            ));
+            );
         }
         Ok(())
     }

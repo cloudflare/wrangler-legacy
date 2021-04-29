@@ -115,10 +115,10 @@ fn download_prebuilt(
 ) -> Result<Download> {
     let url = match prebuilt_url(tool_name, owner, version) {
         Some(url) => url,
-        None => anyhow::bail!(format!(
+        None => anyhow::bail!(
             "no prebuilt {} binaries are available for this platform",
             tool_name
-        )),
+        ),
     };
 
     info!("prebuilt artifact {}", url);

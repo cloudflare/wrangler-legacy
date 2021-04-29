@@ -58,10 +58,11 @@ pub fn dev(
     let upstream_str = styles::highlight("--upstream-protocol");
 
     if server_config.host.is_https() != upstream_protocol.is_https() {
-        anyhow::bail!(format!(
+        anyhow::bail!(
             "Protocol mismatch: protocol in {} and protocol in {} must match",
-            host_str, upstream_str
-        ))
+            host_str,
+            upstream_str
+        )
     } else if local_protocol.is_https() && upstream_protocol.is_http() {
         anyhow::bail!("{} cannot be https if {} is http", local_str, upstream_str)
     }

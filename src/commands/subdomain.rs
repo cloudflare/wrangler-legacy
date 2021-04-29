@@ -119,10 +119,10 @@ fn register_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<
 
 pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<()> {
     if target.account_id.is_empty() {
-        anyhow::bail!(format!(
+        anyhow::bail!(
             "{} You must provide an account_id in your configuration file before creating a subdomain!",
             emoji::WARN
-        ))
+        )
     }
     let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {

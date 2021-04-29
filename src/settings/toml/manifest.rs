@@ -302,10 +302,10 @@ impl Manifest {
         if self.site.is_some() {
             match self.target_type {
                 TargetType::Rust => {
-                    anyhow::bail!(format!(
+                    anyhow::bail!(
                         "{} Workers Sites does not support Rust type projects.",
                         emoji::WARN
-                    ))
+                    )
                 }
                 TargetType::JavaScript => {
                     let error_message = format!(
@@ -384,17 +384,17 @@ impl Manifest {
                 if let Some(environment) = environment_table.get(environment_name) {
                     Ok(Some(environment))
                 } else {
-                    anyhow::bail!(format!(
+                    anyhow::bail!(
                         "{} Could not find environment with name \"{}\"",
                         emoji::WARN,
                         environment_name
-                    ))
+                    )
                 }
             } else {
-                anyhow::bail!(format!(
+                anyhow::bail!(
                     "{} There are no environments specified in your configuration file",
                     emoji::WARN
-                ))
+                )
             }
         } else {
             Ok(None)
@@ -548,12 +548,12 @@ fn check_for_duplicate_names(manifest: &Manifest) -> Result<()> {
         _ => None,
     };
     if let Some(message) = duplicate_message {
-        anyhow::bail!(format!(
+        anyhow::bail!(
             "{} Each name in your configuration file must be unique, {}: {}",
             emoji::WARN,
             message,
             duplicate_name_string
-        ))
+        )
     }
     Ok(())
 }
