@@ -16,6 +16,7 @@ use wrangler::commands;
 use wrangler::commands::kv::key::{parse_metadata, KVMetaData};
 use wrangler::installer;
 use wrangler::preview::{HttpMethod, PreviewOpt};
+use wrangler::reporter;
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
 use wrangler::settings::toml::TargetType;
@@ -24,7 +25,9 @@ use wrangler::terminal::{emoji, interactive, styles};
 use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<()> {
+    reporter::init();
     env_logger::init();
+
     let latest_version_receiver = background_check_for_updates();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
