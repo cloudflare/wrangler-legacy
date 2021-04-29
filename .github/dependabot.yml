@@ -1,0 +1,52 @@
+version: 2
+updates:
+- package-ecosystem: cargo
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "13:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: cloudflare
+    versions:
+    - 0.7.2
+    - 0.7.3
+    - 0.8.0
+    - 0.8.1
+  - dependency-name: hyper
+    versions:
+    - 0.14.2
+    - 0.14.3
+    - 0.14.4
+    - 0.14.5
+    - 0.14.7
+  - dependency-name: hyper-rustls
+    versions:
+    - 0.22.1
+  - dependency-name: tokio-tungstenite
+    versions:
+    - 0.13.0
+  - dependency-name: tokio-native-tls
+    versions:
+    - 0.3.0
+  - dependency-name: reqwest
+    versions:
+    - 0.11.1
+    - 0.11.2
+    - 0.11.3
+  - dependency-name: tokio-rustls
+    versions:
+    - 0.22.0
+  - dependency-name: rustls
+    versions:
+    - 0.19.0
+    - 0.19.1
+  - dependency-name: flate2
+    versions:
+    - 1.0.20
+  - dependency-name: rand
+    versions:
+    - 0.8.2
+  - dependency-name: futures-util
+    versions:
+    - 0.3.12
