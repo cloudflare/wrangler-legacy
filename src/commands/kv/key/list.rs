@@ -6,6 +6,8 @@ use crate::kv::key::KeyList;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
+use anyhow::Result;
+
 // Note: this function only prints keys in json form, given that
 // the number of entries in each json blob is variable (so csv and tsv
 // representation won't make sense)
@@ -14,7 +16,7 @@ pub fn list(
     user: &GlobalUser,
     namespace_id: &str,
     prefix: Option<&str>,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     kv::validate_target(target)?;
     let client = http::cf_v4_client(&user)?;
     let key_list = KeyList::new(target, client, namespace_id, prefix)?;

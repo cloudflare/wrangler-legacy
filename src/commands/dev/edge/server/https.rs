@@ -5,6 +5,7 @@ use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
 use std::sync::{Arc, Mutex};
 
+use anyhow::Result;
 use chrono::prelude::*;
 use futures_util::{stream::StreamExt, FutureExt};
 
@@ -17,7 +18,7 @@ pub async fn https(
     server_config: ServerConfig,
     preview_token: Arc<Mutex<String>>,
     host: String,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     tls::generate_cert()?;
 
     // set up https client to connect to the preview service
@@ -34,7 +35,7 @@ pub async fn https(
         let server_config = server_config.to_owned();
 
         async move {
-            Ok::<_, failure::Error>(service_fn(move |req| {
+            Ok::<_, anyhow::Error>(service_fn(move |req| {
                 let client = client.to_owned();
                 let preview_token = preview_token.lock().unwrap().to_owned();
                 let host = host.to_owned();
@@ -69,7 +70,7 @@ pub async fn https(
                         version,
                         resp.status()
                     );
-                    Ok::<_, failure::Error>(resp)
+                    Ok::<_, anyhow::Error>(resp)
                 }
             }))
         }

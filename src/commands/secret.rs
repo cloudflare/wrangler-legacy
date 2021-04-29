@@ -2,6 +2,8 @@ use cloudflare::endpoints::workers::{CreateSecret, CreateSecretParams, DeleteSec
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 
+use anyhow::Result;
+
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -13,7 +15,7 @@ fn format_error(e: ApiFailure) -> String {
     http::format_error(e, Some(&secret_errors))
 }
 
-fn validate_target(target: &Target) -> Result<(), failure::Error> {
+fn validate_target(target: &Target) -> Result<()> {
     let mut missing_fields = Vec::new();
 
     if target.account_id.is_empty() {
@@ -21,7 +23,7 @@ fn validate_target(target: &Target) -> Result<(), failure::Error> {
     };
 
     if !missing_fields.is_empty() {
-        failure::bail!(
+        anyhow::bail!(
             "{} Your configuration file is missing the following field(s): {:?}",
             emoji::WARN,
             missing_fields
@@ -52,7 +54,7 @@ pub fn upload_draft_worker(
     e: &ApiFailure,
     user: &GlobalUser,
     target: &Target,
-) -> Option<Result<(), failure::Error>> {
+) -> Option<Result<()>> {
     match e {
         ApiFailure::Error(_, api_errors) => {
             let error = &api_errors.errors[0];
@@ -68,7 +70,7 @@ pub fn upload_draft_worker(
     }
 }
 
-pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<()> {
     validate_target(target)?;
 
     let secret_value = interactive::get_user_input_multi_line(&format!(
@@ -77,7 +79,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     ));
 
     if secret_value.is_empty() {
-        failure::bail!("Your secret cannot be empty.")
+        anyhow::bail!("Your secret cannot be empty.")
     }
 
     StdOut::working(&format!(
@@ -102,7 +104,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     match response {
         Ok(_) => StdOut::success(&format!("Success! Uploaded secret {}.", name)),
         Err(e) => match upload_draft_worker(&e, user, target) {
-            None => failure::bail!(format_error(e)),
+            None => anyhow::bail!(format_error(e)),
             Some(draft_upload_response) => match draft_upload_response {
                 Ok(_) => {
                     let retry_response = client.request(&CreateSecret {
@@ -113,10 +115,10 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 
                     match retry_response {
                         Ok(_) => StdOut::success(&format!("Success! Uploaded secret {}.", name)),
-                        Err(e) => failure::bail!(format_error(e)),
+                        Err(e) => anyhow::bail!(format_error(e)),
                     }
                 }
-                Err(e) => failure::bail!(e),
+                Err(e) => anyhow::bail!(e),
             },
         },
     }
@@ -124,7 +126,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     Ok(())
 }
 
-pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<()> {
     validate_target(target)?;
 
     match interactive::confirm(&format!(
@@ -136,7 +138,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
             StdOut::info(&format!("Not deleting secret {}.", name));
             return Ok(());
         }
-        Err(e) => failure::bail!(e),
+        Err(e) => anyhow::bail!(e),
     }
 
     StdOut::working(&format!(
@@ -154,13 +156,13 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 
     match response {
         Ok(_) => StdOut::success(&format!("Success! Deleted secret {}.", name)),
-        Err(e) => failure::bail!(format_error(e)),
+        Err(e) => anyhow::bail!(format_error(e)),
     }
 
     Ok(())
 }
 
-pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<()> {
     validate_target(target)?;
     let client = http::cf_v4_client(user)?;
 
@@ -174,7 +176,7 @@ pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<(), failure::E
             let secrets = success.result;
             println!("{}", serde_json::to_string(&secrets)?);
         }
-        Err(e) => failure::bail!(format_error(e)),
+        Err(e) => anyhow::bail!(format_error(e)),
     }
 
     Ok(())

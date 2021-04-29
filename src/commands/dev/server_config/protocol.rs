@@ -1,4 +1,5 @@
-pub use std::convert::TryFrom;
+use anyhow::{anyhow, Result};
+use std::convert::TryFrom;
 
 #[derive(Clone, Copy)]
 pub enum Protocol {
@@ -17,13 +18,13 @@ impl Protocol {
 }
 
 impl TryFrom<&str> for Protocol {
-    type Error = failure::Error;
+    type Error = anyhow::Error;
 
-    fn try_from(p: &str) -> Result<Protocol, failure::Error> {
+    fn try_from(p: &str) -> Result<Protocol> {
         match p {
             "http" => Ok(Protocol::Http),
             "https" => Ok(Protocol::Https),
-            _ => failure::bail!("Invalid protocol, must be http or https"),
+            _ => Err(anyhow!("Invalid protocol, must be http or https")),
         }
     }
 }

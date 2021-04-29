@@ -1,6 +1,7 @@
 use std::str;
 use std::time::Duration;
 
+use anyhow::{anyhow, bail, Result};
 use regex::Regex;
 use tokio::sync::oneshot::{Receiver, Sender};
 use tokio::time::sleep;
@@ -31,7 +32,7 @@ impl Session {
         tx: Sender<()>,
         metrics_port: u16,
         verbose: bool,
-    ) -> Result<(), failure::Error> {
+    ) -> Result<()> {
         // During the start process we'll populate the tail with the response from the API.
         let mut session = Session { tail_id: None };
         // We need to exit on a shutdown command without waiting for API calls to complete.
@@ -41,7 +42,7 @@ impl Session {
         }
     }
 
-    async fn close(&self, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+    async fn close(&self, user: &GlobalUser, target: &Target) -> Result<()> {
         // The API will clean up tails after about 10 minutes of inactivity, or 24 hours of
         // activity but since we limit the number of tails allowed on a single script we should at
         // least try to delete them as we go.
@@ -66,7 +67,7 @@ impl Session {
         tx: Sender<()>,
         metrics_port: u16,
         _verbose: bool,
-    ) -> Result<(), failure::Error> {
+    ) -> Result<()> {
         eprintln!("This may take a few seconds...");
 
         let client = http::cf_v4_api_client_async(user, HttpApiClientConfig::default())?;
@@ -111,16 +112,16 @@ impl Session {
                 }
                 Err(e) => {
                     tx.send(()).unwrap();
-                    failure::bail!(http::format_error(e, Some(&tail_help)))
+                    bail!(http::format_error(e, Some(&tail_help)))
                 }
             }
         } else {
-            failure::bail!("Could not extract tunnel url from cloudflared");
+            bail!("Could not extract tunnel url from cloudflared");
         }
     }
 }
 
-async fn get_tunnel_url(metrics_port: u16) -> Result<String, failure::Error> {
+async fn get_tunnel_url(metrics_port: u16) -> Result<String> {
     let metrics_url = format!("http://localhost:{}/metrics", metrics_port);
     let url_regex = Regex::new("userHostname=\"(https://[a-z.-]+)\"").unwrap();
     let body = reqwest::get(metrics_url).await?.text().await?;
@@ -129,15 +130,11 @@ async fn get_tunnel_url(metrics_port: u16) -> Result<String, failure::Error> {
         .and_then(|captures| captures.get(1))
     {
         Some(url) => Ok(url.as_str().to_string()),
-        None => Err(failure::format_err!("Failed to extract capture group!")),
+        None => Err(anyhow!("Failed to extract capture group!")),
     }
 }
 
-async fn send_heartbeat(
-    target: &Target,
-    client: &async_api::Client,
-    tail_id: &str,
-) -> Result<(), failure::Error> {
+async fn send_heartbeat(target: &Target, client: &async_api::Client, tail_id: &str) -> Result<()> {
     let response = client
         .request(&SendTailHeartbeat {
             account_identifier: &target.account_id,
@@ -148,7 +145,7 @@ async fn send_heartbeat(
 
     match response {
         Ok(_) => Ok(()),
-        Err(e) => failure::bail!(http::format_error(e, Some(&tail_help))),
+        Err(e) => Err(anyhow!(http::format_error(e, Some(&tail_help)))),
     }
 }
 

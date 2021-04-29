@@ -5,13 +5,15 @@
 
 use cloudflare::framework::response::ApiFailure;
 
+use anyhow::Result;
+
 use crate::commands::kv;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use std::io::{self, Write};
 
-pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<(), failure::Error> {
+pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()> {
     kv::validate_target(target)?;
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",

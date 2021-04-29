@@ -4,6 +4,7 @@ use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::{emoji, interactive};
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -12,7 +13,7 @@ pub struct Subdomain {
 }
 
 impl Subdomain {
-    pub fn get(account_id: &str, user: &GlobalUser) -> Result<Option<String>, failure::Error> {
+    pub fn get(account_id: &str, user: &GlobalUser) -> Result<Option<String>> {
         let addr = subdomain_addr(account_id);
 
         let client = http::legacy_auth_client(user);
@@ -20,7 +21,7 @@ impl Subdomain {
         let response = client.get(&addr).send()?;
 
         if !response.status().is_success() {
-            failure::bail!(
+            anyhow::bail!(
                 "{} There was an error fetching your subdomain.\n Status Code: {}\n Msg: {}",
                 emoji::WARN,
                 response.status(),
@@ -31,7 +32,7 @@ impl Subdomain {
         Ok(response.result.map(|r| r.subdomain))
     }
 
-    pub fn put(name: &str, account_id: &str, user: &GlobalUser) -> Result<(), failure::Error> {
+    pub fn put(name: &str, account_id: &str, user: &GlobalUser) -> Result<()> {
         let addr = subdomain_addr(account_id);
         let subdomain = Subdomain {
             subdomain: name.to_string(),
@@ -66,7 +67,7 @@ impl Subdomain {
                     response_text
                 )
             };
-            failure::bail!(msg)
+            anyhow::bail!(msg)
         }
         StdOut::success(&format!("Success! You've registered {}.", name));
         Ok(())
@@ -107,11 +108,7 @@ fn subdomain_addr(account_id: &str) -> String {
     )
 }
 
-fn register_subdomain(
-    name: &str,
-    user: &GlobalUser,
-    target: &Target,
-) -> Result<(), failure::Error> {
+fn register_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<()> {
     let msg = format!(
         "Registering your subdomain, {}.workers.dev, this could take up to a minute.",
         name
@@ -120,12 +117,12 @@ fn register_subdomain(
     Subdomain::put(name, &target.account_id, user)
 }
 
-pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<()> {
     if target.account_id.is_empty() {
-        failure::bail!(format!(
+        anyhow::bail!(
             "{} You must provide an account_id in your configuration file before creating a subdomain!",
             emoji::WARN
-        ))
+        )
     }
     let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {
@@ -162,7 +159,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
                     StdOut::info(&format!("Keeping subdomain: {}.workers.dev", subdomain));
                     return Ok(());
                 }
-                Err(e) => failure::bail!(e),
+                Err(e) => anyhow::bail!(e),
             }
         }
     }
@@ -170,7 +167,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     register_subdomain(&name, &user, &target)
 }
 
-pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::Error> {
+pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<()> {
     let subdomain = Subdomain::get(&target.account_id, user)?;
     if let Some(subdomain) = subdomain {
         let msg = format!("{}.workers.dev", subdomain);
@@ -183,10 +180,7 @@ pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<(), failure::
     Ok(())
 }
 
-fn get_subdomain_scripts(
-    account_id: &str,
-    user: &GlobalUser,
-) -> Result<Vec<String>, failure::Error> {
+fn get_subdomain_scripts(account_id: &str, user: &GlobalUser) -> Result<Vec<String>> {
     let addr = scripts_addr(account_id);
 
     let client = http::legacy_auth_client(user);
@@ -197,7 +191,7 @@ fn get_subdomain_scripts(
         .send()?;
 
     if !response.status().is_success() {
-        failure::bail!(
+        anyhow::bail!(
             "{} There was an error fetching scripts.\n Status Code: {}\n Msg: {}",
             emoji::WARN,
             response.status(),

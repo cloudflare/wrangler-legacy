@@ -1,7 +1,9 @@
 use crate::terminal::message::{Message, StdOut};
 use std::process::{Command, Stdio};
 
-pub fn open_browser(url: &str) -> Result<(), failure::Error> {
+use anyhow::Result;
+
+pub fn open_browser(url: &str) -> Result<()> {
     if cfg!(target_os = "windows") {
         let url_escaped = url.replace("&", "^&");
         let windows_cmd = format!("start {}", url_escaped);

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use openssl::asn1::Asn1Time;
 use openssl::bn::{BigNum, MsbOption};
 use openssl::hash::MessageDigest;
@@ -14,7 +15,7 @@ use std::path::PathBuf;
 use crate::settings::get_wrangler_home_dir;
 use crate::terminal::message::{Message, StdOut};
 /// Create files for cert and private key
-fn create_output_files() -> Result<Option<(PathBuf, PathBuf)>, failure::Error> {
+fn create_output_files() -> Result<Option<(PathBuf, PathBuf)>> {
     let home = get_wrangler_home_dir()?.join("config");
     let cert = home.join("dev-cert.pem");
     let privkey = home.join("dev-privkey.rsa");
@@ -31,7 +32,7 @@ fn create_output_files() -> Result<Option<(PathBuf, PathBuf)>, failure::Error> {
 }
 
 /// Generate certificate authority to sign cert
-fn create_ca() -> Result<(X509, PKey<Private>), failure::Error> {
+fn create_ca() -> Result<(X509, PKey<Private>)> {
     let rsa = Rsa::generate(2048)?;
     let privkey = PKey::from_rsa(rsa)?;
 
@@ -77,7 +78,7 @@ fn create_ca() -> Result<(X509, PKey<Private>), failure::Error> {
     Ok((cert, privkey))
 }
 
-fn create_req(privkey: &PKey<Private>) -> Result<X509Req, failure::Error> {
+fn create_req(privkey: &PKey<Private>) -> Result<X509Req> {
     let mut req_builder = X509ReqBuilder::new()?;
     req_builder.set_pubkey(&privkey)?;
 
@@ -95,7 +96,7 @@ fn create_req(privkey: &PKey<Private>) -> Result<X509Req, failure::Error> {
 }
 
 /// Generate cert and private key
-pub fn generate_cert() -> Result<(), failure::Error> {
+pub fn generate_cert() -> Result<()> {
     let files = create_output_files()?;
     if files.is_none() {
         return Ok(());

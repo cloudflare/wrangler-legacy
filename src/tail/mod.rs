@@ -20,6 +20,7 @@ use session::Session;
 use shutdown::ShutdownHandler;
 use tunnel::Tunnel;
 
+use anyhow::Result;
 use console::style;
 use tokio::runtime::Runtime as TokioRuntime;
 use which::which;
@@ -38,7 +39,7 @@ impl Tail {
         tunnel_port: u16,
         metrics_port: u16,
         verbose: bool,
-    ) -> Result<(), failure::Error> {
+    ) -> Result<()> {
         is_cloudflared_installed()?;
         print_startup_message(&target.name, tunnel_port, metrics_port);
 
@@ -89,13 +90,13 @@ impl Tail {
     }
 }
 
-fn is_cloudflared_installed() -> Result<(), failure::Error> {
+fn is_cloudflared_installed() -> Result<()> {
     // this can be removed once we automatically install cloudflared
     if which("cloudflared").is_err() {
         let install_url = style("https://developers.cloudflare.com/argo-tunnel/downloads/")
             .blue()
             .bold();
-        failure::bail!("You must install cloudflared to use wrangler tail.\n\nInstallation instructions can be found here:\n{}", install_url);
+        anyhow::bail!("You must install cloudflared to use wrangler tail.\n\nInstallation instructions can be found here:\n{}", install_url);
     } else {
         Ok(())
     }

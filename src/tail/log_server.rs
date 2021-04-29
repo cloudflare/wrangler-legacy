@@ -1,4 +1,5 @@
 use crate::terminal::{emoji, styles};
+use anyhow::Result;
 use hyper::server::conn::AddrIncoming;
 use hyper::server::Builder;
 use hyper::service::{make_service_fn, service_fn};
@@ -29,7 +30,7 @@ impl LogServer {
         }
     }
 
-    pub async fn run(self) -> Result<(), failure::Error> {
+    pub async fn run(self) -> Result<()> {
         // this is so bad
         // but i also am so bad at types
         // TODO: make this less terrible
@@ -96,7 +97,7 @@ async fn print_logs_json(req: Request<Body>) -> Result<Response<Body>, hyper::Er
     }
 }
 
-async fn print_logs_pretty(req: Request<Body>) -> Result<Response<Body>, failure::Error> {
+async fn print_logs_pretty(req: Request<Body>) -> Result<Response<Body>> {
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;

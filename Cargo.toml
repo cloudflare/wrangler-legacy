@@ -11,6 +11,7 @@ categories = ["wasm", "development-tools", "command-line-utilities", "web-progra
 build = "build.rs"
 
 [dependencies]
+anyhow = "1.0"
 atty = "0.2.14"
 base64 = "0.13.0"
 billboard = "0.1.0"
@@ -24,8 +25,6 @@ console = "0.13.0"
 dirs = "3.0.1"
 env_logger = "0.8.2"
 eventual = "0.1.7"
-exitfailure = "0.5.1"
-failure = "0.1.8"
 flate2 = "1.0.18"
 fs2 = "0.4.3"
 futures-util = "0.3"

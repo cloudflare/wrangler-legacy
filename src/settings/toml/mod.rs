@@ -18,6 +18,7 @@ pub use site::Site;
 pub use target::Target;
 pub use target_type::TargetType;
 
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -29,13 +30,15 @@ pub enum UsageModel {
 }
 
 impl FromStr for UsageModel {
-    type Err = failure::Error;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "bundled" => Ok(UsageModel::Bundled),
             "unbound" => Ok(UsageModel::Unbound),
-            _ => failure::bail!("Invalid usage model; must be either \"bundled\" or \"unbound\""),
+            _ => Err(anyhow!(
+                "Invalid usage model; must be either \"bundled\" or \"unbound\""
+            )),
         }
     }
 }

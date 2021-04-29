@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use anyhow::Result;
 use cloudflare::framework::auth::Credentials;
 use serde::{Deserialize, Serialize};
 
@@ -24,17 +25,14 @@ pub enum GlobalUser {
 }
 
 impl GlobalUser {
-    pub fn new() -> Result<Self, failure::Error> {
+    pub fn new() -> Result<Self> {
         let environment = Environment::with_whitelist(ENV_VAR_WHITELIST.to_vec());
 
         let config_path = get_global_config_path()?;
         GlobalUser::build(environment, config_path)
     }
 
-    fn build<T: 'static + QueryEnvironment>(
-        environment: T,
-        config_path: PathBuf,
-    ) -> Result<Self, failure::Error>
+    fn build<T: 'static + QueryEnvironment>(environment: T, config_path: PathBuf) -> Result<Self>
     where
         T: config::Source + Send + Sync,
     {
@@ -45,9 +43,7 @@ impl GlobalUser {
         }
     }
 
-    fn from_env<T: 'static + QueryEnvironment>(
-        environment: T,
-    ) -> Option<Result<Self, failure::Error>>
+    fn from_env<T: 'static + QueryEnvironment>(environment: T) -> Option<Result<Self>>
     where
         T: config::Source + Send + Sync,
     {
@@ -64,7 +60,7 @@ impl GlobalUser {
         }
     }
 
-    fn from_file(config_path: PathBuf) -> Result<Self, failure::Error> {
+    fn from_file(config_path: PathBuf) -> Result<Self> {
         let mut s = config::Config::new();
 
         let config_str = config_path
@@ -80,7 +76,7 @@ impl GlobalUser {
             );
             s.merge(config::File::with_name(config_str))?;
         } else {
-            failure::bail!(
+            anyhow::bail!(
                 "config path does not exist {}. Try running `wrangler login` or `wrangler config`",
                 config_str
             );
@@ -89,7 +85,7 @@ impl GlobalUser {
         GlobalUser::from_config(s)
     }
 
-    pub fn to_file(&self, config_path: &Path) -> Result<(), failure::Error> {
+    pub fn to_file(&self, config_path: &Path) -> Result<()> {
         let toml = toml::to_string(self)?;
 
         fs::create_dir_all(&config_path.parent().unwrap())?;
@@ -98,7 +94,7 @@ impl GlobalUser {
         Ok(())
     }
 
-    fn from_config(config: config::Config) -> Result<Self, failure::Error> {
+    fn from_config(config: config::Config) -> Result<Self> {
         let global_user: Result<GlobalUser, config::ConfigError> = config.clone().try_into();
         match global_user {
             Ok(user) => Ok(user),
@@ -114,7 +110,7 @@ impl GlobalUser {
                     vars_msg
                 );
                 log::info!("{:?}", config);
-                failure::bail!(msg)
+                anyhow::bail!(msg)
             }
         }
     }
@@ -247,10 +243,7 @@ mod tests {
         assert!(new_user.is_ok());
     }
 
-    fn test_config_dir(
-        tmp_dir: &tempfile::TempDir,
-        user: Option<GlobalUser>,
-    ) -> Result<PathBuf, failure::Error> {
+    fn test_config_dir(tmp_dir: &tempfile::TempDir, user: Option<GlobalUser>) -> Result<PathBuf> {
         let tmp_config_path = tmp_dir.path().join(DEFAULT_CONFIG_FILE_NAME);
         if let Some(user_config) = user {
             user_config.to_file(&tmp_config_path)?;

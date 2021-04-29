@@ -5,6 +5,7 @@ use std::os::unix::fs::PermissionsExt;
 #[cfg(not(target_os = "windows"))]
 use std::path::PathBuf;
 
+use anyhow::Result;
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
 use cloudflare::framework::apiclient::ApiClient;
 
@@ -22,7 +23,7 @@ pub fn set_file_mode(file: &PathBuf) {
         .expect("could not set permissions on file");
 }
 
-pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Error> {
+pub fn global_config(user: &GlobalUser, verify: bool) -> Result<()> {
     if verify {
         StdOut::info("Validating credentials...");
         validate_credentials(user)?;
@@ -45,7 +46,7 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<(), failure::Err
 
 // validate_credentials() checks the /user/tokens/verify endpoint (for API token)
 // or /user endpoint (for global API key) to ensure provided credentials actually work.
-pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
+pub fn validate_credentials(user: &GlobalUser) -> Result<()> {
     let client = http::cf_v4_client(user)?;
 
     match user {
@@ -54,10 +55,10 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
                 if success.result.status == "active" {
                     Ok(())
                 } else {
-                    failure::bail!("Authentication check failed. Your token has status \"{}\", not \"active\".\nTry rolling your token on the Cloudflare dashboard.")
+                    anyhow::bail!("Authentication check failed. Your token has status \"{}\", not \"active\".\nTry rolling your token on the Cloudflare dashboard.")
                 }
             }
-            Err(e) => failure::bail!(
+            Err(e) => anyhow::bail!(
                 "Authentication check failed. Please make sure your API token is correct.\n{}",
                 http::format_error(e, None)
             ),
@@ -68,7 +69,7 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<(), failure::Error> {
                 let api_docs_url = styles::url(
                     "https://developers.cloudflare.com/workers/quickstart/#global-api-key",
                 );
-                failure::bail!("Authentication check failed. Please make sure your email and global API key pair are correct.\nSee {}", api_docs_url)
+                anyhow::bail!("Authentication check failed. Please make sure your email and global API key pair are correct.\nSee {}", api_docs_url)
             }
         },
     }

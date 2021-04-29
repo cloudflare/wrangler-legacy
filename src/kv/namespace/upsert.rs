@@ -1,6 +1,8 @@
 use cloudflare::endpoints::workerskv::WorkersKvNamespace;
 use cloudflare::framework::response::ApiFailure;
 
+use anyhow::Result;
+
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -13,11 +15,7 @@ pub enum UpsertedNamespace {
     Reused(WorkersKvNamespace),
 }
 
-pub fn upsert(
-    target: &Target,
-    user: &GlobalUser,
-    title: String,
-) -> Result<UpsertedNamespace, failure::Error> {
+pub fn upsert(target: &Target, user: &GlobalUser, title: String) -> Result<UpsertedNamespace> {
     let client = http::cf_v4_client(user)?;
     let response = create(&client, &target.account_id, &title);
 
@@ -32,13 +30,13 @@ pub fn upsert(
                         .iter()
                         .find(|ns| ns.title == title) {
                         Some(namespace) => Ok(UpsertedNamespace::Reused(namespace.to_owned())),
-                        None => failure::bail!("namespace already exists, but could not be found in the API's listed namespaces"),
+                        None => anyhow::bail!("namespace already exists, but could not be found in the API's listed namespaces"),
                     }
                 } else {
-                    failure::bail!("{}", http::format_error(e, Some(&error_suggestions)))
+                    anyhow::bail!("{}", http::format_error(e, Some(&error_suggestions)))
                 }
             }
-            _ => failure::bail!("{}", http::format_error(e, Some(&error_suggestions))),
+            _ => anyhow::bail!("{}", http::format_error(e, Some(&error_suggestions))),
         },
     }
 }

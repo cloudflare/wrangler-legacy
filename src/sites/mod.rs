@@ -11,7 +11,7 @@ use std::fs;
 use std::hash::Hasher;
 use std::path::Path;
 
-use failure::format_err;
+use anyhow::{anyhow, Result};
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{Walk, WalkBuilder};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -28,11 +28,7 @@ pub const KEY_MAX_SIZE: usize = 512;
 pub const VALUE_MAX_SIZE: u64 = 25 * 1024 * 1024;
 
 // Updates given Target with kv_namespace binding for a static site assets KV namespace.
-pub fn add_namespace(
-    user: &GlobalUser,
-    target: &mut Target,
-    preview: bool,
-) -> Result<KvNamespace, failure::Error> {
+pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> Result<KvNamespace> {
     let title = if preview {
         format!("__{}-{}", target.name, "workers_sites_assets_preview")
     } else {
@@ -68,9 +64,9 @@ pub fn add_namespace(
 pub fn directory_keys_values(
     target: &Target,
     directory: &Path,
-) -> Result<(Vec<KeyValuePair>, AssetManifest, Vec<String>), failure::Error> {
-    match &fs::metadata(directory) {
-        Ok(file_type) if file_type.is_dir() => {
+) -> Result<(Vec<KeyValuePair>, AssetManifest, Vec<String>)> {
+    match fs::metadata(directory) {
+        Ok(ref file_type) if file_type.is_dir() => {
             let mut upload_vec: Vec<KeyValuePair> = Vec::new();
             let mut asset_manifest = AssetManifest::new();
             let mut file_list: Vec<String> = Vec::new();
@@ -115,9 +111,9 @@ pub fn directory_keys_values(
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             // TODO: return an error type here, like NotADirectoryError
-            Err(format_err!("Check your configuration file; the `bucket` attribute for [site] should point to a directory."))
+            Err(anyhow!("Check your configuration file; the `bucket` attribute for [site] should point to a directory."))
         }
-        Err(e) => Err(format_err!("{}", e)),
+        Err(e) => Err(anyhow!(e)),
     }
 }
 
@@ -126,12 +122,12 @@ pub fn directory_keys_values(
 // logic in validate_key_size()) because it duplicates the size checking the API already does--but
 // doing a preemptive check like this (before calling the API) will prevent partial bucket uploads
 // from happening.
-fn validate_file_size(path: &Path) -> Result<(), failure::Error> {
+fn validate_file_size(path: &Path) -> Result<()> {
     let metadata = fs::metadata(path)?;
     let file_len = metadata.len();
 
     if file_len > VALUE_MAX_SIZE {
-        failure::bail!(
+        anyhow::bail!(
             "File `{}` of {} bytes exceeds the maximum value size limit of {} bytes",
             path.display(),
             file_len,
@@ -141,9 +137,9 @@ fn validate_file_size(path: &Path) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn validate_key_size(key: &str) -> Result<(), failure::Error> {
+fn validate_key_size(key: &str) -> Result<()> {
     if key.len() > KEY_MAX_SIZE {
-        failure::bail!(
+        anyhow::bail!(
             "Path `{}` of {} bytes exceeds the maximum key size limit of {} bytes",
             key,
             key.len(),
@@ -156,11 +152,11 @@ fn validate_key_size(key: &str) -> Result<(), failure::Error> {
 const REQUIRED_IGNORE_FILES: &[&str] = &[NODE_MODULES];
 const NODE_MODULES: &str = "node_modules";
 
-fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
+fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk> {
     // The directory provided should never be node_modules!
     if let Some(name) = directory.file_name() {
         if name == NODE_MODULES {
-            failure::bail!("Your directory of files to upload cannot be named node_modules.");
+            anyhow::bail!("Your directory of files to upload cannot be named node_modules.");
         }
     };
 
@@ -171,9 +167,9 @@ fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::
         .build())
 }
 
-fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
+fn build_ignore(target: &Target, directory: &Path) -> Result<Override> {
     let mut required_override = OverrideBuilder::new(directory);
-    let required_ignore = |builder: &mut OverrideBuilder| -> Result<(), failure::Error> {
+    let required_ignore = |builder: &mut OverrideBuilder| -> Result<()> {
         for ignored in REQUIRED_IGNORE_FILES {
             builder.add(&format!("!{}", ignored))?;
             log::info!("Ignoring {}", ignored);
@@ -216,7 +212,7 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::
 }
 
 // Courtesy of Steve Klabnik's PoC :) Used for bulk operations (write, delete)
-fn generate_url_safe_path(path: &Path) -> Result<String, failure::Error> {
+fn generate_url_safe_path(path: &Path) -> Result<String> {
     // first, we have to re-build the paths: if we're on Windows, we have paths with
     // `\` as separators. But we want to use `/` as separators. Because that's how URLs
     // work.
@@ -247,7 +243,7 @@ pub fn generate_path_and_key(
     path: &Path,
     directory: &Path,
     value: Option<String>,
-) -> Result<(String, String), failure::Error> {
+) -> Result<(String, String)> {
     // strip the bucket directory from both paths for ease of reference.
     let relative_path = path.strip_prefix(directory).unwrap();
 
@@ -280,7 +276,7 @@ fn get_digest(value: String) -> String {
 
 // Assumes that `path` is a file (called from a match branch for path.is_file())
 // Assumes that `hashed_value` is a String, not an Option<String> (called from a match branch for value.is_some())
-fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<String, failure::Error> {
+fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<String> {
     if let Some(file_stem) = path.file_stem() {
         let mut file_name = file_stem.to_os_string();
         let extension = path.extension();
@@ -296,7 +292,7 @@ fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<String, 
 
         Ok(generate_url_safe_path(&new_path)?)
     } else {
-        failure::bail!("no file_stem for path {}", path.display())
+        anyhow::bail!("no file_stem for path {}", path.display())
     }
 }
 

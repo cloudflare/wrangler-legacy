@@ -9,6 +9,7 @@ use crate::wranglerjs;
 use crate::{build::command, build_target};
 use crate::{commands, install};
 
+use anyhow::Result;
 use notify::{self, RecursiveMode, Watcher};
 use std::sync::mpsc;
 use std::thread;
@@ -23,16 +24,13 @@ const RUST_IGNORE: &[&str] = &["pkg", "target", "worker/generated"];
 
 // watch a project for changes and re-build it when necessary,
 // outputting a build event to tx.
-pub fn watch_and_build(
-    target: &Target,
-    tx: Option<mpsc::Sender<()>>,
-) -> Result<(), failure::Error> {
+pub fn watch_and_build(target: &Target, tx: Option<mpsc::Sender<()>>) -> Result<()> {
     let target_type = &target.target_type;
     let build = target.build.clone();
     match target_type {
         TargetType::JavaScript => {
             let target = target.clone();
-            thread::spawn::<_, Result<(), failure::Error>>(move || {
+            thread::spawn::<_, Result<()>>(move || {
                 let (watcher_tx, watcher_rx) = mpsc::channel();
                 let mut watcher = notify::watcher(watcher_tx, Duration::from_secs(1))?;
 

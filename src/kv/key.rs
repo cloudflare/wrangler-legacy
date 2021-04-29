@@ -1,3 +1,4 @@
+use anyhow::Result;
 use serde_json::value::Value as JsonValue;
 
 use cloudflare::endpoints::workerskv::list_namespace_keys::ListNamespaceKeys;
@@ -25,7 +26,7 @@ impl KeyList {
         client: HttpApiClient,
         namespace_id: &str,
         prefix: Option<&str>,
-    ) -> Result<KeyList, failure::Error> {
+    ) -> Result<KeyList> {
         let iter = KeyList {
             keys_result: None,
             prefix: prefix.map(str::to_string),

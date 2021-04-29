@@ -6,6 +6,7 @@ use std::path::Path;
 
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
+use anyhow::{anyhow, Result};
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::commands::kv::validate_target;
@@ -14,12 +15,7 @@ use crate::kv::bulk::BATCH_KEY_MAX;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdErr};
-pub fn run(
-    target: &Target,
-    user: &GlobalUser,
-    namespace_id: &str,
-    filename: &Path,
-) -> Result<(), failure::Error> {
+pub fn run(target: &Target, user: &GlobalUser, namespace_id: &str, filename: &Path) -> Result<()> {
     validate_target(target)?;
 
     let pairs: Vec<KeyValuePair> = match &metadata(filename) {
@@ -28,14 +24,14 @@ pub fn run(
             let data_vec = serde_json::from_str(&data);
             match data_vec {
                 Ok(data_vec) => Ok(data_vec),
-                Err(_) => Err(failure::format_err!("Failed to decode JSON. Please make sure to follow the format, [{{\"key\": \"test_key\", \"value\": \"test_value\"}}, ...]"))
+                Err(_) => Err(anyhow!("Failed to decode JSON. Please make sure to follow the format, [{{\"key\": \"test_key\", \"value\": \"test_value\"}}, ...]"))
             }
         }
-        Ok(_) => Err(failure::format_err!(
+        Ok(_) => Err(anyhow!(
             "{} should be a JSON file, but is not",
             filename.display()
         )),
-        Err(e) => Err(failure::format_err!("{}", e)),
+        Err(e) => Err(anyhow!("{}", e)),
     }?;
 
     let len = pairs.len();

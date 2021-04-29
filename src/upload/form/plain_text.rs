@@ -1,4 +1,5 @@
 use super::binding::Binding;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -8,7 +9,7 @@ pub struct PlainText {
 }
 
 impl PlainText {
-    pub fn new(name: String, value: String) -> Result<Self, failure::Error> {
+    pub fn new(name: String, value: String) -> Result<Self> {
         Ok(Self { name, value })
     }
 

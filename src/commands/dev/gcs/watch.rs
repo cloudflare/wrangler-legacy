@@ -6,13 +6,15 @@ use crate::commands::dev::server_config::ServerConfig;
 use crate::settings::toml::Target;
 use crate::watch::watch_and_build;
 
+use anyhow::Result;
+
 pub fn watch_for_changes(
     target: Target,
     server_config: &ServerConfig,
     preview_id: Arc<Mutex<String>>,
     session_id: &str,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let (sender, receiver) = mpsc::channel();
     watch_and_build(&target, Some(sender))?;
 

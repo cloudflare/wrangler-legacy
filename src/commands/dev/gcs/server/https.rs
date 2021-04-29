@@ -7,6 +7,7 @@ use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
 use std::sync::{Arc, Mutex};
 
+use anyhow::Result;
 use chrono::prelude::*;
 use futures_util::{FutureExt, StreamExt};
 use hyper::service::{make_service_fn, service_fn};
@@ -16,10 +17,7 @@ use tokio::net::TcpListener;
 
 /// performs all logic that takes an incoming request
 /// and routes it to the Workers runtime preview service
-pub async fn https(
-    server_config: ServerConfig,
-    preview_id: Arc<Mutex<String>>,
-) -> Result<(), failure::Error> {
+pub async fn https(server_config: ServerConfig, preview_id: Arc<Mutex<String>>) -> Result<()> {
     tls::generate_cert()?;
 
     // set up https client to connect to the preview service
@@ -36,7 +34,7 @@ pub async fn https(
         let server_config = server_config.to_owned();
         let preview_id = preview_id.to_owned();
         async move {
-            Ok::<_, failure::Error>(service_fn(move |req| {
+            Ok::<_, anyhow::Error>(service_fn(move |req| {
                 let client = client.to_owned();
                 let server_config = server_config.to_owned();
                 let preview_id = preview_id.lock().unwrap().to_owned();
@@ -91,7 +89,7 @@ pub async fn https(
                         version,
                         resp.status()
                     );
-                    Ok::<_, failure::Error>(resp)
+                    Ok::<_, anyhow::Error>(resp)
                 }
             }))
         }

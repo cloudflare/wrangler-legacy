@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use anyhow::Result;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
@@ -48,7 +49,7 @@ pub fn upload(
     user: Option<&GlobalUser>,
     sites_preview: bool,
     verbose: bool,
-) -> Result<String, failure::Error> {
+) -> Result<String> {
     let preview = match &user {
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
@@ -92,7 +93,7 @@ pub fn upload(
                 ));
                 StdOut::warn("Falling back to unauthenticated preview.");
                 if sites_preview {
-                    failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
+                    anyhow::bail!(SITES_UNAUTH_PREVIEW_ERR)
                 }
 
                 unauthenticated_upload(&target)?
@@ -109,7 +110,7 @@ pub fn upload(
             StdOut::info("Running preview without authentication.");
 
             if sites_preview {
-                failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
+                anyhow::bail!(SITES_UNAUTH_PREVIEW_ERR)
             }
 
             unauthenticated_upload(&target)?
@@ -146,7 +147,7 @@ fn authenticated_upload(
     client: &Client,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
-) -> Result<Preview, failure::Error> {
+) -> Result<Preview> {
     let create_address = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
         target.account_id, target.name
@@ -161,7 +162,7 @@ fn authenticated_upload(
         .send()?;
 
     if !res.status().is_success() {
-        failure::bail!(
+        anyhow::bail!(
             "Something went wrong! Status: {}, Details {}",
             res.status(),
             res.text()?
@@ -177,7 +178,7 @@ fn authenticated_upload(
     Ok(Preview::from(response.result))
 }
 
-fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
+fn unauthenticated_upload(target: &Target) -> Result<Preview> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
@@ -207,7 +208,7 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         .send()?;
 
     if !res.status().is_success() {
-        failure::bail!(
+        anyhow::bail!(
             "Something went wrong! Status: {}, Details {}",
             res.status(),
             res.text()?

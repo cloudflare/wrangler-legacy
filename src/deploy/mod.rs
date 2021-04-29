@@ -2,6 +2,7 @@ mod schedule;
 mod zoned;
 mod zoneless;
 
+use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 pub use schedule::ScheduleTarget;
 pub use zoned::ZonedTarget;
@@ -19,10 +20,7 @@ pub enum DeployTarget {
     Schedule(ScheduleTarget),
 }
 
-pub fn deploy(
-    user: &GlobalUser,
-    deploy_targets: &[DeployTarget],
-) -> Result<DeployResults, failure::Error> {
+pub fn deploy(user: &GlobalUser, deploy_targets: &[DeployTarget]) -> Result<DeployResults> {
     let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
     let spinner = ProgressBar::new_spinner().with_style(style);
     spinner.enable_steady_tick(20);

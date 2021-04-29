@@ -7,10 +7,11 @@ use cloudflare::endpoints::user::GetUserDetails;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 
+use anyhow::Result;
 use prettytable::{Cell, Row, Table};
 
 /// Tells the user who they are
-pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
+pub fn whoami(user: &GlobalUser) -> Result<()> {
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {
@@ -91,7 +92,7 @@ pub fn display_account_id_maybe() {
 fn fetch_api_token_email(
     user: &GlobalUser,
     missing_permissions: &mut Vec<String>,
-) -> Result<Option<String>, failure::Error> {
+) -> Result<Option<String>> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&GetUserDetails {});
     match response {
@@ -104,18 +105,18 @@ fn fetch_api_token_email(
                 }
                 Ok(None)
             }
-            ApiFailure::Invalid(_) => failure::bail!(http::format_error(e, None)),
+            ApiFailure::Invalid(_) => anyhow::bail!(http::format_error(e, None)),
         },
     }
 }
 
 /// Fetch the accounts associated with a user
-fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
+fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&account::ListAccounts { params: None });
     match response {
         Ok(res) => Ok(res.result),
-        Err(e) => failure::bail!(http::format_error(e, None)),
+        Err(e) => anyhow::bail!(http::format_error(e, None)),
     }
 }
 

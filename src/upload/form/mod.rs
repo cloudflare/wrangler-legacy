@@ -5,6 +5,7 @@ mod service_worker;
 mod text_blob;
 mod wasm_module;
 
+use anyhow::Result;
 use reqwest::blocking::multipart::Form;
 use std::fs;
 use std::path::Path;
@@ -28,7 +29,7 @@ pub fn build(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
     session_config: Option<serde_json::Value>,
-) -> Result<Form, failure::Error> {
+) -> Result<Form> {
     let target_type = &target.target_type;
     let kv_namespaces = &target.kv_namespaces;
     let mut text_blobs: Vec<TextBlob> = Vec::new();
@@ -160,7 +161,7 @@ pub fn build(
     }
 }
 
-fn get_asset_manifest_blob(asset_manifest: AssetManifest) -> Result<String, failure::Error> {
+fn get_asset_manifest_blob(asset_manifest: AssetManifest) -> Result<String> {
     let asset_manifest = serde_json::to_string(&asset_manifest)?;
     Ok(asset_manifest)
 }
@@ -169,7 +170,7 @@ fn filestem_from_path(path: &PathBuf) -> Option<String> {
     path.file_stem()?.to_str().map(|s| s.to_string())
 }
 
-fn build_generated_dir() -> Result<(), failure::Error> {
+fn build_generated_dir() -> Result<()> {
     let dir = "./worker/generated";
     if !Path::new(dir).is_dir() {
         fs::create_dir("./worker/generated")?;
@@ -178,7 +179,7 @@ fn build_generated_dir() -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn concat_js(name: &str) -> Result<(), failure::Error> {
+fn concat_js(name: &str) -> Result<()> {
     let bindgen_js_path = format!("./pkg/{}.js", name);
     let bindgen_js: String = fs::read_to_string(bindgen_js_path)?.parse()?;
 

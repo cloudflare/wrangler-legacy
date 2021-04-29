@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::commands::generate::run_generate;
@@ -38,7 +39,7 @@ impl Site {
         ))
     }
 
-    pub fn scaffold_worker(&self) -> Result<(), failure::Error> {
+    pub fn scaffold_worker(&self) -> Result<()> {
         let entry_point = &self.entry_point()?;
         let template = "https://github.com/cloudflare/worker-sites-init";
 

@@ -8,8 +8,8 @@ use std::env;
 use std::path::Path;
 use std::str::FromStr;
 
+use anyhow::{anyhow, ensure, Result};
 use clap::{App, AppSettings, Arg, ArgGroup, SubCommand};
-use exitfailure::ExitFailure;
 use url::Url;
 
 use wrangler::commands;
@@ -23,7 +23,7 @@ use wrangler::terminal::message::{Message, Output, StdOut};
 use wrangler::terminal::{emoji, interactive, styles};
 use wrangler::version::background_check_for_updates;
 
-fn main() -> Result<(), ExitFailure> {
+fn main() -> Result<()> {
     env_logger::init();
     let latest_version_receiver = background_check_for_updates();
     if let Ok(me) = env::current_exe() {
@@ -35,7 +35,7 @@ fn main() -> Result<(), ExitFailure> {
             .expect("executable should have a filename")
             .starts_with("wrangler-init")
         {
-            installer::install();
+            installer::install()?;
         }
     }
     run()?;
@@ -59,7 +59,7 @@ fn main() -> Result<(), ExitFailure> {
 }
 
 #[allow(clippy::cognitive_complexity)]
-fn run() -> Result<(), failure::Error> {
+fn run() -> Result<()> {
     // Define commonly used arguments and arg groups up front for consistency
     // The args below are for KV Subcommands
     let kv_binding_arg = Arg::with_name("binding")
@@ -696,7 +696,7 @@ fn run() -> Result<(), failure::Error> {
 
         let template = if site {
             if template.is_some() {
-                failure::bail!("You cannot pass a template and the --site flag to wrangler generate. If you'd like to use the default site boilerplate, run wrangler generate --site. If you'd like to use another site boilerplate, omit --site when running wrangler generate.")
+                anyhow::bail!("You cannot pass a template and the --site flag to wrangler generate. If you'd like to use the default site boilerplate, run wrangler generate --site. If you'd like to use another site boilerplate, omit --site when running wrangler generate.")
             }
             "https://github.com/cloudflare/worker-sites-template"
         } else {
@@ -770,7 +770,7 @@ fn run() -> Result<(), failure::Error> {
         let url = Url::parse(url)?;
 
         // Validate the URL scheme
-        failure::ensure!(
+        ensure!(
             matches!(url.scheme(), "http" | "https"),
             "Invalid URL scheme (use either \"https\" or \"http\")"
         );
@@ -911,12 +911,12 @@ fn run() -> Result<(), failure::Error> {
             None
         };
 
-        let zone_id: Result<String, failure::Error> = if let Some(zone_id) = env_zone_id {
+        let zone_id: Result<String> = if let Some(zone_id) = env_zone_id {
             Ok(zone_id.to_string())
         } else if let Some(zone_id) = manifest.zone_id {
             Ok(zone_id)
         } else {
-            failure::bail!(
+            anyhow::bail!(
                 "You must specify a zone_id in your configuration file to use `wrangler route` commands."
             )
         };
@@ -1060,10 +1060,8 @@ fn run() -> Result<(), failure::Error> {
                 let expiration_ttl = put_key_matches
                     .value_of("expiration-ttl")
                     .map(|t| t.to_string());
-                let metadata =
-                    parse_metadata(put_key_matches.value_of("metadata")).map_err(|e| {
-                        failure::format_err!("--metadata is not valid JSON: {}", e.to_string())
-                    })?;
+                let metadata = parse_metadata(put_key_matches.value_of("metadata"))
+                    .map_err(|e| anyhow!("--metadata is not valid JSON: {}", e.to_string()))?;
                 let kv_metadata = KVMetaData {
                     namespace_id,
                     key,

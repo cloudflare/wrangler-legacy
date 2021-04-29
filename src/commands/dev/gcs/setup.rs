@@ -3,11 +3,12 @@ use crate::preview::upload;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
+use anyhow::Result;
 use uuid::Uuid;
 
 /// generate a unique uuid that lasts the entirety of the
 /// `wrangler dev` session
-pub(super) fn get_session_id() -> Result<String, failure::Error> {
+pub(super) fn get_session_id() -> Result<String> {
     Ok(Uuid::new_v4().to_simple().to_string())
 }
 
@@ -22,7 +23,7 @@ pub fn get_preview_id(
     server_config: &ServerConfig,
     session_id: &str,
     verbose: bool,
-) -> Result<String, failure::Error> {
+) -> Result<String> {
     // setting sites_preview to `true` would print a message to the terminal
     // directing the user to open the browser to view the output
     // this message makes sense for `wrangler preview` but not `wrangler dev`

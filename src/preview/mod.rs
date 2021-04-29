@@ -13,6 +13,7 @@ pub use upload::upload;
 use std::sync::mpsc::channel;
 use std::thread;
 
+use anyhow::Result;
 use log::info;
 use url::Url;
 use ws::{Sender, WebSocket};
@@ -30,10 +31,10 @@ pub fn preview(
     user: Option<GlobalUser>,
     options: PreviewOpt,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     if let Some(build) = &target.build {
         if matches!(build.upload, UploadFormat::Modules { .. }) {
-            failure::bail!("wrangler preview does not support previewing modules scripts. Please use wrangler dev instead.");
+            anyhow::bail!("wrangler preview does not support previewing modules scripts. Please use wrangler dev instead.");
         }
     }
 
@@ -121,11 +122,7 @@ fn client_request(payload: &RequestPayload, script_id: &str, sites_preview: bool
     StdOut::preview(&msg);
 }
 
-fn get(
-    url: &str,
-    cookie: &str,
-    client: &reqwest::blocking::Client,
-) -> Result<String, failure::Error> {
+fn get(url: &str, cookie: &str, client: &reqwest::blocking::Client) -> Result<String> {
     let res = client.get(url).header("Cookie", cookie).send();
     Ok(res?.text()?)
 }
@@ -135,7 +132,7 @@ fn post(
     cookie: &str,
     body: &Option<String>,
     client: &reqwest::blocking::Client,
-) -> Result<String, failure::Error> {
+) -> Result<String> {
     let res = match body {
         Some(s) => client
             .post(url)
@@ -156,7 +153,7 @@ fn watch_for_changes(
     verbose: bool,
     headless: bool,
     request_payload: RequestPayload,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let sites_preview: bool = target.site.is_some();
 
     let (tx, rx) = channel();

@@ -3,16 +3,13 @@ use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
-use failure::{format_err, Error};
+use anyhow::{anyhow, Result};
 
 use crate::terminal::message::{Message, StdOut};
 use log::info;
 
 // Add cooldown for all types of events to watching logic
-pub fn wait_for_changes(
-    rx: &Receiver<DebouncedEvent>,
-    cooldown: Duration,
-) -> Result<PathBuf, Error> {
+pub fn wait_for_changes(rx: &Receiver<DebouncedEvent>, cooldown: Duration) -> Result<PathBuf> {
     loop {
         let event = rx.recv()?;
         match get_changed_path_from_event(event) {
@@ -33,10 +30,10 @@ pub fn wait_for_changes(
     }
 }
 
-fn get_changed_path_from_event(event: DebouncedEvent) -> Result<Option<PathBuf>, Error> {
+fn get_changed_path_from_event(event: DebouncedEvent) -> Result<Option<PathBuf>> {
     info!("Detected Event {:?}", event);
     match event {
-        DebouncedEvent::Error(error, _) => Err(format_err!("{:?}", error)),
+        DebouncedEvent::Error(error, _) => Err(anyhow!(error)),
         DebouncedEvent::NoticeWrite(path) => Ok(Some(path)),
         DebouncedEvent::Write(path) => Ok(Some(path)),
         DebouncedEvent::NoticeRemove(path) => Ok(Some(path)),

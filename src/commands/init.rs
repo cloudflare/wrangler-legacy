@@ -1,13 +1,11 @@
 use std::path::{Path, PathBuf};
 
+use anyhow::Result;
+
 use crate::commands::validate_worker_name;
 use crate::settings::toml::{Manifest, Site, TargetType};
 use crate::terminal::message::{Message, StdOut};
-pub fn init(
-    name: Option<&str>,
-    target_type: Option<TargetType>,
-    site_flag: bool,
-) -> Result<(), failure::Error> {
+pub fn init(name: Option<&str>, target_type: Option<TargetType>, site_flag: bool) -> Result<()> {
     if Path::new("./wrangler.toml").exists() {
         if site_flag {
             let msg = r#"A wrangler.toml file already exists!
@@ -19,9 +17,9 @@ bucket = "" # this should point to the directory with static assets
 entry-point = "workers-site"
 
 "#;
-            failure::bail!(msg);
+            anyhow::bail!(msg);
         } else {
-            failure::bail!("A wrangler.toml file already exists! Please remove it before running this command again.");
+            anyhow::bail!("A wrangler.toml file already exists! Please remove it before running this command again.");
         }
     }
     let dirname = get_current_dirname()?;
@@ -50,7 +48,7 @@ entry-point = "workers-site"
     Ok(())
 }
 
-fn get_current_dirname() -> Result<String, failure::Error> {
+fn get_current_dirname() -> Result<String> {
     let current_path = std::env::current_dir()?;
     let parent = current_path.parent();
     let dirname = match parent {

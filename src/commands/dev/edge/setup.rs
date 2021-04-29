@@ -8,6 +8,7 @@ use crate::sites::{add_namespace, sync};
 use crate::terminal::message::{Message, StdOut};
 use crate::upload;
 
+use anyhow::{anyhow, Result};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -18,7 +19,7 @@ pub(super) fn upload(
     user: &GlobalUser,
     session_token: String,
     verbose: bool,
-) -> Result<String, failure::Error> {
+) -> Result<String> {
     let client = crate::http::legacy_auth_client(&user);
 
     let (to_delete, asset_manifest, site_namespace_id) = if let Some(site_config) =
@@ -78,13 +79,11 @@ impl Session {
         target: &Target,
         user: &GlobalUser,
         deploy_target: &DeployTarget,
-    ) -> Result<Session, failure::Error> {
+    ) -> Result<Session> {
         let exchange_url = get_exchange_url(deploy_target, user)?;
         let host = match exchange_url.host_str() {
             Some(host) => Ok(host.to_string()),
-            None => Err(failure::format_err!(
-                "Could not parse host from exchange url"
-            )),
+            None => Err(anyhow!("Could not parse host from exchange url")),
         }?;
 
         let host = match deploy_target {
@@ -152,10 +151,7 @@ fn get_upload_address(target: &mut Target) -> String {
     )
 }
 
-fn get_exchange_url(
-    deploy_target: &DeployTarget,
-    user: &GlobalUser,
-) -> Result<Url, failure::Error> {
+fn get_exchange_url(deploy_target: &DeployTarget, user: &GlobalUser) -> Result<Url> {
     let client = crate::http::legacy_auth_client(&user);
     let address = get_session_address(deploy_target);
     let url = Url::parse(&address)?;

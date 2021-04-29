@@ -3,6 +3,7 @@ pub mod target;
 
 use crate::terminal::emoji;
 
+use anyhow::{anyhow, Result};
 use binary_install::{Cache, Download};
 use log::info;
 use semver::Version;
@@ -22,20 +23,24 @@ enum ToolDownload {
     InstalledAt(Download),
 }
 
-pub fn install_cargo_generate() -> Result<PathBuf, failure::Error> {
+pub fn install_cargo_generate() -> Result<PathBuf> {
     let tool_name = "cargo-generate";
     let tool_author = "ashleygwilliams";
     let is_binary = true;
     let version = Version::parse(dependencies::GENERATE_VERSION)?;
-    install(tool_name, tool_author, is_binary, version)?.binary(tool_name)
+    install(tool_name, tool_author, is_binary, version)?
+        .binary(tool_name)
+        .map_err(|e| anyhow::Error::from(e.compat()))
 }
 
-pub fn install_wasm_pack() -> Result<PathBuf, failure::Error> {
+pub fn install_wasm_pack() -> Result<PathBuf> {
     let tool_name = "wasm-pack";
     let tool_author = "rustwasm";
     let is_binary = true;
     let version = Version::parse(dependencies::WASM_PACK_VERSION)?;
-    install(tool_name, tool_author, is_binary, version)?.binary(tool_name)
+    install(tool_name, tool_author, is_binary, version)?
+        .binary(tool_name)
+        .map_err(|e| anyhow!(e.compat()))
 }
 
 pub fn install(
@@ -43,7 +48,7 @@ pub fn install(
     owner: &str,
     is_binary: bool,
     version: Version,
-) -> Result<Download, failure::Error> {
+) -> Result<Download> {
     let download = match tool_needs_update(tool_name, version)? {
         ToolDownload::NeedsInstall(version) => {
             println!("{}  Installing {} v{}...", emoji::DOWN, tool_name, version);
@@ -52,11 +57,7 @@ pub fn install(
                 download_prebuilt(tool_name, owner, &version.to_string(), binaries.as_ref());
             match download {
                 Ok(download) => Ok(download),
-                Err(e) => Err(failure::format_err!(
-                    "could not download `{}`\n{}",
-                    tool_name,
-                    e
-                )),
+                Err(e) => Err(anyhow!("could not download `{}`\n{}", tool_name, e)),
             }
         }
         ToolDownload::InstalledAt(download) => Ok(download),
@@ -65,10 +66,7 @@ pub fn install(
     Ok(download)
 }
 
-fn tool_needs_update(
-    tool_name: &str,
-    target_version: Version,
-) -> Result<ToolDownload, failure::Error> {
+fn tool_needs_update(tool_name: &str, target_version: Version) -> Result<ToolDownload> {
     let current_installation = get_installation(tool_name, &target_version);
     // if something goes wrong checking the current installation
     // we shouldn't fail, we should just re-install for them
@@ -87,7 +85,7 @@ fn tool_needs_update(
 fn get_installation(
     tool_name: &str,
     target_version: &Version,
-) -> Result<Option<(Version, PathBuf)>, failure::Error> {
+) -> Result<Option<(Version, PathBuf)>> {
     for entry in fs::read_dir(&CACHE.destination)? {
         let entry = entry?;
         let filename = entry.file_name().into_string();
@@ -114,27 +112,31 @@ fn download_prebuilt(
     owner: &str,
     version: &str,
     binaries: &[&str],
-) -> Result<Download, failure::Error> {
+) -> Result<Download> {
     let url = match prebuilt_url(tool_name, owner, version) {
         Some(url) => url,
-        None => failure::bail!(format!(
+        None => anyhow::bail!(
             "no prebuilt {} binaries are available for this platform",
             tool_name
-        )),
+        ),
     };
 
     info!("prebuilt artifact {}", url);
 
     // no binaries are expected; downloading it as an artifact
     let res = if !binaries.is_empty() {
-        CACHE.download_version(true, tool_name, binaries, &url, version)?
+        CACHE
+            .download_version(true, tool_name, binaries, &url, version)
+            .map_err(|e| e.compat())?
     } else {
-        CACHE.download_artifact_version(tool_name, &url, version)?
+        CACHE
+            .download_artifact_version(tool_name, &url, version)
+            .map_err(|e| e.compat())?
     };
 
     match res {
         Some(download) => Ok(download),
-        None => failure::bail!("{} is not installed!", tool_name),
+        None => anyhow::bail!("{} is not installed!", tool_name),
     }
 }
 
@@ -163,10 +165,10 @@ fn prebuilt_url(tool_name: &str, owner: &str, version: &str) -> Option<String> {
     }
 }
 
-fn get_wrangler_cache() -> Result<Cache, failure::Error> {
+fn get_wrangler_cache() -> Result<Cache> {
     if let Ok(path) = env::var("WRANGLER_CACHE") {
         Ok(Cache::at(Path::new(&path)))
     } else {
-        Cache::new("wrangler")
+        Cache::new("wrangler").map_err(|e| anyhow::Error::from(e.compat()))
     }
 }

@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::path::Path;
 
+use anyhow::Result;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use super::directory_keys_values;
@@ -17,7 +18,7 @@ pub fn sync(
     user: &GlobalUser,
     namespace_id: &str,
     path: &Path,
-) -> Result<(Vec<KeyValuePair>, Vec<String>, AssetManifest), failure::Error> {
+) -> Result<(Vec<KeyValuePair>, Vec<String>, AssetManifest)> {
     kv::validate_target(target)?;
     // First, find all changed files in given local directory (aka files that are now stale
     // in Workers KV).
@@ -34,7 +35,7 @@ pub fn sync(
             Ok(remote_key) => {
                 remote_keys.insert(remote_key.name);
             }
-            Err(e) => failure::bail!(kv::format_error(e)),
+            Err(e) => anyhow::bail!(kv::format_error(e)),
         }
     }
 

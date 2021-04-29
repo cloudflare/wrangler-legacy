@@ -20,17 +20,11 @@ use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
-use std::process;
 
-use failure::{self, bail, ResultExt};
+use anyhow::{anyhow, bail, Result};
 
-pub fn install() -> ! {
-    if let Err(e) = do_install() {
-        eprintln!("{}", e);
-        for cause in e.iter_causes() {
-            eprintln!("Caused by: {}", cause);
-        }
-    }
+pub fn install() -> Result<()> {
+    do_install()?;
 
     // On Windows we likely popped up a console for the installation. If we were
     // to exit here immediately then the user wouldn't see any error that
@@ -42,10 +36,10 @@ pub fn install() -> ! {
         drop(io::stdin().read_line(&mut line));
     }
 
-    process::exit(0);
+    Ok(())
 }
 
-fn do_install() -> Result<(), failure::Error> {
+fn do_install() -> Result<()> {
     // Find `rustup.exe` in PATH, we'll be using its installation directory as
     // our installation directory.
     let rustup = match which::which("rustup") {
@@ -72,7 +66,7 @@ fn do_install() -> Result<(), failure::Error> {
     // Our relatively simple install step!
     let me = env::current_exe()?;
     fs::copy(&me, &destination)
-        .with_context(|_| format!("failed to copy executable to `{}`", destination.display()))?;
+        .map_err(|_| anyhow!("failed to copy executable to `{}`", destination.display()))?;
     println!(
         "info: successfully installed wrangler to `{}`",
         destination.display()
@@ -83,7 +77,7 @@ fn do_install() -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn confirm_can_overwrite(dst: &Path) -> Result<(), failure::Error> {
+fn confirm_can_overwrite(dst: &Path) -> Result<()> {
     // If the `-f` argument was passed, we can always overwrite everything.
     if env::args().any(|arg| arg == "-f") {
         return Ok(());
@@ -110,7 +104,7 @@ fn confirm_can_overwrite(dst: &Path) -> Result<(), failure::Error> {
     let mut line = String::new();
     io::stdin()
         .read_line(&mut line)
-        .with_context(|_| "failed to read stdin")?;
+        .map_err(|_| anyhow!("failed to read stdin"))?;
 
     if line.starts_with('y') || line.starts_with('Y') {
         return Ok(());
