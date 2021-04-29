@@ -20,17 +20,11 @@ use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
-use std::process;
 
 use anyhow::{anyhow, bail, Result};
 
-pub fn install() -> ! {
-    if let Err(e) = do_install() {
-        eprintln!("{}", e);
-        for cause in e.chain() {
-            eprintln!("Caused by: {}", cause);
-        }
-    }
+pub fn install() -> Result<()> {
+    do_install()?;
 
     // On Windows we likely popped up a console for the installation. If we were
     // to exit here immediately then the user wouldn't see any error that
@@ -42,7 +36,7 @@ pub fn install() -> ! {
         drop(io::stdin().read_line(&mut line));
     }
 
-    process::exit(0);
+    Ok(())
 }
 
 fn do_install() -> Result<()> {

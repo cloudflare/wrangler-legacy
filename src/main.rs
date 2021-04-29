@@ -35,7 +35,7 @@ fn main() -> Result<()> {
             .expect("executable should have a filename")
             .starts_with("wrangler-init")
         {
-            installer::install();
+            installer::install()?;
         }
     }
     run()?;
