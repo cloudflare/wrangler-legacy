@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: daily
+    labels:
+      - dependencies
+  - package-ecosystem: npm
+    directory: /npm
+    schedule:
+      interval: daily
+    labels:
+      - dependencies
+  - package-ecosystem: npm
+    directory: /changelog-generator
+    schedule:
+      interval: daily
+    labels:
+      - dependencies
+  - package-ecosystem: npm
+    directory: /wranglerjs
+    schedule:
+      interval: daily
+    labels:
+      - dependencies
