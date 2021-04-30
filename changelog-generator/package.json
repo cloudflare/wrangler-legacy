@@ -10,7 +10,7 @@
   "author": "wrangler@cloudflare.com",
   "license": "MIT OR Apache-2.0",
   "dependencies": {
-    "@octokit/rest": "^18.3.2",
+    "@octokit/rest": "^18.5.3",
     "commander": "^7.1.0",
     "date-fns": "^2.18.0",
     "mustache": "^4.1.0",
