@@ -11,7 +11,7 @@
   "license": "MIT OR Apache-2.0",
   "dependencies": {
     "@octokit/rest": "^18.3.2",
-    "commander": "^7.1.0",
+    "commander": "^7.2.0",
     "date-fns": "^2.18.0",
     "mustache": "^4.1.0",
     "prettier": "^2.2.1"
