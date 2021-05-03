@@ -93,7 +93,7 @@ impl Tail {
 fn is_cloudflared_installed() -> Result<()> {
     // this can be removed once we automatically install cloudflared
     if which("cloudflared").is_err() {
-        let install_url = style("https://developers.cloudflare.com/argo-tunnel/downloads/")
+        let install_url = style("https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation")
             .blue()
             .bold();
         anyhow::bail!("You must install cloudflared to use wrangler tail.\n\nInstallation instructions can be found here:\n{}", install_url);
