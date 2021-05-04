@@ -40,7 +40,7 @@ fn secret_errors(error_code: u16) -> &'static str {
             "Your configuration file is likely missing the field \"account_id\", which is required to create a secret."
         }
         10053 => "There is already another binding with a different type by this name. Check your configuration file or your Cloudflare dashboard for conflicting bindings",
-        10054 => "Your secret is too large, it must be 1kB or less",
+        10054 => "Your secret is too large, it must be 5kB or less",
         10055 => "You have exceeded the limit of 32 text bindings for this worker. Run `wrangler secret list` or go to your Cloudflare dashboard to clean up unused text/secret variables",
         _ => "",
     }
