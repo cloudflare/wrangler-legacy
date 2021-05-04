@@ -659,6 +659,16 @@ fn run() -> Result<()> {
         .subcommand(
             SubCommand::with_name("login")
                 .about(&*format!("{} Authenticate Wrangler with your Cloudflare username and password", emoji::UNLOCKED)))
+        .subcommand(
+            SubCommand::with_name("report")
+                .about(&*format!("{} Report an error caught by wrangler to the Cloudflare team", emoji::BUG))
+                .arg(
+                    Arg::with_name("log")
+                        .long("log")
+                        .takes_value(true)
+                        .help("specifies a log to report (e.g. --log=1619728882567.log)")
+                )
+        )
         .get_matches();
 
     let mut is_preview = false;
@@ -1151,6 +1161,10 @@ fn run() -> Result<()> {
         commands::tail::start(&target, &user, format, tunnel_port, metrics_port, verbose)?;
     } else if matches.subcommand_matches("login").is_some() {
         commands::login::run()?;
+    } else if let Some(matches) = matches.subcommand_matches("report") {
+        commands::report::run(matches.value_of("log")).map(|_| {
+            eprintln!("Report submission sucessful. Thank you!");
+        })?;
     }
     Ok(())
 }

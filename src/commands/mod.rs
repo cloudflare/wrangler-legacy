@@ -9,6 +9,7 @@ pub mod kv;
 pub mod login;
 mod preview;
 pub mod publish;
+pub mod report;
 pub mod route;
 pub mod secret;
 pub mod subdomain;
