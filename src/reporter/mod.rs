@@ -66,7 +66,12 @@ pub fn generate_report(panic_info: Option<&PanicInfo>) {
 
     if let Some(info) = panic_info {
         if let Some(loc) = info.location() {
-            report.location = Some(format!("{}:{}:{}", loc.file(), loc.line(), loc.column()));
+            report.location = Some(format!(
+                "{}, line: {} column: {}",
+                loc.file(),
+                loc.line(),
+                loc.column()
+            ));
         }
     }
 
@@ -82,7 +87,6 @@ pub fn generate_report(panic_info: Option<&PanicInfo>) {
     // write the report to disk using a timestamp-like name
     let wrangler_error_dir = error_report_dir().unwrap_or_else(|e| {
         err_exit(format!("directory location error: {}", e), 1);
-        unreachable!()
     });
     if let Ok(data) = serde_json::to_string_pretty(&report) {
         if std::fs::create_dir_all(wrangler_error_dir.clone()).is_err() {
@@ -93,7 +97,6 @@ pub fn generate_report(panic_info: Option<&PanicInfo>) {
             std::fs::File::create(wrangler_error_dir.join(format!("{}.log", report.timestamp_ms)))
                 .unwrap_or_else(|_| {
                     err_exit("failed to create report file", 1);
-                    unreachable!()
                 });
 
         if file.write_all(data.as_bytes()).is_err() {
@@ -133,7 +136,8 @@ fn latest_report() -> Result<Report> {
     files.sort();
 
     if let Some(f) = files.last() {
-        return serde_json::from_reader(BufReader::new(File::open(f)?)).map_err(|e| e.into());
+        let reader = BufReader::new(File::open(f)?);
+        return serde_json::from_reader(reader).map_err(|e| e.into());
     }
 
     Err(anyhow!("no error reports found"))
@@ -271,7 +275,10 @@ fn panic_payload(panic_info: Option<&PanicInfo>) -> Option<String> {
     None
 }
 
-fn err_exit<S: AsRef<str>>(msg: S, code: i32) {
-    eprintln!("wrangler panic handle error: {}", msg.as_ref());
+fn err_exit<S: AsRef<str>>(msg: S, code: i32) -> ! {
+    eprintln!(
+        "Wrangler encountered an error while attempting to log an error report: {}",
+        msg.as_ref()
+    );
     std::process::exit(code);
 }
