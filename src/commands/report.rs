@@ -38,7 +38,7 @@ pub fn run(log: Option<&str>) -> Result<()> {
                 // been submitted.
                 if code == 409 {
                     return Err(anyhow!(
-                        "we have already received this report, thank you for submitting!"
+                        "we already received this report, thank you for submitting!"
                     ));
                 }
 

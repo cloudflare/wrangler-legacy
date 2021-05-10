@@ -661,7 +661,7 @@ fn run() -> Result<()> {
                 .about(&*format!("{} Authenticate Wrangler with your Cloudflare username and password", emoji::UNLOCKED)))
         .subcommand(
             SubCommand::with_name("report")
-                .about(&*format!("{} Report an error caught by wrangler to the Cloudflare team", emoji::BUG))
+                .about(&*format!("{} Report an error caught by wrangler to Cloudflare", emoji::BUG))
                 .arg(
                     Arg::with_name("log")
                         .long("log")

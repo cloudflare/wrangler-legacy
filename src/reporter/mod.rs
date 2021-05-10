@@ -103,16 +103,16 @@ pub fn generate_report(panic_info: Option<&PanicInfo>) {
             err_exit("failed to write report", 1);
         }
     } else {
-        err_exit(format!("Wrangler encountered an unrecoverable error and failed to write the report: \n{:#?}", report), 1);
+        err_exit(format!("wrangler encountered an unrecoverable error and failed to write the report: \n{:#?}", report), 1);
     }
 
     // print message to user with note about the crash and how to report it using the command
     // `wrangler report --log=<filename.log>`
     eprintln!(
         r#"
-Oops! Wrangler hit a snag... please help Cloudflare debug the issue by submitting the generated error report ({})
+Oops! wrangler encountered an error... please help Cloudflare debug this issue by submitting an error report ({})
 
-To submit this error report to the Wrangler team now, run:
+To submit this error report to Cloudflare, run:
 
     $ wrangler report
         "#,
@@ -277,7 +277,7 @@ fn panic_payload(panic_info: Option<&PanicInfo>) -> Option<String> {
 
 fn err_exit<S: AsRef<str>>(msg: S, code: i32) -> ! {
     eprintln!(
-        "Wrangler encountered an error while attempting to log an error report: {}",
+        "wrangler encountered an error while attempting to log an error report: {}",
         msg.as_ref()
     );
     std::process::exit(code);
