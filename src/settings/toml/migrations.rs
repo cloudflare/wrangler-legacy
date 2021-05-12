@@ -7,7 +7,7 @@ pub struct Migrations {
 }
 
 impl Migrations {
-    pub fn api_migration(&self) -> Result<ApiMigration, failure::Error> {
+    pub fn api_migration(&self) -> Result<ApiMigration, anyhow::Error> {
         // TODO: make api call to get most recent tag, and coalesce tags afterwards.
         // For now, migrations will only ever have a single adhoc migration in it.
         match &self.migrations {
@@ -20,9 +20,7 @@ impl Migrations {
         }
     }
 
-    fn coalesce_migrations(
-        _migrations: &[MigrationConfig],
-    ) -> Result<ApiMigration, failure::Error> {
+    fn coalesce_migrations(_migrations: &[MigrationConfig]) -> Result<ApiMigration, anyhow::Error> {
         unimplemented!()
     }
 }
