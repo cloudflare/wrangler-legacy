@@ -23,7 +23,7 @@ const BACKTRACE_PATH_PREFIX: &str = "backtrace::";
 pub struct Report {
     uuid: Uuid,
     timestamp_ms: u128,
-    host_env: HashMap<String, String>, // "os": "..." TODO: consider struct over HashMaps
+    host_env: HashMap<String, String>,
     project_info: HashMap<String, String>,
     args: Vec<String>,
     panic: Option<String>,
@@ -200,12 +200,15 @@ fn load_project_info() -> HashMap<String, String> {
                 project_info.insert("custom_build_command".into(), command.into());
             }
 
-            // TODO: encode the format's struct members in map field instead of only string literal
             project_info.insert(
                 "upload_format".into(),
-                match builder.upload {
-                    settings::toml::UploadFormat::ServiceWorker { .. } => "service-worker".into(),
-                    settings::toml::UploadFormat::Modules { .. } => "modules".into(),
+                match &builder.upload {
+                    settings::toml::UploadFormat::ServiceWorker { .. } => {
+                        to_json_obj("service-worker", &builder.upload)
+                    }
+                    settings::toml::UploadFormat::Modules { .. } => {
+                        to_json_obj("modules", &builder.upload)
+                    }
                 },
             );
         }
@@ -218,12 +221,28 @@ fn load_project_info() -> HashMap<String, String> {
             project_info.insert("route".into(), route);
         }
 
-        if let Some(usage_model) = manifest.usage_model {
-            project_info.insert("usage_model".into(), usage_model.as_ref().into());
+        if let Some(usage_model) = &manifest.usage_model {
+            project_info.insert("usage_model".into(), usage_model.as_ref().to_string());
+        }
+
+        if let Some(durable_objects) = &manifest.durable_objects {
+            project_info.insert(
+                "durable_objects".into(),
+                reserialize_from_manifest(durable_objects),
+            );
         }
     }
 
     project_info
+}
+
+fn to_json_obj<V: Serialize>(k: &str, v: &V) -> String {
+    serde_json::json!({ k: reserialize_from_manifest(v) }).to_string()
+}
+
+fn reserialize_from_manifest<V: Serialize>(value: &V) -> String {
+    serde_json::to_string(value)
+        .unwrap_or_else(|_| "[error] failed to reserialize from manifest".into())
 }
 
 // removes frames before wrangler takes over at the panic, reduces noise
