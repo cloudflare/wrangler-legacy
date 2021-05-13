@@ -19,9 +19,11 @@ use wrangler::preview::{HttpMethod, PreviewOpt};
 use wrangler::reporter;
 use wrangler::settings;
 use wrangler::settings::global_user::GlobalUser;
+use wrangler::settings::toml::migrations::{MigrationConfig, Migrations};
 use wrangler::settings::toml::TargetType;
 use wrangler::terminal::message::{Message, Output, StdOut};
 use wrangler::terminal::{emoji, interactive, styles};
+use wrangler::util::ApplyToApp;
 use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<()> {
@@ -577,6 +579,7 @@ fn run() -> Result<()> {
                     .takes_value(true)
                     .possible_value("json")
                 )
+                .apply(MigrationConfig::add_to_app)
             ,
         )
         .subcommand(
@@ -878,6 +881,11 @@ fn run() -> Result<()> {
         let manifest = settings::toml::Manifest::new(config_path)?;
         let env = matches.value_of("env");
         let mut target = manifest.get_target(env, is_preview)?;
+        if let Some(adhoc) = MigrationConfig::from_matches(&matches) {
+            target.migrations = Some(Migrations {
+                migrations: vec![adhoc],
+            });
+        }
 
         let deploy_config = manifest.get_deployments(env)?;
         if matches.is_present("output") && matches.value_of("output") == Some("json") {
