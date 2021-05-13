@@ -1,5 +1,8 @@
-use crate::commands::DEFAULT_CONFIG_PATH;
 use crate::settings::{self, toml::Manifest};
+use crate::{
+    commands::DEFAULT_CONFIG_PATH,
+    settings::toml::{DurableObjects, UploadFormat},
+};
 
 use std::env::args;
 use std::fs::{read_dir, File};
@@ -25,6 +28,8 @@ pub struct Report {
     timestamp_ms: u128,
     host_env: HashMap<String, String>,
     project_info: HashMap<String, String>,
+    durable_objects: Option<DurableObjects>,
+    upload_format: Option<UploadFormat>,
     args: Vec<String>,
     panic: Option<String>,
     location: Option<String>,
@@ -53,11 +58,14 @@ pub fn read_log(log: Option<&str>) -> Result<Report> {
 
 /// gathers necessary error report information, and stores on disk until uploaded. the
 pub fn generate_report(panic_info: Option<&PanicInfo>) {
+    let project_info = load_project_info();
     let mut report = Report {
         uuid: Uuid::new_v4(),
         timestamp_ms: 0,
         host_env: load_host_info(),
-        project_info: load_project_info(),
+        project_info: project_info.base,
+        durable_objects: project_info.durable_objects,
+        upload_format: project_info.upload_format,
         args: args().collect::<Vec<_>>(),
         panic: panic_payload(panic_info),
         location: None,
@@ -177,72 +185,69 @@ fn load_host_info() -> HashMap<String, String> {
     host_info
 }
 
+#[derive(Default)]
+struct ProjectInfo {
+    base: HashMap<String, String>,
+    durable_objects: Option<DurableObjects>,
+    upload_format: Option<UploadFormat>,
+}
+
 // wrangler project information
-fn load_project_info() -> HashMap<String, String> {
-    let mut project_info = HashMap::new();
+fn load_project_info() -> ProjectInfo {
+    let mut project_info: ProjectInfo = Default::default();
 
     if let Ok(manifest) = Manifest::new(Path::new(DEFAULT_CONFIG_PATH)) {
-        project_info.insert("script_name".into(), manifest.name);
-        project_info.insert("account_id".into(), manifest.account_id);
-        project_info.insert(
+        project_info
+            .base
+            .insert("script_name".into(), manifest.name);
+        project_info
+            .base
+            .insert("account_id".into(), manifest.account_id);
+        project_info.base.insert(
             "zone_id".into(),
             manifest.zone_id.unwrap_or_else(|| "".into()),
         );
-        project_info.insert("target_type".into(), manifest.target_type.to_string());
-        project_info.insert(
+        project_info
+            .base
+            .insert("target_type".into(), manifest.target_type.to_string());
+        project_info.base.insert(
             "workers_dev".into(),
             manifest.workers_dev.unwrap_or(false).to_string(),
         );
         if let Some(builder) = manifest.build {
-            project_info.insert("using_custom_build".into(), "true".into());
+            project_info
+                .base
+                .insert("using_custom_build".into(), "true".into());
 
             if let Some((command, _)) = builder.build_command() {
-                project_info.insert("custom_build_command".into(), command.into());
+                project_info
+                    .base
+                    .insert("custom_build_command".into(), command.into());
             }
 
-            project_info.insert(
-                "upload_format".into(),
-                match &builder.upload {
-                    settings::toml::UploadFormat::ServiceWorker { .. } => {
-                        to_json_obj("service-worker", &builder.upload)
-                    }
-                    settings::toml::UploadFormat::Modules { .. } => {
-                        to_json_obj("modules", &builder.upload)
-                    }
-                },
-            );
+            project_info.upload_format = Some(builder.upload);
         }
 
         if let Some(routes) = manifest.routes {
-            project_info.insert("routes".into(), routes.join(","));
+            project_info.base.insert("routes".into(), routes.join(","));
         }
 
         if let Some(route) = manifest.route {
-            project_info.insert("route".into(), route);
+            project_info.base.insert("route".into(), route);
         }
 
         if let Some(usage_model) = &manifest.usage_model {
-            project_info.insert("usage_model".into(), usage_model.as_ref().to_string());
+            project_info
+                .base
+                .insert("usage_model".into(), usage_model.as_ref().to_string());
         }
 
         if let Some(durable_objects) = &manifest.durable_objects {
-            project_info.insert(
-                "durable_objects".into(),
-                reserialize_from_manifest(durable_objects),
-            );
+            project_info.durable_objects = Some(durable_objects.clone());
         }
     }
 
     project_info
-}
-
-fn to_json_obj<V: Serialize>(k: &str, v: &V) -> String {
-    serde_json::json!({ k: reserialize_from_manifest(v) }).to_string()
-}
-
-fn reserialize_from_manifest<V: Serialize>(value: &V) -> String {
-    serde_json::to_string(value)
-        .unwrap_or_else(|_| "[error] failed to reserialize from manifest".into())
 }
 
 // removes frames before wrangler takes over at the panic, reduces noise
