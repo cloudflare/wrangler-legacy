@@ -9,7 +9,9 @@ pub mod util;
 pub use build::build_target;
 pub mod commands;
 pub mod deploy;
+pub mod fixtures;
 pub mod http;
+pub mod i18n;
 pub mod install;
 pub mod installer;
 pub mod kv;
@@ -23,5 +25,3 @@ pub mod upload;
 pub mod version;
 pub mod watch;
 pub mod wranglerjs;
-
-pub mod fixtures;
