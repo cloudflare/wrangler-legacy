@@ -92,7 +92,8 @@ pub fn dev(
     }
 
     if target.durable_objects.is_some() {
-        anyhow::bail!("Previewing a script that binds to a Durable Object Class is not supported using unauthenticated preview. Please use wrangler login or wrangler config.")
+        anyhow::bail!("wrangler dev does not yet support unauthenticated sessions when using Durable Objects. Please run wrangler login or wrangler config first.")
     }
+
     gcs::dev(target, server_config, local_protocol, verbose)
 }

@@ -39,7 +39,7 @@ pub fn preview(
     }
 
     if target.durable_objects.is_some() {
-        anyhow::bail!("wrangler preview does not support previewing scripts that bind to durable object classes. Please use wrangler dev instead.");
+        anyhow::bail!("wrangler preview is not yet supported for scripts that use Durable Objects. Please use wrangler dev instead.");
     }
 
     build_target(&target)?;

@@ -10,6 +10,7 @@ use reqwest::blocking::Client;
 
 use crate::settings::toml::Target;
 use crate::sites::AssetManifest;
+use crate::util::TEMP_NOTICE_ES_MODULES_DO_BETA;
 
 pub fn script(
     client: &Client,
@@ -73,6 +74,8 @@ fn error_msg(status: reqwest::StatusCode, text: String) -> String {
         "Your user configuration is invalid, please run wrangler login or wrangler config and enter a new set of credentials.".to_string()
     } else if text.contains("\"code\": 10075,") {
         "Setting a Usage Model requires a Paid plan with Unbound enabled. You can do this in the dash by logging in to https://dash.cloudflare.com/?account=workers/plans".to_string()
+    } else if text.contains("\"code\": 10015,") || text.contains("workers.api.error.not_entitled") {
+        TEMP_NOTICE_ES_MODULES_DO_BETA.into()
     } else {
         format!("Something went wrong! Status: {}, Details {}", status, text)
     }
