@@ -374,7 +374,7 @@ fn build_creates_assets_with_arg(
     build.args(args);
 
     let output = build.output().expect("failed to execute process");
-    assert!(output.status.success());
+    assert!(output.status.success(), "Build failed: {:?}", output);
 
     for script_name in script_names {
         assert!(fixture.get_output_path().join(script_name).exists());

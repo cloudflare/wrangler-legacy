@@ -5,7 +5,6 @@ extern crate text_io;
 
 mod build;
 pub mod preview;
-pub mod util;
 pub use build::build_target;
 pub mod commands;
 pub mod deploy;
@@ -25,3 +24,5 @@ pub mod watch;
 pub mod wranglerjs;
 
 pub mod fixtures;
+
+const TEMP_NOTICE_ES_MODULES_DO_BETA: &str = "Your account does not have permission to do this! While Durable Objects are in Beta, the modules format is limited to accounts which have opted-in to the Beta. You may do so by following the instructions here: https://developers.cloudflare.com/workers/learning/using-durable-objects";

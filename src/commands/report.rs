@@ -10,6 +10,7 @@ use cloudflare::framework::{
     endpoint::{Endpoint, Method},
     response::ApiFailure,
 };
+use std::path::Path;
 
 struct ErrorReport(Report);
 
@@ -27,7 +28,7 @@ impl Endpoint<(), (), Report> for ErrorReport {
     }
 }
 
-pub fn run(log: Option<&str>) -> Result<()> {
+pub fn run(log: Option<&Path>) -> Result<()> {
     let user = settings::global_user::GlobalUser::new()?;
     let report = reporter::read_log(log)?;
     let client = http::cf_v4_client(&user)?;

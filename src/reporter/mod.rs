@@ -46,7 +46,7 @@ pub fn init() {
 
 /// finds the most recent log in the error report directory, unless `log` is Some, and will try to
 /// read that file instead.
-pub fn read_log(log: Option<&str>) -> Result<Report> {
+pub fn read_log(log: Option<&Path>) -> Result<Report> {
     match log {
         Some(path) => {
             let r = BufReader::new(File::open(error_report_dir()?.join(path))?);
