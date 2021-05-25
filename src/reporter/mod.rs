@@ -67,7 +67,7 @@ pub fn generate_report(panic_info: Option<&PanicInfo>) {
         durable_objects: project_info.durable_objects,
         upload_format: project_info.upload_format,
         args: args().collect::<Vec<_>>(),
-        panic: panic_payload(panic_info),
+        panic: panic_info.and_then(try_extract_payload),
         location: None,
         backtrace: useful_frames(),
     };
@@ -286,17 +286,17 @@ fn useful_frames() -> String {
     format!("{:?}", Backtrace::from(useful)).trim().to_string()
 }
 
-// extracts the payload contents from the panic (e.g. panic!("this is the payload"))
-// TODO: consider other <T> for downcast_ref and handle
-fn panic_payload(panic_info: Option<&PanicInfo>) -> Option<String> {
-    if let Some(info) = panic_info {
-        return match info.payload().downcast_ref::<&str>() {
-            Some(s) => Some(s.to_string()),
-            None => None,
-        };
+/// Attempts to extract the payload contents from the panic (e.g. panic!("this is the payload"))
+fn try_extract_payload(panic_info: &PanicInfo) -> Option<String> {
+    // This currently only handles standard panic payloads (&str and String). If we ever use
+    // panic_any, we'll have to explicitly handle it here.
+    if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+        Some(s.to_string())
+    } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+        Some(s.clone())
+    } else {
+        None
     }
-
-    None
 }
 
 fn err_exit<S: AsRef<str>>(msg: S, code: i32) -> ! {
