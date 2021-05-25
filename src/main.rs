@@ -8,7 +8,7 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::path::PathBuf;
 
 use anyhow::{anyhow, ensure, Result};
-use clap::AppSettings;
+use clap::{AppSettings, ArgGroup};
 use structopt::StructOpt;
 use url::Url;
 
@@ -30,7 +30,9 @@ use wrangler::terminal::{interactive, styles};
 use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<()> {
-    reporter::init();
+    if !cfg!(debug_assertions) {
+        reporter::init();
+    }
     env_logger::init();
 
     let latest_version_receiver = background_check_for_updates();
@@ -378,13 +380,14 @@ pub enum KvNamespace {
 }
 
 #[derive(Debug, StructOpt)]
+#[structopt(group = ArgGroup::with_name("namespace-specifier").required(true))]
 pub struct Namespace {
     /// The binding of the namespace this action applies to
-    #[structopt(long, short = "b", conflicts_with = "namespace-id")]
+    #[structopt(long, short = "b", group = "namespace-specifier", global = true)]
     pub binding: Option<String>,
 
     /// Applies the command to the preview namespace when combined with --binding
-    #[structopt(long, requires = "binding")]
+    #[structopt(long, requires = "binding", global = true)]
     pub preview: bool,
 
     /// The ID of the namespace this action applies to
@@ -392,8 +395,8 @@ pub struct Namespace {
         name = "namespace-id",
         long,
         short = "n",
-        conflicts_with = "binding",
-        required_unless = "binding"
+        group = "namespace-specifier",
+        global = true
     )]
     pub namespace_id: Option<String>,
 }
