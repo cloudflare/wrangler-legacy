@@ -30,9 +30,7 @@ use wrangler::terminal::{interactive, styles};
 use wrangler::version::background_check_for_updates;
 
 fn main() -> Result<()> {
-    if !cfg!(debug_assertions) {
-        reporter::init();
-    }
+    reporter::init();
     env_logger::init();
 
     let latest_version_receiver = background_check_for_updates();
