@@ -2,7 +2,7 @@ use crate::commands::{subdomain::Subdomain, whoami::display_account_id_maybe};
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::RouteConfig;
-use crate::util::TEMP_NOTICE_ES_MODULES_DO_BETA;
+use crate::TEMP_NOTICE_ES_MODULES_DO_BETA;
 
 use anyhow::Result;
 

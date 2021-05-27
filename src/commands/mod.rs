@@ -1,6 +1,5 @@
 use std::process::Command;
 
-pub mod build;
 pub mod config;
 pub mod dev;
 pub mod generate;
@@ -18,7 +17,6 @@ pub mod whoami;
 
 pub use self::config::global_config;
 pub use self::preview::run as preview;
-pub use build::build;
 pub use dev::dev;
 pub use generate::generate;
 pub use init::init;

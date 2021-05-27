@@ -1,5 +1,5 @@
 use crate::settings::global_user::GlobalUser;
-use crate::{http, util::TEMP_NOTICE_ES_MODULES_DO_BETA};
+use crate::{http, TEMP_NOTICE_ES_MODULES_DO_BETA};
 
 use anyhow::Result;
 

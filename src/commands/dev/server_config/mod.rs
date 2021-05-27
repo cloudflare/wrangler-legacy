@@ -6,7 +6,7 @@ pub use protocol::Protocol;
 use host::Host;
 
 use anyhow::Result;
-use std::net::{SocketAddr, TcpListener};
+use std::net::{IpAddr, SocketAddr, TcpListener};
 
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
@@ -16,14 +16,12 @@ pub struct ServerConfig {
 
 impl ServerConfig {
     pub fn new(
-        host: Option<&str>,
-        ip: Option<&str>,
-        port: Option<u16>,
+        host: Option<String>,
+        ip: IpAddr,
+        port: u16,
         upstream_protocol: Protocol,
     ) -> Result<Self> {
-        let ip = ip.unwrap_or("127.0.0.1");
-        let port = port.unwrap_or(8787);
-        let addr = format!("{}:{}", ip, port);
+        let addr = SocketAddr::new(ip, port);
         let listening_address = match TcpListener::bind(&addr) {
             Ok(socket) => socket.local_addr(),
             Err(_) => anyhow::bail!("{} is unavailable, try binding to another address with the --port and --ip flags, or stop other `wrangler dev` processes.", &addr)

@@ -5,12 +5,11 @@ use cloudflare::framework::apiclient::ApiClient;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::message::{Message, StdOut};
-pub fn list(zone_identifier: String, user: &GlobalUser) -> Result<()> {
+
+pub fn list(zone_identifier: &str, user: &GlobalUser) -> Result<()> {
     let client = http::cf_v4_client(user)?;
 
-    let result = client.request(&ListRoutes {
-        zone_identifier: &zone_identifier,
-    });
+    let result = client.request(&ListRoutes { zone_identifier });
 
     match result {
         Ok(success) => {
@@ -23,7 +22,7 @@ pub fn list(zone_identifier: String, user: &GlobalUser) -> Result<()> {
     Ok(())
 }
 
-pub fn delete(zone_identifier: String, user: &GlobalUser, route_id: &str) -> Result<()> {
+pub fn delete(zone_identifier: &str, user: &GlobalUser, route_id: &str) -> Result<()> {
     let client = http::cf_v4_client(user)?;
 
     let result = client.request(&DeleteRoute {

@@ -10,7 +10,7 @@ use reqwest::blocking::Client;
 
 use crate::settings::toml::Target;
 use crate::sites::AssetManifest;
-use crate::util::TEMP_NOTICE_ES_MODULES_DO_BETA;
+use crate::TEMP_NOTICE_ES_MODULES_DO_BETA;
 
 pub fn script(
     client: &Client,
