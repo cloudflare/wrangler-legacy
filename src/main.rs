@@ -76,21 +76,15 @@ fn main() -> Result<()> {
 )]
 pub struct Cli {
     /// Toggle verbose output (when applicable)
-    #[structopt(name = "verbose", long = "verbose", global = true)]
+    #[structopt(long, global = true)]
     pub verbose: bool,
 
     /// Path to configuration file.
-    #[structopt(
-        name = "config",
-        short = "c",
-        long = "config",
-        default_value = "./wrangler.toml",
-        global = true
-    )]
+    #[structopt(long, short = "c", default_value = "wrangler.toml", global = true)]
     pub config: PathBuf,
 
     /// Environment to perform a command on.
-    #[structopt(name = "env", short = "e", long = "env", global = true)]
+    #[structopt(name = "env", long, short = "e", global = true)]
     pub environment: Option<String>,
 
     #[structopt(subcommand)]
