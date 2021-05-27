@@ -99,23 +99,11 @@ pub enum Command {
 
     /// Individually manage Workers KV key-value pairs
     #[structopt(name = "kv:key", setting = AppSettings::SubcommandRequiredElseHelp)]
-    KvKey {
-        #[structopt(flatten)]
-        namespace: Namespace,
-
-        #[structopt(subcommand)]
-        subcommand: KvKey,
-    },
+    KvKey(KvKey),
 
     /// Interact with multiple Workers KV key-value pairs at once
     #[structopt(name = "kv:bulk", setting = AppSettings::SubcommandRequiredElseHelp)]
-    KvBulk {
-        #[structopt(flatten)]
-        namespace: Namespace,
-
-        #[structopt(subcommand)]
-        subcommand: KvBulk,
-    },
+    KvBulk(KvBulk),
 
     /// List or delete worker routes.
     #[structopt(name = "route", setting = AppSettings::SubcommandRequiredElseHelp)]
@@ -127,7 +115,7 @@ pub enum Command {
 
     /// Generate a new worker project
     Generate {
-        /// The name of your worker! defaults to 'worker'
+        /// The name of your worker!
         #[structopt(index = 1, default_value = "worker")]
         name: String,
 
@@ -139,14 +127,14 @@ pub enum Command {
         #[structopt(name = "type", long, short = "t")]
         target_type: Option<TargetType>,
 
-        /// Initializes a Workers Sites project.
+        /// Initializes a Workers Sites project. Overrides 'type' and 'template'
         #[structopt(long, short = "s")]
         site: bool,
     },
 
     /// Create a wrangler.toml for an existing project
     Init {
-        /// The name of your worker! Defaults to 'worker'
+        /// The name of your worker!
         #[structopt(index = 1)]
         name: Option<String>,
 
@@ -169,7 +157,7 @@ pub enum Command {
         method: HttpMethod,
 
         /// URL to open in the worker preview
-        #[structopt(short = "s", long, default_value = "https://example.com")]
+        #[structopt(short = "u", long, default_value = "https://example.com")]
         url: Url,
 
         /// Body string to post to your preview worker request
@@ -218,6 +206,7 @@ pub enum Command {
         #[structopt(long, hidden = true)]
         release: bool,
 
+        #[structopt(possible_value = "json")]
         output: Option<String>,
 
         #[structopt(flatten)]
@@ -356,9 +345,10 @@ impl AdhocMigration {
 pub enum KvNamespace {
     /// Create a new namespace
     Create {
-        #[structopt(name = "binding", long, short = "b")]
+        /// The binding for your new namespace
+        #[structopt(index = 1)]
         binding: String,
-        /// Applies the command to the preview namespace when combined with 'binding'
+        /// Applies the command to the preview namespace
         #[structopt(name = "preview", long)]
         preview: bool,
     },
@@ -375,11 +365,11 @@ pub enum KvNamespace {
 #[structopt(group = ArgGroup::with_name("namespace-specifier").required(true))]
 pub struct Namespace {
     /// The binding of the namespace this action applies to
-    #[structopt(long, short = "b", group = "namespace-specifier", global = true)]
+    #[structopt(long, short = "b", group = "namespace-specifier")]
     pub binding: Option<String>,
 
     /// Applies the command to the preview namespace when combined with --binding
-    #[structopt(long, requires = "binding", global = true)]
+    #[structopt(long, requires = "binding")]
     pub preview: bool,
 
     /// The ID of the namespace this action applies to
@@ -387,8 +377,7 @@ pub struct Namespace {
         name = "namespace-id",
         long,
         short = "n",
-        group = "namespace-specifier",
-        global = true
+        group = "namespace-specifier"
     )]
     pub namespace_id: Option<String>,
 }
@@ -398,6 +387,9 @@ pub struct Namespace {
 pub enum KvKey {
     /// Put a key-value pair into a namespace
     Put {
+        #[structopt(flatten)]
+        namespace: Namespace,
+
         /// Key to write the value to
         #[structopt(name = "key", index = 1)]
         key: String,
@@ -425,18 +417,27 @@ pub enum KvKey {
     },
     /// Get a key's value from a namespace
     Get {
+        #[structopt(flatten)]
+        namespace: Namespace,
+
         /// Key whose value to get
         #[structopt(name = "key", index = 1)]
         key: String,
     },
     /// Delete a key and its value from a namespace
     Delete {
+        #[structopt(flatten)]
+        namespace: Namespace,
+
         /// Key whose value to get
         #[structopt(name = "key", index = 1)]
         key: String,
     },
     /// List all keys in a namespace. Produces JSON output
     List {
+        #[structopt(flatten)]
+        namespace: Namespace,
+
         /// The prefix for filtering listed keys
         #[structopt(name = "prefix", long, short = "p")]
         prefix: Option<String>,
@@ -448,12 +449,18 @@ pub enum KvKey {
 pub enum KvBulk {
     /// Upload multiple key-value pairs to a namespace
     Put {
+        #[structopt(flatten)]
+        namespace: Namespace,
+
         /// The JSON file of key-value pairs to upload, in form [{\"key\":..., \"value\":...}\"...]
         #[structopt(index = 1)]
         path: PathBuf,
     },
     /// Delete multiple keys and their values from a namespace
     Delete {
+        #[structopt(flatten)]
+        namespace: Namespace,
+
         /// The JSON file of key-value pairs to upload, in form [\"<example-key>\", ...]
         #[structopt(index = 1)]
         path: PathBuf,
@@ -771,26 +778,30 @@ fn run() -> Result<()> {
                 }
             }
         }
-        Command::KvKey {
-            namespace,
-            subcommand,
-        } => {
+        Command::KvKey(key) => {
             let user = settings::global_user::GlobalUser::new()?;
             let manifest = Manifest::new(&cli.config)?;
             let env = cli.environment.as_deref();
 
-            let target = manifest.get_target(env, namespace.preview)?;
-            let namespace_id = if let Some(binding) = namespace.binding {
-                commands::kv::get_namespace_id(&target, &binding)?
-            } else {
-                namespace
-                    .namespace_id
-                    .expect("Namespace ID is required if binding isn't supplied")
+            let target_and_namespace = |namespace: Namespace| -> Result<(_, _)> {
+                let target = manifest.get_target(env, namespace.preview)?;
+                let namespace_id = if let Some(binding) = namespace.binding {
+                    commands::kv::get_namespace_id(&target, &binding)?
+                } else {
+                    namespace
+                        .namespace_id
+                        .expect("Namespace ID is required if binding isn't supplied")
+                };
+                Ok((target, namespace_id))
             };
 
-            match subcommand {
-                KvKey::Get { key } => commands::kv::key::get(&target, &user, &namespace_id, &key)?,
+            match key {
+                KvKey::Get { namespace, key } => {
+                    let (target, namespace_id) = target_and_namespace(namespace)?;
+                    commands::kv::key::get(&target, &user, &namespace_id, &key)?
+                }
                 KvKey::Put {
+                    namespace,
                     key,
                     value,
                     path: is_file,
@@ -798,6 +809,7 @@ fn run() -> Result<()> {
                     expiration,
                     metadata,
                 } => {
+                    let (target, namespace_id) = target_and_namespace(namespace)?;
                     let expiration = expiration.as_ref().map(ToString::to_string);
                     let expiration_ttl = expiration_ttl.as_ref().map(ToString::to_string);
                     let metadata = parse_metadata(metadata.as_deref())
@@ -817,37 +829,41 @@ fn run() -> Result<()> {
                         },
                     )?;
                 }
-                KvKey::Delete { key } => {
+                KvKey::Delete { namespace, key } => {
+                    let (target, namespace_id) = target_and_namespace(namespace)?;
                     commands::kv::key::delete(&target, &user, &namespace_id, &key)?
                 }
-                KvKey::List { prefix } => {
+                KvKey::List { namespace, prefix } => {
+                    let (target, namespace_id) = target_and_namespace(namespace)?;
                     commands::kv::key::list(&target, &user, &namespace_id, prefix.as_deref())?
                 }
             }
         }
-        Command::KvBulk {
-            namespace,
-            subcommand,
-        } => {
+        Command::KvBulk(bulk) => {
             // Get environment and bindings
             let manifest = Manifest::new(&cli.config)?;
             let user = settings::global_user::GlobalUser::new()?;
             let env = cli.environment.as_deref();
 
-            let target = manifest.get_target(env, namespace.preview)?;
-            let namespace_id = if let Some(binding) = namespace.binding {
-                commands::kv::get_namespace_id(&target, &binding)?
-            } else {
-                namespace
-                    .namespace_id
-                    .expect("Namespace ID is required if binding isn't supplied")
+            let target_and_namespace = |namespace: Namespace| -> Result<(_, _)> {
+                let target = manifest.get_target(env, namespace.preview)?;
+                let namespace_id = if let Some(binding) = namespace.binding {
+                    commands::kv::get_namespace_id(&target, &binding)?
+                } else {
+                    namespace
+                        .namespace_id
+                        .expect("Namespace ID is required if binding isn't supplied")
+                };
+                Ok((target, namespace_id))
             };
 
-            match subcommand {
-                KvBulk::Put { path } => {
+            match bulk {
+                KvBulk::Put { namespace, path } => {
+                    let (target, namespace_id) = target_and_namespace(namespace)?;
                     commands::kv::bulk::put(&target, &user, &namespace_id, &path)?
                 }
-                KvBulk::Delete { path } => {
+                KvBulk::Delete { namespace, path } => {
+                    let (target, namespace_id) = target_and_namespace(namespace)?;
                     commands::kv::bulk::delete(&target, &user, &namespace_id, &path)?
                 }
             }
