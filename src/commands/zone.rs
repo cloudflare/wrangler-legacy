@@ -25,7 +25,7 @@ pub fn zone(user: &GlobalUser, zone: String) -> Result<()> {
         },
     })?;
 
-    if resp.result.len() == 0 {
+    if resp.result.is_empty() {
         println!("{}", styles::warning(ERR_MESSAGE));
         return Ok(());
     }
