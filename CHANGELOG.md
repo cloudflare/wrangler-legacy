@@ -1,5 +1,109 @@
 # Changelog
 
+## v1.17.0
+
+- ### Features
+
+  - **feat: capture panics and generate error report - [nilslice], [pull/1888]**
+
+    This PR adds support for wrangler error reporting. Currently, all panics are caught and a report is generated, then written to disk. `wrangler report` or `wrangler report --log <file-name.log>` will upload the corresponding error report to Cloudflare
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1888]: https://github.com/cloudflare/wrangler/pull/1888
+
+- ### Fixes
+
+  - **fix: clarify error messages around durable objects beta - [nilslice], [pull/1921]**
+
+    Disambiguates error message described in #1859, adds more clarity around other places where Durable Object usage in beta may conflict with `wrangler` functionality.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1921]: https://github.com/cloudflare/wrangler/pull/1921
+
+  - **Fix filtering by extension for js assets - [rubenamorim], [pull/1722]**
+
+    Fixes [#1719](https://github.com/cloudflare/wrangler/issues/1719)
+
+    [rubenamorim]: https://github.com/rubenamorim
+    [pull/1722]: https://github.com/cloudflare/wrangler/pull/1722
+
+  - **fix: use latest cloudflare api client, resolving wrangler whoami issue - [nilslice], [pull/1920]**
+
+    Updates `cloudflare-rs` crate to https://github.com/cloudflare/cloudflare-rs/commit/ae936d4b180155bafe5c44482a746fa490513df2, which should fix #1914.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1920]: https://github.com/cloudflare/wrangler/pull/1920
+
+  - **Handle String panic payloads when generating reports - [ObsidianMinor], [pull/1934]**
+
+    Standard panics will only produce &str and String, but we were only handling &str, so this adds handling for String.
+
+    [obsidianminor]: https://github.com/ObsidianMinor
+    [pull/1934]: https://github.com/cloudflare/wrangler/pull/1934
+
+- ### Maintenance
+
+  - **chore: tokio ecosystem update - [nataliescottdavidson], [pull/1886]**
+
+    Update [tokio ecosystem](https://github.com/tokio-rs/tokio) crates including hyper, rustls, openssl and necessary API changes
+    Rewrite get_tunnel_url to use tokio-retry
+
+    [nataliescottdavidson]: https://github.com/nataliescottdavidson
+    [pull/1886]: https://github.com/cloudflare/wrangler/pull/1886
+
+  - **failure --> anyhow - [caass], [pull/1881]**
+
+    Follow up to [#1880](https://github.com/cloudflare/wrangler/pull/1880)
+
+    Switch from deprecated `failure` to `anyhow`. [read this](https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md)
+
+    [caass]: https://github.com/caass
+    [pull/1881]: https://github.com/cloudflare/wrangler/pull/1881
+
+  - **further reduce complexity of main - [nilslice], [pull/1937]**
+
+    In many ways, thanks to @ObsidianMinor's work on #1932, we can split up the cli code further and keep a simple `main.rs`.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1937]: https://github.com/cloudflare/wrangler/pull/1937
+
+  - **rebases & updates durable-objects-rc branch - [nilslice], [pull/1919]**
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1919]: https://github.com/cloudflare/wrangler/pull/1919
+
+  - **Reduce cognitive complexity in main - [ObsidianMinor], [pull/1932]**
+
+    This replaces our massive clap App with a much simpler Cli struct that
+    has all the same information in an easier to understand and modify
+    format (types).
+
+    [obsidianminor]: https://github.com/ObsidianMinor
+    [pull/1932]: https://github.com/cloudflare/wrangler/pull/1932
+
+  - **sorry i got excited with dependabot - [caass], [pull/1917]**
+
+    [caass]: https://github.com/caass
+    [pull/1917]: https://github.com/cloudflare/wrangler/pull/1917
+
+  - **update copy on text binding size limit - [caass], [pull/1911]**
+
+    [caass]: https://github.com/caass
+    [pull/1911]: https://github.com/cloudflare/wrangler/pull/1911
+
+  - **Updated cloudflared download link - [arunesh90], [pull/1900]**
+
+    The commit included with this PR updates the download link for cloudflared, as the previous link is no longer current and is now a redirect to https://developers.cloudflare.com/cloudflare-one/connections/connect-apps
+
+    [arunesh90]: https://github.com/arunesh90
+    [pull/1900]: https://github.com/cloudflare/wrangler/pull/1900
+
+  - **Upgrade to GitHub-native Dependabot - [dependabot], [pull/1887]**
+
+    [dependabot]: https://dependabot.com/
+    [pull/1887]: https://github.com/cloudflare/wrangler/pull/1887
+
+
 ## 🍏 v1.16.1
 
 - ### Features
