@@ -54,13 +54,12 @@ impl Package {
         }
 
         let package_json: String = fs::read_to_string(manifest_path.clone())?.parse()?;
-        let package: Package = serde_json::from_str(&package_json).unwrap_or_else(|_| {
-            panic!(
+
+        serde_json::from_str::<Package>(&package_json).map_err(|_| {
+            anyhow::anyhow!(
                 "could not parse {}, may have invalid or missing `main` or `module` keys",
                 manifest_path.display()
             )
-        });
-
-        Ok(package)
+        })
     }
 }
