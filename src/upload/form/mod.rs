@@ -12,7 +12,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use crate::settings::binding;
-use crate::settings::toml::{Target, TargetType, UploadFormat};
+use crate::settings::toml::{Target, TargetType, UploadFormat, UsageModel};
 use crate::sites::AssetManifest;
 use crate::wranglerjs;
 
@@ -40,6 +40,7 @@ pub fn build(
     let mut text_blobs: Vec<TextBlob> = Vec::new();
     let mut plain_texts: Vec<PlainText> = Vec::new();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
+    let usage_model = target.usage_model;
 
     if let Some(blobs) = &target.text_blobs {
         for (key, blob_path) in blobs.iter() {
@@ -89,6 +90,7 @@ pub fn build(
                 durable_object_classes,
                 text_blobs,
                 plain_texts,
+                usage_model,
             )?;
 
             service_worker::build_form(&assets, session_config)
@@ -108,6 +110,7 @@ pub fn build(
                         durable_object_classes,
                         text_blobs,
                         plain_texts,
+                        usage_model,
                     )?;
 
                     service_worker::build_form(&assets, session_config)
@@ -125,6 +128,7 @@ pub fn build(
                         durable_object_classes,
                         migration,
                         plain_texts,
+                        usage_model,
                     )?;
 
                     modules_worker::build_form(&assets, session_config)
@@ -143,6 +147,7 @@ pub fn build(
                     durable_object_classes,
                     text_blobs,
                     plain_texts,
+                    usage_model,
                 )?;
 
                 service_worker::build_form(&assets, session_config)
@@ -170,6 +175,7 @@ pub fn build(
                 durable_object_classes,
                 text_blobs,
                 plain_texts,
+                usage_model,
             )?;
 
             service_worker::build_form(&assets, session_config)
