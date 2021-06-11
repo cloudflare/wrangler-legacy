@@ -2623,12 +2623,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tee"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37c12559dba7383625faaff75be24becf35bfc885044375bcab931111799a3da"
-
-[[package]]
 name = "tempfile"
 version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3364,7 +3358,6 @@ dependencies = [
  "serde_with",
  "structopt",
  "sys-info",
- "tee",
  "tempfile",
  "term_size",
  "text_io",
