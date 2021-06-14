@@ -68,7 +68,7 @@ fn error_msg(text: String) -> String {
     } else if text.contains("\"code\": 10075,") {
         "Setting a Usage Model requires a Paid plan with Unbound enabled. You can do this in the dash by logging in to https://dash.cloudflare.com/?account=workers/plans".into()
     } else {
-        crate::format_api_errors(text).unwrap_or_default()
+        crate::format_api_errors(text)
     }
 }
 

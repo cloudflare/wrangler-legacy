@@ -164,9 +164,7 @@ fn authenticated_upload(
     let status = res.status();
     let text = res.text()?;
     if !status.is_success() {
-        if let Some(msg) = crate::format_api_errors(text.clone()) {
-            anyhow::bail!(msg)
-        }
+        anyhow::bail!(crate::format_api_errors(text))
     }
 
     log::info!("Response from preview: {:#?}", text);
@@ -209,9 +207,7 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview> {
     let status = res.status();
     let text = res.text()?;
     if !status.is_success() {
-        if let Some(msg) = crate::format_api_errors(text.clone()) {
-            anyhow::bail!(msg)
-        }
+        anyhow::bail!(crate::format_api_errors(text))
     }
 
     log::info!("Response from preview: {:#?}", text);

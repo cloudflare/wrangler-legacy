@@ -52,9 +52,7 @@ impl ZonelessTarget {
         let status = res.status();
         let text = res.text()?;
         if !status.is_success() {
-            if let Some(msg) = crate::format_api_errors(text) {
-                anyhow::bail!(msg)
-            }
+            anyhow::bail!(crate::format_api_errors(text))
         }
 
         let deploy_address = format!("https://{}.{}.workers.dev", self.script_name, subdomain);
