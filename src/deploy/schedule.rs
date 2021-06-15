@@ -1,5 +1,5 @@
+use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::{http, TEMP_NOTICE_ES_MODULES_DO_BETA};
 
 use anyhow::Result;
 
@@ -38,13 +38,9 @@ impl ScheduleTarget {
             .send()?;
 
         let status = res.status();
+        let text = res.text()?;
         if !status.is_success() {
-            let text = res.text()?;
-            if text.contains("workers.api.error.not_entitled") {
-                anyhow::bail!(TEMP_NOTICE_ES_MODULES_DO_BETA)
-            }
-
-            anyhow::bail!("Something went wrong! Status: {}, Details {}", status, text)
+            anyhow::bail!(crate::format_api_errors(text))
         }
 
         Ok(self.crons.clone())

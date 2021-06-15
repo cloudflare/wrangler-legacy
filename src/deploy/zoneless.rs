@@ -2,7 +2,6 @@ use crate::commands::{subdomain::Subdomain, whoami::display_account_id_maybe};
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::RouteConfig;
-use crate::TEMP_NOTICE_ES_MODULES_DO_BETA;
 
 use anyhow::Result;
 
@@ -51,13 +50,9 @@ impl ZonelessTarget {
             .send()?;
 
         let status = res.status();
+        let text = res.text()?;
         if !status.is_success() {
-            let text = res.text()?;
-            if text.contains("workers.api.error.not_entitled") {
-                anyhow::bail!(TEMP_NOTICE_ES_MODULES_DO_BETA)
-            }
-
-            anyhow::bail!("Something went wrong! Status: {}, Details {}", status, text)
+            anyhow::bail!(crate::format_api_errors(text))
         }
 
         let deploy_address = format!("https://{}.{}.workers.dev", self.script_name, subdomain);

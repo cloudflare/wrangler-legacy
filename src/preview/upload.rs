@@ -161,19 +161,16 @@ fn authenticated_upload(
         .multipart(script_upload_form)
         .send()?;
 
-    if !res.status().is_success() {
-        anyhow::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
+    let status = res.status();
+    let text = res.text()?;
+    if !status.is_success() {
+        anyhow::bail!(crate::format_api_errors(text))
     }
 
-    let text = &res.text()?;
     log::info!("Response from preview: {:#?}", text);
 
     let response: V4ApiResponse =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+        serde_json::from_str(&text).expect("could not create a script on cloudflareworkers.com");
 
     Ok(Preview::from(response.result))
 }
@@ -207,19 +204,16 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview> {
         .multipart(script_upload_form)
         .send()?;
 
-    if !res.status().is_success() {
-        anyhow::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
+    let status = res.status();
+    let text = res.text()?;
+    if !status.is_success() {
+        anyhow::bail!(crate::format_api_errors(text))
     }
 
-    let text = &res.text()?;
     log::info!("Response from preview: {:#?}", text);
 
     let preview: Preview =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+        serde_json::from_str(&text).expect("could not create a script on cloudflareworkers.com");
 
     Ok(preview)
 }
