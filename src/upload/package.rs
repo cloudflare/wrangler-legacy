@@ -4,6 +4,9 @@ use std::path::PathBuf;
 use anyhow::Result;
 use serde::{self, Deserialize};
 
+const PACKAGE_JSON_KEY_ERROR_MAIN: &str = "The `main` key in your `package.json` file is required; it must specify the entry point of your Worker.";
+const PACKAGE_JSON_KEY_ERROR_MODULE: &str = "The `module` key in your `package.json` file is required when using the module script format; please specify the entry point of your Worker.";
+
 #[derive(Debug, Deserialize)]
 pub struct Package {
     #[serde(default)]
@@ -14,9 +17,7 @@ pub struct Package {
 impl Package {
     pub fn main(&self, package_dir: &PathBuf) -> Result<PathBuf> {
         if self.main == PathBuf::from("") {
-            anyhow::bail!(
-                "The `main` key in your `package.json` file is required; please specify the entry point of your Worker.",
-            )
+            anyhow::bail!(PACKAGE_JSON_KEY_ERROR_MAIN,)
         } else if !package_dir.join(&self.main).exists() {
             anyhow::bail!(
                 "The entrypoint of your Worker ({}) could not be found.",
@@ -28,9 +29,7 @@ impl Package {
     }
     pub fn module(&self, package_dir: &PathBuf) -> Result<PathBuf> {
         if self.module == PathBuf::from("") {
-            anyhow::bail!(
-                "The `module` key in your `package.json` file is required when using the module script format; please specify the entry point of your Worker.",
-            )
+            anyhow::bail!(PACKAGE_JSON_KEY_ERROR_MODULE)
         } else if !package_dir.join(&self.module).exists() {
             anyhow::bail!(
                 "The entrypoint of your Worker ({}) could not be found.",
@@ -55,12 +54,13 @@ impl Package {
 
         let package_json: String = fs::read_to_string(manifest_path.clone())?.parse()?;
 
-        serde_json::from_str::<Package>(&package_json).map_err(|e| {
+        serde_json::from_str(&package_json).map_err(|e| {
             anyhow::anyhow!(
-                "could not parse {}, may have invalid or missing `main` or `module` keys: {}",
+                "could not parse {}, may have invalid or missing `main` or `module` keys: {}, \nHints:\n{}",
                 manifest_path.display(),
-                e
+                e,
+                vec![PACKAGE_JSON_KEY_ERROR_MAIN, PACKAGE_JSON_KEY_ERROR_MODULE].join("\n"),
             )
-        })
+        }) as Result<Package>
     }
 }
