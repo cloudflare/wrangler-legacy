@@ -36,7 +36,7 @@ pub struct Manifest {
     #[serde(rename = "type")]
     pub target_type: TargetType,
     #[serde(default)]
-    pub account_id: String,
+    pub account_id: Option<String>,
     pub workers_dev: Option<bool>,
     #[serde(default, with = "string_empty_as_none")]
     pub route: Option<String>,
@@ -190,7 +190,7 @@ impl Manifest {
 
     fn route_config(&self) -> RouteConfig {
         RouteConfig {
-            account_id: self.account_id,
+            account_id: self.account_id.clone(),
             workers_dev: self.workers_dev,
             route: self.route.clone(),
             routes: self.routes.clone(),
@@ -256,7 +256,7 @@ impl Manifest {
 
         let crons = match env {
             Some(e) => {
-                let account_id = e.account_id.as_ref().unwrap_or(&self.account_id);
+                let account_id = e.account_id.as_ref().or_else(|| self.account_id.as_ref());
                 e.triggers
                     .as_ref()
                     .or_else(|| self.triggers.as_ref())
@@ -265,12 +265,12 @@ impl Manifest {
             None => self
                 .triggers
                 .as_ref()
-                .map(|t| (t.crons.as_slice(), &self.account_id)),
+                .map(|t| (t.crons.as_slice(), self.account_id.as_ref())),
         };
 
         if let Some((crons, account)) = crons {
             let scheduled =
-                deploy::ScheduleTarget::build(account.clone(), script.clone(), crons.to_vec())?;
+                deploy::ScheduleTarget::build(account.cloned(), script.clone(), crons.to_vec())?;
             deployments.push(DeployTarget::Schedule(scheduled));
         }
 
@@ -288,20 +288,20 @@ impl Manifest {
 
     pub fn get_account_id(&self, environment_name: Option<&str>) -> Result<String> {
         let environment = self.get_environment(environment_name)?;
-        let mut result = self.account_id.to_string();
+        let mut result = self.account_id.clone();
         if let Some(environment) = environment {
             if let Some(account_id) = &environment.account_id {
-                result = account_id.to_string();
+                result = Some(account_id.to_string());
             }
         }
-        if result.is_empty() {
+        if let Some(id) = result {
+            Ok(id)
+        } else {
             let mut msg = "Your configuration file is missing an account_id field".to_string();
             if let Some(environment_name) = environment_name {
                 msg.push_str(&format!(" in [env.{}]", environment_name));
             }
             anyhow::bail!("{}", &msg)
-        } else {
-            Ok(result)
         }
     }
 
@@ -340,10 +340,10 @@ impl Manifest {
         Not inherited: Must be defined for every environment individually.
         */
         let mut target = Target {
-            target_type: self.target_type.clone(),       // Top level
-            account_id: self.account_id.clone(),         // Inherited
+            target_type: self.target_type.clone(), // Top level
+            account_id: self.account_id.clone().unwrap_or_default(), // Inherited
             webpack_config: self.webpack_config.clone(), // Inherited
-            build: self.build.clone(),                   // Inherited
+            build: self.build.clone(),             // Inherited
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(), // Inherited
