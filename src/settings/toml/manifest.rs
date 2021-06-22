@@ -7,12 +7,15 @@ use std::str::FromStr;
 use config::{Config, File};
 
 use anyhow::{anyhow, Result};
+use once_cell::unsync::OnceCell;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use super::UsageModel;
+use crate::commands::whoami::fetch_accounts;
 use crate::commands::{validate_worker_name, whoami, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
+use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::builder::Builder;
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::durable_objects::DurableObjects;
@@ -36,7 +39,7 @@ pub struct Manifest {
     #[serde(rename = "type")]
     pub target_type: TargetType,
     #[serde(default)]
-    pub account_id: Option<String>,
+    pub account_id: LazyAccountId,
     pub workers_dev: Option<bool>,
     #[serde(default, with = "string_empty_as_none")]
     pub route: Option<String>,
@@ -239,7 +242,7 @@ impl Manifest {
 
         if let Some(env) = env {
             if let Some(env_route_cfg) =
-                env.route_config(self.account_id.clone(), self.zone_id.clone())
+                env.route_config(self.account_id.if_present().cloned(), self.zone_id.clone())
             {
                 add_routed_deployments(&env_route_cfg)
             } else {
@@ -256,7 +259,10 @@ impl Manifest {
 
         let crons = match env {
             Some(e) => {
-                let account_id = e.account_id.as_ref().or_else(|| self.account_id.as_ref());
+                let account_id = e
+                    .account_id
+                    .as_ref()
+                    .or_else(|| self.account_id.if_present());
                 e.triggers
                     .as_ref()
                     .or_else(|| self.triggers.as_ref())
@@ -265,7 +271,7 @@ impl Manifest {
             None => self
                 .triggers
                 .as_ref()
-                .map(|t| (t.crons.as_slice(), self.account_id.as_ref())),
+                .map(|t| (t.crons.as_slice(), self.account_id.if_present())),
         };
 
         if let Some((crons, account)) = crons {
@@ -288,21 +294,12 @@ impl Manifest {
 
     pub fn get_account_id(&self, environment_name: Option<&str>) -> Result<String> {
         let environment = self.get_environment(environment_name)?;
-        let mut result = self.account_id.clone();
         if let Some(environment) = environment {
             if let Some(account_id) = &environment.account_id {
-                result = Some(account_id.to_string());
+                return Ok(account_id.to_string());
             }
         }
-        if let Some(id) = result {
-            Ok(id)
-        } else {
-            let mut msg = "Your configuration file is missing an account_id field".to_string();
-            if let Some(environment_name) = environment_name {
-                msg.push_str(&format!(" in [env.{}]", environment_name));
-            }
-            anyhow::bail!("{}", &msg)
-        }
+        self.account_id.load().map(String::from)
     }
 
     pub fn get_target(&self, environment_name: Option<&str>, preview: bool) -> Result<Target> {
@@ -340,10 +337,10 @@ impl Manifest {
         Not inherited: Must be defined for every environment individually.
         */
         let mut target = Target {
-            target_type: self.target_type.clone(), // Top level
-            account_id: self.account_id.clone().unwrap_or_default(), // Inherited
-            webpack_config: self.webpack_config.clone(), // Inherited
-            build: self.build.clone(),             // Inherited
+            target_type: self.target_type.clone(),           // Top level
+            account_id: self.account_id.load()?.to_string(), // Inherited
+            webpack_config: self.webpack_config.clone(),     // Inherited
+            build: self.build.clone(),                       // Inherited
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(), // Inherited
@@ -509,6 +506,65 @@ impl Manifest {
                 }
             }
         }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct LazyAccountId(OnceCell<String>);
+
+impl Serialize for LazyAccountId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.get().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for LazyAccountId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(match Option::<String>::deserialize(deserializer)? {
+            None => None,
+            Some(x) if x.is_empty() => None,
+            Some(x) => Some(x),
+        }
+        .into())
+    }
+}
+
+impl From<Option<String>> for LazyAccountId {
+    fn from(opt: Option<String>) -> Self {
+        let cell = OnceCell::new();
+        if let Some(val) = opt {
+            cell.set(val).unwrap();
+        }
+        Self(cell)
+    }
+}
+
+impl LazyAccountId {
+    /// Return the `account_id` in `wrangler.toml`, if present.
+    pub(crate) fn if_present(&self) -> Option<&String> {
+        self.0.get()
+    }
+
+    /// Load the account ID, possibly prompting the user.
+    pub(crate) fn load(&self) -> Result<&String> {
+        self.0.get_or_try_init(|| {
+            if let Ok(user) = GlobalUser::new() {
+                let accounts = fetch_accounts(&user)?;
+                let account_id = match accounts.as_slice() {
+                    [single] => single.id.clone(),
+                    _ => todo!(),
+                };
+                return Ok(account_id);
+            }
+
+            todo!()
+        })
     }
 }
 

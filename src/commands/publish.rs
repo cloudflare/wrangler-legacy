@@ -184,9 +184,6 @@ pub fn validate_bucket_location(bucket: &Path) -> Result<()> {
 fn validate_target_required_fields_present(target: &Target) -> Result<()> {
     let mut missing_fields = Vec::new();
 
-    if target.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
     if target.name.is_empty() {
         missing_fields.push("name")
     };
