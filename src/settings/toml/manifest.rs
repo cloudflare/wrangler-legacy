@@ -190,7 +190,7 @@ impl Manifest {
 
     fn route_config(&self) -> RouteConfig {
         RouteConfig {
-            account_id: Some(self.account_id.clone()),
+            account_id: self.account_id,
             workers_dev: self.workers_dev,
             route: self.route.clone(),
             routes: self.routes.clone(),

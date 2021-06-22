@@ -16,7 +16,7 @@ impl ZonelessTarget {
         match route_config.account_id.as_ref() {
             // TODO: Deserialize empty strings to None; cannot do this for account id
             // yet without a large refactor.
-            Some(account_id) if !account_id.is_empty() => Ok(Self {
+            Some(account_id) => Ok(Self {
                 script_name: script_name.to_string(),
                 account_id: account_id.to_string(),
             }),

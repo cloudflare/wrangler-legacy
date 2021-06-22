@@ -37,10 +37,10 @@ pub struct Environment {
 impl Environment {
     pub fn route_config(
         &self,
-        top_level_account_id: String,
+        top_level_account_id: Option<String>,
         top_level_zone_id: Option<String>,
     ) -> Option<RouteConfig> {
-        let account_id = self.account_id.clone().or(Some(top_level_account_id));
+        let account_id = self.account_id.clone().or(top_level_account_id);
         let zone_id = self.zone_id.clone().or(top_level_zone_id);
 
         if self.workers_dev.is_none() && self.route.is_none() && self.routes.is_none() {
