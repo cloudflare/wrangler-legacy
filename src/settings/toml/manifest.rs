@@ -557,9 +557,15 @@ impl LazyAccountId {
             if let Ok(user) = GlobalUser::new() {
                 let accounts = fetch_accounts(&user)?;
                 let account_id = match accounts.as_slice() {
+                    [] => unreachable!("auth token without account?"),
                     [single] => single.id.clone(),
-                    _ => todo!(),
+                    _multiple => {
+                        StdOut::user_error("You have multiple accounts.");
+                        whoami::display_account_id_maybe();
+                        anyhow::bail!("field `account_id` is required")
+                    }
                 };
+
                 return Ok(account_id);
             }
 
