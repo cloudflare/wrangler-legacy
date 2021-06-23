@@ -123,6 +123,9 @@ pub fn upload(
 fn validate(target: &Target) -> Vec<&str> {
     let mut missing_fields = Vec::new();
 
+    if target.account_id.maybe_load().is_none() {
+        missing_fields.push("account_id")
+    };
     if target.name.is_empty() {
         missing_fields.push("name")
     };

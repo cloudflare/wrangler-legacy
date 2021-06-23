@@ -547,8 +547,31 @@ impl From<Option<String>> for LazyAccountId {
 
 impl LazyAccountId {
     /// Return the `account_id` in `wrangler.toml`, if present.
+    ///
+    /// Use this with caution; prefer `maybe_load` instead where possible.
     pub(crate) fn if_present(&self) -> Option<&String> {
         self.0.get()
+    }
+
+    /// If `account_id` can be inferred automatically, do so;
+    /// otherwise, return `None`.
+    ///
+    /// Note that *unlike* `load`, this will never prompt the user or warn.
+    pub(crate) fn maybe_load(&self) -> Option<String> {
+        if let Some(id) = self.0.get() {
+            return Some(id.to_owned());
+        }
+
+        if let Some(mut accounts) = GlobalUser::new()
+            .ok()
+            .and_then(|user| fetch_accounts(&user).ok())
+        {
+            if accounts.len() == 1 {
+                return Some(accounts.pop().unwrap().id);
+            }
+        }
+
+        None
     }
 
     /// Load the account ID, possibly prompting the user.
