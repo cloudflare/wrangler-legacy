@@ -12,11 +12,10 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
-lazy_static! {
-    static ref CACHE: Cache = get_wrangler_cache().expect("Could not get Wrangler cache location");
-}
+static CACHE: Lazy<Cache> =
+    Lazy::new(|| get_wrangler_cache().expect("Could not get Wrangler cache location"));
 
 enum ToolDownload {
     NeedsInstall(Version),
