@@ -549,7 +549,7 @@ impl LazyAccountId {
     /// Return the `account_id` in `wrangler.toml`, if present.
     ///
     /// Use this with caution; prefer `maybe_load` instead where possible.
-    pub(crate) fn if_present(&self) -> Option<&String> {
+    fn if_present(&self) -> Option<&String> {
         self.0.get()
     }
 

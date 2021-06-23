@@ -202,11 +202,7 @@ fn load_project_info() -> ProjectInfo {
             .insert("script_name".into(), manifest.name);
         project_info.base.insert(
             "account_id".into(),
-            manifest
-                .account_id
-                .if_present()
-                .cloned()
-                .unwrap_or_default(),
+            manifest.account_id.maybe_load().unwrap_or_default(),
         );
         project_info.base.insert(
             "zone_id".into(),
