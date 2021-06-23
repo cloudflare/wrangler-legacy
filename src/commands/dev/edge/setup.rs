@@ -41,7 +41,7 @@ pub(super) fn upload(
     };
 
     let session_config = get_session_config(deploy_target);
-    let address = get_upload_address(target);
+    let address = get_upload_address(target)?;
 
     let script_upload_form = upload::form::build(target, asset_manifest, Some(session_config))?;
 
@@ -144,11 +144,12 @@ fn get_session_address(target: &DeployTarget) -> String {
     }
 }
 
-fn get_upload_address(target: &mut Target) -> String {
-    format!(
+fn get_upload_address(target: &mut Target) -> Result<String> {
+    Ok(format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/edge-preview",
-        target.account_id, target.name
-    )
+        target.account_id.load()?,
+        target.name
+    ))
 }
 
 fn get_exchange_url(deploy_target: &DeployTarget, user: &GlobalUser) -> Result<Url> {

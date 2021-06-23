@@ -17,7 +17,7 @@ pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()
     kv::validate_target(target)?;
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        target.account_id,
+        target.account_id.load()?,
         id,
         kv::url_encode_key(key)
     );

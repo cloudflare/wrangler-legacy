@@ -26,7 +26,7 @@ pub fn delete(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result
     StdOut::working(&msg);
 
     let response = client.request(&DeleteKey {
-        account_identifier: &target.account_id,
+        account_identifier: target.account_id.load()?,
         namespace_identifier: id,
         key, // this is url encoded within cloudflare-rs
     });

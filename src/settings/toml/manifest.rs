@@ -7,7 +7,7 @@ use std::str::FromStr;
 use config::{Config, File};
 
 use anyhow::{anyhow, Result};
-use once_cell::unsync::OnceCell;
+use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
@@ -337,10 +337,10 @@ impl Manifest {
         Not inherited: Must be defined for every environment individually.
         */
         let mut target = Target {
-            target_type: self.target_type.clone(),           // Top level
-            account_id: self.account_id.load()?.to_string(), // Inherited
-            webpack_config: self.webpack_config.clone(),     // Inherited
-            build: self.build.clone(),                       // Inherited
+            target_type: self.target_type.clone(),       // Top level
+            account_id: self.account_id.clone(),         // Inherited
+            webpack_config: self.webpack_config.clone(), // Inherited
+            build: self.build.clone(),                   // Inherited
             // importantly, the top level name will be modified
             // to include the name of the environment
             name: self.name.clone(), // Inherited
@@ -359,7 +359,7 @@ impl Manifest {
         if let Some(environment) = environment {
             target.name = self.worker_name(environment_name);
             if let Some(account_id) = &environment.account_id {
-                target.account_id = account_id.clone();
+                target.account_id = Some(account_id.clone()).into();
             }
             if let Some(webpack_config) = &environment.webpack_config {
                 target.webpack_config = Some(webpack_config.clone());

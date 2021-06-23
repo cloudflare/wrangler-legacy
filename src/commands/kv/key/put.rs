@@ -53,7 +53,7 @@ pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<()> {
 
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        target.account_id,
+        target.account_id.load()?,
         &data.namespace_id,
         kv::url_encode_key(&data.key)
     );

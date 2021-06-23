@@ -18,7 +18,8 @@ pub fn script(
 ) -> Result<()> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}",
-        target.account_id, target.name,
+        target.account_id.load()?,
+        target.name,
     );
 
     let script_upload_form = form::build(target, asset_manifest, None)?;
@@ -42,7 +43,8 @@ pub fn script(
     if let Some(usage_model) = target.usage_model {
         let addr = format!(
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/usage-model",
-            target.account_id, target.name,
+            target.account_id.load()?,
+            target.name,
         );
 
         let res = client
