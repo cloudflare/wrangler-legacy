@@ -3,14 +3,13 @@ use cloudflare::framework::apiclient::ApiClient;
 
 use anyhow::Result;
 
-use crate::commands::kv::{format_error, validate_target};
+use crate::commands::kv::format_error;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
 use crate::terminal::message::{Message, StdOut};
 pub fn delete(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()> {
-    validate_target(target)?;
     let client = http::cf_v4_client(user)?;
 
     match interactive::confirm(&format!("Are you sure you want to delete key \"{}\"?", key)) {

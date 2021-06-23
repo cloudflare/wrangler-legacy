@@ -39,23 +39,6 @@ fn kv_help(error_code: u16) -> &'static str {
     }
 }
 
-pub fn validate_target(target: &Target) -> Result<()> {
-    // let mut missing_fields = Vec::new();
-
-    // if target.account_id.is_empty() {
-    //     missing_fields.push("account_id")
-    // };
-
-    // if !missing_fields.is_empty() {
-    //     anyhow::bail!(
-    //         "Your configuration file is missing the following field(s): {:?}",
-    //         missing_fields
-    //     )
-    // } else {
-        Ok(())
-    // }
-}
-
 fn check_duplicate_namespaces(target: &Target) -> bool {
     // HashSet for detecting duplicate namespace bindings
     let mut binding_names: HashSet<String> = HashSet::new();

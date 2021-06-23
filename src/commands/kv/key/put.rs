@@ -49,8 +49,6 @@ pub fn parse_metadata(arg: Option<&str>) -> Result<Option<serde_json::Value>> {
 }
 
 pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<()> {
-    kv::validate_target(target)?;
-
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
         target.account_id.load()?,
