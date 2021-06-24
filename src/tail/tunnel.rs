@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::str;
 
@@ -68,7 +68,7 @@ impl Tunnel {
 // TODO: let's not clumsily copy this from commands/build/mod.rs
 // We definitely want to keep the check for RUST_LOG=info below so we avoid
 // spamming user terminal with default cloudflared output (which is pretty darn sizable.)
-pub fn command(args: &[&str], binary_path: &PathBuf, verbose: bool) -> Command {
+pub fn command(args: &[&str], binary_path: &Path, verbose: bool) -> Command {
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
         c.arg("/C");

@@ -48,6 +48,7 @@ pub trait Message {
 
     fn billboard(msg: &str);
     fn deprecation_warning(msg: &str);
+    #[allow(clippy::wrong_self_convention)]
     fn as_json<T>(value: &T)
     where
         T: ?Sized + Serialize;

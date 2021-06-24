@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn metadata_parser_legal() {
-        for input in vec![
+        for input in &[
             "true",
             "false",
             "123.456",
@@ -150,14 +150,14 @@ mod tests {
 
     #[test]
     fn metadata_parser_illegal() {
-        for input in vec!["something", "{key: 123}", "[1, 2"] {
+        for input in &["something", "{key: 123}", "[1, 2"] {
             assert!(parse_metadata(Some(input)).is_err());
         }
     }
 
     #[test]
     fn metadata_parser_error_message_unquoted_string_error_message() -> Result<(), &'static str> {
-        for input in vec!["abc", "'abc'", "'abc", "abc'", "\"abc", "abc\""] {
+        for input in &["abc", "'abc'", "'abc", "abc'", "\"abc", "abc\""] {
             match parse_metadata(Some(input)) {
                 Ok(_) => return Err("illegal value was parsed successfully"),
                 Err(e) => {

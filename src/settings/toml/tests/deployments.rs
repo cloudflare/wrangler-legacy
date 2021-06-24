@@ -177,7 +177,7 @@ fn it_can_get_a_scheduled_no_workers_dev_no_zoned() {
     let expected_deployments = vec![DeployTarget::Schedule(ScheduleTarget {
         account_id: ACCOUNT_ID.to_owned(),
         script_name: script_name.to_owned(),
-        crons: crons,
+        crons,
     })];
     let environment = None;
     let actual_deployments = manifest.get_deployments(environment).unwrap();

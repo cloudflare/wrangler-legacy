@@ -292,10 +292,8 @@ fn try_extract_payload(panic_info: &PanicInfo) -> Option<String> {
     // panic_any, we'll have to explicitly handle it here.
     if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
         Some(s.to_string())
-    } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
-        Some(s.clone())
     } else {
-        None
+        panic_info.payload().downcast_ref::<String>().cloned()
     }
 }
 
