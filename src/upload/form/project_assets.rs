@@ -178,7 +178,7 @@ impl ModuleConfig {
 
         Ok(ModuleManifest {
             main: self.main.to_owned(),
-            modules: Self::make_module_manifest(candidates, &self.dir, &matchers)?,
+            modules: self::make_module_manifest(candidates, &self.dir, &matchers)?,
         })
     }
 
