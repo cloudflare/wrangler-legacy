@@ -3310,7 +3310,7 @@ dependencies = [
 
 [[package]]
 name = "wrangler"
-version = "1.17.0"
+version = "1.17.1-rc.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
