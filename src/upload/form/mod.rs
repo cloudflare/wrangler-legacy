@@ -23,12 +23,11 @@ use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
 // TODO: https://github.com/cloudflare/wrangler/issues/1083
-use super::{krate, Package};
-
 struct Module {
     pub path: PathBuf,
     pub module_type: ModuleType,
 }
+
 
 pub fn build(
     target: &Target,
@@ -128,17 +127,14 @@ pub fn build(
                     let mut mod_cfg = module_config.get_modules()?;
 
                     if let Some(asset_manifest) = asset_manifest {
-                        log::info!("adding CONTENT_MANIFEST to the module provided.");
-                        //asseet_manifest_blob is the variable we are interested in.
+                        log::info!("adding CONTENT_MANIFEST to the module.");
                         let asset_manifest_blob = get_asset_manifest_blob(asset_manifest)?;
-                        mod_cfg.modules.insert(
-                            "STATIC_CONTENT_MANIFEST",
-                            Module {
-                                path: Path::new("./CONTENT_MANIFEST.txt"),
-                                module_type: ModuleType::Text,
-                            },
-                        );
+                        mod_cfg.modules.insert("STATIC_CONTENT_MANIFEST", Module {
+                            path: Path::new("CONTENT_MANIFEST.txt"),
+                            module_type: ModuleType::Text
+                        });
                     }
+
 
                     let assets = ModulesAssets::new(
                         mod_cfg,
