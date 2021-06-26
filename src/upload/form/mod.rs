@@ -60,14 +60,15 @@ pub fn build(
             plain_texts.push(PlainText::new(key.clone(), value.clone())?)
         }
     }
-
-    if let Some(asset_manifest) = asset_manifest {
+    
+    if let Some(asset_manifest) = &asset_manifest {
         log::info!("adding __STATIC_CONTENT_MANIFEST");
         let binding = "__STATIC_CONTENT_MANIFEST".to_string();
-        let asset_manifest_blob = get_asset_manifest_blob(asset_manifest)?;
+        let asset_manifest_blob = get_asset_manifest_blob(&asset_manifest)?;
         let text_blob = TextBlob::new(asset_manifest_blob, binding)?;
         text_blobs.push(text_blob);
     }
+
 
     match target_type {
         TargetType::Rust => {
@@ -123,9 +124,9 @@ pub fn build(
 
                     let mut mod_cfg = module_config.get_modules()?;
 
-                    if let Some(asset_manifest) = asset_manifest {
+                    if let Some(asset_manifest) = &asset_manifest {
                         log::info!("adding CONTENT_MANIFEST to the module.");
-                        let asset_manifest_blob = get_asset_manifest_blob(asset_manifest)?;
+                        let asset_manifest_blob = get_asset_manifest_blob(&asset_manifest)?;
                         mod_cfg.modules.insert("STATIC_CONTENT_MANIFEST".to_owned(), Module {
                             path: Path::new("CONTENT_MANIFEST.txt").to_path_buf(),
                             module_type: ModuleType::Text
@@ -191,7 +192,7 @@ pub fn build(
     }
 }
 
-fn get_asset_manifest_blob(asset_manifest: AssetManifest) -> Result<String> {
+fn get_asset_manifest_blob(asset_manifest: &AssetManifest) -> Result<String> {
     let asset_manifest = serde_json::to_string(&asset_manifest)?;
     Ok(asset_manifest)
 }
