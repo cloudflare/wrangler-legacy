@@ -17,16 +17,13 @@ use crate::sites::AssetManifest;
 use crate::wranglerjs;
 
 use plain_text::PlainText;
-pub use project_assets::{ModuleConfig, ModuleType};
+pub use project_assets::{Module, ModuleConfig, ModuleType};
 use project_assets::{ModulesAssets, ServiceWorkerAssets};
 use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
 // TODO: https://github.com/cloudflare/wrangler/issues/1083
-struct Module {
-    pub path: PathBuf,
-    pub module_type: ModuleType,
-}
+use super::{krate, Package};
 
 
 pub fn build(
@@ -129,8 +126,8 @@ pub fn build(
                     if let Some(asset_manifest) = asset_manifest {
                         log::info!("adding CONTENT_MANIFEST to the module.");
                         let asset_manifest_blob = get_asset_manifest_blob(asset_manifest)?;
-                        mod_cfg.modules.insert("STATIC_CONTENT_MANIFEST", Module {
-                            path: Path::new("CONTENT_MANIFEST.txt"),
+                        mod_cfg.modules.insert("STATIC_CONTENT_MANIFEST".to_owned(), Module {
+                            path: Path::new("CONTENT_MANIFEST.txt").to_path_buf(),
                             module_type: ModuleType::Text
                         });
                     }
