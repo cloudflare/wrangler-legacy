@@ -121,28 +121,23 @@ pub fn build(
                     };
 
                     let module_config = ModuleConfig::new(main, dir, rules);
-
-                    let mut mod_cfg = module_config.get_modules()?;
-
-                    if let Some(asset_manifest) = &asset_manifest {
-                        log::info!("adding CONTENT_MANIFEST to the module.");
-                        let asset_manifest_blob = get_asset_manifest_blob(&asset_manifest)?;
-                        mod_cfg.modules.insert("STATIC_CONTENT_MANIFEST".to_owned(), Module {
-                            path: Path::new("CONTENT_MANIFEST.txt").to_path_buf(),
-                            module_type: ModuleType::Text
-                        });
-                    }
-
-
+                    
                     let assets = ModulesAssets::new(
-                        mod_cfg,
+                        module_config.get_modules()?,
                         kv_namespaces.to_vec(),
                         durable_object_classes,
                         migration,
                         plain_texts,
                     )?;
 
-                    modules_worker::build_form(&assets, session_config)
+                    if let Some(asset_manifest) = &asset_manifest {
+                        log::info!("adding STATIC_CONTENT_MANIFEST to the module.");
+                        let manifest_blob = get_asset_manifest_blob(&asset_manifest)?;
+                        return modules_worker::build_form_with_manifest(&assets, session_config, manifest_blob);
+                    }
+
+
+                    return modules_worker::build_form(&assets, session_config);
                 }
             },
             None => {
