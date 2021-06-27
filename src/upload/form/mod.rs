@@ -25,7 +25,6 @@ use wasm_module::WasmModule;
 // TODO: https://github.com/cloudflare/wrangler/issues/1083
 use super::{krate, Package};
 
-
 pub fn build(
     target: &Target,
     asset_manifest: Option<AssetManifest>,
@@ -60,7 +59,7 @@ pub fn build(
             plain_texts.push(PlainText::new(key.clone(), value.clone())?)
         }
     }
-    
+
     if let Some(asset_manifest) = &asset_manifest {
         log::info!("adding __STATIC_CONTENT_MANIFEST");
         let binding = "__STATIC_CONTENT_MANIFEST".to_string();
@@ -68,7 +67,6 @@ pub fn build(
         let text_blob = TextBlob::new(asset_manifest_blob, binding)?;
         text_blobs.push(text_blob);
     }
-
 
     match target_type {
         TargetType::Rust => {
@@ -121,7 +119,7 @@ pub fn build(
                     };
 
                     let module_config = ModuleConfig::new(main, dir, rules);
-                    
+
                     let assets = ModulesAssets::new(
                         module_config.get_modules()?,
                         kv_namespaces.to_vec(),
@@ -133,9 +131,12 @@ pub fn build(
                     if let Some(asset_manifest) = &asset_manifest {
                         log::info!("adding STATIC_CONTENT_MANIFEST to the module.");
                         let manifest_blob = get_asset_manifest_blob(&asset_manifest)?;
-                        return modules_worker::build_form_with_manifest(&assets, session_config, manifest_blob);
+                        return modules_worker::build_form_with_manifest(
+                            &assets,
+                            session_config,
+                            manifest_blob,
+                        );
                     }
-
 
                     return modules_worker::build_form(&assets, session_config);
                 }

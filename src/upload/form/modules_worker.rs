@@ -40,7 +40,7 @@ pub fn build_form(
 pub fn build_form_with_manifest(
     assets: &ModulesAssets,
     session_config: Option<serde_json::Value>,
-    static_manifest: String
+    static_manifest: String,
 ) -> Result<Form> {
     let mut form = Form::new();
 
@@ -49,7 +49,12 @@ pub fn build_form_with_manifest(
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
 
-    form = form.part("STATIC_CONTENT_MANIFEST", Part::text(static_manifest).mime_str("text/plain")?.file_name("STATIC_CONTENT_MANIFEST.txt"));
+    form = form.part(
+        "STATIC_CONTENT_MANIFEST",
+        Part::text(static_manifest)
+            .mime_str("text/plain")?
+            .file_name("STATIC_CONTENT_MANIFEST.txt"),
+    );
 
     if let Some(session_config) = session_config {
         form = add_session_config(form, session_config)?
@@ -60,7 +65,6 @@ pub fn build_form_with_manifest(
 
     Ok(form)
 }
-
 
 fn add_files(mut form: Form, assets: &ModulesAssets) -> Result<Form> {
     for (name, module) in &assets.manifest.modules {
