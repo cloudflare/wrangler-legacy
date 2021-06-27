@@ -1,5 +1,6 @@
 use std::fs::File;
 
+
 use anyhow::Result;
 use reqwest::blocking::multipart::{Form, Part};
 use serde::Serialize;
@@ -8,6 +9,10 @@ use crate::settings::binding::Binding;
 use crate::settings::toml::migrations::ApiMigration;
 
 use super::ModulesAssets;
+
+
+use super::text_blob; 
+use text_blob::TextBlob;
 
 #[derive(Serialize, Debug)]
 struct Metadata {
@@ -19,6 +24,7 @@ struct Metadata {
 pub fn build_form(
     assets: &ModulesAssets,
     session_config: Option<serde_json::Value>,
+    blobs: Vec<TextBlob>
 ) -> Result<Form> {
     let mut form = Form::new();
 
@@ -26,6 +32,7 @@ pub fn build_form(
     // "metadata" part be set first, so this order is important.
     form = add_metadata(form, assets)?;
     form = add_files(form, assets)?;
+    form = add_blobs(form, blobs)?;
 
     if let Some(session_config) = session_config {
         form = add_session_config(form, session_config)?
@@ -37,31 +44,12 @@ pub fn build_form(
     Ok(form)
 }
 
-pub fn build_form_with_manifest(
-    assets: &ModulesAssets,
-    session_config: Option<serde_json::Value>,
-    static_manifest: String,
-) -> Result<Form> {
-    let mut form = Form::new();
 
-    // The preview service in particular streams the request form, and requires that the
-    // "metadata" part be set first, so this order is important.
-    form = add_metadata(form, assets)?;
-    form = add_files(form, assets)?;
-
-    form = form.part(
-        "STATIC_CONTENT_MANIFEST",
-        Part::text(static_manifest)
-            .mime_str("text/plain")?
-            .file_name("STATIC_CONTENT_MANIFEST.txt"),
-    );
-
-    if let Some(session_config) = session_config {
-        form = add_session_config(form, session_config)?
+fn add_blobs(mut form: Form, blobs: Vec<TextBlob>) -> Result<Form> {
+    for blob in blobs {
+        let part = Part::text(blob.data).mime_str("text/plain")?.file_name(format!("{}.txt", blob.binding));
+        form = form.part(blob.binding + ".txt", part);
     }
-
-    log::info!("building form");
-    log::info!("{:#?}", &form);
 
     Ok(form)
 }
