@@ -128,7 +128,17 @@ pub fn build(
                         plain_texts,
                     )?;
 
-                    modules_worker::build_form(&assets, session_config, text_blobs)
+                    if let Some(asset_manifest) = &asset_manifest {
+                        log::info!("adding STATIC_CONTENT_MANIFEST to the module.");
+                        let manifest_blob = get_asset_manifest_blob(&asset_manifest)?;
+                        return modules_worker::build_form_with_manifest(
+                            &assets,
+                            session_config,
+                            manifest_blob,
+                        );
+                    }
+
+                    return modules_worker::build_form(&assets, session_config);
                 }
             },
             None => {
