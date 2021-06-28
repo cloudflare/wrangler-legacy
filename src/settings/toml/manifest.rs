@@ -414,9 +414,6 @@ impl Manifest {
         let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
         let zone_id_env = env::var("CF_ZONE_ID").is_ok();
         let mut top_level_fields: Vec<String> = Vec::new();
-        if !account_id_env {
-            top_level_fields.push("account_id".to_string());
-        }
         if let Some(kv_namespaces) = &self.kv_namespaces {
             for kv_namespace in kv_namespaces {
                 top_level_fields.push(format!(
