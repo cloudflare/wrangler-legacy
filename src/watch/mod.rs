@@ -43,7 +43,7 @@ pub fn watch_and_build(target: &Target, tx: Option<mpsc::Sender<()>>) -> Result<
                             match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
                                 Ok(_path) => {
                                     if let Some(tx) = tx.clone() {
-                                        tx.send(()).expect("--watch change message failed to send");
+                                        send_change_or_log_error(tx);
                                     }
                                 }
                                 Err(e) => {
@@ -63,8 +63,7 @@ pub fn watch_and_build(target: &Target, tx: Option<mpsc::Sender<()>>) -> Result<
                                     Ok(output) => {
                                         StdOut::success(&output);
                                         if let Some(tx) = tx.clone() {
-                                            tx.send(())
-                                                .expect("--watch change message failed to send");
+                                            send_change_or_log_error(tx);
                                         }
                                     }
                                     Err(e) => StdOut::user_error(&e.to_string()),
@@ -117,7 +116,7 @@ pub fn watch_and_build(target: &Target, tx: Option<mpsc::Sender<()>>) -> Result<
                             let command_name = format!("{:?}", command);
                             if commands::run(command, &command_name).is_ok() {
                                 if let Some(tx) = tx.clone() {
-                                    tx.send(()).expect("--watch change message failed to send");
+                                    send_change_or_log_error(tx);
                                 }
                             }
                         }
@@ -132,4 +131,10 @@ pub fn watch_and_build(target: &Target, tx: Option<mpsc::Sender<()>>) -> Result<
     }
 
     Ok(())
+}
+
+fn send_change_or_log_error(tx: mpsc::Sender<()>) {
+    if let Err(e) = tx.send(()) {
+        log::error!("--watch change message failed to send, {:?}", e);
+    }
 }
