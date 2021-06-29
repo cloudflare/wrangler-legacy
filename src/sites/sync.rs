@@ -39,14 +39,14 @@ pub fn sync(
         }
     }
 
-    let (pairs, asset_manifest, _): (Vec<KeyValuePair>, AssetManifest, _) =
+    let (diff_files_to_upload, asset_manifest, _): (Vec<KeyValuePair>, AssetManifest, _) =
         directory_keys_values(target, path, Some(&remote_keys))?;
 
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
     let mut local_keys: HashSet<_> = HashSet::new();
-    for pair in pairs.iter() {
-        local_keys.insert(pair.key.clone());
+    for (_, asset_key) in asset_manifest.iter() {
+        local_keys.insert(asset_key.clone());
     }
 
     // Find keys that are present in remote but not present in local, and
@@ -57,5 +57,5 @@ pub fn sync(
         .collect();
 
     StdErr::success("Success");
-    Ok((pairs, to_delete, asset_manifest))
+    Ok((diff_files_to_upload, to_delete, asset_manifest))
 }
