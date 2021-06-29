@@ -255,12 +255,12 @@ pub struct AdhocMigration {
     delete_class: Vec<String>,
 
     /// Rename a durable object class
-    #[structopt(name = "rename-class", long, number_of_values = 2)]
+    #[structopt(name = "rename-class", long, number_of_values = 2, value_names(&["from class", "to class"]))]
     rename_class: Vec<String>,
 
     /// Transfer all durable objects associated with a class in another script to a class in
     /// this script
-    #[structopt(name = "transfer-class", long, number_of_values = 3)]
+    #[structopt(name = "transfer-class", long, number_of_values = 3, value_names(&["from script", "from class", "to class"]))]
     transfer_class: Vec<String>,
 }
 
