@@ -20,8 +20,8 @@ impl WasmModule {
             .ok_or_else(|| anyhow!("filename should not be empty: {}", path.display()))?;
 
         Ok(Self {
-            filename,
             path,
+            filename,
             binding,
         })
     }

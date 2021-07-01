@@ -3,7 +3,7 @@ use std::fs::File;
 #[cfg(not(target_os = "windows"))]
 use std::os::unix::fs::PermissionsExt;
 #[cfg(not(target_os = "windows"))]
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::Result;
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
@@ -16,7 +16,7 @@ use crate::terminal::styles;
 
 // set the permissions on the dir, we want to avoid that other user reads to file
 #[cfg(not(target_os = "windows"))]
-pub fn set_file_mode(file: &PathBuf) {
+pub fn set_file_mode(file: &Path) {
     File::open(&file)
         .unwrap()
         .set_permissions(PermissionsExt::from_mode(0o600))

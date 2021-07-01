@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use serde::{self, Deserialize};
@@ -15,7 +15,7 @@ pub struct Package {
     module: PathBuf,
 }
 impl Package {
-    pub fn main(&self, package_dir: &PathBuf) -> Result<PathBuf> {
+    pub fn main(&self, package_dir: &Path) -> Result<PathBuf> {
         if self.main == PathBuf::from("") {
             anyhow::bail!(PACKAGE_JSON_KEY_ERROR_MAIN,)
         } else if !package_dir.join(&self.main).exists() {
@@ -27,7 +27,7 @@ impl Package {
             Ok(self.main.clone())
         }
     }
-    pub fn module(&self, package_dir: &PathBuf) -> Result<PathBuf> {
+    pub fn module(&self, package_dir: &Path) -> Result<PathBuf> {
         if self.module == PathBuf::from("") {
             anyhow::bail!(PACKAGE_JSON_KEY_ERROR_MODULE)
         } else if !package_dir.join(&self.module).exists() {
@@ -42,7 +42,7 @@ impl Package {
 }
 
 impl Package {
-    pub fn new(package_dir: &PathBuf) -> Result<Package> {
+    pub fn new(package_dir: &Path) -> Result<Package> {
         let manifest_path = package_dir.join("package.json");
         if !manifest_path.is_file() {
             anyhow::bail!(

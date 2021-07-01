@@ -94,10 +94,7 @@ impl Iterator for KeyList {
                 Ok(mut keys) => {
                     let key = keys.pop();
                     self.keys_result = Some(keys);
-                    match key {
-                        Some(k) => Some(Ok(k)),
-                        None => None,
-                    }
+                    key.map(Ok)
                 }
                 Err(e) => Some(Err(e)),
             }

@@ -182,7 +182,7 @@ fn get_asset_manifest_blob(asset_manifest: AssetManifest) -> Result<String> {
     Ok(asset_manifest)
 }
 
-fn filestem_from_path(path: &PathBuf) -> Option<String> {
+fn filestem_from_path(path: &Path) -> Option<String> {
     path.file_stem()?.to_str().map(|s| s.to_string())
 }
 

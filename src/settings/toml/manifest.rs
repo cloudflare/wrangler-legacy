@@ -91,7 +91,7 @@ impl Manifest {
     pub fn generate(
         name: String,
         target_type: Option<TargetType>,
-        config_path: &PathBuf,
+        config_path: &Path,
         site: Option<Site>,
     ) -> Result<Manifest> {
         let config_file = &config_path.join("wrangler.toml");
