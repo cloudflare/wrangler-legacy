@@ -39,7 +39,7 @@ log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
 once_cell = "1"
-openssl = { version = "0.10.32", optional = true }
+openssl = { version = "0.10.35", optional = true }
 os-version = "0.1.1"
 path-slash = "0.1.4"
 percent-encoding = "2.1.0"
