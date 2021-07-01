@@ -17,7 +17,6 @@ pub fn list(
     namespace_id: &str,
     prefix: Option<&str>,
 ) -> Result<()> {
-    kv::validate_target(target)?;
     let client = http::cf_v4_client(&user)?;
     let key_list = KeyList::new(target, client, namespace_id, prefix)?;
 

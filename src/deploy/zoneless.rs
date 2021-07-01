@@ -1,4 +1,4 @@
-use crate::commands::{subdomain::Subdomain, whoami::display_account_id_maybe};
+use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::RouteConfig;
@@ -13,18 +13,11 @@ pub struct ZonelessTarget {
 
 impl ZonelessTarget {
     pub fn build(script_name: &str, route_config: &RouteConfig) -> Result<Self> {
-        match route_config.account_id.as_ref() {
-            // TODO: Deserialize empty strings to None; cannot do this for account id
-            // yet without a large refactor.
-            Some(account_id) if !account_id.is_empty() => Ok(Self {
-                script_name: script_name.to_string(),
-                account_id: account_id.to_string(),
-            }),
-            _ => {
-                display_account_id_maybe();
-                anyhow::bail!("field `account_id` is required to deploy to workers.dev")
-            }
-        }
+        let account_id = route_config.account_id.load()?;
+        Ok(Self {
+            script_name: script_name.to_string(),
+            account_id: account_id.to_string(),
+        })
     }
 
     pub fn deploy(&self, user: &GlobalUser) -> Result<String> {

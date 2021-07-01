@@ -19,7 +19,6 @@ pub fn sync(
     namespace_id: &str,
     path: &Path,
 ) -> Result<(Vec<KeyValuePair>, Vec<String>, AssetManifest)> {
-    kv::validate_target(target)?;
     // First, find all changed files in given local directory (aka files that are now stale
     // in Workers KV).
 

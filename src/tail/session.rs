@@ -50,7 +50,7 @@ impl Session {
             let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
             client
                 .request(&DeleteTail {
-                    account_identifier: &target.account_id,
+                    account_identifier: target.account_id.load()?,
                     script_name: &target.name,
                     tail_id: &tail_id,
                 })
@@ -82,7 +82,7 @@ impl Session {
             let url = Some(url_);
             let response = client
                 .request(&CreateTail {
-                    account_identifier: &target.account_id,
+                    account_identifier: target.account_id.load()?,
                     script_name: &target.name,
                     params: CreateTailParams { url },
                 })
@@ -137,7 +137,7 @@ async fn get_tunnel_url(metrics_port: u16) -> Result<String> {
 async fn send_heartbeat(target: &Target, client: &async_api::Client, tail_id: &str) -> Result<()> {
     let response = client
         .request(&SendTailHeartbeat {
-            account_identifier: &target.account_id,
+            account_identifier: target.account_id.load()?,
             script_name: &target.name,
             tail_id,
         })

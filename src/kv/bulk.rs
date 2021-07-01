@@ -47,7 +47,7 @@ pub fn put(
 
     for b in batch_keys_values(pairs) {
         match client.request(&WriteBulk {
-            account_identifier: &target.account_id,
+            account_identifier: target.account_id.load()?,
             namespace_identifier: namespace_id,
             bulk_key_value_pairs: b.to_owned(),
         }) {
@@ -74,7 +74,7 @@ pub fn delete(
 
     for b in batch_keys(keys) {
         match client.request(&DeleteBulk {
-            account_identifier: &target.account_id,
+            account_identifier: target.account_id.load()?,
             namespace_identifier: namespace_id,
             bulk_keys: b.to_owned(),
         }) {

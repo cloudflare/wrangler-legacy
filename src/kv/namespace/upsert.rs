@@ -17,7 +17,7 @@ pub enum UpsertedNamespace {
 
 pub fn upsert(target: &Target, user: &GlobalUser, title: String) -> Result<UpsertedNamespace> {
     let client = http::cf_v4_client(user)?;
-    let response = create(&client, &target.account_id, &title);
+    let response = create(&client, target.account_id.load()?, &title);
 
     match response {
         Ok(success) => Ok(UpsertedNamespace::Created(success.result)),

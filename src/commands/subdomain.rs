@@ -114,17 +114,12 @@ fn register_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<
         name
     );
     StdOut::working(&msg);
-    Subdomain::put(name, &target.account_id, user)
+    Subdomain::put(name, target.account_id.load()?, user)
 }
 
 pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<()> {
-    if target.account_id.is_empty() {
-        anyhow::bail!(
-            "{} You must provide an account_id in your configuration file before creating a subdomain!",
-            emoji::WARN
-        )
-    }
-    let subdomain = Subdomain::get(&target.account_id, user)?;
+    let account_id = target.account_id.load()?;
+    let subdomain = Subdomain::get(account_id, user)?;
     if let Some(subdomain) = subdomain {
         if subdomain == name {
             let msg = format!("You have already registered {}.workers.dev", subdomain);
@@ -132,7 +127,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
             return Ok(());
         } else {
             // list all the affected scripts
-            let scripts = get_subdomain_scripts(&target.account_id, user)?;
+            let scripts = get_subdomain_scripts(account_id, user)?;
 
             let default_msg = format!("Are you sure you want to permanently move your subdomain from {}.workers.dev to {}.workers.dev?",
                                       subdomain, name);
@@ -168,7 +163,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 }
 
 pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<()> {
-    let subdomain = Subdomain::get(&target.account_id, user)?;
+    let subdomain = Subdomain::get(target.account_id.load()?, user)?;
     if let Some(subdomain) = subdomain {
         let msg = format!("{}.workers.dev", subdomain);
         StdOut::info(&msg);

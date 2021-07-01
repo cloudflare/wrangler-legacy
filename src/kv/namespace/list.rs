@@ -23,7 +23,7 @@ pub fn list(client: &impl ApiClient, target: &Target) -> Result<Vec<WorkersKvNam
         };
 
         match client.request(&ListNamespaces {
-            account_identifier: &target.account_id,
+            account_identifier: target.account_id.load()?,
             params,
         }) {
             Ok(response) => {

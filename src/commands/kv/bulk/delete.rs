@@ -9,16 +9,14 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::commands::kv;
 use crate::kv::bulk::delete;
 use crate::kv::bulk::BATCH_KEY_MAX;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
 use crate::terminal::message::{Message, StdOut};
-pub fn run(target: &Target, user: &GlobalUser, namespace_id: &str, filename: &Path) -> Result<()> {
-    kv::validate_target(target)?;
 
+pub fn run(target: &Target, user: &GlobalUser, namespace_id: &str, filename: &Path) -> Result<()> {
     match interactive::confirm(&format!(
         "Are you sure you want to delete all keys in {}?",
         filename.display()

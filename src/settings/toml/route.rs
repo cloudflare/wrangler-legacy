@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use cloudflare::endpoints::workers::WorkersRoute;
 
+use super::manifest::LazyAccountId;
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Route {
     pub id: Option<String>,
@@ -25,7 +27,7 @@ pub struct RouteConfig {
     pub route: Option<String>,
     pub routes: Option<Vec<String>>,
     pub zone_id: Option<String>,
-    pub account_id: Option<String>,
+    pub account_id: LazyAccountId,
 }
 
 impl RouteConfig {

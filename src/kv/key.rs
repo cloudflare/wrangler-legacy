@@ -31,7 +31,7 @@ impl KeyList {
             keys_result: None,
             prefix: prefix.map(str::to_string),
             client,
-            account_id: target.account_id.to_owned(),
+            account_id: target.account_id.load()?.to_owned(),
             namespace_id: namespace_id.to_string(),
             cursor: None,
             init_fetch: false,

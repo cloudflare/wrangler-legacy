@@ -318,7 +318,7 @@ mod tests {
 
     fn make_target(site: Site) -> Target {
         Target {
-            account_id: "".to_string(),
+            account_id: None.into(),
             kv_namespaces: Vec::new(),
             durable_objects: None,
             migrations: None,

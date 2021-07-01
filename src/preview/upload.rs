@@ -123,7 +123,7 @@ pub fn upload(
 fn validate(target: &Target) -> Vec<&str> {
     let mut missing_fields = Vec::new();
 
-    if target.account_id.is_empty() {
+    if target.account_id.maybe_load().is_none() {
         missing_fields.push("account_id")
     };
     if target.name.is_empty() {
@@ -150,7 +150,8 @@ fn authenticated_upload(
 ) -> Result<Preview> {
     let create_address = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
-        target.account_id, target.name
+        target.account_id.load()?,
+        target.name
     );
     log::info!("address: {}", create_address);
 
