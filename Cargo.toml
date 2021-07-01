@@ -20,7 +20,7 @@ binary-install = "0.0.3-alpha.1"
 chrome-devtools-rs = { version = "=0.0.0-alpha.1", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
-cloudflare = "0.8.2"
+cloudflare = "0.8.3"
 config = "0.10.1"
 console = "0.14.1"
 dirs = "3.0.1"
