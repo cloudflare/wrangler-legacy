@@ -10,7 +10,7 @@ use serde::Deserialize;
 use crate::commands::kv;
 use crate::settings::toml::Target;
 
-const MAX_NAMESPACES_PER_PAGE: u32 = 100;
+const MAX_NAMESPACES_PER_PAGE: u32 = 1000;
 
 pub fn list(client: &impl ApiClient, target: &Target) -> Result<Vec<WorkersKvNamespace>> {
     let mut namespaces: Vec<WorkersKvNamespace> = Vec::new();
@@ -23,7 +23,7 @@ pub fn list(client: &impl ApiClient, target: &Target) -> Result<Vec<WorkersKvNam
         };
 
         match client.request(&ListNamespaces {
-            account_identifier: &target.account_id,
+            account_identifier: target.account_id.load()?,
             params,
         }) {
             Ok(response) => {

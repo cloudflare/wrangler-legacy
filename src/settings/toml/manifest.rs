@@ -7,12 +7,15 @@ use std::str::FromStr;
 use config::{Config, File};
 
 use anyhow::{anyhow, Result};
+use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
 use super::UsageModel;
+use crate::commands::whoami::fetch_accounts;
 use crate::commands::{validate_worker_name, whoami, DEFAULT_CONFIG_PATH};
 use crate::deploy::{self, DeployTarget, DeploymentSet};
+use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::builder::Builder;
 use crate::settings::toml::dev::Dev;
 use crate::settings::toml::durable_objects::DurableObjects;
@@ -36,7 +39,7 @@ pub struct Manifest {
     #[serde(rename = "type")]
     pub target_type: TargetType,
     #[serde(default)]
-    pub account_id: String,
+    pub account_id: LazyAccountId,
     pub workers_dev: Option<bool>,
     #[serde(default, with = "string_empty_as_none")]
     pub route: Option<String>,
@@ -91,7 +94,7 @@ impl Manifest {
     pub fn generate(
         name: String,
         target_type: Option<TargetType>,
-        config_path: &PathBuf,
+        config_path: &Path,
         site: Option<Site>,
     ) -> Result<Manifest> {
         let config_file = &config_path.join("wrangler.toml");
@@ -190,7 +193,7 @@ impl Manifest {
 
     fn route_config(&self) -> RouteConfig {
         RouteConfig {
-            account_id: Some(self.account_id.clone()),
+            account_id: self.account_id.clone(),
             workers_dev: self.workers_dev,
             route: self.route.clone(),
             routes: self.routes.clone(),
@@ -239,7 +242,7 @@ impl Manifest {
 
         if let Some(env) = env {
             if let Some(env_route_cfg) =
-                env.route_config(self.account_id.clone(), self.zone_id.clone())
+                env.route_config(self.account_id.if_present().cloned(), self.zone_id.clone())
             {
                 add_routed_deployments(&env_route_cfg)
             } else {
@@ -256,7 +259,10 @@ impl Manifest {
 
         let crons = match env {
             Some(e) => {
-                let account_id = e.account_id.as_ref().unwrap_or(&self.account_id);
+                let account_id = e
+                    .account_id
+                    .as_ref()
+                    .or_else(|| self.account_id.if_present());
                 e.triggers
                     .as_ref()
                     .or_else(|| self.triggers.as_ref())
@@ -265,12 +271,12 @@ impl Manifest {
             None => self
                 .triggers
                 .as_ref()
-                .map(|t| (t.crons.as_slice(), &self.account_id)),
+                .map(|t| (t.crons.as_slice(), self.account_id.if_present())),
         };
 
         if let Some((crons, account)) = crons {
             let scheduled =
-                deploy::ScheduleTarget::build(account.clone(), script.clone(), crons.to_vec())?;
+                deploy::ScheduleTarget::build(account.cloned(), script.clone(), crons.to_vec())?;
             deployments.push(DeployTarget::Schedule(scheduled));
         }
 
@@ -288,21 +294,12 @@ impl Manifest {
 
     pub fn get_account_id(&self, environment_name: Option<&str>) -> Result<String> {
         let environment = self.get_environment(environment_name)?;
-        let mut result = self.account_id.to_string();
         if let Some(environment) = environment {
             if let Some(account_id) = &environment.account_id {
-                result = account_id.to_string();
+                return Ok(account_id.to_string());
             }
         }
-        if result.is_empty() {
-            let mut msg = "Your configuration file is missing an account_id field".to_string();
-            if let Some(environment_name) = environment_name {
-                msg.push_str(&format!(" in [env.{}]", environment_name));
-            }
-            anyhow::bail!("{}", &msg)
-        } else {
-            Ok(result)
-        }
+        self.account_id.load().map(String::from)
     }
 
     pub fn get_target(&self, environment_name: Option<&str>, preview: bool) -> Result<Target> {
@@ -362,7 +359,7 @@ impl Manifest {
         if let Some(environment) = environment {
             target.name = self.worker_name(environment_name);
             if let Some(account_id) = &environment.account_id {
-                target.account_id = account_id.clone();
+                target.account_id = Some(account_id.clone()).into();
             }
             if let Some(webpack_config) = &environment.webpack_config {
                 target.webpack_config = Some(webpack_config.clone());
@@ -417,9 +414,6 @@ impl Manifest {
         let account_id_env = env::var("CF_ACCOUNT_ID").is_ok();
         let zone_id_env = env::var("CF_ZONE_ID").is_ok();
         let mut top_level_fields: Vec<String> = Vec::new();
-        if !account_id_env {
-            top_level_fields.push("account_id".to_string());
-        }
         if let Some(kv_namespaces) = &self.kv_namespaces {
             for kv_namespace in kv_namespaces {
                 top_level_fields.push(format!(
@@ -509,6 +503,94 @@ impl Manifest {
                 }
             }
         }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct LazyAccountId(OnceCell<String>);
+
+impl Serialize for LazyAccountId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.get().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for LazyAccountId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(match Option::<String>::deserialize(deserializer)? {
+            None => None,
+            Some(x) if x.is_empty() => None,
+            Some(x) => Some(x),
+        }
+        .into())
+    }
+}
+
+impl From<Option<String>> for LazyAccountId {
+    fn from(opt: Option<String>) -> Self {
+        let cell = OnceCell::new();
+        if let Some(val) = opt {
+            cell.set(val).unwrap();
+        }
+        Self(cell)
+    }
+}
+
+impl LazyAccountId {
+    /// Return the `account_id` in `wrangler.toml`, if present.
+    ///
+    /// Use this with caution; prefer `maybe_load` instead where possible.
+    fn if_present(&self) -> Option<&String> {
+        self.0.get()
+    }
+
+    /// If `account_id` can be inferred automatically, do so;
+    /// otherwise, return `None`.
+    ///
+    /// Note that *unlike* `load`, this will never prompt the user or warn.
+    pub(crate) fn maybe_load(&self) -> Option<String> {
+        if let Some(id) = self.0.get() {
+            return Some(id.to_owned());
+        }
+
+        if let Some(mut accounts) = GlobalUser::new()
+            .ok()
+            .and_then(|user| fetch_accounts(&user).ok())
+        {
+            if accounts.len() == 1 {
+                return Some(accounts.pop().unwrap().id);
+            }
+        }
+
+        None
+    }
+
+    /// Load the account ID, possibly prompting the user.
+    pub(crate) fn load(&self) -> Result<&String> {
+        self.0.get_or_try_init(|| {
+            if let Ok(user) = GlobalUser::new() {
+                let accounts = fetch_accounts(&user)?;
+                let account_id = match accounts.as_slice() {
+                    [] => unreachable!("auth token without account?"),
+                    [single] => single.id.clone(),
+                    _multiple => {
+                        StdOut::user_error("You have multiple accounts.");
+                        whoami::display_account_id_maybe();
+                        anyhow::bail!("field `account_id` is required")
+                    }
+                };
+
+                return Ok(account_id);
+            }
+
+            todo!()
+        })
     }
 }
 

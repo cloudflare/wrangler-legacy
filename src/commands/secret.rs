@@ -7,30 +7,12 @@ use anyhow::Result;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
+use crate::terminal::interactive;
 use crate::terminal::message::{Message, StdOut};
-use crate::terminal::{emoji, interactive};
 use crate::upload;
 
 fn format_error(e: ApiFailure) -> String {
     http::format_error(e, Some(&secret_errors))
-}
-
-fn validate_target(target: &Target) -> Result<()> {
-    let mut missing_fields = Vec::new();
-
-    if target.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
-
-    if !missing_fields.is_empty() {
-        anyhow::bail!(
-            "{} Your configuration file is missing the following field(s): {:?}",
-            emoji::WARN,
-            missing_fields
-        )
-    } else {
-        Ok(())
-    }
 }
 
 // secret_errors() provides more detailed explanations of API error codes.
@@ -71,8 +53,6 @@ pub fn upload_draft_worker(
 }
 
 pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<()> {
-    validate_target(target)?;
-
     let secret_value = interactive::get_user_input_multi_line(&format!(
         "Enter the secret text you'd like assigned to the variable {} on the script named {}:",
         name, target.name
@@ -96,7 +76,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     };
 
     let response = client.request(&CreateSecret {
-        account_identifier: &target.account_id,
+        account_identifier: target.account_id.load()?,
         script_name: &target.name,
         params: params.clone(),
     });
@@ -108,7 +88,7 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
             Some(draft_upload_response) => match draft_upload_response {
                 Ok(_) => {
                     let retry_response = client.request(&CreateSecret {
-                        account_identifier: &target.account_id,
+                        account_identifier: target.account_id.load()?,
                         script_name: &target.name,
                         params,
                     });
@@ -127,8 +107,6 @@ pub fn create_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 }
 
 pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<()> {
-    validate_target(target)?;
-
     match interactive::confirm(&format!(
         "Are you sure you want to permanently delete the variable {} on the script named {}?",
         name, target.name
@@ -149,7 +127,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     let client = http::cf_v4_client(user)?;
 
     let response = client.request(&DeleteSecret {
-        account_identifier: &target.account_id,
+        account_identifier: target.account_id.load()?,
         script_name: &target.name,
         secret_name: &name,
     });
@@ -163,11 +141,10 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
 }
 
 pub fn list_secrets(user: &GlobalUser, target: &Target) -> Result<()> {
-    validate_target(target)?;
     let client = http::cf_v4_client(user)?;
 
     let response = client.request(&ListSecrets {
-        account_identifier: &target.account_id,
+        account_identifier: target.account_id.load()?,
         script_name: &target.name,
     });
 

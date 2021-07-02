@@ -6,6 +6,7 @@ mod sync;
 pub use manifest::AssetManifest;
 pub use sync::sync;
 
+use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs;
 use std::hash::Hasher;
@@ -64,6 +65,7 @@ pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> R
 pub fn directory_keys_values(
     target: &Target,
     directory: &Path,
+    exclude: Option<&HashSet<String>>,
 ) -> Result<(Vec<KeyValuePair>, AssetManifest, Vec<String>)> {
     match fs::metadata(directory) {
         Ok(ref file_type) if file_type.is_dir() => {
@@ -95,6 +97,16 @@ pub fn directory_keys_values(
 
                     validate_key_size(&key)?;
 
+                    // asset manifest should always contain all files
+                    asset_manifest.insert(url_safe_path, key.clone());
+
+                    // skip uploading existing keys, if configured to do so
+                    if let Some(remote_keys) = exclude {
+                        if remote_keys.contains(&key) {
+                            continue;
+                        }
+                    }
+
                     upload_vec.push(KeyValuePair {
                         key: key.clone(),
                         value: b64_value,
@@ -102,8 +114,6 @@ pub fn directory_keys_values(
                         expiration_ttl: None,
                         base64: Some(true),
                     });
-
-                    asset_manifest.insert(url_safe_path, key);
                 }
             }
             Ok((upload_vec, asset_manifest, file_list))
@@ -308,7 +318,7 @@ mod tests {
 
     fn make_target(site: Site) -> Target {
         Target {
-            account_id: "".to_string(),
+            account_id: None.into(),
             kv_namespaces: Vec::new(),
             durable_objects: None,
             migrations: None,
@@ -371,7 +381,7 @@ mod tests {
             test_dir
         )))
         .unwrap();
-        let (_, _, file_list) = directory_keys_values(&target, Path::new(test_dir)).unwrap();
+        let (_, _, file_list) = directory_keys_values(&target, Path::new(test_dir), None).unwrap();
         if cfg!(windows) {
             assert!(!file_list.contains(&format!("{}\\.ignore_me.txt", test_dir)));
             assert!(file_list.contains(&format!("{}\\.well-known\\dontignoreme.txt", test_dir)));

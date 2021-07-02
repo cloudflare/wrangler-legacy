@@ -39,23 +39,6 @@ fn kv_help(error_code: u16) -> &'static str {
     }
 }
 
-pub fn validate_target(target: &Target) -> Result<()> {
-    let mut missing_fields = Vec::new();
-
-    if target.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
-
-    if !missing_fields.is_empty() {
-        anyhow::bail!(
-            "Your configuration file is missing the following field(s): {:?}",
-            missing_fields
-        )
-    } else {
-        Ok(())
-    }
-}
-
 fn check_duplicate_namespaces(target: &Target) -> bool {
     // HashSet for detecting duplicate namespace bindings
     let mut binding_names: HashSet<String> = HashSet::new();
@@ -109,7 +92,7 @@ mod tests {
     #[test]
     fn it_can_detect_duplicate_bindings() {
         let target_with_dup_kv_bindings = Target {
-            account_id: "".to_string(),
+            account_id: None.into(),
             kv_namespaces: vec![
                 KvNamespace {
                     id: "fake".to_string(),
@@ -137,11 +120,11 @@ mod tests {
 
     #[test]
     fn it_encodes_slash() {
-        assert_eq!(kv::url_encode_key("/slash").to_string(), "%2Fslash");
+        assert_eq!(kv::url_encode_key("/slash"), "%2Fslash");
     }
 
     #[test]
     fn it_doesnt_double_encode_slash() {
-        assert_eq!(kv::url_encode_key("%2Fslash").to_string(), "%2Fslash");
+        assert_eq!(kv::url_encode_key("%2Fslash"), "%2Fslash");
     }
 }

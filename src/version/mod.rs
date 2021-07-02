@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 use std::str::FromStr;
 use std::sync::mpsc;
 use std::thread;
@@ -104,7 +104,7 @@ fn check_wrangler_versions() -> Result<WranglerVersion> {
 }
 
 /// Reads version out of version file, is `None` if file does not exist or is corrupted
-fn get_version_disk(version_file: &PathBuf) -> Option<LastCheckedVersion> {
+fn get_version_disk(version_file: &Path) -> Option<LastCheckedVersion> {
     match fs::read_to_string(&version_file) {
         Ok(contents) => match LastCheckedVersion::from_str(&contents) {
             Ok(last_checked_version) => Some(last_checked_version),
@@ -116,7 +116,7 @@ fn get_version_disk(version_file: &PathBuf) -> Option<LastCheckedVersion> {
 
 fn get_latest_version(
     installed_version: &str,
-    version_file: &PathBuf,
+    version_file: &Path,
     current_time: SystemTime,
 ) -> Result<Version> {
     let latest_version = get_latest_version_from_api(installed_version)?;

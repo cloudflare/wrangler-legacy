@@ -111,7 +111,7 @@ fn fetch_api_token_email(
 }
 
 /// Fetch the accounts associated with a user
-fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
+pub(crate) fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&account::ListAccounts { params: None });
     match response {

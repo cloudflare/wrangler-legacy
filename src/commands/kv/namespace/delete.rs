@@ -9,7 +9,6 @@ use crate::terminal::message::{Message, StdOut};
 use anyhow::Result;
 
 pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<()> {
-    kv::validate_target(target)?;
     let client = http::cf_v4_client(user)?;
 
     match interactive::confirm(&format!(
@@ -27,7 +26,7 @@ pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<()> {
     let msg = format!("Deleting namespace {}", id);
     StdOut::working(&msg);
 
-    let response = delete(client, target, id);
+    let response = delete(client, target.account_id.load()?, id);
     match response {
         Ok(_) => {
             StdOut::success("Success");

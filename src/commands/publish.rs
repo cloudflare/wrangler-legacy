@@ -1,5 +1,5 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -154,7 +154,7 @@ fn build_output_message(deploy_results: deploy::DeployResults, target_name: Stri
 
 // We don't want folks setting their bucket to the top level directory,
 // which is where wrangler commands are always called from.
-pub fn validate_bucket_location(bucket: &PathBuf) -> Result<()> {
+pub fn validate_bucket_location(bucket: &Path) -> Result<()> {
     // TODO: this should really use a convenience function for "Wrangler Project Root"
     let current_dir = env::current_dir()?;
     if bucket.as_os_str() == current_dir {
@@ -184,9 +184,6 @@ pub fn validate_bucket_location(bucket: &PathBuf) -> Result<()> {
 fn validate_target_required_fields_present(target: &Target) -> Result<()> {
     let mut missing_fields = Vec::new();
 
-    if target.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
     if target.name.is_empty() {
         missing_fields.push("name")
     };

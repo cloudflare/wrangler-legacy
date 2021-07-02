@@ -203,17 +203,17 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle)> {
     Ok((command, temp_file, bundle))
 }
 
-fn build_with_custom_webpack(command: &mut Command, webpack_config_path: &PathBuf) {
+fn build_with_custom_webpack(command: &mut Command, webpack_config_path: &Path) {
     command.arg(format!(
         "--webpack-config={}",
         &webpack_config_path.to_str().unwrap().to_string()
     ));
 }
 
-fn build_with_default_webpack(command: &mut Command, package_dir: &PathBuf) -> Result<()> {
-    let package = Package::new(&package_dir)?;
+fn build_with_default_webpack(command: &mut Command, package_dir: &Path) -> Result<()> {
+    let package = Package::new(package_dir)?;
     let package_main = package_dir
-        .join(package.main(&package_dir)?)
+        .join(package.main(package_dir)?)
         .to_str()
         .unwrap()
         .to_string();
@@ -224,7 +224,7 @@ fn build_with_default_webpack(command: &mut Command, package_dir: &PathBuf) -> R
 
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
-fn run_npm_install(dir: &PathBuf) -> Result<()> {
+fn run_npm_install(dir: &Path) -> Result<()> {
     let flock_path = dir.join(&".install.lock");
     let flock = File::create(&flock_path)?;
     // avoid running multiple {npm install} at the same time (eg. in tests)
@@ -232,7 +232,7 @@ fn run_npm_install(dir: &PathBuf) -> Result<()> {
 
     if !dir.join("node_modules").exists() {
         let mut command = build_npm_command();
-        command.current_dir(dir.clone());
+        command.current_dir(dir.to_path_buf());
         command.arg("install");
         log::info!("Running {:?} in directory {:?}", command, dir);
 
@@ -312,6 +312,7 @@ fn random_chars(n: usize) -> String {
     let mut rng = thread_rng();
     iter::repeat(())
         .map(|()| rng.sample(Alphanumeric))
+        .map(char::from)
         .take(n)
         .collect()
 }

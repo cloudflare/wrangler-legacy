@@ -12,11 +12,10 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
-lazy_static! {
-    static ref CACHE: Cache = get_wrangler_cache().expect("Could not get Wrangler cache location");
-}
+static CACHE: Lazy<Cache> =
+    Lazy::new(|| get_wrangler_cache().expect("Could not get Wrangler cache location"));
 
 enum ToolDownload {
     NeedsInstall(Version),
@@ -70,13 +69,9 @@ fn tool_needs_update(tool_name: &str, target_version: Version) -> Result<ToolDow
     let current_installation = get_installation(tool_name, &target_version);
     // if something goes wrong checking the current installation
     // we shouldn't fail, we should just re-install for them
-    if let Ok(current_installation) = current_installation {
-        if let Some((installed_version, installed_location)) = current_installation {
-            if installed_version.major == target_version.major
-                && installed_version >= target_version
-            {
-                return Ok(ToolDownload::InstalledAt(Download::at(&installed_location)));
-            }
+    if let Ok(Some((installed_version, installed_location))) = current_installation {
+        if installed_version.major == target_version.major && installed_version >= target_version {
+            return Ok(ToolDownload::InstalledAt(Download::at(&installed_location)));
         }
     }
     Ok(ToolDownload::NeedsInstall(target_version))

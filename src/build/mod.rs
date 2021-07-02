@@ -4,7 +4,7 @@ use crate::terminal::styles;
 use crate::wranglerjs;
 use crate::{commands, install};
 
-use std::path::PathBuf;
+use std::path::Path;
 use std::process::Command;
 
 use anyhow::{anyhow, Result};
@@ -68,7 +68,7 @@ pub fn build_target(target: &Target) -> Result<String> {
     }
 }
 
-pub fn command(args: &[&str], binary_path: &PathBuf) -> Command {
+pub fn command(args: &[&str], binary_path: &Path) -> Command {
     let mut c = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
         c.arg("/C");
