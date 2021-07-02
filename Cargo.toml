@@ -34,7 +34,7 @@ http = "0.2.1"
 hyper = { version = "0.14.7", features = ["http2", "server", "runtime"] }
 hyper-rustls = "0.22.1"
 ignore = "0.4.17"
-indicatif = "0.15.0"
+indicatif = "0.16.2"
 log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
