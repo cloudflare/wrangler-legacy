@@ -685,3 +685,29 @@ fn get_namespaces(
         Ok(Vec::new())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate() -> Result<()> {
+        let toml_path = Path::new(".");
+
+        let toml = Manifest::generate(
+            "test".to_string(),
+            Some(TargetType::JavaScript),
+            toml_path,
+            None,
+        )?;
+        assert_eq!(toml.name.to_string(), "test".to_string());
+        assert_eq!(toml.target_type.to_string(), "javascript".to_string());
+        fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
+
+        let toml = Manifest::generate("test".to_string(), None, toml_path, None)?;
+        assert_eq!(toml.target_type.to_string(), "webpack".to_string());
+        fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
+
+        Ok(())
+    }
+}
