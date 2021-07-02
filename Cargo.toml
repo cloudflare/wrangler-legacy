@@ -29,7 +29,7 @@ eventual = "0.1.7"
 flate2 = "1.0.18"
 fs2 = "0.4.3"
 futures-util = "0.3"
-globset = "0.4.6"
+globset = "0.4.8"
 http = "0.2.1"
 hyper = { version = "0.14.7", features = ["http2", "server", "runtime"] }
 hyper-rustls = "0.22.1"
