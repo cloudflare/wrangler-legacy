@@ -4,12 +4,13 @@ use serde::Serialize;
 
 use crate::settings::binding::Binding;
 
-use super::ServiceWorkerAssets;
+use super::{ServiceWorkerAssets, UsageModel};
 
 #[derive(Serialize, Debug)]
 struct Metadata {
     pub body_part: String,
     pub bindings: Vec<Binding>,
+    pub usage_model: Option<UsageModel>,
 }
 
 pub fn build_form(
@@ -54,6 +55,7 @@ fn add_metadata(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
     let metadata_json = serde_json::json!(&Metadata {
         body_part: assets.script_name(),
         bindings: assets.bindings(),
+        usage_model: assets.usage_model,
     });
 
     let metadata = Part::text(metadata_json.to_string())

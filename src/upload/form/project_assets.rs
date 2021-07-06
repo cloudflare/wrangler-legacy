@@ -11,6 +11,7 @@ use super::filestem_from_path;
 use super::plain_text::PlainText;
 use super::text_blob::TextBlob;
 use super::wasm_module::WasmModule;
+use super::UsageModel;
 
 use crate::settings::toml::{
     migrations::ApiMigration, DurableObjectsClass, KvNamespace, ModuleRule,
@@ -26,6 +27,7 @@ pub struct ServiceWorkerAssets {
     pub durable_object_classes: Vec<DurableObjectsClass>,
     pub text_blobs: Vec<TextBlob>,
     pub plain_texts: Vec<PlainText>,
+    pub usage_model: Option<UsageModel>,
 }
 
 impl ServiceWorkerAssets {
@@ -36,6 +38,7 @@ impl ServiceWorkerAssets {
         durable_object_classes: Vec<DurableObjectsClass>,
         text_blobs: Vec<TextBlob>,
         plain_texts: Vec<PlainText>,
+        usage_model: Option<UsageModel>,
     ) -> Result<Self> {
         let script_name = filestem_from_path(&script_path)
             .ok_or_else(|| anyhow!("filename should not be empty: {}", script_path.display()))?;
@@ -48,6 +51,7 @@ impl ServiceWorkerAssets {
             durable_object_classes,
             text_blobs,
             plain_texts,
+            usage_model,
         })
     }
 
@@ -331,6 +335,7 @@ pub struct ModulesAssets {
     pub durable_object_classes: Vec<DurableObjectsClass>,
     pub migration: Option<ApiMigration>,
     pub plain_texts: Vec<PlainText>,
+    pub usage_model: Option<UsageModel>,
 }
 
 impl ModulesAssets {
@@ -340,6 +345,7 @@ impl ModulesAssets {
         durable_object_classes: Vec<DurableObjectsClass>,
         migration: Option<ApiMigration>,
         plain_texts: Vec<PlainText>,
+        usage_model: Option<UsageModel>,
     ) -> Result<Self> {
         Ok(Self {
             manifest,
@@ -347,6 +353,7 @@ impl ModulesAssets {
             durable_object_classes,
             migration,
             plain_texts,
+            usage_model,
         })
     }
 
