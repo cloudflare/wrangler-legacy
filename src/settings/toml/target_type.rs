@@ -21,7 +21,7 @@ impl Default for TargetType {
 impl fmt::Display for TargetType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let printable = match *self {
-            TargetType::JavaScript => "js",
+            TargetType::JavaScript => "javascript",
             TargetType::Rust => "rust",
             TargetType::Webpack => "webpack",
         };

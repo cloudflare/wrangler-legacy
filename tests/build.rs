@@ -359,7 +359,8 @@ fn it_builds_with_webpack_name_output_warn() {
 
     assert!(
         stderr.contains("webpack's output filename is being renamed"),
-        format!("given: {}", stderr)
+        "given: {}",
+        stderr
     );
 }
 
@@ -415,11 +416,9 @@ fn build_fails_with(fixture: &Fixture, expected_message: &str) {
         str::from_utf8(&output.stderr)
             .unwrap()
             .contains(expected_message),
-        format!(
-            "expected {:?} not found, given: {:?}",
-            expected_message,
-            str::from_utf8(&output.stderr)
-        )
+        "expected {:?} not found, given: {:?}",
+        expected_message,
+        str::from_utf8(&output.stderr)
     );
 }
 

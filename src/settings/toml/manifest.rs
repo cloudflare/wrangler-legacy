@@ -140,7 +140,7 @@ impl Manifest {
             config_template_doc["workers_dev"] = toml_edit::value(default_workers_dev);
         }
         if let Some(target_type) = &target_type {
-            config_template_doc["target_type"] = toml_edit::value(target_type.to_string());
+            config_template_doc["type"] = toml_edit::value(target_type.to_string());
         }
         if let Some(site) = site {
             if config_template.site.is_none() {
@@ -683,5 +683,31 @@ fn get_namespaces(
         }).collect()
     } else {
         Ok(Vec::new())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate() -> Result<()> {
+        let toml_path = Path::new(".");
+
+        let toml = Manifest::generate(
+            "test".to_string(),
+            Some(TargetType::JavaScript),
+            toml_path,
+            None,
+        )?;
+        assert_eq!(toml.name.to_string(), "test".to_string());
+        assert_eq!(toml.target_type.to_string(), "javascript".to_string());
+        fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
+
+        let toml = Manifest::generate("test".to_string(), None, toml_path, None)?;
+        assert_eq!(toml.target_type.to_string(), "webpack".to_string());
+        fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
+
+        Ok(())
     }
 }
