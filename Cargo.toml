@@ -43,7 +43,7 @@ openssl = { version = "0.10.35", optional = true }
 os-version = "0.1.1"
 path-slash = "0.1.4"
 percent-encoding = "2.1.0"
-predicates = "1.0.5"
+predicates = "2.0.0"
 prettytable-rs = "0.8.0"
 rand = "0.8.3"
 regex = "1.4.1"
@@ -75,7 +75,7 @@ ws = "0.9.1"
 [dev-dependencies]
 assert_cmd = "1.0.2"
 fs_extra = "1.2.0"
-predicates = "1.0.5"
+predicates = "2.0.0"
 
 [features]
 # OpenSSL is vendored by default, can use system OpenSSL through feature flag.
