@@ -43,6 +43,10 @@ impl Tail {
         is_cloudflared_installed()?;
         print_startup_message(&target.name, tunnel_port, metrics_port);
 
+        // Loading the token creates a nested runtime because it goes through reqwest.
+        // Make sure it's loaded before creating our own runtime; nested runtimes will panic.
+        target.account_id.load()?;
+
         let runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
