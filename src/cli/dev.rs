@@ -13,6 +13,7 @@ pub fn dev(
     mut local_protocol: Option<Protocol>,
     mut upstream_protocol: Option<Protocol>,
     cli_params: &Cli,
+    inspect: bool,
 ) -> Result<()> {
     log::info!("Starting dev server");
     let manifest = Manifest::new(&cli_params.config)?;
@@ -44,5 +45,6 @@ pub fn dev(
         local_protocol,
         upstream_protocol,
         cli_params.verbose,
+        inspect,
     )
 }
