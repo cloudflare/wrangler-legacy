@@ -1,4 +1,4 @@
-use crate::terminal::{emoji, styles};
+use crate::terminal::{colored_json_string, emoji, styles};
 use anyhow::Result;
 use hyper::server::conn::AddrIncoming;
 use hyper::server::Builder;
@@ -31,54 +31,43 @@ impl LogServer {
     }
 
     pub async fn run(self) -> Result<()> {
-        // this is so bad
-        // but i also am so bad at types
-        // TODO: make this less terrible
-        match self.format.as_str() {
-            "json" => {
-                let service = make_service_fn(|_| async {
-                    Ok::<_, hyper::Error>(service_fn(print_logs_json))
-                });
+        let format = self.format.clone(); // Having to clone this so much is a little gross TODO
 
-                let server = self.server.serve(service);
-
-                // The shutdown receiver listens for a one shot message from our sigint handler as a signal
-                // to gracefully shut down the hyper server.
-                let shutdown_rx = self.shutdown_rx;
-
-                let graceful = server.with_graceful_shutdown(async {
-                    shutdown_rx.await.ok();
-                });
-
-                graceful.await?;
-
-                Ok(())
+        let service = make_service_fn(move |_| {
+            let format = format.clone();
+            async move {
+                let format = format.clone();
+                Ok::<_, hyper::Error>(service_fn(move |req| {
+                    let format = format.clone();
+                    async move {
+                        let format = format.clone();
+                        match format.as_str() {
+                            "pretty" => print_logs_pretty(req).await,
+                            "json" => print_logs_json(req).await,
+                            _ => unreachable!(),
+                        }
+                    }
+                }))
             }
-            "pretty" => {
-                let service = make_service_fn(|_| async {
-                    Ok::<_, hyper::Error>(service_fn(print_logs_pretty))
-                });
+        });
 
-                let server = self.server.serve(service);
+        let server = self.server.serve(service);
 
-                // The shutdown receiver listens for a one shot message from our sigint handler as a signal
-                // to gracefully shut down the hyper server.
-                let shutdown_rx = self.shutdown_rx;
+        // The shutdown receiver listens for a one shot message from our sigint handler as a signal
+        // to gracefully shut down the hyper server.
+        let shutdown_rx = self.shutdown_rx;
 
-                let graceful = server.with_graceful_shutdown(async {
-                    shutdown_rx.await.ok();
-                });
+        let graceful = server.with_graceful_shutdown(async {
+            shutdown_rx.await.ok();
+        });
 
-                graceful.await?;
+        graceful.await?;
 
-                Ok(())
-            }
-            _ => unreachable!(),
-        }
+        Ok(())
     }
 }
 
-async fn print_logs_json(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+async fn print_logs_json(req: Request<Body>) -> Result<Response<Body>> {
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => {
             let whole_body = hyper::body::to_bytes(req.into_body()).await?;
@@ -137,7 +126,12 @@ async fn print_logs_pretty(req: Request<Body>) -> Result<Response<Body>> {
             if !parsed.logs.is_empty() {
                 println!("  Logs:");
                 parsed.logs.iter().for_each(|log| {
-                    let messages = log.message.join(" ");
+                    let message = colored_json_string(&log.message);
+                    let messages = if let Ok(m) = message {
+                        m
+                    } else {
+                        "Error: Failed to convert encoded message to string".to_string()
+                    };
 
                     let output = match log.level.as_str() {
                         "assert" | "error" => format!("{} {}", emoji::X, styles::warning(messages)),
@@ -183,7 +177,7 @@ struct LogException {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct LogMessage {
-    message: Vec<String>,
+    message: serde_json::Value,
     level: String,
     timestamp: usize,
 }

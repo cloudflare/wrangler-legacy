@@ -17,10 +17,11 @@ backtrace = { version = "0.3.58" }
 base64 = "0.13.0"
 billboard = "0.1.0"
 binary-install = "0.0.3-alpha.1"
-chrome-devtools-rs = { version = "=0.0.0-alpha.1", features = ["color"] }
+chrome-devtools-rs = { version = "0.0.0-alpha.2", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
 cloudflare = "0.8.3"
+colored_json = "2.1.0"
 config = "0.11.0"
 console = "0.14.1"
 dirs = "3.0.1"

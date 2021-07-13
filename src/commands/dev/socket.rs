@@ -7,6 +7,7 @@ use futures_util::sink::SinkExt;
 use futures_util::stream::{SplitStream, StreamExt};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
+use crate::terminal::colored_json_string;
 use crate::terminal::message::{Message, StdErr, StdOut};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
@@ -107,14 +108,15 @@ async fn print_ws_messages(
                 log::info!("{}", &message_text);
 
                 let parsed_message: Result<protocol::Runtime> = serde_json::from_str(&message_text)
-                    .map_err(|e| anyhow!("this event could not be parsed:\n{}", e));
+                    .map_err(|e| anyhow!("Failed to parse event:\n{}", e));
 
                 if let Ok(protocol::Runtime::Event(event)) = parsed_message {
                     // Try to parse json to pretty print, otherwise just print string
                     let json_parse: Result<serde_json::Value, serde_json::Error> =
                         serde_json::from_str(&*event.to_string());
+
                     if let Ok(json) = json_parse {
-                        if let Ok(json_str) = serde_json::to_string_pretty(&json) {
+                        if let Ok(json_str) = colored_json_string(&json) {
                             println!("{}", json_str);
                         } else {
                             StdOut::message(&format!("{:?}", event.to_string()));
