@@ -22,11 +22,17 @@ pub fn dev(
     server_config: ServerConfig,
     local_protocol: Protocol,
     verbose: bool,
+    inspect: bool,
 ) -> Result<()> {
     println!("unauthenticated");
 
     // setup the session
     let session_id = get_session_id()?;
+    let inspect = if inspect {
+        Some(target.name.clone())
+    } else {
+        None
+    };
 
     // upload the initial script
     let preview_id = get_preview_id(
@@ -74,15 +80,20 @@ pub fn dev(
     // and we must block the main thread on the completion of
     // said futures
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(socket_url.clone(), None));
+        let devtools_listener = runtime.spawn(socket::listen(
+            socket_url.clone(),
+            server_config.clone(),
+            inspect,
+            None,
+        ));
 
         let server = match local_protocol {
-            Protocol::Https => tokio::spawn(server::https(
+            Protocol::Https => runtime.spawn(server::https(
                 server_config.clone(),
                 Arc::clone(&preview_id),
             )),
             Protocol::Http => {
-                tokio::spawn(server::http(server_config.clone(), Arc::clone(&preview_id)))
+                runtime.spawn(server::http(server_config.clone(), Arc::clone(&preview_id)))
             }
         };
 
