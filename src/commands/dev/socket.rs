@@ -9,6 +9,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 
 use crate::terminal::colored_json_string;
 use crate::terminal::message::{Message, StdErr, StdOut};
+use protocol::domain::runtime::event::Event::ExceptionThrown;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
@@ -98,6 +99,18 @@ async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpSt
     }
 }
 
+fn print_json(value: Result<serde_json::Value, serde_json::Error>, fallback: String) {
+    if let Ok(json) = value {
+        if let Ok(json_str) = colored_json_string(&json) {
+            println!("{}", json_str);
+        } else {
+            StdOut::message(fallback.as_str());
+        }
+    } else {
+        println!("{}", fallback);
+    }
+}
+
 async fn print_ws_messages(
     mut read: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
 ) -> Result<()> {
@@ -110,20 +123,33 @@ async fn print_ws_messages(
                 let parsed_message: Result<protocol::Runtime> = serde_json::from_str(&message_text)
                     .map_err(|e| anyhow!("Failed to parse event:\n{}", e));
 
-                if let Ok(protocol::Runtime::Event(event)) = parsed_message {
-                    // Try to parse json to pretty print, otherwise just print string
-                    let json_parse: Result<serde_json::Value, serde_json::Error> =
-                        serde_json::from_str(&*event.to_string());
+                match parsed_message {
+                    Ok(protocol::Runtime::Event(ExceptionThrown(params))) => {
+                        let default_description = "N/A".to_string();
+                        let description = params
+                            .exception_details
+                            .exception
+                            .description
+                            .as_ref()
+                            .unwrap_or(&default_description);
 
-                    if let Ok(json) = json_parse {
-                        if let Ok(json_str) = colored_json_string(&json) {
-                            println!("{}", json_str);
-                        } else {
-                            StdOut::message(&format!("{:?}", event.to_string()));
-                        }
-                    } else {
-                        println!("{}", event);
+                        StdOut::message(&format!(
+                            "{} at line {:?}, col {:?}",
+                            description,
+                            params.exception_details.line_number,
+                            params.exception_details.column_number,
+                        ));
+
+                        let json_parse = serde_json::to_value(params.clone());
+                        print_json(json_parse, format!("{:?}", params));
                     }
+                    Ok(protocol::Runtime::Event(event)) => {
+                        // Try to parse json to pretty print, otherwise just print string
+                        let json_parse: Result<serde_json::Value, serde_json::Error> =
+                            serde_json::from_str(&*event.to_string());
+                        print_json(json_parse, event.to_string());
+                    }
+                    _ => {}
                 }
             }
             Err(error) => return Err(error.into()),

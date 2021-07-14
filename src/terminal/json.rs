@@ -1,7 +1,6 @@
 use colored_json::{Color, ColoredFormatter, PrettyFormatter, Styler};
-use serde_json::Value;
 
-pub fn colored_json_string(value: &Value) -> Result<String, serde_json::Error> {
+pub fn colored_json_string(value: &serde_json::Value) -> Result<String, serde_json::Error> {
     let formatter = ColoredFormatter::with_styler(
         PrettyFormatter::new(),
         Styler {
