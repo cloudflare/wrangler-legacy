@@ -313,6 +313,7 @@ mod tests {
     use std::fs;
     use std::io::Write;
     use std::path::{Path, PathBuf};
+    use tempfile::TempDir;
 
     use crate::settings::toml::{Site, Target, TargetType};
 
@@ -332,6 +333,71 @@ mod tests {
             usage_model: None,
             wasm_modules: None,
         }
+    }
+
+    fn tmpdir_with_default_files() -> (PathBuf, Vec<PathBuf>) {
+        let files = vec![
+            PathBuf::new().join("file_a.txt"),
+            PathBuf::new().join("file_b.txt"),
+            PathBuf::new().join("file_c.txt"),
+        ];
+
+        let tmpdir = TempDir::new().unwrap();
+        let tmp_path = tmpdir.into_path();
+
+        files.iter().for_each(|path| {
+            std::fs::File::create(tmp_path.clone().join(path)).unwrap();
+        });
+
+        (tmp_path, files)
+    }
+
+    #[test]
+    fn it_runs_directory_keys_values_returning_expected_valyes() {
+        let (tmpdir, all_files) = tmpdir_with_default_files();
+
+        // check that no files are excluded from the upload set or the asset manifest.
+        let (to_upload, asset_manifest, _) =
+            directory_keys_values(&make_target(Site::default()), &tmpdir, None).unwrap();
+        let mut keys = vec![];
+        for file in &all_files {
+            let filename = file.to_str().unwrap();
+            assert!(asset_manifest.get(filename).is_some());
+            keys.push(asset_manifest.get(filename).unwrap());
+        }
+        for kv in to_upload {
+            assert!(keys.contains(&&kv.key))
+        }
+
+        // check that the correct files are excluded (as if they already are uploaded).
+        // asset manifest should have all the files, to_upload should be filtered.
+        let mut exclude = HashSet::new();
+        for f in &["file_a.txt", "file_b.txt"] {
+            let path = tmpdir.join(f);
+            let path = path.to_str().unwrap();
+            // in calling code, `exclude` is the list of keys from KV, and thus needs to contain the
+            // partial hash digest of the file in the "key". call generate_path_and_key to obtain
+            // for later comparison.
+            let (_, key_with_hash) =
+                generate_path_and_key(&Path::new(path), &tmpdir, Some("".into())).unwrap();
+            exclude.insert(key_with_hash);
+        }
+
+        let (to_upload, asset_manifest, _) =
+            directory_keys_values(&make_target(Site::default()), &tmpdir, Some(&exclude)).unwrap();
+        for file in &all_files {
+            let filename = file.to_str().unwrap();
+            assert!(asset_manifest.get(filename).is_some());
+        }
+        // construct a list of keys from the upload list to then ensure it does _not_ contain any
+        // key for a file which we have designated for exclusion.
+        let upload_keys: Vec<String> = to_upload.iter().map(|kv| kv.key.clone()).collect();
+        for file in exclude.iter() {
+            assert!(!upload_keys.contains(&file.to_string()));
+        }
+        assert_eq!(upload_keys.len(), 1);
+        assert!(upload_keys.first().unwrap().starts_with("file_c"));
+        assert_eq!(to_upload.len(), all_files.len() - exclude.len());
     }
 
     #[test]
