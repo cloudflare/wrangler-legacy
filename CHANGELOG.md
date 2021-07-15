@@ -1,5 +1,123 @@
 # Changelog
 
+## v1.18.0
+
+- ### Features
+
+  - **feat: add test for kv sync for site projects - [nilslice], [pull/1996]**
+
+    Adds test for quickfix made in #1976.
+
+    TODO: consider adding types for the Key / Value pairs used in this code. It's a bit confusing to rely the comparison of `String` types which have been considerably modified from the assumed original
+    ... truncated
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1996]: https://github.com/cloudflare/wrangler/pull/1996
+
+  - **feat: add usage_model to metadata - [taylorlee], [pull/1961]**
+
+    and remove toggling usage model after upload
+    this shouldn't be merged until the upload api supports usage_model in
+    metadata
+
+    [taylorlee]: https://github.com/taylorlee
+    [pull/1961]: https://github.com/cloudflare/wrangler/pull/1961
+
+  - **Don't require an account_id in wrangler.toml - [jyn514], [pull/1966]**
+
+    Helps with https://github.com/cloudflare/wrangler/issues/331. I recommend reviewing this commit-by-commit.
+
+    Note that unlike the suggestion in the original issue, this actually never writes to the wrangler.toml at all, which will hopefull
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/1966]: https://github.com/cloudflare/wrangler/pull/1966
+
+- ### Fixes
+
+  - **fix: improve error message when no deployment info is provided - [nilslice], [pull/1997]**
+
+    Fixes #1694.
+
+    Adds clarification and links to documentation on how the project must be configured in order to deploy it.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1997]: https://github.com/cloudflare/wrangler/pull/1997
+
+  - **Fixed issue with tail not deserailzing event properly - [jspspike], [pull/1994]**
+
+    Also added color to `wrangler dev` and `wrangler tail -f pretty` json outputs if deserialized properly
+    Fixes #1990
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1994]: https://github.com/cloudflare/wrangler/pull/1994
+
+  - **Temporary workaround to avoid dropping a tokio::runtime while another is running - [jyn514], [pull/1991]**
+
+    This fixes the following error from `wrangler tail`:
+
+    ```
+    $ wrangler tail
+    🦚  Setting up log streaming from Worker script "test-project". Using ports 8080 and 8081.
+    This may take a few seconds...
+
+    Oops! wrangler encountered an error.
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/1991]: https://github.com/cloudflare/wrangler/pull/1991
+
+    ``` 
+
+  - **Made config add target_type to type instead of "target_type" - [jspspike], [pull/1988]**
+
+    Fixes #1960
+
+    We used serde to rename the `target_type` field to `type` but when making the toml ourselves we still used `target_type`
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1988]: https://github.com/cloudflare/wrangler/pull/1988
+
+  - **fix: use asset manifest for sync op - [nilslice], [pull/1976]**
+
+    After #1970, the `vec` of assets used in the sync operation no longer included the assets that were already uploaded. this diff of assets was re-used to determine remote assets to delete, which would in turn remove files that should have re
+    ... truncated
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1976]: https://github.com/cloudflare/wrangler/pull/1976
+
+  - **Remove misleading `rustup install` and update rust-toolchain - [jyn514], [pull/1968]**
+
+    Previously, CI ran `rustup install stable` just before running lints, but didn't
+    actually use the new toolchain. This removes the unneeded download and updates
+    rust-toolchain to the latest stable version.
+
+    This also fixes a bunch of cli
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/1968]: https://github.com/cloudflare/wrangler/pull/1968
+
+- ### Maintenance
+
+  - **Cleanup code in socket.rs - [jyn514], [pull/2000]**
+
+    This can just use `?` instead of an explicit match.
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2000]: https://github.com/cloudflare/wrangler/pull/2000
+ 
+  - **Tell Dependabot to only make PRs for new major versions - [jyn514], [pull/1987]**
+
+    This avoids constant small PRs which aren't necessary. Dependabot will still
+    make PRs for security updates, which is good because we keep Cargo.lock checked
+    into git and Cargo will keep using yanked versions until you update Cargo.lock.
+
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/1987]: https://github.com/cloudflare/wrangler/pull/1987
+
 ## v1.17.0
 
 - ### Features
