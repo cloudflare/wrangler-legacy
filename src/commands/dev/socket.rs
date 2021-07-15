@@ -148,7 +148,8 @@ async fn print_ws_messages(
                     serde_json::from_str(&*event.to_string());
                 print_json(json_parse, event.to_string());
             }
-            _ => {}
+            Ok(protocol::Runtime::Method(_)) => {}
+            Err(err) => log::debug!("{}", err),
         }
     }
     Ok(())
