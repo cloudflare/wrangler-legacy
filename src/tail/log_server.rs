@@ -31,24 +31,18 @@ impl LogServer {
     }
 
     pub async fn run(self) -> Result<()> {
-        let format = self.format.clone(); // Having to clone this so much is a little gross TODO
+        let format = self.format;
+
+        let server_fn_gen = |format: String| {
+            service_fn(move |req: Request<Body>| {
+                let format = format.clone();
+                print_logs(req, format)
+            })
+        };
 
         let service = make_service_fn(move |_| {
             let format = format.clone();
-            async move {
-                let format = format.clone();
-                Ok::<_, hyper::Error>(service_fn(move |req| {
-                    let format = format.clone();
-                    async move {
-                        let format = format.clone();
-                        match format.as_str() {
-                            "pretty" => print_logs_pretty(req).await,
-                            "json" => print_logs_json(req).await,
-                            _ => unreachable!(),
-                        }
-                    }
-                }))
-            }
+            async move { Ok::<_, hyper::Error>(server_fn_gen(format)) }
         });
 
         let server = self.server.serve(service);
@@ -64,6 +58,14 @@ impl LogServer {
         graceful.await?;
 
         Ok(())
+    }
+}
+
+async fn print_logs(req: Request<Body>, format: String) -> Result<Response<Body>> {
+    match format.as_str() {
+        "pretty" => print_logs_pretty(req).await,
+        "json" => print_logs_json(req).await,
+        _ => unreachable!(),
     }
 }
 
