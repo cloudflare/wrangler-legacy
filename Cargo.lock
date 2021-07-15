@@ -42,6 +42,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ansi_term"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
+dependencies = [
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "anyhow"
 version = "1.0.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -306,9 +315,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrome-devtools-rs"
-version = "0.0.0-alpha.1"
+version = "0.0.0-alpha.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17d1ada6e226ee1c5a69bfe5b16a494f036151d16461904afd22edeccb93061b"
+checksum = "a20571a8098aabf6fd6c83b896c3ebccd428c85d5a7e2a59ccb50f6c2ec33816"
 dependencies = [
  "console 0.11.3",
  "log 0.4.14",
@@ -337,7 +346,7 @@ version = "2.33.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37e58ac78573c40708d45522f0d80fa2f01cc4f9b4e2bf749807255454312002"
 dependencies = [
- "ansi_term",
+ "ansi_term 0.11.0",
  "atty",
  "bitflags",
  "strsim 0.8.0",
@@ -381,6 +390,19 @@ dependencies = [
  "sloggers",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "colored_json"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd32eb54d016e203b7c2600e3a7802c75843a92e38ccc4869aefeca21771a64"
+dependencies = [
+ "ansi_term 0.12.1",
+ "atty",
+ "libc",
+ "serde 1.0.126",
+ "serde_json",
 ]
 
 [[package]]
@@ -3288,6 +3310,7 @@ dependencies = [
  "chrono",
  "clap",
  "cloudflare",
+ "colored_json",
  "config",
  "console 0.14.1",
  "dirs 3.0.2",
