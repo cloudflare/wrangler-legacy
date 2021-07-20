@@ -216,20 +216,7 @@ pub enum Command {
     Whoami,
 
     /// Aggregate logs from production worker
-    #[structopt(name = "tail")]
-    Tail {
-        /// Specify an output format
-        #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
-        format: String,
-
-        /// Port to accept tail log requests
-        #[structopt(long = "port", short = "p")]
-        tunnel_port: Option<u16>,
-
-        /// Provides endpoint for cloudflared metrics. Used to retrieve tunnel url
-        #[structopt(long = "metrics")]
-        metrics_port: Option<u16>,
-    },
+    Tail,
 
     /// Authenticate Wrangler with your Cloudflare username and password
     #[structopt(name = "login")]

@@ -104,11 +104,7 @@ fn run() -> Result<()> {
         Command::KvNamespace(namespace) => exec::kv_namespace(namespace, &cli_params),
         Command::KvKey(key) => exec::kv_key(key, &cli_params),
         Command::KvBulk(bulk) => exec::kv_bulk(bulk, &cli_params),
-        Command::Tail {
-            format,
-            tunnel_port,
-            metrics_port,
-        } => exec::tail(format, tunnel_port, metrics_port, &cli_params),
+        Command::Tail => exec::tail(&cli_params),
         Command::Login => commands::login::run(),
         Command::Report { log } => commands::report::run(log.as_deref()).map(|_| {
             eprintln!("Report submission sucessful. Thank you!");
