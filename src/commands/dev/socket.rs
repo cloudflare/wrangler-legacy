@@ -88,7 +88,7 @@ async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpSt
                     wait_seconds
                 ));
                 sleep(Duration::from_secs(wait_seconds)).await;
-                wait_seconds = wait_seconds.pow(2);
+                wait_seconds *= 2;
                 if wait_seconds > maximum_wait_seconds {
                     // max out at 60 seconds
                     wait_seconds = maximum_wait_seconds;
