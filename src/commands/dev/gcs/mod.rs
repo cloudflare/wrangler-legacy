@@ -6,7 +6,7 @@ mod watch;
 use setup::{get_preview_id, get_session_id};
 use watch::watch_for_changes;
 
-use crate::commands::dev::gcs::setup::{Session, get_socket_url};
+use crate::commands::dev::gcs::setup::{get_socket_url, Session};
 use crate::commands::dev::{socket, Protocol, ServerConfig};
 use crate::settings::toml::Target;
 
