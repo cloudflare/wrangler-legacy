@@ -26,29 +26,23 @@ pub fn dev(
     verbose: bool,
 ) -> Result<()> {
     let session = Session::new(&target, &user, &deploy_target)?;
+    let session = Arc::new(Mutex::new(session));
     let mut target = target;
 
-    let preview_token = upload(
-        &mut target,
-        &deploy_target,
-        &user,
-        session.preview_token.clone(),
-        verbose,
-    )?;
-
+    let preview_token = upload(&mut target, &deploy_target, &user, session.clone(), verbose)?;
     let preview_token = Arc::new(Mutex::new(preview_token));
 
     {
+        let session = session.clone();
         let preview_token = preview_token.clone();
-        let session_token = session.preview_token.clone();
 
         thread::spawn(move || {
             watch_for_changes(
                 target,
                 &deploy_target,
                 &user,
+                session,
                 Arc::clone(&preview_token),
-                session_token,
                 verbose,
             )
         });
@@ -56,17 +50,19 @@ pub fn dev(
 
     let runtime = TokioRuntime::new()?;
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(session.websocket_url));
+        let devtools_listener = tokio::spawn(socket::listen(
+            session.lock().unwrap().websocket_url.to_owned(),
+        ));
         let server = match local_protocol {
             Protocol::Https => tokio::spawn(server::https(
                 server_config.clone(),
+                session.clone(),
                 Arc::clone(&preview_token),
-                session.host.clone(),
             )),
             Protocol::Http => tokio::spawn(server::http(
                 server_config,
+                session.clone(),
                 Arc::clone(&preview_token),
-                session.host,
                 upstream_protocol,
             )),
         };

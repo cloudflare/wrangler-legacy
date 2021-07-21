@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use crate::deploy::DeployTarget;
 use crate::kv::bulk;
@@ -17,7 +18,7 @@ pub(super) fn upload(
     target: &mut Target,
     deploy_target: &DeployTarget,
     user: &GlobalUser,
-    session_token: String,
+    session: Arc<Mutex<Session>>,
     verbose: bool,
 ) -> Result<String> {
     let client = crate::http::legacy_auth_client(&user);
@@ -44,6 +45,7 @@ pub(super) fn upload(
     let address = get_upload_address(target)?;
 
     let script_upload_form = upload::form::build(target, asset_manifest, Some(session_config))?;
+    let session_token = &session.lock().unwrap().preview_token;
 
     let response = client
         .post(&address)

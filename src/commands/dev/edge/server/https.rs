@@ -1,4 +1,5 @@
 use super::preview_request;
+use crate::commands::dev::edge::setup::Session;
 use crate::commands::dev::utils::{get_path_as_str, rewrite_redirect};
 use crate::commands::dev::{tls, Protocol, ServerConfig};
 use crate::terminal::emoji;
@@ -16,8 +17,8 @@ use tokio::net::TcpListener;
 
 pub async fn https(
     server_config: ServerConfig,
+    session: Arc<Mutex<Session>>,
     preview_token: Arc<Mutex<String>>,
-    host: String,
 ) -> Result<()> {
     tls::generate_cert()?;
 
@@ -31,7 +32,7 @@ pub async fn https(
     let service = make_service_fn(move |_| {
         let client = client.to_owned();
         let preview_token = preview_token.to_owned();
-        let host = host.to_owned();
+        let host = session.lock().unwrap().host.to_owned();
         let server_config = server_config.to_owned();
 
         async move {
