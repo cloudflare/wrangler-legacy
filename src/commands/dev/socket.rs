@@ -1,3 +1,4 @@
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use chrome_devtools as protocol;
@@ -17,17 +18,18 @@ use tokio::time::sleep;
 use tokio_tungstenite::{connect_async, tungstenite, MaybeTlsStream, WebSocketStream};
 
 use anyhow::{anyhow, Result};
-use url::Url;
+
+use super::session::Session;
 
 const KEEP_ALIVE_INTERVAL: u64 = 10;
 
 /// connect to a Workers runtime WebSocket emitting the Chrome Devtools Protocol
 /// parse all console messages, and print them to stdout
-pub async fn listen(socket_url: Url) -> Result<()> {
+pub async fn listen(session: Arc<Mutex<impl Session>>) -> Result<()> {
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
-        let ws_stream = connect_retry(&socket_url).await;
+        let ws_stream = connect_retry(session.clone()).await;
 
         let (mut write, read) = ws_stream.split();
 
@@ -67,11 +69,14 @@ pub async fn listen(socket_url: Url) -> Result<()> {
 
 // Endlessly retry connecting to the chrome devtools instance with exponential backoff.
 // The backoff maxes out at 60 seconds.
-async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
+async fn connect_retry(
+    session: Arc<Mutex<impl Session>>,
+) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
     let mut wait_seconds = 2;
     let maximum_wait_seconds = 60;
     let mut failed = false;
     loop {
+        let socket_url = session.lock().unwrap().get_socket_url().to_string();
         match connect_async(socket_url).await {
             Ok((ws_stream, _)) => {
                 if failed {
@@ -88,6 +93,11 @@ async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpSt
                     wait_seconds
                 ));
                 sleep(Duration::from_secs(wait_seconds)).await;
+                {
+                    StdOut::info("Starting a new session because the existing token has expired");
+                    let mut session = session.lock().unwrap();
+                    *session = session.refresh().expect("Could not start a new session");
+                }
                 wait_seconds = wait_seconds.pow(2);
                 if wait_seconds > maximum_wait_seconds {
                     // max out at 60 seconds

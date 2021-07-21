@@ -50,9 +50,7 @@ pub fn dev(
 
     let runtime = TokioRuntime::new()?;
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(
-            session.lock().unwrap().websocket_url.to_owned(),
-        ));
+        let devtools_listener = tokio::spawn(socket::listen(session.clone()));
         let server = match local_protocol {
             Protocol::Https => tokio::spawn(server::https(
                 server_config.clone(),

@@ -1,6 +1,7 @@
 mod edge;
 mod gcs;
 mod server_config;
+mod session;
 mod socket;
 mod tls;
 mod utils;

@@ -1,9 +1,10 @@
-use crate::commands::dev::ServerConfig;
+use crate::commands::dev::{session, ServerConfig};
 use crate::preview::upload;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
 use anyhow::Result;
+use url::Url;
 use uuid::Uuid;
 
 /// generate a unique uuid that lasts the entirety of the
@@ -36,4 +37,27 @@ pub fn get_preview_id(
         server_config.host.is_https() as u8,
         server_config.host
     ))
+}
+
+pub fn get_socket_url(session_id: &str) -> Result<Url, url::ParseError> {
+    Url::parse(&format!(
+        "wss://cloudflareworkers.com/inspect/{}",
+        session_id
+    ))
+}
+
+pub struct Session {
+    pub socket_url: Url,
+}
+
+impl session::Session for Session {
+    fn get_socket_url(&self) -> &Url {
+        &self.socket_url
+    }
+
+    fn refresh(&self) -> Result<Self> {
+        let session_id = get_session_id()?;
+        let socket_url = get_socket_url(&session_id)?;
+        Ok(Self { socket_url })
+    }
 }

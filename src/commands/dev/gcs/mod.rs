@@ -6,6 +6,7 @@ mod watch;
 use setup::{get_preview_id, get_session_id};
 use watch::watch_for_changes;
 
+use crate::commands::dev::gcs::setup::{Session, get_socket_url};
 use crate::commands::dev::{socket, Protocol, ServerConfig};
 use crate::settings::toml::Target;
 
@@ -13,7 +14,6 @@ use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tokio::runtime::Runtime as TokioRuntime;
-use url::Url;
 
 /// spin up a local server that routes requests to the preview service
 /// that has a Cloudflare Workers runtime without access to zone-specific features
@@ -67,6 +67,7 @@ pub fn dev(
     }
 
     let socket_url = get_socket_url(&session_id)?;
+    let session = Arc::new(Mutex::new(Session { socket_url }));
 
     // in order to spawn futures we must create a tokio runtime
     let runtime = TokioRuntime::new()?;
@@ -74,7 +75,7 @@ pub fn dev(
     // and we must block the main thread on the completion of
     // said futures
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(socket_url.clone()));
+        let devtools_listener = tokio::spawn(socket::listen(session));
 
         let server = match local_protocol {
             Protocol::Https => tokio::spawn(server::https(
@@ -92,11 +93,4 @@ pub fn dev(
             Err(e) => Err(e),
         }
     })
-}
-
-fn get_socket_url(session_id: &str) -> Result<Url, url::ParseError> {
-    Url::parse(&format!(
-        "wss://cloudflareworkers.com/inspect/{}",
-        session_id
-    ))
 }
