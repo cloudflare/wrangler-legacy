@@ -30,8 +30,11 @@ async fn listen_tail(tail_tag: String) -> Result<(), ()> {
         tokio_tungstenite::connect_async(url::Url::parse(&listen_tail_endpoint).unwrap())
             .await
             .expect("Can't connect");
-    eprintln!("Connected to the log forwarding server at {}", listen_tail_endpoint);
- 
+    eprintln!(
+        "Connected to the log forwarding server at {}",
+        listen_tail_endpoint
+    );
+
     loop {
         tokio::select! {
             maybe_incoming = socket.next()  => {
