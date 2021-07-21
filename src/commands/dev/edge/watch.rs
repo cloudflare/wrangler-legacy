@@ -19,7 +19,10 @@ pub fn watch_for_changes(
     let (sender, receiver) = mpsc::channel();
     watch_and_build(&target, Some(sender))?;
 
-    while receiver.recv().is_ok() {
+    loop {
+        if let Err(e) = receiver.recv() {
+            panic!("The channel for file changes was disconnected: {}", e);
+        }
         let user = user.clone();
         let target = target.clone();
         let deploy_target = deploy_target.clone();
@@ -36,6 +39,4 @@ pub fn watch_for_changes(
         // to the proper script
         *preview_token = setup::upload(&mut target, &deploy_target, &user, session_token, verbose)?;
     }
-
-    Ok(())
 }
