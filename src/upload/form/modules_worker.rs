@@ -15,7 +15,9 @@ struct Metadata {
     pub bindings: Vec<Binding>,
     pub migrations: Option<ApiMigration>,
     pub usage_model: Option<UsageModel>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub compatibility_date: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub compatibility_flags: Vec<String>,
 }
 
