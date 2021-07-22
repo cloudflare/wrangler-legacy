@@ -84,6 +84,7 @@ fn dev_once(
     {
         let preview_token = preview_token.clone();
         let session_token = session.preview_token.clone();
+        let refresh_session_sender = refresh_session_sender.clone();
 
         thread::spawn(move || {
             watch_for_changes(
@@ -98,7 +99,10 @@ fn dev_once(
         });
     }
 
-    let devtools_listener = runtime.spawn(socket::listen(session.websocket_url));
+    let devtools_listener = runtime.spawn(socket::listen(
+        session.websocket_url,
+        Some(refresh_session_sender),
+    ));
     let server = match local_protocol {
         Protocol::Https => runtime.spawn(server::https(
             server_config.clone(),

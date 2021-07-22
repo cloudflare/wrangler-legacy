@@ -1,3 +1,4 @@
+use std::sync::mpsc::Sender;
 use std::time::Duration;
 
 use chrome_devtools as protocol;
@@ -23,11 +24,12 @@ const KEEP_ALIVE_INTERVAL: u64 = 10;
 
 /// connect to a Workers runtime WebSocket emitting the Chrome Devtools Protocol
 /// parse all console messages, and print them to stdout
-pub async fn listen(socket_url: Url) -> Result<()> {
+pub async fn listen(socket_url: Url, refresh_session_sender: Option<Sender<()>>) -> Result<()> {
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
-        let ws_stream = connect_retry(&socket_url).await;
+        let sender = refresh_session_sender.clone();
+        let ws_stream = connect_retry(&socket_url, sender).await;
 
         let (mut write, read) = ws_stream.split();
 
@@ -67,7 +69,10 @@ pub async fn listen(socket_url: Url) -> Result<()> {
 
 // Endlessly retry connecting to the chrome devtools instance with exponential backoff.
 // The backoff maxes out at 60 seconds.
-async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
+async fn connect_retry(
+    socket_url: &Url,
+    sender: Option<Sender<()>>,
+) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
     let mut wait_seconds = 2;
     let maximum_wait_seconds = 60;
     let mut failed = false;
@@ -89,6 +94,14 @@ async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpSt
                 ));
                 sleep(Duration::from_secs(wait_seconds)).await;
                 wait_seconds *= 2;
+                if let (Some(sender), tungstenite::Error::Http(resp)) = (&sender, e) {
+                    if resp.status().as_u16() >= 400 && resp.status().as_u16() < 500 {
+                        StdOut::info(
+                            "Starting a new session to retry the connection with a new token",
+                        );
+                        sender.send(()).ok();
+                    }
+                }
                 if wait_seconds > maximum_wait_seconds {
                     // max out at 60 seconds
                     wait_seconds = maximum_wait_seconds;
