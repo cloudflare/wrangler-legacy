@@ -332,6 +332,8 @@ mod tests {
             text_blobs: None,
             usage_model: None,
             wasm_modules: None,
+            compatibility_date: None,
+            compatibility_flags: Vec::new(),
         }
     }
 

@@ -22,6 +22,8 @@ use std::collections::{HashMap, HashSet};
 pub struct ServiceWorkerAssets {
     script_name: String,
     script_path: PathBuf,
+    pub compatibility_date: Option<String>,
+    pub compatibility_flags: Vec<String>,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
     pub durable_object_classes: Vec<DurableObjectsClass>,
@@ -33,6 +35,8 @@ pub struct ServiceWorkerAssets {
 impl ServiceWorkerAssets {
     pub fn new(
         script_path: PathBuf,
+        compatibility_date: Option<String>,
+        compatibility_flags: Vec<String>,
         wasm_modules: Vec<WasmModule>,
         kv_namespaces: Vec<KvNamespace>,
         durable_object_classes: Vec<DurableObjectsClass>,
@@ -46,6 +50,8 @@ impl ServiceWorkerAssets {
         Ok(Self {
             script_name,
             script_path,
+            compatibility_date,
+            compatibility_flags,
             wasm_modules,
             kv_namespaces,
             durable_object_classes,
@@ -330,6 +336,8 @@ fn build_type_matchers(rules: Vec<ModuleRule>) -> Result<Vec<ModuleMatcher>> {
 }
 
 pub struct ModulesAssets {
+    pub compatibility_date: Option<String>,
+    pub compatibility_flags: Vec<String>,
     pub manifest: ModuleManifest,
     pub kv_namespaces: Vec<KvNamespace>,
     pub durable_object_classes: Vec<DurableObjectsClass>,
@@ -340,6 +348,8 @@ pub struct ModulesAssets {
 
 impl ModulesAssets {
     pub fn new(
+        compatibility_date: Option<String>,
+        compatibility_flags: Vec<String>,
         manifest: ModuleManifest,
         kv_namespaces: Vec<KvNamespace>,
         durable_object_classes: Vec<DurableObjectsClass>,
@@ -348,6 +358,8 @@ impl ModulesAssets {
         usage_model: Option<UsageModel>,
     ) -> Result<Self> {
         Ok(Self {
+            compatibility_date,
+            compatibility_flags,
             manifest,
             kv_namespaces,
             durable_object_classes,

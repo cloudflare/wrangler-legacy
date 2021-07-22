@@ -11,6 +11,8 @@ struct Metadata {
     pub body_part: String,
     pub bindings: Vec<Binding>,
     pub usage_model: Option<UsageModel>,
+    pub compatibility_date: Option<String>,
+    pub compatibility_flags: Vec<String>,
 }
 
 pub fn build_form(
@@ -56,6 +58,8 @@ fn add_metadata(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
         body_part: assets.script_name(),
         bindings: assets.bindings(),
         usage_model: assets.usage_model,
+        compatibility_date: assets.compatibility_date.clone(),
+        compatibility_flags: assets.compatibility_flags.clone(),
     });
 
     let metadata = Part::text(metadata_json.to_string())
