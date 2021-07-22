@@ -38,7 +38,7 @@ pub fn build_form(
 }
 
 fn add_files(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
-    form = form.file(assets.script_name(), assets.script_path())?;
+    form = form.file(assets.script_name()?, assets.script_path())?;
 
     for wasm_module in &assets.wasm_modules {
         form = form.file(wasm_module.filename(), wasm_module.path())?;
@@ -57,7 +57,7 @@ fn add_files(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
 
 fn add_metadata(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
     let metadata_json = serde_json::json!(&Metadata {
-        body_part: assets.script_name(),
+        body_part: assets.script_name()?,
         bindings: assets.bindings(),
         usage_model: assets.usage_model,
         compatibility_date: assets.compatibility_date.clone(),
