@@ -50,7 +50,7 @@ pub fn dev(
             sender,
         )?;
 
-        while let None = receiver.recv()? {}
+        while receiver.recv()?.is_none() {}
         for task in tasks {
             task.abort();
         }
@@ -58,6 +58,7 @@ pub fn dev(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn dev_once(
     mut target: Target,
     user: GlobalUser,
@@ -105,9 +106,9 @@ fn dev_once(
     ));
     let server = match local_protocol {
         Protocol::Https => runtime.spawn(server::https(
-            server_config.clone(),
+            server_config,
             Arc::clone(&preview_token),
-            session.host.clone(),
+            session.host,
         )),
         Protocol::Http => runtime.spawn(server::http(
             server_config,
