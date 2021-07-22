@@ -33,6 +33,7 @@ pub struct ServiceWorkerAssets {
 }
 
 impl ServiceWorkerAssets {
+    #[allow(clippy::too_many_arguments)] // TODO: refactor?
     pub fn new(
         script_path: PathBuf,
         compatibility_date: Option<String>,
@@ -347,6 +348,7 @@ pub struct ModulesAssets {
 }
 
 impl ModulesAssets {
+    #[allow(clippy::too_many_arguments)] // TODO: refactor?
     pub fn new(
         compatibility_date: Option<String>,
         compatibility_flags: Vec<String>,
