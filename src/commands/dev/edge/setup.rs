@@ -72,9 +72,6 @@ pub(super) fn upload(
 
 #[derive(Debug, Clone)]
 pub struct Session {
-    pub target: Target,
-    pub user: GlobalUser,
-    pub deploy_target: DeployTarget,
     pub host: String,
     pub websocket_url: Url,
     pub preview_token: String,
@@ -83,10 +80,6 @@ pub struct Session {
 impl session::Session for Session {
     fn get_socket_url(&self) -> &Url {
         &self.websocket_url
-    }
-
-    fn refresh(&self) -> Result<Self> {
-        Session::new(&self.target, &self.user, &self.deploy_target)
     }
 }
 
@@ -124,9 +117,6 @@ impl Session {
         let preview_token = response.token;
 
         Ok(Session {
-            target: target.clone(),
-            user: user.clone(),
-            deploy_target: deploy_target.clone(),
             host,
             websocket_url,
             preview_token,

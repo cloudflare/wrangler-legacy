@@ -54,10 +54,4 @@ impl session::Session for Session {
     fn get_socket_url(&self) -> &Url {
         &self.socket_url
     }
-
-    fn refresh(&self) -> Result<Self> {
-        let session_id = get_session_id()?;
-        let socket_url = get_socket_url(&session_id)?;
-        Ok(Self { socket_url })
-    }
 }

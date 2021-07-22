@@ -93,11 +93,6 @@ async fn connect_retry(
                     wait_seconds
                 ));
                 sleep(Duration::from_secs(wait_seconds)).await;
-                {
-                    StdOut::info("Starting a new session because the existing token has expired");
-                    let mut session = session.lock().unwrap();
-                    *session = session.refresh().expect("Could not start a new session");
-                }
                 wait_seconds = wait_seconds.pow(2);
                 if wait_seconds > maximum_wait_seconds {
                     // max out at 60 seconds
