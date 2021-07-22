@@ -20,8 +20,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
 pub struct ServiceWorkerAssets {
-    script_name: String,
-    script_path: PathBuf,
+    pub(crate) script_path: PathBuf,
     pub compatibility_date: Option<String>,
     pub compatibility_flags: Vec<String>,
     pub wasm_modules: Vec<WasmModule>,
@@ -33,35 +32,6 @@ pub struct ServiceWorkerAssets {
 }
 
 impl ServiceWorkerAssets {
-    #[allow(clippy::too_many_arguments)] // TODO: refactor?
-    pub fn new(
-        script_path: PathBuf,
-        compatibility_date: Option<String>,
-        compatibility_flags: Vec<String>,
-        wasm_modules: Vec<WasmModule>,
-        kv_namespaces: Vec<KvNamespace>,
-        durable_object_classes: Vec<DurableObjectsClass>,
-        text_blobs: Vec<TextBlob>,
-        plain_texts: Vec<PlainText>,
-        usage_model: Option<UsageModel>,
-    ) -> Result<Self> {
-        let script_name = filestem_from_path(&script_path)
-            .ok_or_else(|| anyhow!("filename should not be empty: {}", script_path.display()))?;
-
-        Ok(Self {
-            script_name,
-            script_path,
-            compatibility_date,
-            compatibility_flags,
-            wasm_modules,
-            kv_namespaces,
-            durable_object_classes,
-            text_blobs,
-            plain_texts,
-            usage_model,
-        })
-    }
-
     pub fn bindings(&self) -> Vec<Binding> {
         let mut bindings = Vec::new();
 
@@ -89,8 +59,13 @@ impl ServiceWorkerAssets {
         bindings
     }
 
-    pub fn script_name(&self) -> String {
-        self.script_name.to_string()
+    pub fn script_name(&self) -> Result<String> {
+        filestem_from_path(&self.script_path).ok_or_else(|| {
+            anyhow!(
+                "filename should not be empty: {}",
+                self.script_path.display()
+            )
+        })
     }
 
     pub fn script_path(&self) -> PathBuf {
