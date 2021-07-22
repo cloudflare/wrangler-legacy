@@ -50,7 +50,7 @@ pub fn dev(
             sender,
         )?;
 
-        receiver.recv()?;
+        while let None = receiver.recv()? {}
         for task in tasks {
             task.abort();
         }
@@ -67,7 +67,7 @@ fn dev_once(
     upstream_protocol: Protocol,
     verbose: bool,
     runtime: &TokioRuntime,
-    refresh_session_sender: Sender<()>,
+    refresh_session_sender: Sender<Option<()>>,
 ) -> Result<Vec<JoinHandle<Result<()>>>> {
     let session = Session::new(&target, &user, &deploy_target)?;
 

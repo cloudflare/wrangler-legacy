@@ -16,10 +16,10 @@ pub fn watch_for_changes(
     preview_token: Arc<Mutex<String>>,
     session_token: String,
     verbose: bool,
-    refresh_session_channel: Sender<()>,
+    refresh_session_channel: Sender<Option<()>>,
 ) -> Result<()> {
     let (sender, receiver) = mpsc::channel();
-    watch_and_build(&target, Some(sender))?;
+    watch_and_build(&target, Some(sender), Some(refresh_session_channel.clone()))?;
 
     while receiver.recv().is_ok() {
         let user = user.clone();
@@ -40,7 +40,7 @@ pub fn watch_for_changes(
         if let Ok(token) = uploaded {
             *preview_token = token;
         } else {
-            refresh_session_channel.send(())?;
+            refresh_session_channel.send(Some(()))?;
             break;
         }
     }

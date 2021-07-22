@@ -24,7 +24,10 @@ const KEEP_ALIVE_INTERVAL: u64 = 10;
 
 /// connect to a Workers runtime WebSocket emitting the Chrome Devtools Protocol
 /// parse all console messages, and print them to stdout
-pub async fn listen(socket_url: Url, refresh_session_sender: Option<Sender<()>>) -> Result<()> {
+pub async fn listen(
+    socket_url: Url,
+    refresh_session_sender: Option<Sender<Option<()>>>,
+) -> Result<()> {
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
@@ -71,7 +74,7 @@ pub async fn listen(socket_url: Url, refresh_session_sender: Option<Sender<()>>)
 // The backoff maxes out at 60 seconds.
 async fn connect_retry(
     socket_url: &Url,
-    sender: Option<Sender<()>>,
+    sender: Option<Sender<Option<()>>>,
 ) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
     let mut wait_seconds = 2;
     let maximum_wait_seconds = 60;
@@ -99,7 +102,7 @@ async fn connect_retry(
                         StdOut::info(
                             "Starting a new session to retry the connection with a new token",
                         );
-                        sender.send(()).ok();
+                        sender.send(Some(())).ok();
                     }
                 }
                 if wait_seconds > maximum_wait_seconds {
