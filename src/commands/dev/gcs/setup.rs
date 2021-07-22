@@ -1,4 +1,4 @@
-use crate::commands::dev::{session, ServerConfig};
+use crate::commands::dev::ServerConfig;
 use crate::preview::upload;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -50,7 +50,7 @@ pub struct Session {
     pub socket_url: Url,
 }
 
-impl session::Session for Session {
+impl crate::commands::dev::Session for Session {
     fn get_socket_url(&self) -> &Url {
         &self.socket_url
     }

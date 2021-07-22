@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use crate::commands::dev::session;
 use crate::deploy::DeployTarget;
 use crate::kv::bulk;
 use crate::settings::global_user::GlobalUser;
@@ -77,7 +76,7 @@ pub struct Session {
     pub preview_token: String,
 }
 
-impl session::Session for Session {
+impl crate::commands::dev::Session for Session {
     fn get_socket_url(&self) -> &Url {
         &self.websocket_url
     }

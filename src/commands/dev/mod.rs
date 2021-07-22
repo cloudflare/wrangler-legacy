@@ -1,7 +1,6 @@
 mod edge;
 mod gcs;
 mod server_config;
-mod session;
 mod socket;
 mod tls;
 mod utils;
@@ -17,6 +16,7 @@ use crate::terminal::message::{Message, StdOut};
 use crate::terminal::styles;
 
 use anyhow::Result;
+use url::Url;
 
 /// `wrangler dev` starts a server on a dev machine that routes incoming HTTP requests
 /// to a Cloudflare Workers runtime and returns HTTP responses
@@ -97,4 +97,8 @@ pub fn dev(
     }
 
     gcs::dev(target, server_config, local_protocol, verbose)
+}
+
+pub trait Session: Sized {
+    fn get_socket_url(&self) -> &Url;
 }

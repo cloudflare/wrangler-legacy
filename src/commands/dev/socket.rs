@@ -19,7 +19,7 @@ use tokio_tungstenite::{connect_async, tungstenite, MaybeTlsStream, WebSocketStr
 
 use anyhow::{anyhow, Result};
 
-use super::session::Session;
+use super::Session;
 
 const KEEP_ALIVE_INTERVAL: u64 = 10;
 
