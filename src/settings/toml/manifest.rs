@@ -579,22 +579,16 @@ impl LazyAccountId {
     /// Load the account ID, possibly prompting the user.
     pub(crate) fn load(&self) -> Result<&String> {
         self.0.get_or_try_init(|| {
-            if let Ok(user) = GlobalUser::new() {
-                let accounts = fetch_accounts(&user)?;
-                let account_id = match accounts.as_slice() {
-                    [] => unreachable!("auth token without account?"),
-                    [single] => single.id.clone(),
-                    _multiple => {
-                        StdOut::user_error("You have multiple accounts.");
-                        whoami::display_account_id_maybe();
-                        anyhow::bail!("field `account_id` is required")
-                    }
-                };
-
-                return Ok(account_id);
+            let user = GlobalUser::new()?;
+            match fetch_accounts(&user)?.as_slice() {
+                [] => unreachable!("auth token without account?"),
+                [single] => Ok(single.id.clone()),
+                _multiple => {
+                    StdOut::user_error("You have multiple accounts.");
+                    whoami::display_account_id_maybe();
+                    anyhow::bail!("field `account_id` is required")
+                }
             }
-
-            todo!()
         })
     }
 }
