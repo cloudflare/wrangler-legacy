@@ -16,7 +16,7 @@ use crate::settings::get_wrangler_home_dir;
 use crate::terminal::message::{Message, StdOut};
 /// Create files for cert and private key
 fn create_output_files() -> Result<Option<(PathBuf, PathBuf)>> {
-    let home = get_wrangler_home_dir()?.join("config");
+    let home = get_wrangler_home_dir().join("config");
     let cert = home.join("dev-cert.pem");
     let privkey = home.join("dev-privkey.rsa");
 

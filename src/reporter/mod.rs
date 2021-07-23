@@ -153,7 +153,7 @@ fn latest_report() -> Result<Report> {
 
 // returns the path to the location of wrangler's error report log files
 fn error_report_dir() -> Result<PathBuf> {
-    let base = settings::get_wrangler_home_dir()?;
+    let base = settings::get_wrangler_home_dir();
     let report_dir = base.join(Path::new("errors"));
     fs::create_dir_all(report_dir.clone())?;
     Ok(report_dir)
