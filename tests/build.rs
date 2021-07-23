@@ -3,7 +3,8 @@ use std::process::Command;
 use std::str;
 
 use assert_cmd::prelude::*;
-use wrangler::fixtures::{Fixture, WranglerToml};
+mod fixtures;
+use fixtures::{Fixture, WranglerToml};
 
 #[test]
 fn it_builds_webpack() {

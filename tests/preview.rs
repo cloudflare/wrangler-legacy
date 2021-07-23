@@ -1,4 +1,5 @@
-use wrangler::fixtures::{Fixture, WranglerToml};
+mod fixtures;
+use fixtures::{Fixture, WranglerToml};
 
 use std::collections::HashMap;
 use std::env;

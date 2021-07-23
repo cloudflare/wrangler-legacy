@@ -1,3 +1,7 @@
+// This is used from two different integration tests and a unit test, which
+// makes the compiler confused about what code is used and what isn't.
+#![allow(dead_code)]
+
 mod wrangler_toml;
 pub use wrangler_toml::{EnvConfig, KvConfig, SiteConfig, Triggers, WranglerToml, TEST_ENV_NAME};
 
