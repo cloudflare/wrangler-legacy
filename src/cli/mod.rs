@@ -216,7 +216,12 @@ pub enum Command {
     Whoami,
 
     /// Aggregate logs from production worker
-    Tail,
+    #[structopt(name = "tail")]
+    Tail {
+        /// Specify an output format
+        #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
+        format: String,
+    },
 
     /// Authenticate Wrangler with your Cloudflare username and password
     #[structopt(name = "login")]
