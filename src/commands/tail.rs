@@ -52,7 +52,7 @@ pub fn start(target: Target, user: GlobalUser) -> Result<()> {
     let client = http::cf_v4_client(&user)?;
 
     let res = client.request(&CreateTail {
-        account_identifier: &target.account_id,
+        account_identifier: target.account_id.load()?,
         script_name: &target.name,
         params: CreateTailParams { url: None },
     });
