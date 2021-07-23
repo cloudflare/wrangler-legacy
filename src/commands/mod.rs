@@ -17,13 +17,9 @@ pub mod whoami;
 
 pub use self::config::global_config;
 pub use self::preview::run as preview;
-pub use dev::dev;
 pub use generate::generate;
 pub use init::init;
 pub use publish::publish;
-pub use secret::{create_secret, delete_secret, list_secrets};
-pub use subdomain::get_subdomain;
-pub use subdomain::set_subdomain;
 pub use whoami::whoami;
 
 use anyhow::Result;

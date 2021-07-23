@@ -27,18 +27,6 @@ impl Package {
             Ok(self.main.clone())
         }
     }
-    pub fn module(&self, package_dir: &Path) -> Result<PathBuf> {
-        if self.module == PathBuf::from("") {
-            anyhow::bail!(PACKAGE_JSON_KEY_ERROR_MODULE)
-        } else if !package_dir.join(&self.module).exists() {
-            anyhow::bail!(
-                "The entrypoint of your Worker ({}) could not be found.",
-                self.module.display()
-            )
-        } else {
-            Ok(self.module.clone())
-        }
-    }
 }
 
 impl Package {

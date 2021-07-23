@@ -8,7 +8,7 @@ use http::StatusCode;
 
 use anyhow::Result;
 
-use crate::http::{feature::headers, Feature, DEFAULT_HTTP_TIMEOUT_SECONDS};
+use crate::http::{feature::headers, DEFAULT_HTTP_TIMEOUT_SECONDS};
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
@@ -16,19 +16,6 @@ pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient> {
     let config = HttpApiClientConfig {
         http_timeout: Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS),
         default_headers: headers(None),
-    };
-
-    HttpApiClient::new(
-        Credentials::from(user.to_owned()),
-        config,
-        Environment::Production,
-    )
-}
-
-pub fn featured_cf_v4_client(user: &GlobalUser, feature: Feature) -> Result<HttpApiClient> {
-    let config = HttpApiClientConfig {
-        http_timeout: Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS),
-        default_headers: headers(Some(feature)),
     };
 
     HttpApiClient::new(
