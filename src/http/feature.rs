@@ -5,7 +5,6 @@ use crate::install;
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Feature {
     Sites,
-    Bucket,
 }
 
 pub(crate) fn headers(feature: Option<Feature>) -> HeaderMap {

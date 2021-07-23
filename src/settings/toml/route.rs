@@ -41,23 +41,11 @@ impl RouteConfig {
         }
     }
 
-    pub fn routes(&self) -> impl Iterator<Item = &String> {
-        self.route.iter().chain(self.routes.iter().flatten())
-    }
-
     pub fn is_zoneless(&self) -> bool {
         self.workers_dev.unwrap_or_default()
     }
 
     pub fn is_zoned(&self) -> bool {
         self.has_routes_defined() && self.zone_id.is_some()
-    }
-
-    pub fn workers_dev_false_by_itself(&self) -> bool {
-        if let Some(workers_dev) = self.workers_dev {
-            !workers_dev && !self.has_routes_defined()
-        } else {
-            false
-        }
     }
 }
