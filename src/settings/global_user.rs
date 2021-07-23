@@ -28,7 +28,7 @@ impl GlobalUser {
     pub fn new() -> Result<Self> {
         let environment = Environment::with_whitelist(ENV_VAR_WHITELIST.to_vec());
 
-        let config_path = get_global_config_path()?;
+        let config_path = get_global_config_path();
         GlobalUser::build(environment, config_path)
     }
 

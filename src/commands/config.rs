@@ -29,7 +29,7 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<()> {
         validate_credentials(user)?;
     }
 
-    let config_file = get_global_config_path()?;
+    let config_file = get_global_config_path();
     user.to_file(&config_file)?;
 
     // set permissions on the file
