@@ -4,7 +4,7 @@ use crate::deploy::{DeployTarget, ScheduleTarget, ZonedTarget, ZonelessTarget};
 use crate::settings::toml::route::Route;
 use crate::settings::toml::Manifest;
 
-use crate::fixtures::{EnvConfig, Triggers, WranglerToml, TEST_ENV_NAME};
+use super::fixtures::{EnvConfig, Triggers, WranglerToml, TEST_ENV_NAME};
 
 // Test consts
 const ZONE_ID: &str = "samplezoneid";
