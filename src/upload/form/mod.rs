@@ -31,6 +31,8 @@ pub fn build(
     session_config: Option<serde_json::Value>,
 ) -> Result<Form> {
     let target_type = &target.target_type;
+    let compatibility_date = target.compatibility_date.clone();
+    let compatibility_flags = target.compatibility_flags.clone();
     let kv_namespaces = &target.kv_namespaces;
     let durable_object_classes = target
         .durable_objects
@@ -85,6 +87,8 @@ pub fn build(
 
             let assets = ServiceWorkerAssets::new(
                 script_path,
+                compatibility_date,
+                compatibility_flags,
                 wasm_modules,
                 kv_namespaces.to_vec(),
                 durable_object_classes,
@@ -105,6 +109,8 @@ pub fn build(
 
                     let assets = ServiceWorkerAssets::new(
                         script_path,
+                        compatibility_date,
+                        compatibility_flags,
                         wasm_modules,
                         kv_namespaces.to_vec(),
                         durable_object_classes,
@@ -123,6 +129,8 @@ pub fn build(
 
                     let module_config = ModuleConfig::new(main, dir, rules);
                     let assets = ModulesAssets::new(
+                        compatibility_date,
+                        compatibility_flags,
                         module_config.get_modules()?,
                         kv_namespaces.to_vec(),
                         durable_object_classes,
@@ -142,6 +150,8 @@ pub fn build(
 
                 let assets = ServiceWorkerAssets::new(
                     script_path,
+                    compatibility_date,
+                    compatibility_flags,
                     wasm_modules,
                     kv_namespaces.to_vec(),
                     durable_object_classes,
@@ -170,6 +180,8 @@ pub fn build(
 
             let assets = ServiceWorkerAssets::new(
                 script_path,
+                compatibility_date,
+                compatibility_flags,
                 wasm_modules,
                 kv_namespaces.to_vec(),
                 durable_object_classes,

@@ -63,6 +63,9 @@ pub struct Manifest {
     pub durable_objects: Option<DurableObjects>,
     #[serde(default, with = "string_empty_as_none")]
     pub usage_model: Option<UsageModel>,
+    pub compatibility_date: Option<String>,
+    #[serde(default)]
+    pub compatibility_flags: Vec<String>,
 }
 
 impl Manifest {
@@ -352,6 +355,8 @@ impl Manifest {
             text_blobs: self.text_blobs.clone(), // Inherited
             usage_model: self.usage_model, // Top level
             wasm_modules: self.wasm_modules.clone(),
+            compatibility_date: self.compatibility_date.clone(),
+            compatibility_flags: self.compatibility_flags.clone(),
         };
 
         let environment = self.get_environment(environment_name)?;

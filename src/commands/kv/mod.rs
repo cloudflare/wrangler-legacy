@@ -114,6 +114,8 @@ mod tests {
             build: None,
             wasm_modules: None,
             usage_model: None,
+            compatibility_date: None,
+            compatibility_flags: Vec::new(),
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }
