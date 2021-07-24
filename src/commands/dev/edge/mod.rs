@@ -3,6 +3,7 @@ mod setup;
 mod watch;
 
 use setup::{upload, Session};
+use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use watch::watch_for_changes;
 
@@ -37,6 +38,8 @@ pub fn dev(
         let server_config = server_config.clone();
         let deploy_target = deploy_target.clone();
         let (sender, receiver) = mpsc::channel();
+        let (tx_init_shutdown, rx_init_shutdown) = oneshot::channel();
+        let (tx_ack_shutdown, rx_ack_shutdown) = oneshot::channel();
 
         let tasks = dev_once(
             target,
@@ -48,9 +51,18 @@ pub fn dev(
             verbose,
             &runtime,
             sender,
+            (rx_init_shutdown, tx_ack_shutdown),
         )?;
 
         while receiver.recv()?.is_none() {}
+        tx_init_shutdown
+            .send(())
+            .expect("Could not initiate listener task shutdown");
+        runtime.block_on(async {
+            rx_ack_shutdown
+                .await
+                .expect("Could not receive shutdown acknowledgement");
+        });
         for task in tasks {
             task.abort();
         }
@@ -69,6 +81,7 @@ fn dev_once(
     verbose: bool,
     runtime: &TokioRuntime,
     refresh_session_sender: Sender<Option<()>>,
+    shutdown_channel: (oneshot::Receiver<()>, oneshot::Sender<()>),
 ) -> Result<Vec<JoinHandle<Result<()>>>> {
     let session = Session::new(&target, &user, &deploy_target)?;
 
@@ -109,12 +122,14 @@ fn dev_once(
             server_config,
             Arc::clone(&preview_token),
             session.host,
+            shutdown_channel,
         )),
         Protocol::Http => runtime.spawn(server::http(
             server_config,
             Arc::clone(&preview_token),
             session.host,
             upstream_protocol,
+            shutdown_channel,
         )),
     };
     Ok(vec![devtools_listener, server])
