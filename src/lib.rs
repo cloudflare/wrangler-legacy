@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
+#![warn(clippy::todo)] // TODO(jyn514): remove this once clippy warns about it by default
 
 #[macro_use]
 extern crate text_io;
