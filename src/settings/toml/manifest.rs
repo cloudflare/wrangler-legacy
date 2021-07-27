@@ -354,7 +354,7 @@ impl Manifest {
             usage_model: self.usage_model, // Top level
             wasm_modules: self.wasm_modules.clone(),
             compatibility_date: self.compatibility_date.clone(),
-            compatibility_flags: self.compatibility_flags.clone().unwrap_or_else(|| vec![]),
+            compatibility_flags: self.compatibility_flags.clone().unwrap_or_default()
         };
 
         let environment = self.get_environment(environment_name)?;
