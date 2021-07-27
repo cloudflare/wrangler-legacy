@@ -1,4 +1,5 @@
 use std::env;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -14,8 +15,6 @@ const UPLOAD_DIR: &str = "dist";
 #[serde(deny_unknown_fields)]
 pub struct Builder {
     pub command: Option<String>,
-    #[serde(default = "project_root")]
-    pub cwd: PathBuf,
     #[serde(default = "watch_dir")]
     pub watch_dir: PathBuf,
     pub upload: UploadFormat,
@@ -51,7 +50,7 @@ fn project_root() -> PathBuf {
 }
 
 fn watch_dir() -> PathBuf {
-    project_root().join(WATCH_DIR)
+    Path::new(WATCH_DIR).to_path_buf()
 }
 
 fn upload_dir() -> PathBuf {
@@ -131,7 +130,7 @@ impl Builder {
                     c
                 };
 
-                c.current_dir(&self.cwd);
+                c.current_dir(project_root());
 
                 Some((cmd, c))
             }

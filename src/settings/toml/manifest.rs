@@ -41,7 +41,6 @@ pub struct Manifest {
     #[serde(default)]
     pub account_id: LazyAccountId,
     pub workers_dev: Option<bool>,
-    #[serde(default, with = "string_empty_as_none")]
     pub route: Option<String>,
     pub routes: Option<Vec<String>>,
     #[serde(default, with = "string_empty_as_none")]
@@ -61,11 +60,10 @@ pub struct Manifest {
     pub wasm_modules: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
     pub durable_objects: Option<DurableObjects>,
-    #[serde(default, with = "string_empty_as_none")]
     pub usage_model: Option<UsageModel>,
     pub compatibility_date: Option<String>,
     #[serde(default)]
-    pub compatibility_flags: Vec<String>,
+    pub compatibility_flags: Option<Vec<String>>,
 }
 
 impl Manifest {
@@ -356,7 +354,7 @@ impl Manifest {
             usage_model: self.usage_model, // Top level
             wasm_modules: self.wasm_modules.clone(),
             compatibility_date: self.compatibility_date.clone(),
-            compatibility_flags: self.compatibility_flags.clone(),
+            compatibility_flags: self.compatibility_flags.clone().unwrap_or_else(|| vec![]),
         };
 
         let environment = self.get_environment(environment_name)?;
