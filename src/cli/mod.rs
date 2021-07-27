@@ -34,6 +34,7 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 
 use crate::commands::dev::Protocol;
+use crate::commands::tail::websocket::TailFormat;
 use crate::preview::HttpMethod;
 use crate::settings::toml::migrations::{
     DurableObjectsMigration, Migration, MigrationConfig, Migrations, RenameClass, TransferClass,
@@ -215,15 +216,51 @@ pub enum Command {
     #[structopt(name = "whoami")]
     Whoami,
 
-    /// Aggregate logs from production worker
+    /// View a stream of logs from a published worker
     #[structopt(name = "tail")]
     Tail {
-        /// Specify an output format
+        /// Name of the worker
+        #[structopt(index = 1)]
+        name: Option<String>,
+
+        /// Output format for log messages
         #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
-        format: String,
+        format: TailFormat,
+
+        /// Stop the tail after receiving the first log message (useful for integration testing)
+        #[structopt(long)]
+        once: bool,
+
+        /// Filter by invocation status
+        #[structopt(long, possible_values = &["ok", "error", "canceled"])]
+        status: Vec<String>,
+
+        /// Filter by HTTP status code
+        #[structopt(long = "http-status")]
+        http_status: Vec<u32>,
+
+        /// Filter by HTTP method
+        #[structopt(long)]
+        method: Vec<String>,
+
+        /// Filter by IP address (use "self" for your own IP address)
+        #[structopt(long = "ip-address")]
+        ip_address: Vec<String>,
+
+        /// Set the URL to forward log messages
+        #[structopt(hidden = true, long = "url", short = "u")]
+        url: Option<Url>,
+
+        /// Deprecated, no longer used.
+        #[structopt(hidden = true, long = "port", short = "p")]
+        tunnel_port: Option<u16>,
+
+        /// Deprecated, no longer used.
+        #[structopt(hidden = true, long = "metrics")]
+        metrics_port: Option<u16>,
     },
 
-    /// Authenticate Wrangler with your Cloudflare username and password
+    /// Authenticate wrangler with your Cloudflare username and password
     #[structopt(name = "login")]
     Login,
 

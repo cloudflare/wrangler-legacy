@@ -25,10 +25,12 @@ pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient> {
     )
 }
 
-pub fn cf_v4_api_client_async(
-    user: &GlobalUser,
-    config: HttpApiClientConfig,
-) -> Result<async_api::Client> {
+pub fn cf_v4_api_client_async(user: &GlobalUser) -> Result<async_api::Client> {
+    let config = HttpApiClientConfig {
+        http_timeout: Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS),
+        default_headers: headers(None),
+    };
+
     async_api::Client::new(
         Credentials::from(user.to_owned()),
         config,
