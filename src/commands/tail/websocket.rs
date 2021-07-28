@@ -83,9 +83,15 @@ impl WebSocketTail {
                 match frame {
                     Some(Ok(message)) if message.is_text() || message.is_binary() => {
                         match self.options.format {
-                            TailFormat::Json => Ok(println!("{}", message)),
+                            TailFormat::Json => {
+                                println!("{}", message);
+                                Ok(())
+                            },
                             TailFormat::Pretty => match serde_json::from_str::<TraceEvent>(&message.to_string()) {
-                                Ok(event) => Ok(println!("{}", event)),
+                                Ok(event) => {
+                                    println!("{}", event);
+                                    Ok(())
+                                },
                                 Err(err) => {
                                     log::debug!("Failed to pretty-print tail: {}", err);
                                     self.close(CloseCode::Protocol, "wrangler is closing due to a protocol violation").await

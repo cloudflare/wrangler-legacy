@@ -43,13 +43,10 @@ impl Tail {
 
     /// Tests if the tail is using WebSockets.
     pub fn is_web_socket(&self) -> bool {
-        match self.url.clone() {
-            Some(url) => match url.scheme() {
-                "ws" | "wss" => true,
-                _ => false,
-            },
-            _ => false,
+        if let Some(url) = self.url.clone() {
+            return matches!(url.scheme(), "ws" | "wss");
         }
+        false
     }
 
     /// Creates the tail and attaches it to a Worker.

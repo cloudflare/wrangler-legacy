@@ -7,6 +7,7 @@ use crate::settings::{global_user::GlobalUser, toml::Manifest};
 use anyhow::Result;
 use url::Url;
 
+#[allow(clippy::too_many_arguments)]
 pub fn tail(
     name: Option<String>,
     url: Option<Url>,
@@ -44,16 +45,21 @@ pub fn tail(
     if let Some(query) = search {
         filters.push(Box::new(QueryFilter::from(query)));
     };
-    if sampling_rate < 1.0 {
+    if sampling_rate < 1.0 && sampling_rate > 0.0 {
         filters.push(Box::new(SamplingRateFilter::from(sampling_rate))); // Should always be last
     };
 
-    let options = TailOptions {
-        format,
-        once,
-        filters,
-    };
-    let tail = commands::tail::run(user, account_id, script_name, url, options);
+    let tail = commands::tail::run(
+        user,
+        account_id,
+        script_name,
+        url,
+        TailOptions {
+            once,
+            format,
+            filters,
+        },
+    );
 
     tokio::runtime::Builder::new_current_thread()
         .enable_all()

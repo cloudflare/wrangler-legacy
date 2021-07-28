@@ -78,7 +78,10 @@ impl Display for TraceEvent {
         .bold();
         match self.event.request.clone() {
             Some(request) => {
-                let colo = request.cf.map(|cf| cf.colo).unwrap_or("?".to_owned());
+                let colo = request
+                    .cf
+                    .map(|cf| cf.colo)
+                    .unwrap_or_else(|| "?".to_owned());
                 let method = style(request.method).italic();
                 let url = style(request.url).bold();
                 write!(

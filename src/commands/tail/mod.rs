@@ -70,17 +70,14 @@ pub async fn run(
                 tail.url
                     .clone()
                     .map(String::from)
-                    .unwrap_or("an unknown destination".to_owned())
+                    .unwrap_or_else(|| "an endpoint".to_owned())
             )
         ));
 
         if let Err(err) = loop {
             tokio::select! {
                 _ = tokio::signal::ctrl_c() => break Ok(()),
-                _ = tokio::time::sleep_until(tail.expires_at) => match tail.keep_alive().await {
-                    Err(err) => break Err(err),
-                    _ => {},
-                }
+                _ = tokio::time::sleep_until(tail.expires_at) => if let Err(err) = tail.keep_alive().await { break Err(err) }
             }
         } {
             progress.abandon_with_message(&format!("{}", err));
