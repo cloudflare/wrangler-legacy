@@ -161,7 +161,7 @@ fn watch_for_changes(
     let sites_preview: bool = target.site.is_some();
 
     let (tx, rx) = channel();
-    watch_and_build(&target, Some(tx))?;
+    watch_and_build(&target, Some(tx), None)?;
 
     while rx.recv().is_ok() {
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {

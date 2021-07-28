@@ -1,3 +1,4 @@
+use std::sync::mpsc::Sender;
 use std::sync::{mpsc, Arc, Mutex};
 
 use crate::commands::dev::edge::setup;
@@ -9,15 +10,16 @@ use crate::watch::watch_and_build;
 use anyhow::Result;
 
 pub fn watch_for_changes(
-    target: Target,
+    target: &Target,
     deploy_target: &DeployTarget,
     user: &GlobalUser,
     preview_token: Arc<Mutex<String>>,
     session_token: String,
     verbose: bool,
+    refresh_session_channel: Sender<Option<()>>,
 ) -> Result<()> {
     let (sender, receiver) = mpsc::channel();
-    watch_and_build(&target, Some(sender))?;
+    watch_and_build(&target, Some(sender), Some(refresh_session_channel.clone()))?;
 
     while receiver.recv().is_ok() {
         let user = user.clone();
@@ -34,7 +36,13 @@ pub fn watch_for_changes(
         //
         // this allows the server to route subsequent requests
         // to the proper script
-        *preview_token = setup::upload(&mut target, &deploy_target, &user, session_token, verbose)?;
+        let uploaded = setup::upload(&mut target, &deploy_target, &user, session_token, verbose);
+        if let Ok(token) = uploaded {
+            *preview_token = token;
+        } else {
+            refresh_session_channel.send(Some(()))?;
+            break;
+        }
     }
 
     Ok(())
