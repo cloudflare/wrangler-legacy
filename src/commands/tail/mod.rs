@@ -1,3 +1,4 @@
+pub mod api;
 /// `wrangler tail` allows Workers users to collect logs from their deployed Workers.
 /// When a user runs `wrangler tail`, several things happen:
 ///     1. wrangler asks the Cloudflare API to send log events to a Durable Object,
@@ -6,13 +7,12 @@
 ///     3. Upon receipt of messages, wrangler prints log events to stdout.
 pub mod event;
 pub mod filter;
-pub mod tail;
 pub mod websocket;
 
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::styles;
 
-use tail::Tail;
+use api::Tail;
 use websocket::{TailOptions, WebSocketTail};
 
 use anyhow::Result;

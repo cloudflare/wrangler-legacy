@@ -1,8 +1,8 @@
 use crate::http::feature::user_agent;
 
+use super::api::Tail;
 use super::event::{TraceEvent, PROTOCOL_ID};
 use super::filter::TraceFilter;
-use super::tail::Tail;
 
 use anyhow::Result;
 use futures_util::{SinkExt, StreamExt};
@@ -45,7 +45,7 @@ pub struct TailOptions {
     pub filters: Vec<Box<dyn TraceFilter>>,
 }
 
-/// A tail that sends `TraceEvent`s to WebSocket.
+/// A tail that sends `TraceEvent`s to a WebSocket.
 pub struct WebSocketTail {
     pub tail: Tail,
     pub options: TailOptions,
