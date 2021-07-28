@@ -219,7 +219,7 @@ pub enum Command {
     /// View a stream of logs from a published worker
     #[structopt(name = "tail")]
     Tail {
-        /// Name of the worker
+        /// Name of the worker to tail
         #[structopt(index = 1)]
         name: Option<String>,
 
@@ -227,28 +227,36 @@ pub enum Command {
         #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
         format: TailFormat,
 
-        /// Stop the tail after receiving the first log message (useful for integration testing)
+        /// Stops the tail after receiving the first log message (useful for integration testing)
         #[structopt(long)]
         once: bool,
+
+        /// Adds a sampling rate (0.01 for 1%)
+        #[structopt(long = "sampling-rate", default_value = "1")]
+        sampling_rate: f64,
 
         /// Filter by invocation status
         #[structopt(long, possible_values = &["ok", "error", "canceled"])]
         status: Vec<String>,
 
-        /// Filter by HTTP status code
-        #[structopt(long = "http-status")]
-        http_status: Vec<u32>,
-
         /// Filter by HTTP method
         #[structopt(long)]
-        method: Vec<String>,
+        method: Vec<reqwest::Method>,
 
-        /// Filter by IP address (use "self" for your own IP address)
+        /// Filter by HTTP header
+        #[structopt(long)]
+        header: Vec<String>,
+
+        /// Filter by IP address ("self" to filter your own IP address)
         #[structopt(long = "ip-address")]
         ip_address: Vec<String>,
 
+        /// Filter by a text match in console.log messages
+        #[structopt(long)]
+        search: Option<String>,
+
         /// Set the URL to forward log messages
-        #[structopt(hidden = true, long = "url", short = "u")]
+        #[structopt(hidden = true)]
         url: Option<Url>,
 
         /// Deprecated, no longer used.

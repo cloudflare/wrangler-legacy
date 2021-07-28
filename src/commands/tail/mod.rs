@@ -5,6 +5,7 @@
 ///     2. wrangler connects to the log forwarder using a WebSocket.
 ///     3. Upon receipt of messages, wrangler prints log events to stdout.
 pub mod event;
+pub mod filter;
 pub mod tail;
 pub mod websocket;
 
@@ -44,17 +45,22 @@ pub async fn run(
 
     if tail.is_web_socket() {
         progress.set_message("Connecting to tail...");
-        let websocket = &mut WebSocketTail::connect(tail.clone(), options).await?;
 
-        progress.abandon_with_message(&format!(
-            "Connected! Streaming logs from {}... (ctrl-c to quit)",
-            styles::bold(&tail.script_name)
-        ));
-        if let Err(err) = websocket.update().await {
-            log::warn!("{}", err);
-        }
-        if let Err(err) = websocket.read().await {
-            log::warn!("{}", err);
+        match &mut WebSocketTail::connect(tail.clone(), options).await {
+            Ok(websocket) => {
+                progress.abandon_with_message(&format!(
+                    "Connected! Streaming logs from {}... (ctrl-c to quit)",
+                    styles::bold(&tail.script_name)
+                ));
+
+                if let Err(err) = websocket.update().await {
+                    log::warn!("{}", err);
+                };
+                if let Err(err) = websocket.read().await {
+                    log::warn!("{}", err);
+                }
+            }
+            Err(err) => progress.abandon_with_message(&format!("{}", err)),
         }
     } else {
         progress.set_message(&format!(
@@ -77,7 +83,7 @@ pub async fn run(
                 }
             }
         } {
-            log::warn!("{}", err);
+            progress.abandon_with_message(&format!("{}", err));
         }
     }
 

@@ -12,7 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::time::{Duration, Instant};
 use url::Url;
 
-/// A tail that captures `TraceEvent`s from a published Worker.
+/// A tail captures `TraceEvent`s from a published Worker.
 #[derive(Debug, Clone)]
 pub struct Tail {
     pub user: GlobalUser,
@@ -70,14 +70,11 @@ impl Tail {
                 Ok(response) => {
                     let tail = response.result;
                     log::info!("Created tail: {:?}", tail);
-                    self.id = Some(tail.id.clone());
+                    self.id = Some(tail.id);
                     self.expires_at = to_instant(tail.expires_at);
-                    // TODO: soon the API will always return a URL and this can be replaced with an .expect()
-                    let url = match tail.url {
-                        Some(url) => url,
-                        _ => format!("wss://tail.developers.workers.dev/{}/ws", tail.id.clone()),
-                    };
-                    self.url = Some(Url::parse(&url)?);
+                    self.url = Some(Url::parse(
+                        &tail.url.expect("Expected a URL from tail response"),
+                    )?);
                     Ok(())
                 }
                 Err(err) => {
@@ -91,7 +88,7 @@ impl Tail {
     /// Sends a keep-alive to the tail.
     pub async fn keep_alive(&mut self) -> Result<()> {
         match self.id.clone() {
-            Some(tail_id) if !self.is_web_socket() => {
+            Some(tail_id) => {
                 match http::cf_v4_api_client_async(&self.user)?
                     .request(&SendTailHeartbeat {
                         account_identifier: &self.account_id,

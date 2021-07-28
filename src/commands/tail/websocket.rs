@@ -1,6 +1,7 @@
 use crate::http::feature::user_agent;
 
 use super::event::{TraceEvent, PROTOCOL_ID};
+use super::filter::TraceFilter;
 use super::tail::Tail;
 
 use anyhow::Result;
@@ -33,19 +34,15 @@ impl FromStr for TailFormat {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Options that are sent to the `WebSocketTail`.
+#[derive(Serialize)]
 pub struct TailOptions {
+    #[serde(skip_serializing)]
     pub once: bool,
+    #[serde(skip_serializing)]
     pub format: TailFormat,
-    pub filters: TailFilters,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TailFilters {
-    pub status: Vec<String>,
-    pub http_status: Vec<u32>,
-    pub method: Vec<String>,
-    pub ip_address: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub filters: Vec<Box<dyn TraceFilter>>,
 }
 
 /// A tail that sends `TraceEvent`s to WebSocket.
@@ -60,13 +57,14 @@ impl WebSocketTail {
     /// Connects to WebSocket tail.
     pub async fn connect(tail: Tail, options: TailOptions) -> Result<Self> {
         if tail.id.is_none() && tail.url.is_none() && !tail.is_web_socket() {
-            anyhow::bail!("Unexpected WebSocket tail: {:?}", &tail);
+            anyhow::bail!("Precondition failed for WebSocket tail: {:?}", &tail);
         }
         let request = Request::builder()
             .uri(&tail.url.clone().map(String::from).unwrap())
             .header("User-Agent", user_agent())
             .header("Sec-WebSocket-Protocol", PROTOCOL_ID)
             .body(())?;
+        log::info!("Connecting to WebSocket tail: {:?}", request);
         match tokio_tungstenite::connect_async(request).await {
             Ok((websocket, _)) => Ok(Self {
                 tail,
@@ -137,6 +135,7 @@ impl WebSocketTail {
 
     /// Writes a text message to the WebSocket.
     pub async fn write(&mut self, message: String) -> Result<()> {
+        log::debug!("Sending message to WebSocket tail: {}", message);
         match self.websocket.send(Message::Text(message)).await {
             Err(err) => anyhow::bail!("Failed to write to WebSocket tail: {}", err),
             _ => Ok(()),
@@ -145,9 +144,12 @@ impl WebSocketTail {
 
     /// Sends the tail filters to the WebSocket.
     pub async fn update(&mut self) -> Result<()> {
-        match serde_json::to_string(&self.options) {
-            Ok(options) => self.write(options).await,
-            Err(err) => anyhow::bail!("Failed to deserialize options: {}", err),
+        match self.options.filters.is_empty() {
+            false => match serde_json::to_string(&self.options) {
+                Ok(options) => self.write(options).await,
+                Err(err) => anyhow::bail!("Failed to deserialize options: {}", err),
+            },
+            true => Ok(()),
         }
     }
 

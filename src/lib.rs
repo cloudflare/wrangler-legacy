@@ -4,6 +4,9 @@
 #[macro_use]
 extern crate text_io;
 
+#[macro_use]
+extern crate erased_serde;
+
 use cloudflare::framework::response::ApiErrors;
 
 mod build;
