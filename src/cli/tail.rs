@@ -15,7 +15,7 @@ pub fn tail(
     once: bool,
     sampling_rate: f64,
     outcomes: Vec<String>,
-    methods: Vec<reqwest::Method>,
+    methods: Vec<String>,
     headers: Vec<String>,
     client_ips: Vec<String>,
     search: Option<String>,

@@ -125,7 +125,6 @@ impl Display for LogItem {
         write!(f, "[{}] ", level)?;
         match &self.message {
             // Most console.log() messages are formatted as an array.
-            //
             // e.g.
             //   console.log('Hi')             // => '["Hi"]'
             //   console.log('Hello', 'World') // => '["Hello","World"]'

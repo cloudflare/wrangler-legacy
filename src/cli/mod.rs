@@ -32,6 +32,7 @@ pub mod exec {
 
 use std::net::IpAddr;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use crate::commands::dev::Protocol;
 use crate::commands::tail::websocket::TailFormat;
@@ -227,7 +228,7 @@ pub enum Command {
         #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
         format: TailFormat,
 
-        /// Stops the tail after receiving the first log message (useful for integration testing)
+        /// Stops the tail after receiving the first log (useful for testing)
         #[structopt(long)]
         once: bool,
 
@@ -241,14 +242,14 @@ pub enum Command {
 
         /// Filter by HTTP method
         #[structopt(long)]
-        method: Vec<reqwest::Method>,
+        method: Vec<String>,
 
         /// Filter by HTTP header
         #[structopt(long)]
         header: Vec<String>,
 
         /// Filter by IP address ("self" to filter your own IP address)
-        #[structopt(long = "ip-address")]
+        #[structopt(long = "ip-address", parse(try_from_str = parse_ip_address))]
         ip_address: Vec<String>,
 
         /// Filter by a text match in console.log messages
@@ -352,6 +353,16 @@ impl AdhocMigration {
         } else {
             None
         }
+    }
+}
+
+fn parse_ip_address(input: &str) -> Result<String, anyhow::Error> {
+    match input {
+        "self" => Ok(String::from("self")),
+        address => match IpAddr::from_str(address) {
+            Ok(_) => Ok(address.to_owned()),
+            Err(err) => anyhow::bail!("{}: {}", err, input),
+        },
     }
 }
 

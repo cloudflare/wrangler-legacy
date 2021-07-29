@@ -1,4 +1,3 @@
-use reqwest::Method;
 use serde::Serialize;
 use std::collections::HashSet;
 use std::convert::From;
@@ -57,11 +56,9 @@ pub struct MethodFilter {
 
 impl TraceFilter for MethodFilter {}
 
-impl From<Vec<Method>> for MethodFilter {
-    fn from(methods: Vec<Method>) -> Self {
-        Self {
-            method: methods.iter().map(|m| m.as_str().to_owned()).collect(),
-        }
+impl From<Vec<String>> for MethodFilter {
+    fn from(method: Vec<String>) -> Self {
+        Self { method }
     }
 }
 
