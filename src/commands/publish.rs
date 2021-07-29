@@ -32,7 +32,7 @@ pub fn publish(
 ) -> Result<()> {
     validate_target_required_fields_present(target)?;
 
-    let run_deploy = |target: &Target| match deploy::deploy(&user, &deployments) {
+    let run_deploy = |target: &Target| match deploy::deploy(user, &deployments) {
         Ok(results) => {
             build_output_message(results, target.name.clone(), out);
             Ok(())
@@ -41,7 +41,7 @@ pub fn publish(
     };
 
     // Build the script before uploading and log build result
-    let build_result = build_target(&target);
+    let build_result = build_target(target);
     match build_result {
         Ok(msg) => {
             StdErr::success(&msg);
@@ -62,7 +62,7 @@ pub fn publish(
         let site_namespace = sites::add_namespace(user, target, false)?;
 
         let (to_upload, to_delete, asset_manifest) =
-            sites::sync(target, user, &site_namespace.id, &path)?;
+            sites::sync(target, user, &site_namespace.id, path)?;
 
         // First, upload all existing files in bucket directory
         StdErr::working("Uploading site files");
@@ -90,7 +90,7 @@ pub fn publish(
         let upload_client = http::featured_legacy_auth_client(user, Feature::Sites);
 
         // Next, upload and deploy the worker with the updated asset_manifest
-        upload::script(&upload_client, &target, Some(asset_manifest))?;
+        upload::script(&upload_client, target, Some(asset_manifest))?;
 
         run_deploy(target)?;
 
@@ -123,7 +123,7 @@ pub fn publish(
     } else {
         let upload_client = http::legacy_auth_client(user);
 
-        upload::script(&upload_client, &target, None)?;
+        upload::script(&upload_client, target, None)?;
         run_deploy(target)?;
     }
 

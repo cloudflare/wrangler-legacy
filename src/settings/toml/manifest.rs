@@ -704,7 +704,7 @@ mod tests {
             toml_path,
             None,
         )?;
-        assert_eq!(toml.name.to_string(), "test".to_string());
+        assert_eq!(toml.name, "test".to_string());
         assert_eq!(toml.target_type.to_string(), "javascript".to_string());
         fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
 

@@ -36,7 +36,7 @@ pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> R
         format!("__{}-{}", target.name, "workers_sites_assets")
     };
 
-    let site_namespace = match upsert(target, &user, title)? {
+    let site_namespace = match upsert(target, user, title)? {
         UpsertedNamespace::Created(namespace) => {
             let msg = format!("Created namespace for Workers Site \"{}\"", namespace.title);
             StdErr::working(&msg);
@@ -85,7 +85,7 @@ pub fn directory_keys_values(
                     spinner.set_message(&format!("{}", path.display()));
 
                     file_list.push(path.to_str().unwrap().to_string());
-                    validate_file_size(&path)?;
+                    validate_file_size(path)?;
 
                     let value = std::fs::read(path)?;
 
@@ -192,7 +192,7 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override> {
         if let Some(included) = &site.include {
             required_ignore(&mut required_override)?;
             for i in included {
-                required_override.add(&i)?;
+                required_override.add(i)?;
                 log::info!("Including {}", i);
             }
         } else {
@@ -381,7 +381,7 @@ mod tests {
             // partial hash digest of the file in the "key". call generate_path_and_key to obtain
             // for later comparison.
             let (_, key_with_hash) =
-                generate_path_and_key(&Path::new(path), &tmpdir, Some("".into())).unwrap();
+                generate_path_and_key(Path::new(path), &tmpdir, Some("".into())).unwrap();
             exclude.insert(key_with_hash);
         }
 

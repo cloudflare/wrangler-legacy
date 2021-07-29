@@ -22,7 +22,7 @@ pub fn run() -> Result<()> {
         .lines()
         .filter(|line| !line.starts_with("---"))
         .fold(String::new(), |mut data, line| {
-            data.push_str(&line);
+            data.push_str(line);
             data
         });
     let pubkey_encoded = percent_encode(pubkey_filtered.as_bytes(), NON_ALPHANUMERIC).to_string();

@@ -12,7 +12,7 @@ pub struct Host {
 impl Host {
     pub fn new(host: &str, default: bool) -> Result<Self> {
         // try to create a url from host
-        let url = match Url::parse(&host) {
+        let url = match Url::parse(host) {
             Ok(host) => Ok(host),
             // if it doesn't work, it might be because there was no scheme
             // default to https

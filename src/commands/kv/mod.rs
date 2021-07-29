@@ -57,7 +57,7 @@ fn check_duplicate_namespaces(target: &Target) -> bool {
 
 // Get namespace id for a given binding name.
 pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String> {
-    if check_duplicate_namespaces(&target) {
+    if check_duplicate_namespaces(target) {
         anyhow::bail!(
             "Namespace binding \"{}\" is duplicated in \"{}\"",
             binding,

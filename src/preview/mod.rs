@@ -114,8 +114,8 @@ fn client_request(payload: &RequestPayload, script_id: &str, sites_preview: bool
     let cookie = payload.cookie(script_id);
 
     let worker_res = match method {
-        HttpMethod::Get => get(&url, &cookie, &client).unwrap(),
-        HttpMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
+        HttpMethod::Get => get(url, &cookie, &client).unwrap(),
+        HttpMethod::Post => post(url, &cookie, body, &client).unwrap(),
     };
 
     let msg = if sites_preview {

@@ -21,7 +21,7 @@ pub fn get(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()
         kv::url_encode_key(key)
     );
 
-    let client = http::legacy_auth_client(&user);
+    let client = http::legacy_auth_client(user);
 
     let res = client.get(&api_endpoint).send()?;
 

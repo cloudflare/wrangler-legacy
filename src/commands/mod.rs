@@ -46,7 +46,7 @@ pub fn run(mut command: Command, command_name: &str) -> Result<()> {
 // Ensures that Worker name is valid.
 pub fn validate_worker_name(name: &str) -> Result<()> {
     let re = Regex::new(r"^[a-z0-9_][a-z0-9-_]*$").unwrap();
-    if !re.is_match(&name) {
+    if !re.is_match(name) {
         anyhow::bail!("Worker name \"{}\" invalid. Ensure that you only use lowercase letters, dashes, underscores, and numbers.", name)
     }
     Ok(())
