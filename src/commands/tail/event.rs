@@ -1,6 +1,7 @@
 use chrono::{Local, TimeZone};
 use console::style;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::fmt::{Display, Formatter, Result};
 
 /// A unique protocol ID that is passed by the `Sec-WebSocket-Protocol` header.
@@ -52,7 +53,7 @@ pub struct CfMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogItem {
     pub level: String,
-    pub message: serde_json::Value,
+    pub message: Value,
 }
 
 /// An error item.
@@ -65,24 +66,29 @@ pub struct ExceptionItem {
 
 impl Display for TraceEvent {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        let timestamp = Local
-            .timestamp_millis(self.timestamp)
-            .format("%Y-%m-%d %H:%M:%S");
+        let timestamp = style(
+            Local
+                .timestamp_millis(self.timestamp)
+                .format("%Y-%m-%d %H:%M:%S"),
+        )
+        .dim();
         let outcome = match self.outcome.as_ref() {
             "ok" => style("Ok").green(),
             "canceled" => style("Canceled").blue(),
             "exception" => style("Error").red(),
-            "exceededCpu" => style("Exceeded CPU").yellow(),
+            "exceededCpu" => style("Exceeded Limit").yellow(),
             _ => style("System Error").red(),
-        }
-        .bold();
+        };
         match self.event.request.clone() {
             Some(request) => {
-                let colo = request
-                    .cf
-                    .map(|cf| cf.colo)
-                    .unwrap_or_else(|| "?".to_owned());
-                let method = style(request.method).italic();
+                let colo = style(
+                    request
+                        .cf
+                        .map(|cf| cf.colo)
+                        .unwrap_or_else(|| "?".to_owned()),
+                )
+                .dim();
+                let method = style(request.method);
                 let url = style(request.url).bold();
                 write!(
                     f,
@@ -97,10 +103,12 @@ impl Display for TraceEvent {
             },
         }?;
         for log in self.logs.iter() {
-            write!(f, "\n |> {}", log)?;
+            let prefix = style("|").dim();
+            write!(f, "\n {} {}", prefix, log)?;
         }
         for err in self.exceptions.iter() {
-            write!(f, "\n |! {}", err)?;
+            let prefix = style("!").dim();
+            write!(f, "\n {} {}", prefix, err)?;
         }
         Ok(())
     }
@@ -109,21 +117,47 @@ impl Display for TraceEvent {
 impl Display for LogItem {
     fn fmt(&self, f: &mut Formatter) -> Result {
         let level = match self.level.as_ref() {
-            "debug" => style("Debug"),
+            "debug" => style("Debug").blue(),
             "warn" => style("Warn").yellow(),
             "error" => style("Error").red(),
-            _ => style("Info").blue(),
-        }
-        .bold();
-        let message = &self.message;
-        write!(f, "[{}] {}", level, message)
+            _ => style("Info").dim(),
+        };
+        write!(f, "[{}] ", level)?;
+        match &self.message {
+            // Most console.log() messages are formatted as an array.
+            //
+            // e.g.
+            //   console.log('Hi')             // => '["Hi"]'
+            //   console.log('Hello', 'World') // => '["Hello","World"]'
+            //
+            // However, we want to format it nicely, similar to how it's done in DevTools.
+            // e.g.
+            //   Hello World
+            //
+            // While a recursive approach might seem like a good idea, the output becomes
+            // suprisingly unreadable. Instead, we only handle the simple case where the
+            // top-level is an array and its values are strings.
+            Value::Array(values) => {
+                for value in values.iter() {
+                    match value {
+                        Value::String(s) => write!(f, "{}", s),
+                        v => write!(f, "{}", v),
+                    }?;
+                    write!(f, " ")?;
+                }
+                Ok(())
+            }
+            Value::String(v) => write!(f, "{}", v),
+            v => write!(f, "{}", v),
+        }?;
+        Ok(())
     }
 }
 
 impl Display for ExceptionItem {
     fn fmt(&self, f: &mut Formatter) -> Result {
         let name = style(&self.name).red().bold();
-        let message = &self.message;
+        let message = style(&self.message).red();
         write!(f, "[{}] {}", name, message)
     }
 }
