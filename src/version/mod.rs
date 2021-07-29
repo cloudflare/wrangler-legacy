@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 use std::str::FromStr;
 use std::sync::mpsc;
 use std::thread;
@@ -7,6 +7,7 @@ use std::time::SystemTime;
 
 use crate::settings::get_wrangler_home_dir;
 
+use anyhow::Result;
 use reqwest::header::USER_AGENT;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -65,14 +66,14 @@ impl FromStr for LastCheckedVersion {
     }
 }
 
-fn get_installed_version() -> Result<Version, failure::Error> {
+fn get_installed_version() -> Result<Version> {
     let version = option_env!("CARGO_PKG_VERSION").unwrap_or_else(|| "unknown");
     let parsed_version = Version::parse(version)?;
     Ok(parsed_version)
 }
 
-fn check_wrangler_versions() -> Result<WranglerVersion, failure::Error> {
-    let config_dir = get_wrangler_home_dir()?;
+fn check_wrangler_versions() -> Result<WranglerVersion> {
+    let config_dir = get_wrangler_home_dir();
     let version_file = config_dir.join("version.toml");
     let current_time = SystemTime::now();
 
@@ -103,7 +104,7 @@ fn check_wrangler_versions() -> Result<WranglerVersion, failure::Error> {
 }
 
 /// Reads version out of version file, is `None` if file does not exist or is corrupted
-fn get_version_disk(version_file: &PathBuf) -> Option<LastCheckedVersion> {
+fn get_version_disk(version_file: &Path) -> Option<LastCheckedVersion> {
     match fs::read_to_string(&version_file) {
         Ok(contents) => match LastCheckedVersion::from_str(&contents) {
             Ok(last_checked_version) => Some(last_checked_version),
@@ -115,9 +116,9 @@ fn get_version_disk(version_file: &PathBuf) -> Option<LastCheckedVersion> {
 
 fn get_latest_version(
     installed_version: &str,
-    version_file: &PathBuf,
+    version_file: &Path,
     current_time: SystemTime,
-) -> Result<Version, failure::Error> {
+) -> Result<Version> {
     let latest_version = get_latest_version_from_api(installed_version)?;
     let updated_file_contents = toml::to_string(&LastCheckedVersion {
         latest_version: latest_version.to_string(),
@@ -127,14 +128,15 @@ fn get_latest_version(
     Ok(latest_version)
 }
 
-fn get_latest_version_from_api(installed_version: &str) -> Result<Version, failure::Error> {
+fn get_latest_version_from_api(installed_version: &str) -> Result<Version> {
     let url = "https://crates.io/api/v1/crates/wrangler";
     let user_agent = format!(
         "wrangler/{} ({})",
         installed_version,
         env!("CARGO_PKG_REPOSITORY")
     );
-    let response = reqwest::blocking::Client::new()
+    let client = reqwest::blocking::Client::builder().build()?;
+    let response = client
         .get(url)
         .header(USER_AGENT, user_agent)
         .send()?

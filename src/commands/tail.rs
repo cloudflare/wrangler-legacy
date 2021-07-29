@@ -1,5 +1,7 @@
 use std::net::{SocketAddr, TcpListener};
 
+use anyhow::Result;
+
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::tail::Tail;
@@ -10,16 +12,18 @@ const DEFAULT_METRICS_PORT: u16 = 8081;
 pub fn start(
     target: &Target,
     user: &GlobalUser,
+    format: String,
     tunnel_port: Option<u16>,
     metrics_port: Option<u16>,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let tunnel_port = find_open_port(tunnel_port, DEFAULT_TUNNEL_PORT)?;
     let metrics_port = find_open_port(metrics_port, DEFAULT_METRICS_PORT)?;
 
     Tail::run(
         target.clone(),
         user.clone(),
+        format,
         tunnel_port,
         metrics_port,
         verbose,
@@ -27,12 +31,12 @@ pub fn start(
 }
 
 /// Find open port takes two arguments: an Optional requested port, and a default port.
-fn find_open_port(requested: Option<u16>, default: u16) -> Result<u16, failure::Error> {
+fn find_open_port(requested: Option<u16>, default: u16) -> Result<u16> {
     if let Some(port) = requested {
         let addr = format!("127.0.0.1:{}", port);
         match TcpListener::bind(addr) {
             Ok(socket) => Ok(socket.local_addr()?.port()),
-            Err(_) => failure::bail!("the specified port {} is unavailable", port),
+            Err(_) => anyhow::bail!("the specified port {} is unavailable", port),
         }
     } else {
         // try to use the default port; else get an ephemeral port from the OS

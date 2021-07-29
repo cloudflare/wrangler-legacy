@@ -6,12 +6,13 @@ mod sync;
 pub use manifest::AssetManifest;
 pub use sync::sync;
 
+use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs;
 use std::hash::Hasher;
 use std::path::Path;
 
-use failure::format_err;
+use anyhow::{anyhow, Result};
 use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{Walk, WalkBuilder};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -28,11 +29,7 @@ pub const KEY_MAX_SIZE: usize = 512;
 pub const VALUE_MAX_SIZE: u64 = 25 * 1024 * 1024;
 
 // Updates given Target with kv_namespace binding for a static site assets KV namespace.
-pub fn add_namespace(
-    user: &GlobalUser,
-    target: &mut Target,
-    preview: bool,
-) -> Result<KvNamespace, failure::Error> {
+pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> Result<KvNamespace> {
     let title = if preview {
         format!("__{}-{}", target.name, "workers_sites_assets_preview")
     } else {
@@ -68,9 +65,10 @@ pub fn add_namespace(
 pub fn directory_keys_values(
     target: &Target,
     directory: &Path,
-) -> Result<(Vec<KeyValuePair>, AssetManifest, Vec<String>), failure::Error> {
-    match &fs::metadata(directory) {
-        Ok(file_type) if file_type.is_dir() => {
+    exclude: Option<&HashSet<String>>,
+) -> Result<(Vec<KeyValuePair>, AssetManifest, Vec<String>)> {
+    match fs::metadata(directory) {
+        Ok(ref file_type) if file_type.is_dir() => {
             let mut upload_vec: Vec<KeyValuePair> = Vec::new();
             let mut asset_manifest = AssetManifest::new();
             let mut file_list: Vec<String> = Vec::new();
@@ -99,6 +97,16 @@ pub fn directory_keys_values(
 
                     validate_key_size(&key)?;
 
+                    // asset manifest should always contain all files
+                    asset_manifest.insert(url_safe_path, key.clone());
+
+                    // skip uploading existing keys, if configured to do so
+                    if let Some(remote_keys) = exclude {
+                        if remote_keys.contains(&key) {
+                            continue;
+                        }
+                    }
+
                     upload_vec.push(KeyValuePair {
                         key: key.clone(),
                         value: b64_value,
@@ -106,8 +114,6 @@ pub fn directory_keys_values(
                         expiration_ttl: None,
                         base64: Some(true),
                     });
-
-                    asset_manifest.insert(url_safe_path, key);
                 }
             }
             Ok((upload_vec, asset_manifest, file_list))
@@ -115,9 +121,9 @@ pub fn directory_keys_values(
         Ok(_file_type) => {
             // any other file types (files, symlinks)
             // TODO: return an error type here, like NotADirectoryError
-            Err(format_err!("Check your configuration file; the `bucket` attribute for [site] should point to a directory."))
+            Err(anyhow!("Check your configuration file; the `bucket` attribute for [site] should point to a directory."))
         }
-        Err(e) => Err(format_err!("{}", e)),
+        Err(e) => Err(anyhow!(e)),
     }
 }
 
@@ -126,12 +132,12 @@ pub fn directory_keys_values(
 // logic in validate_key_size()) because it duplicates the size checking the API already does--but
 // doing a preemptive check like this (before calling the API) will prevent partial bucket uploads
 // from happening.
-fn validate_file_size(path: &Path) -> Result<(), failure::Error> {
+fn validate_file_size(path: &Path) -> Result<()> {
     let metadata = fs::metadata(path)?;
     let file_len = metadata.len();
 
     if file_len > VALUE_MAX_SIZE {
-        failure::bail!(
+        anyhow::bail!(
             "File `{}` of {} bytes exceeds the maximum value size limit of {} bytes",
             path.display(),
             file_len,
@@ -141,9 +147,9 @@ fn validate_file_size(path: &Path) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn validate_key_size(key: &str) -> Result<(), failure::Error> {
+fn validate_key_size(key: &str) -> Result<()> {
     if key.len() > KEY_MAX_SIZE {
-        failure::bail!(
+        anyhow::bail!(
             "Path `{}` of {} bytes exceeds the maximum key size limit of {} bytes",
             key,
             key.len(),
@@ -156,11 +162,11 @@ fn validate_key_size(key: &str) -> Result<(), failure::Error> {
 const REQUIRED_IGNORE_FILES: &[&str] = &[NODE_MODULES];
 const NODE_MODULES: &str = "node_modules";
 
-fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::Error> {
+fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk> {
     // The directory provided should never be node_modules!
     if let Some(name) = directory.file_name() {
         if name == NODE_MODULES {
-            failure::bail!("Your directory of files to upload cannot be named node_modules.");
+            anyhow::bail!("Your directory of files to upload cannot be named node_modules.");
         }
     };
 
@@ -171,9 +177,9 @@ fn get_dir_iterator(target: &Target, directory: &Path) -> Result<Walk, failure::
         .build())
 }
 
-fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::Error> {
+fn build_ignore(target: &Target, directory: &Path) -> Result<Override> {
     let mut required_override = OverrideBuilder::new(directory);
-    let required_ignore = |builder: &mut OverrideBuilder| -> Result<(), failure::Error> {
+    let required_ignore = |builder: &mut OverrideBuilder| -> Result<()> {
         for ignored in REQUIRED_IGNORE_FILES {
             builder.add(&format!("!{}", ignored))?;
             log::info!("Ignoring {}", ignored);
@@ -203,7 +209,6 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::
 
             // add any other excludes specified
             if let Some(excluded) = &site.exclude {
-                required_ignore(&mut required_override)?;
                 for e in excluded {
                     required_override.add(&format!("!{}", e))?;
                     log::info!("Ignoring {}", e);
@@ -217,7 +222,7 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override, failure::
 }
 
 // Courtesy of Steve Klabnik's PoC :) Used for bulk operations (write, delete)
-fn generate_url_safe_path(path: &Path) -> Result<String, failure::Error> {
+fn generate_url_safe_path(path: &Path) -> Result<String> {
     // first, we have to re-build the paths: if we're on Windows, we have paths with
     // `\` as separators. But we want to use `/` as separators. Because that's how URLs
     // work.
@@ -248,7 +253,7 @@ pub fn generate_path_and_key(
     path: &Path,
     directory: &Path,
     value: Option<String>,
-) -> Result<(String, String), failure::Error> {
+) -> Result<(String, String)> {
     // strip the bucket directory from both paths for ease of reference.
     let relative_path = path.strip_prefix(directory).unwrap();
 
@@ -281,7 +286,7 @@ fn get_digest(value: String) -> String {
 
 // Assumes that `path` is a file (called from a match branch for path.is_file())
 // Assumes that `hashed_value` is a String, not an Option<String> (called from a match branch for value.is_some())
-fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<String, failure::Error> {
+fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<String> {
     if let Some(file_stem) = path.file_stem() {
         let mut file_name = file_stem.to_os_string();
         let extension = path.extension();
@@ -297,7 +302,7 @@ fn generate_path_with_hash(path: &Path, hashed_value: String) -> Result<String, 
 
         Ok(generate_url_safe_path(&new_path)?)
     } else {
-        failure::bail!("no file_stem for path {}", path.display())
+        anyhow::bail!("no file_stem for path {}", path.display())
     }
 }
 
@@ -308,20 +313,93 @@ mod tests {
     use std::fs;
     use std::io::Write;
     use std::path::{Path, PathBuf};
+    use tempfile::TempDir;
 
     use crate::settings::toml::{Site, Target, TargetType};
 
     fn make_target(site: Site) -> Target {
         Target {
-            account_id: "".to_string(),
+            account_id: None.into(),
             kv_namespaces: Vec::new(),
+            durable_objects: None,
+            migrations: None,
             name: "".to_string(),
             target_type: TargetType::JavaScript,
             webpack_config: None,
             site: Some(site),
+            build: None,
             vars: None,
             text_blobs: None,
+            usage_model: None,
+            wasm_modules: None,
+            compatibility_date: None,
+            compatibility_flags: Vec::new(),
         }
+    }
+
+    fn tmpdir_with_default_files() -> (PathBuf, Vec<PathBuf>) {
+        let files = vec![
+            PathBuf::new().join("file_a.txt"),
+            PathBuf::new().join("file_b.txt"),
+            PathBuf::new().join("file_c.txt"),
+        ];
+
+        let tmpdir = TempDir::new().unwrap();
+        let tmp_path = tmpdir.into_path();
+
+        files.iter().for_each(|path| {
+            std::fs::File::create(tmp_path.clone().join(path)).unwrap();
+        });
+
+        (tmp_path, files)
+    }
+
+    #[test]
+    fn it_runs_directory_keys_values_returning_expected_valyes() {
+        let (tmpdir, all_files) = tmpdir_with_default_files();
+
+        // check that no files are excluded from the upload set or the asset manifest.
+        let (to_upload, asset_manifest, _) =
+            directory_keys_values(&make_target(Site::default()), &tmpdir, None).unwrap();
+        let mut keys = vec![];
+        for file in &all_files {
+            let filename = file.to_str().unwrap();
+            assert!(asset_manifest.get(filename).is_some());
+            keys.push(asset_manifest.get(filename).unwrap());
+        }
+        for kv in to_upload {
+            assert!(keys.contains(&&kv.key))
+        }
+
+        // check that the correct files are excluded (as if they already are uploaded).
+        // asset manifest should have all the files, to_upload should be filtered.
+        let mut exclude = HashSet::new();
+        for f in &["file_a.txt", "file_b.txt"] {
+            let path = tmpdir.join(f);
+            let path = path.to_str().unwrap();
+            // in calling code, `exclude` is the list of keys from KV, and thus needs to contain the
+            // partial hash digest of the file in the "key". call generate_path_and_key to obtain
+            // for later comparison.
+            let (_, key_with_hash) =
+                generate_path_and_key(&Path::new(path), &tmpdir, Some("".into())).unwrap();
+            exclude.insert(key_with_hash);
+        }
+
+        let (to_upload, asset_manifest, _) =
+            directory_keys_values(&make_target(Site::default()), &tmpdir, Some(&exclude)).unwrap();
+        for file in &all_files {
+            let filename = file.to_str().unwrap();
+            assert!(asset_manifest.get(filename).is_some());
+        }
+        // construct a list of keys from the upload list to then ensure it does _not_ contain any
+        // key for a file which we have designated for exclusion.
+        let upload_keys: Vec<String> = to_upload.iter().map(|kv| kv.key.clone()).collect();
+        for file in exclude.iter() {
+            assert!(!upload_keys.contains(&file.to_string()));
+        }
+        assert_eq!(upload_keys.len(), 1);
+        assert!(upload_keys.first().unwrap().starts_with("file_c"));
+        assert_eq!(to_upload.len(), all_files.len() - exclude.len());
     }
 
     #[test]
@@ -371,7 +449,7 @@ mod tests {
             test_dir
         )))
         .unwrap();
-        let (_, _, file_list) = directory_keys_values(&target, Path::new(test_dir)).unwrap();
+        let (_, _, file_list) = directory_keys_values(&target, Path::new(test_dir), None).unwrap();
         if cfg!(windows) {
             assert!(!file_list.contains(&format!("{}\\.ignore_me.txt", test_dir)));
             assert!(file_list.contains(&format!("{}\\.well-known\\dontignoreme.txt", test_dir)));

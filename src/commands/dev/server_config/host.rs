@@ -1,6 +1,6 @@
 use std::fmt;
 
-use failure::format_err;
+use anyhow::{anyhow, Result};
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -10,7 +10,7 @@ pub struct Host {
 }
 
 impl Host {
-    pub fn new(host: &str, default: bool) -> Result<Self, failure::Error> {
+    pub fn new(host: &str, default: bool) -> Result<Self> {
         // try to create a url from host
         let url = match Url::parse(&host) {
             Ok(host) => Ok(host),
@@ -22,11 +22,11 @@ impl Host {
         // validate scheme
         let scheme = url.scheme();
         if scheme != "http" && scheme != "https" {
-            failure::bail!("Your host scheme must be either http or https")
+            anyhow::bail!("Your host scheme must be either http or https")
         }
 
         // validate host
-        let host = url.host_str().ok_or_else(|| format_err!("Invalid host, accepted formats are example.com, http://example.com, or https://example.com"))?;
+        let host = url.host_str().ok_or_else(|| anyhow!("Invalid host, accepted formats are example.com, http://example.com, or https://example.com"))?;
 
         // recreate url without any trailing path
         let url = Url::parse(&format!("{}://{}", scheme, host))?;

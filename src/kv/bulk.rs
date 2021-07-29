@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use anyhow::Result;
 use indicatif::ProgressBar;
 
 use cloudflare::endpoints::workerskv::delete_bulk::DeleteBulk;
@@ -22,7 +23,7 @@ const UPLOAD_MAX_SIZE: usize = 50 * 1024 * 1024;
 
 // Create a special API client that has a longer timeout than usual, given that KV operations
 // can be lengthy if payloads are large.
-fn bulk_api_client(user: &GlobalUser) -> Result<HttpApiClient, failure::Error> {
+fn bulk_api_client(user: &GlobalUser) -> Result<HttpApiClient> {
     let config = HttpApiClientConfig {
         http_timeout: Duration::from_secs(5 * 60),
         default_headers: headers(None),
@@ -41,17 +42,17 @@ pub fn put(
     namespace_id: &str,
     pairs: Vec<KeyValuePair>,
     progress_bar: &Option<ProgressBar>,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let client = bulk_api_client(user)?;
 
     for b in batch_keys_values(pairs) {
         match client.request(&WriteBulk {
-            account_identifier: &target.account_id,
+            account_identifier: target.account_id.load()?,
             namespace_identifier: namespace_id,
             bulk_key_value_pairs: b.to_owned(),
         }) {
             Ok(_) => {}
-            Err(e) => failure::bail!("{}", format_error(e)),
+            Err(e) => anyhow::bail!("{}", format_error(e)),
         }
 
         if let Some(pb) = &progress_bar {
@@ -68,17 +69,17 @@ pub fn delete(
     namespace_id: &str,
     keys: Vec<String>,
     progress_bar: &Option<ProgressBar>,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let client = bulk_api_client(user)?;
 
     for b in batch_keys(keys) {
         match client.request(&DeleteBulk {
-            account_identifier: &target.account_id,
+            account_identifier: target.account_id.load()?,
             namespace_identifier: namespace_id,
             bulk_keys: b.to_owned(),
         }) {
             Ok(_) => {}
-            Err(e) => failure::bail!("{}", format_error(e)),
+            Err(e) => anyhow::bail!("{}", format_error(e)),
         }
 
         if let Some(pb) = &progress_bar {

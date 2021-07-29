@@ -1,7 +1,7 @@
 [package]
 name = "wrangler"
-version = "1.13.0"
-authors = ["The Wrangler Team <wrangler@cloudflare.com>", "Avery Harnish <averyharnish@gmail.com>", "Ashley Lewis <ashleymichal@gmail.com>", "Ashley Williams <ashley666ashley@gmail.com>", "Nat Davidson <davidson@cloudflare.com>"]
+version = "1.18.0"
+authors = ["The Wrangler Team <wrangler@cloudflare.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
 description = "Command-line interface for all things Cloudflare Workers"
@@ -11,53 +11,62 @@ categories = ["wasm", "development-tools", "command-line-utilities", "web-progra
 build = "build.rs"
 
 [dependencies]
+anyhow = "1.0"
 atty = "0.2.14"
+backtrace = { version = "0.3.58" }
 base64 = "0.13.0"
 billboard = "0.1.0"
 binary-install = "0.0.3-alpha.1"
-chrome-devtools-rs = "0.0.0-alpha.2"
+chrome-devtools-rs = { version = "0.0.0-alpha.3", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
-cloudflare = "0.6.6"
-config = "0.10.1"
-console = "0.13.0"
+cloudflare = "0.8.3"
+colored_json = "2.1.0"
+config = "0.11.0"
+console = "0.14.1"
 dirs = "3.0.1"
-env_logger = "0.8.2"
+env_logger = "0.8.4"
 eventual = "0.1.7"
-exitfailure = "0.5.1"
-failure = "0.1.8"
 flate2 = "1.0.18"
 fs2 = "0.4.3"
 futures-util = "0.3"
+globset = "0.4.6"
 http = "0.2.1"
-hyper = "0.13.9"
-hyper-rustls = "0.21.0"
+hyper = { version = "0.14.7", features = ["http2", "server", "runtime"] }
+hyper-rustls = "0.22.1"
 ignore = "0.4.17"
 indicatif = "0.15.0"
-lazy_static = "1.4.0"
 log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
-openssl = { version = "0.10.32", optional = true }
+once_cell = "1"
+openssl = { version = "0.10.35", optional = true }
+os-version = "0.1.1"
+path-slash = "0.1.4"
 percent-encoding = "2.1.0"
-predicates = "1.0.5"
+predicates = "2.0.0"
 prettytable-rs = "0.8.0"
-rand = "0.7.3"
+rand = "0.8.3"
 regex = "1.4.1"
-reqwest = { version = "0.10.9", features = ["blocking", "json"] }
-rustls = "0.18.1"
-semver = "0.11.0"
+reqwest = { version = "0.11.3", features = ["blocking", "json", "multipart"] }
+rustls = "0.19.1"
+semver = "1.0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.60"
 serde_with = "1.5.1"
+structopt = "0.3.21"
+sys-info = "0.9"
 tempfile = "3.1.0"
 term_size = "0.3"
 text_io = "0.1.8"
-tokio = { version = "0.2", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
-tokio-native-tls = "0.1.0"
-tokio-rustls = "0.14.1"
-tokio-tungstenite = { version = "0.11.0", features = ["tls"] }
+tokio = { version = "1.5.0", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
+tokio-native-tls = "0.3.0"
+tokio-retry = "0.3"
+tokio-rustls = "0.22.0"
+tokio-stream = "0.1.5"
+tokio-tungstenite = "0.14.0"
 toml = "0.5.8"
+toml_edit = "0.2.0"
 twox-hash = "1.6.0"
 url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }
@@ -67,15 +76,18 @@ ws = "0.9.1"
 [dev-dependencies]
 assert_cmd = "1.0.2"
 fs_extra = "1.2.0"
-predicates = "1.0.5"
+predicates = "2.0.0"
 
 [features]
 # OpenSSL is vendored by default, can use system OpenSSL through feature flag.
-default = ['openssl/vendored']
+default = ['openssl/vendored', 'tokio-tungstenite/native-tls-vendored']
 
 # Treat compiler warnings as a build error.
 # This only runs in CI by default
 strict = ['openssl/vendored']
-sys-openssl = ['openssl']
+sys-openssl = ['openssl', 'tokio-tungstenite/native-tls']
 # Keeping feature for users already using this feature flag
 vendored-openssl = ['openssl/vendored']
+
+[profile.release]
+panic = "abort"

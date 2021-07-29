@@ -5,19 +5,22 @@ use crate::terminal::emoji;
 
 use std::sync::{Arc, Mutex};
 
+use anyhow::Result;
 use chrono::prelude::*;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
 use hyper_rustls::HttpsConnector;
+use tokio::sync::oneshot::{Receiver, Sender};
 
 pub async fn http(
     server_config: ServerConfig,
     preview_token: Arc<Mutex<String>>,
     host: String,
     upstream_protocol: Protocol,
-) -> Result<(), failure::Error> {
+    shutdown_channel: (Receiver<()>, Sender<()>),
+) -> Result<()> {
     // set up https client to connect to the preview service
-    let https = HttpsConnector::new();
+    let https = HttpsConnector::with_native_roots();
     let client = HyperClient::builder().build::<_, Body>(https);
 
     let listening_address = server_config.listening_address;
@@ -30,7 +33,7 @@ pub async fn http(
         let server_config = server_config.to_owned();
 
         async move {
-            Ok::<_, failure::Error>(service_fn(move |req| {
+            Ok::<_, anyhow::Error>(service_fn(move |req| {
                 let client = client.to_owned();
                 let preview_token = preview_token.lock().unwrap().to_owned();
                 let host = host.to_owned();
@@ -65,18 +68,25 @@ pub async fn http(
                         version,
                         resp.status()
                     );
-                    Ok::<_, failure::Error>(resp)
+                    Ok::<_, anyhow::Error>(resp)
                 }
             }))
         }
     });
 
-    let server = Server::bind(&listening_address).serve(make_service);
+    let (rx, tx) = shutdown_channel;
+    let server = Server::bind(&listening_address)
+        .serve(make_service)
+        .with_graceful_shutdown(async {
+            rx.await.expect("Could not receive shutdown initiation");
+        });
     println!("{} Listening on http://{}", emoji::EAR, listening_address);
 
     if let Err(e) = server.await {
         eprintln!("{}", e);
     }
+    tx.send(())
+        .expect("Could not acknowledge listener shutdown");
 
     Ok(())
 }

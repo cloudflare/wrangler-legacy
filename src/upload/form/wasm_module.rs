@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
-use failure::format_err;
-
 use super::binding::Binding;
-use super::filename_from_path;
+use super::filestem_from_path;
+use anyhow::{anyhow, Result};
+
+// Note: This is only used for service-worker scripts.
+// modules scripts use the universal Module class instead of this.
 
 #[derive(Debug)]
 pub struct WasmModule {
@@ -13,13 +15,13 @@ pub struct WasmModule {
 }
 
 impl WasmModule {
-    pub fn new(path: PathBuf, binding: String) -> Result<Self, failure::Error> {
-        let filename = filename_from_path(&path)
-            .ok_or_else(|| format_err!("filename should not be empty: {}", path.display()))?;
+    pub fn new(path: PathBuf, binding: String) -> Result<Self> {
+        let filename = filestem_from_path(&path)
+            .ok_or_else(|| anyhow!("filename should not be empty: {}", path.display()))?;
 
         Ok(Self {
-            filename,
             path,
+            filename,
             binding,
         })
     }

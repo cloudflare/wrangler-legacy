@@ -1,6 +1,7 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
+use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
 
@@ -28,36 +29,12 @@ pub fn publish(
     target: &mut Target,
     deployments: DeploymentSet,
     out: Output,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     validate_target_required_fields_present(target)?;
 
-    let deploy = |target: &Target| match deploy::worker(&user, &deployments) {
-        Ok(deploy::DeployResults { urls, schedules }) => {
-            let result_msg = match (urls.as_slice(), schedules.as_slice()) {
-                ([], []) => "Successfully published your script".to_owned(),
-                ([], schedules) => format!(
-                    "Successfully published your script with this schedule\n {}",
-                    schedules.join("\n ")
-                ),
-                (urls, []) => format!(
-                    "Successfully published your script to\n {}",
-                    urls.join("\n ")
-                ),
-                (urls, schedules) => format!(
-                    "Successfully published your script to\n {}\nwith this schedule\n {}",
-                    urls.join("\n "),
-                    schedules.join("\n ")
-                ),
-            };
-            StdErr::success(&result_msg);
-            if out == Output::Json {
-                StdOut::as_json(&PublishOutput {
-                    success: true,
-                    name: target.name.clone(),
-                    urls,
-                    schedules,
-                });
-            }
+    let run_deploy = |target: &Target| match deploy::deploy(&user, &deployments) {
+        Ok(results) => {
+            build_output_message(results, target.name.clone(), out);
             Ok(())
         }
         Err(e) => Err(e),
@@ -72,6 +49,12 @@ pub fn publish(
         }
         Err(e) => Err(e),
     }?;
+
+    // We verify early here, so we don't perform pre-upload tasks if the upload will fail
+    if let Some(build_config) = &target.build {
+        build_config.verify_upload_dir()?;
+    }
+
     if let Some(site_config) = &target.site {
         let path = &site_config.bucket.clone();
         validate_bucket_location(path)?;
@@ -109,7 +92,7 @@ pub fn publish(
         // Next, upload and deploy the worker with the updated asset_manifest
         upload::script(&upload_client, &target, Some(asset_manifest))?;
 
-        deploy(target)?;
+        run_deploy(target)?;
 
         // Finally, remove any stale files
         if !to_delete.is_empty() {
@@ -141,32 +124,54 @@ pub fn publish(
         let upload_client = http::legacy_auth_client(user);
 
         upload::script(&upload_client, &target, None)?;
-        deploy(target)?;
+        run_deploy(target)?;
     }
 
     Ok(())
 }
 
+fn build_output_message(deploy_results: deploy::DeployResults, target_name: String, out: Output) {
+    let deploy::DeployResults { urls, schedules } = deploy_results;
+
+    let mut msg = "Successfully published your script ".to_owned();
+    if !urls.is_empty() {
+        msg.push_str(&format!("to\n {}\n", urls.join("\n ")));
+    }
+    if !schedules.is_empty() {
+        msg.push_str(&format!("with this schedule\n {}\n", schedules.join("\n ")));
+    }
+
+    StdErr::success(&msg);
+    if out == Output::Json {
+        StdOut::as_json(&PublishOutput {
+            success: true,
+            name: target_name,
+            urls,
+            schedules,
+        });
+    }
+}
+
 // We don't want folks setting their bucket to the top level directory,
 // which is where wrangler commands are always called from.
-pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> {
+pub fn validate_bucket_location(bucket: &Path) -> Result<()> {
     // TODO: this should really use a convenience function for "Wrangler Project Root"
     let current_dir = env::current_dir()?;
     if bucket.as_os_str() == current_dir {
-        failure::bail!(
+        anyhow::bail!(
             "{} Your bucket cannot be set to the parent directory of your configuration file",
             emoji::WARN
         )
     }
     let path = Path::new(&bucket);
     if !path.exists() {
-        failure::bail!(
+        anyhow::bail!(
             "{} bucket directory \"{}\" does not exist",
             emoji::WARN,
             path.display()
         )
     } else if !path.is_dir() {
-        failure::bail!(
+        anyhow::bail!(
             "{} bucket \"{}\" is not a directory",
             emoji::WARN,
             path.display()
@@ -176,12 +181,9 @@ pub fn validate_bucket_location(bucket: &PathBuf) -> Result<(), failure::Error> 
     Ok(())
 }
 
-fn validate_target_required_fields_present(target: &Target) -> Result<(), failure::Error> {
+fn validate_target_required_fields_present(target: &Target) -> Result<()> {
     let mut missing_fields = Vec::new();
 
-    if target.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
     if target.name.is_empty() {
         missing_fields.push("name")
     };
@@ -203,7 +205,7 @@ fn validate_target_required_fields_present(target: &Target) -> Result<(), failur
     };
 
     if !missing_fields.is_empty() {
-        failure::bail!(
+        anyhow::bail!(
             "{} Your configuration file is missing the {} {:?} which {} required to publish your worker!",
             emoji::WARN,
             field_pluralization,

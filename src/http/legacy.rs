@@ -40,7 +40,7 @@ fn builder() -> ClientBuilder {
         .timeout(Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS))
 }
 
-fn add_auth_headers<'a>(headers: &'a mut HeaderMap, user: &GlobalUser) {
+fn add_auth_headers(headers: &mut HeaderMap, user: &GlobalUser) {
     match user {
         GlobalUser::TokenAuth { api_token } => {
             headers.insert(

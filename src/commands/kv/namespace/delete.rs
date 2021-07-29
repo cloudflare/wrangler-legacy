@@ -5,8 +5,10 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
 use crate::terminal::message::{Message, StdOut};
-pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::Error> {
-    kv::validate_target(target)?;
+
+use anyhow::Result;
+
+pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<()> {
     let client = http::cf_v4_client(user)?;
 
     match interactive::confirm(&format!(
@@ -18,13 +20,13 @@ pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<(), failure::
             StdOut::info(&format!("Not deleting namespace {}", id));
             return Ok(());
         }
-        Err(e) => failure::bail!(e),
+        Err(e) => anyhow::bail!(e),
     }
 
     let msg = format!("Deleting namespace {}", id);
     StdOut::working(&msg);
 
-    let response = delete(client, target, id);
+    let response = delete(client, target.account_id.load()?, id);
     match response {
         Ok(_) => {
             StdOut::success("Success");

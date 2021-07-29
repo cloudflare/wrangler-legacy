@@ -20,6 +20,7 @@ use session::Session;
 use shutdown::ShutdownHandler;
 use tunnel::Tunnel;
 
+use anyhow::Result;
 use console::style;
 use tokio::runtime::Runtime as TokioRuntime;
 use which::which;
@@ -34,14 +35,19 @@ impl Tail {
     pub fn run(
         target: Target,
         user: GlobalUser,
+        format: String,
         tunnel_port: u16,
         metrics_port: u16,
         verbose: bool,
-    ) -> Result<(), failure::Error> {
+    ) -> Result<()> {
         is_cloudflared_installed()?;
         print_startup_message(&target.name, tunnel_port, metrics_port);
 
-        let mut runtime = TokioRuntime::new()?;
+        // Loading the token creates a nested runtime because it goes through reqwest.
+        // Make sure it's loaded before creating our own runtime; nested runtimes will panic.
+        target.account_id.load()?;
+
+        let runtime = TokioRuntime::new()?;
 
         runtime.block_on(async {
             // Create three [one-shot](https://docs.rs/tokio/0.2.16/tokio/sync#oneshot-channel)
@@ -57,7 +63,7 @@ impl Tail {
             let listener = tokio::spawn(shutdown_handler.run(rx));
 
             // Spin up a local http server to receive logs
-            let log_server = tokio::spawn(LogServer::new(tunnel_port, log_rx).run());
+            let log_server = tokio::spawn(LogServer::new(tunnel_port, log_rx, format).run());
 
             // Spin up a new cloudflared tunnel to connect trace worker to local server
             let tunnel_process = Tunnel::new(tunnel_port, metrics_port, verbose)?;
@@ -88,13 +94,13 @@ impl Tail {
     }
 }
 
-fn is_cloudflared_installed() -> Result<(), failure::Error> {
+fn is_cloudflared_installed() -> Result<()> {
     // this can be removed once we automatically install cloudflared
     if which("cloudflared").is_err() {
-        let install_url = style("https://developers.cloudflare.com/argo-tunnel/downloads/")
+        let install_url = style("https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation")
             .blue()
             .bold();
-        failure::bail!("You must install cloudflared to use wrangler tail.\n\nInstallation instructions can be found here:\n{}", install_url);
+        anyhow::bail!("You must install cloudflared to use wrangler tail.\n\nInstallation instructions can be found here:\n{}", install_url);
     } else {
         Ok(())
     }

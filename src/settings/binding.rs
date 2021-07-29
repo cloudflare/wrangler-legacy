@@ -4,10 +4,28 @@ use serde::Serialize;
 #[serde(tag = "type")]
 #[serde(rename_all = "snake_case")]
 pub enum Binding {
-    WasmModule { name: String, part: String },
-    KvNamespace { name: String, namespace_id: String },
-    TextBlob { name: String, part: String },
-    PlainText { name: String, text: String },
+    WasmModule {
+        name: String,
+        part: String,
+    },
+    KvNamespace {
+        name: String,
+        namespace_id: String,
+    },
+    #[serde(rename = "durable_object_namespace")]
+    DurableObjectsClass {
+        name: String,
+        class_name: String,
+        script_name: Option<String>,
+    },
+    TextBlob {
+        name: String,
+        part: String,
+    },
+    PlainText {
+        name: String,
+        text: String,
+    },
 }
 
 impl Binding {
@@ -17,6 +35,18 @@ impl Binding {
 
     pub fn new_kv_namespace(name: String, namespace_id: String) -> Binding {
         Binding::KvNamespace { name, namespace_id }
+    }
+
+    pub fn new_durable_object_namespace(
+        name: String,
+        class_name: String,
+        script_name: Option<String>,
+    ) -> Binding {
+        Binding::DurableObjectsClass {
+            name,
+            class_name,
+            script_name,
+        }
     }
 
     pub fn new_text_blob(name: String, part: String) -> Binding {

@@ -104,6 +104,7 @@ fn random_chars(n: usize) -> String {
     let mut rng = thread_rng();
     iter::repeat(())
         .map(|()| rng.sample(Alphanumeric))
+        .map(char::from)
         .take(n)
         .collect()
 }

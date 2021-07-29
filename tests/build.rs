@@ -3,7 +3,8 @@ use std::process::Command;
 use std::str;
 
 use assert_cmd::prelude::*;
-use wrangler::fixtures::{Fixture, WranglerToml};
+mod fixtures;
+use fixtures::{Fixture, WranglerToml};
 
 #[test]
 fn it_builds_webpack() {
@@ -331,7 +332,7 @@ fn it_builds_with_webpack_name_output() {
     build_creates_assets(&fixture, vec!["script.js"]);
 
     let out = fs::read_to_string(fixture.get_output_path().join("script.js")).unwrap();
-    assert!(out.contains(r#"//# sourceMappingURL=worker.js.map{"version":3,"file":"worker.js""#));
+    assert!(out.contains(r#"//# sourceMappingURL=worker.js.map"#));
 }
 
 #[test]
@@ -359,7 +360,8 @@ fn it_builds_with_webpack_name_output_warn() {
 
     assert!(
         stderr.contains("webpack's output filename is being renamed"),
-        format!("given: {}", stderr)
+        "given: {}",
+        stderr
     );
 }
 
@@ -374,7 +376,7 @@ fn build_creates_assets_with_arg(
     build.args(args);
 
     let output = build.output().expect("failed to execute process");
-    assert!(output.status.success());
+    assert!(output.status.success(), "Build failed: {:?}", output);
 
     for script_name in script_names {
         assert!(fixture.get_output_path().join(script_name).exists());
@@ -415,11 +417,9 @@ fn build_fails_with(fixture: &Fixture, expected_message: &str) {
         str::from_utf8(&output.stderr)
             .unwrap()
             .contains(expected_message),
-        format!(
-            "expected {:?} not found, given: {:?}",
-            expected_message,
-            str::from_utf8(&output.stderr)
-        )
+        "expected {:?} not found, given: {:?}",
+        expected_message,
+        str::from_utf8(&output.stderr)
     );
 }
 

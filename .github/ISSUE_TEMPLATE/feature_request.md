@@ -1,25 +1,22 @@
 ---
 name: "\U0001F4A1 Feature request"
-about: Suggest a feature for wrangler
+about: Suggest a feature or enhancement.
 title: ''
-labels: user report
+labels: feature
 assignees: ''
-
 ---
 
 ### 💡 Feature request
 
-<!-- 
-  Please fill out each section below before submitting your 💡 feature request.
+<!--
+  Did you search for related issues?
+  https://github.com/cloudflare/wrangler/issues
+-->
 
-  Before opening a new issue, please search for existing issues: https://github.com/cloudflare/wrangler/issues
+#### Describe the feature
 
-  Thanks! -->
+A clear and concise description of the feature. What problem does it solve for you?
 
-#### Overview and problem statement
+#### Describe the alternatives
 
-Brief explanation of the requested feature, and a description of the problem it would solve.
-
-#### Basic example
-
-Include a basic code example of this new feature if possible. Omit this section if not applicable.
+Are there any alternatives to solving this problem? If so, what was your experience with them?
