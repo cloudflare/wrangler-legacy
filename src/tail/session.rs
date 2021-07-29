@@ -47,12 +47,12 @@ impl Session {
         // activity but since we limit the number of tails allowed on a single script we should at
         // least try to delete them as we go.
         if let Some(tail_id) = &self.tail_id {
-            let client = http::cf_v4_api_client_async(&user, HttpApiClientConfig::default())?;
+            let client = http::cf_v4_api_client_async(user, HttpApiClientConfig::default())?;
             client
                 .request(&DeleteTail {
                     account_identifier: target.account_id.load()?,
                     script_name: &target.name,
-                    tail_id: &tail_id,
+                    tail_id,
                 })
                 .await?;
         }
@@ -103,7 +103,7 @@ impl Session {
 
                     loop {
                         delay.await;
-                        let heartbeat_result = send_heartbeat(&target, &client, &tail_id).await;
+                        let heartbeat_result = send_heartbeat(target, &client, &tail_id).await;
                         if heartbeat_result.is_err() {
                             return heartbeat_result;
                         }

@@ -19,7 +19,7 @@ pub fn watch_for_changes(
     refresh_session_channel: Sender<Option<()>>,
 ) -> Result<()> {
     let (sender, receiver) = mpsc::channel();
-    watch_and_build(&target, Some(sender), Some(refresh_session_channel.clone()))?;
+    watch_and_build(target, Some(sender), Some(refresh_session_channel.clone()))?;
 
     while receiver.recv().is_ok() {
         let user = user.clone();

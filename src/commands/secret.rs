@@ -129,7 +129,7 @@ pub fn delete_secret(name: &str, user: &GlobalUser, target: &Target) -> Result<(
     let response = client.request(&DeleteSecret {
         account_identifier: target.account_id.load()?,
         script_name: &target.name,
-        secret_name: &name,
+        secret_name: name,
     });
 
     match response {

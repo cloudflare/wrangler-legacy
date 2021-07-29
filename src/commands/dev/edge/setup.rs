@@ -20,7 +20,7 @@ pub(super) fn upload(
     session_token: String,
     verbose: bool,
 ) -> Result<String> {
-    let client = crate::http::legacy_auth_client(&user);
+    let client = crate::http::legacy_auth_client(user);
 
     let (to_delete, asset_manifest, site_namespace_id) = if let Some(site_config) =
         target.site.clone()
@@ -96,7 +96,7 @@ impl Session {
             _ => unreachable!(),
         };
 
-        let client = crate::http::legacy_auth_client(&user);
+        let client = crate::http::legacy_auth_client(user);
         let response = client.get(exchange_url).send()?.error_for_status()?;
         let text = &response.text()?;
         let response: InspectorV4ApiResponse = serde_json::from_str(text)?;
@@ -153,7 +153,7 @@ fn get_upload_address(target: &mut Target) -> Result<String> {
 }
 
 fn get_exchange_url(deploy_target: &DeployTarget, user: &GlobalUser) -> Result<Url> {
-    let client = crate::http::legacy_auth_client(&user);
+    let client = crate::http::legacy_auth_client(user);
     let address = get_session_address(deploy_target);
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;

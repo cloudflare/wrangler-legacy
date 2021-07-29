@@ -281,7 +281,7 @@ fn build_type_matchers(rules: Vec<ModuleRule>) -> Result<Vec<ModuleMatcher>> {
             let mut builder = GlobSetBuilder::new();
 
             for glob in &r.globs {
-                let glob = new_glob(&glob)?;
+                let glob = new_glob(glob)?;
                 builder.add(glob);
             }
 

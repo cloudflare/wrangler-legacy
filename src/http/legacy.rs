@@ -49,8 +49,8 @@ fn add_auth_headers(headers: &mut HeaderMap, user: &GlobalUser) {
             );
         }
         GlobalUser::GlobalKeyAuth { email, api_key } => {
-            headers.insert("X-Auth-Email", HeaderValue::from_str(&email).unwrap());
-            headers.insert("X-Auth-Key", HeaderValue::from_str(&api_key).unwrap());
+            headers.insert("X-Auth-Email", HeaderValue::from_str(email).unwrap());
+            headers.insert("X-Auth-Key", HeaderValue::from_str(api_key).unwrap());
         }
     }
 }

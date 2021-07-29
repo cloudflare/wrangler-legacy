@@ -26,7 +26,7 @@ pub fn delete(zone_identifier: &str, user: &GlobalUser, route_id: &str) -> Resul
     let client = http::cf_v4_client(user)?;
 
     let result = client.request(&DeleteRoute {
-        zone_identifier: &zone_identifier,
+        zone_identifier,
         identifier: route_id,
     });
 
