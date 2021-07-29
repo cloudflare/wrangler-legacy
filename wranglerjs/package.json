@@ -4,6 +4,6 @@
   "author": "Sven Sauleau <sven@sauleau.com>",
   "license": "MIT",
   "dependencies": {
-    "webpack": "4.33.0"
+    "webpack": "4.46.0"
   }
 }

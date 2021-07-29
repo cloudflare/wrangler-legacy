@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::env;
 
+use anyhow::Result;
 use config::{ConfigError, Source, Value};
 
 const PREFIX_PATTERN: &str = "CF_";
@@ -8,7 +9,7 @@ const PREFIX_PATTERN: &str = "CF_";
 pub trait QueryEnvironment {
     fn get_var(&self, var: &'static str) -> Result<String, std::env::VarError>;
 
-    fn empty(&self) -> Result<bool, failure::Error>;
+    fn empty(&self) -> Result<bool>;
 }
 
 #[derive(Clone, Debug)]
@@ -27,7 +28,7 @@ impl QueryEnvironment for Environment {
         env::var(var)
     }
 
-    fn empty(&self) -> Result<bool, failure::Error> {
+    fn empty(&self) -> Result<bool> {
         let env = self.collect()?;
 
         Ok(env.is_empty())
@@ -52,12 +53,7 @@ impl Source for Environment {
         for key in &self.whitelist {
             if let Ok(value) = env::var(key) {
                 // remove the `CF` prefix before adding to collection
-                let key = if key.starts_with(PREFIX_PATTERN) {
-                    &key[PREFIX_PATTERN.len()..]
-                } else {
-                    key
-                };
-
+                let key = key.strip_prefix(PREFIX_PATTERN).unwrap_or(key);
                 m.insert(key.to_lowercase(), Value::new(Some(&uri), value));
             }
         }
@@ -88,7 +84,7 @@ impl QueryEnvironment for MockEnvironment {
         Ok("Some Mocked Result".to_string()) // Returns a mocked response
     }
 
-    fn empty(&self) -> Result<bool, failure::Error> {
+    fn empty(&self) -> Result<bool> {
         Ok(self.vars.is_empty())
     }
 }

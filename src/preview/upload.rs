@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use anyhow::Result;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 
@@ -48,7 +49,7 @@ pub fn upload(
     user: Option<&GlobalUser>,
     sites_preview: bool,
     verbose: bool,
-) -> Result<String, failure::Error> {
+) -> Result<String> {
     let preview = match &user {
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
@@ -92,7 +93,7 @@ pub fn upload(
                 ));
                 StdOut::warn("Falling back to unauthenticated preview.");
                 if sites_preview {
-                    failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
+                    anyhow::bail!(SITES_UNAUTH_PREVIEW_ERR)
                 }
 
                 unauthenticated_upload(&target)?
@@ -109,7 +110,7 @@ pub fn upload(
             StdOut::info("Running preview without authentication.");
 
             if sites_preview {
-                failure::bail!(SITES_UNAUTH_PREVIEW_ERR)
+                anyhow::bail!(SITES_UNAUTH_PREVIEW_ERR)
             }
 
             unauthenticated_upload(&target)?
@@ -122,7 +123,7 @@ pub fn upload(
 fn validate(target: &Target) -> Vec<&str> {
     let mut missing_fields = Vec::new();
 
-    if target.account_id.is_empty() {
+    if target.account_id.maybe_load().is_none() {
         missing_fields.push("account_id")
     };
     if target.name.is_empty() {
@@ -146,10 +147,11 @@ fn authenticated_upload(
     client: &Client,
     target: &Target,
     asset_manifest: Option<AssetManifest>,
-) -> Result<Preview, failure::Error> {
+) -> Result<Preview> {
     let create_address = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/preview",
-        target.account_id, target.name
+        target.account_id.load()?,
+        target.name
     );
     log::info!("address: {}", create_address);
 
@@ -160,24 +162,21 @@ fn authenticated_upload(
         .multipart(script_upload_form)
         .send()?;
 
-    if !res.status().is_success() {
-        failure::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
+    let status = res.status();
+    let text = res.text()?;
+    if !status.is_success() {
+        anyhow::bail!(crate::format_api_errors(text))
     }
 
-    let text = &res.text()?;
     log::info!("Response from preview: {:#?}", text);
 
     let response: V4ApiResponse =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+        serde_json::from_str(&text).expect("could not create a script on cloudflareworkers.com");
 
     Ok(Preview::from(response.result))
 }
 
-fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
+fn unauthenticated_upload(target: &Target) -> Result<Preview> {
     let create_address = "https://cloudflareworkers.com/script";
     log::info!("address: {}", create_address);
 
@@ -206,19 +205,16 @@ fn unauthenticated_upload(target: &Target) -> Result<Preview, failure::Error> {
         .multipart(script_upload_form)
         .send()?;
 
-    if !res.status().is_success() {
-        failure::bail!(
-            "Something went wrong! Status: {}, Details {}",
-            res.status(),
-            res.text()?
-        )
+    let status = res.status();
+    let text = res.text()?;
+    if !status.is_success() {
+        anyhow::bail!(crate::format_api_errors(text))
     }
 
-    let text = &res.text()?;
     log::info!("Response from preview: {:#?}", text);
 
     let preview: Preview =
-        serde_json::from_str(text).expect("could not create a script on cloudflareworkers.com");
+        serde_json::from_str(&text).expect("could not create a script on cloudflareworkers.com");
 
     Ok(preview)
 }

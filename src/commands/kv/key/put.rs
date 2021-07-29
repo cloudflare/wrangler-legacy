@@ -5,6 +5,7 @@
 use std::fs;
 use std::fs::metadata;
 
+use anyhow::Result;
 use cloudflare::framework::response::ApiFailure;
 use url::Url;
 
@@ -26,7 +27,7 @@ pub struct KVMetaData {
     pub metadata: Option<serde_json::Value>,
 }
 
-pub fn parse_metadata(arg: Option<&str>) -> Result<Option<serde_json::Value>, failure::Error> {
+pub fn parse_metadata(arg: Option<&str>) -> Result<Option<serde_json::Value>> {
     match arg {
         None => Ok(None),
         Some(s) => {
@@ -36,23 +37,21 @@ pub fn parse_metadata(arg: Option<&str>) -> Result<Option<serde_json::Value>, fa
                     // try to help users that forget to double-quote a JSON string
                     let re = Regex::new(r#"^['"]?[^"'{}\[\]]*['"]?$"#)?;
                     if re.is_match(s) {
-                        failure::bail!(
+                        anyhow::bail!(
                             "did you remember to double quote strings, like --metadata '\"made with 🤠 wrangler\"'"
                         )
                     }
-                    failure::bail!(e.to_string())
+                    anyhow::bail!(e.to_string())
                 }
             }
         }
     }
 }
 
-pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<(), failure::Error> {
-    kv::validate_target(target)?;
-
+pub fn put(target: &Target, user: &GlobalUser, data: KVMetaData) -> Result<()> {
     let api_endpoint = format!(
         "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        target.account_id,
+        target.account_id.load()?,
         &data.namespace_id,
         kv::url_encode_key(&data.key)
     );
@@ -91,7 +90,7 @@ fn get_response(
     data: KVMetaData,
     user: &GlobalUser,
     url: &Url,
-) -> Result<reqwest::blocking::Response, failure::Error> {
+) -> Result<reqwest::blocking::Response> {
     let url_into_str = url.to_string();
     let client = http::legacy_auth_client(user);
     let value_body = get_request_body(&data)?;
@@ -110,19 +109,19 @@ fn get_response(
 
 // If is_file is true, overwrite value to be the contents of the given
 // filename in the 'value' arg.
-fn get_request_body(data: &KVMetaData) -> Result<Vec<u8>, failure::Error> {
+fn get_request_body(data: &KVMetaData) -> Result<Vec<u8>> {
     if data.is_file {
         match &metadata(&data.value) {
             Ok(file_type) if file_type.is_file() => Ok(fs::read(&data.value)?),
-            Ok(file_type) if file_type.is_dir() => failure::bail!(
+            Ok(file_type) if file_type.is_dir() => anyhow::bail!(
                 "--path argument takes a file, {} is a directory",
                 data.value
             ),
-            Ok(_) => failure::bail!(
+            Ok(_) => anyhow::bail!(
                 "--path argument points to an entity that is not a file or a directory: {}",
                 data.value
             ),
-            Err(e) => failure::bail!("{}", e),
+            Err(e) => anyhow::bail!("{}", e),
         }
     } else {
         Ok(data.value.clone().into())
@@ -135,7 +134,7 @@ mod tests {
 
     #[test]
     fn metadata_parser_legal() {
-        for input in vec![
+        for input in &[
             "true",
             "false",
             "123.456",
@@ -149,14 +148,14 @@ mod tests {
 
     #[test]
     fn metadata_parser_illegal() {
-        for input in vec!["something", "{key: 123}", "[1, 2"] {
+        for input in &["something", "{key: 123}", "[1, 2"] {
             assert!(parse_metadata(Some(input)).is_err());
         }
     }
 
     #[test]
     fn metadata_parser_error_message_unquoted_string_error_message() -> Result<(), &'static str> {
-        for input in vec!["abc", "'abc'", "'abc", "abc'", "\"abc", "abc\""] {
+        for input in &["abc", "'abc'", "'abc", "abc'", "\"abc", "abc\""] {
             match parse_metadata(Some(input)) {
                 Ok(_) => return Err("illegal value was parsed successfully"),
                 Err(e) => {

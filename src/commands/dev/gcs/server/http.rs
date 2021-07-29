@@ -6,6 +6,7 @@ use crate::terminal::emoji;
 
 use std::sync::{Arc, Mutex};
 
+use anyhow::Result;
 use chrono::prelude::*;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Response, Server};
@@ -13,12 +14,9 @@ use hyper_rustls::HttpsConnector;
 
 /// performs all logic that takes an incoming request
 /// and routes it to the Workers runtime preview service
-pub async fn http(
-    server_config: ServerConfig,
-    preview_id: Arc<Mutex<String>>,
-) -> Result<(), failure::Error> {
+pub async fn http(server_config: ServerConfig, preview_id: Arc<Mutex<String>>) -> Result<()> {
     // set up https client to connect to the preview service
-    let https = HttpsConnector::new();
+    let https = HttpsConnector::with_native_roots();
     let client = HyperClient::builder().build::<_, Body>(https);
 
     let listening_address = server_config.listening_address;
@@ -31,7 +29,7 @@ pub async fn http(
         let server_config = server_config.to_owned();
         let preview_id = preview_id.to_owned();
         async move {
-            Ok::<_, failure::Error>(service_fn(move |req| {
+            Ok::<_, anyhow::Error>(service_fn(move |req| {
                 let client = client.to_owned();
                 let server_config = server_config.to_owned();
                 let preview_id = preview_id.lock().unwrap().to_owned();
@@ -86,7 +84,7 @@ pub async fn http(
                         version,
                         resp.status()
                     );
-                    Ok::<_, failure::Error>(resp)
+                    Ok::<_, anyhow::Error>(resp)
                 }
             }))
         }

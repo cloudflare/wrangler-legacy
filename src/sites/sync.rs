@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::path::Path;
 
+use anyhow::Result;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 
 use super::directory_keys_values;
@@ -17,8 +18,7 @@ pub fn sync(
     user: &GlobalUser,
     namespace_id: &str,
     path: &Path,
-) -> Result<(Vec<KeyValuePair>, Vec<String>, AssetManifest), failure::Error> {
-    kv::validate_target(target)?;
+) -> Result<(Vec<KeyValuePair>, Vec<String>, AssetManifest)> {
     // First, find all changed files in given local directory (aka files that are now stale
     // in Workers KV).
 
@@ -34,20 +34,18 @@ pub fn sync(
             Ok(remote_key) => {
                 remote_keys.insert(remote_key.name);
             }
-            Err(e) => failure::bail!(kv::format_error(e)),
+            Err(e) => anyhow::bail!(kv::format_error(e)),
         }
     }
 
-    let (pairs, asset_manifest, _): (Vec<KeyValuePair>, AssetManifest, _) =
-        directory_keys_values(target, path)?;
-
-    let to_upload = filter_files(pairs.clone(), &remote_keys);
+    let (diff_files_to_upload, asset_manifest, _): (Vec<KeyValuePair>, AssetManifest, _) =
+        directory_keys_values(target, path, Some(&remote_keys))?;
 
     // Now delete files from Workers KV that exist in remote but no longer exist locally.
     // Get local keys
     let mut local_keys: HashSet<_> = HashSet::new();
-    for pair in pairs.iter() {
-        local_keys.insert(pair.key.clone());
+    for (_, asset_key) in asset_manifest.iter() {
+        local_keys.insert(asset_key.clone());
     }
 
     // Find keys that are present in remote but not present in local, and
@@ -58,82 +56,5 @@ pub fn sync(
         .collect();
 
     StdErr::success("Success");
-    Ok((to_upload, to_delete, asset_manifest))
-}
-
-fn filter_files(pairs: Vec<KeyValuePair>, already_uploaded: &HashSet<String>) -> Vec<KeyValuePair> {
-    let mut filtered_pairs: Vec<KeyValuePair> = Vec::new();
-    for pair in pairs {
-        if !already_uploaded.contains(&pair.key) {
-            filtered_pairs.push(pair);
-        }
-    }
-    filtered_pairs
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::sites::generate_path_and_key;
-    use std::collections::HashSet;
-    use std::path::Path;
-
-    #[test]
-    fn it_can_filter_preexisting_files() {
-        let (_, key_a_old) =
-            generate_path_and_key(Path::new("/a"), Path::new("/"), Some("old".to_string()))
-                .unwrap();
-        let (_, key_b_old) =
-            generate_path_and_key(Path::new("/b"), Path::new("/"), Some("old".to_string()))
-                .unwrap();
-        // Generate new key (using hash of new value) for b when to simulate its value being updated.
-        let (_, key_b_new) =
-            generate_path_and_key(Path::new("/b"), Path::new("/"), Some("new".to_string()))
-                .unwrap();
-
-        // Old values found on remote
-        let mut exclude_keys = HashSet::new();
-        exclude_keys.insert(key_a_old.clone());
-        exclude_keys.insert(key_b_old);
-
-        // local files (with b updated) to upload
-        let pairs_to_upload = vec![
-            KeyValuePair {
-                key: key_a_old,
-                value: "old".to_string(), // This value remains unchanged
-                expiration_ttl: None,
-                expiration: None,
-                base64: None,
-            },
-            KeyValuePair {
-                key: key_b_new.clone(),
-                value: "new".to_string(), // Note this pair has a new value
-                expiration_ttl: None,
-                expiration: None,
-                base64: None,
-            },
-        ];
-
-        let expected = vec![KeyValuePair {
-            key: key_b_new,
-            value: "new".to_string(),
-            expiration_ttl: None,
-            expiration: None,
-            base64: None,
-        }];
-        let actual = filter_files(pairs_to_upload, &exclude_keys);
-        check_kv_pairs_equality(expected, actual);
-    }
-
-    fn check_kv_pairs_equality(expected: Vec<KeyValuePair>, actual: Vec<KeyValuePair>) {
-        assert_eq!(expected.len(), actual.len());
-        for (idx, pair) in expected.into_iter().enumerate() {
-            // Ensure the expected key and value was returned in the filtered pair list
-            // Awkward field-by-field comparison below courtesy of not yet implementing
-            // PartialEq for KeyValuePair in cloudflare-rs :)
-            // TODO: (gabbi) Implement PartialEq for KeyValuePair in cloudflare-rs.
-            assert_eq!(pair.key, actual[idx].key);
-            assert_eq!(pair.value, actual[idx].value);
-        }
-    }
+    Ok((diff_files_to_upload, to_delete, asset_manifest))
 }

@@ -9,6 +9,7 @@ use watch::watch_for_changes;
 use crate::commands::dev::{socket, Protocol, ServerConfig};
 use crate::settings::toml::Target;
 
+use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tokio::runtime::Runtime as TokioRuntime;
@@ -21,7 +22,7 @@ pub fn dev(
     server_config: ServerConfig,
     local_protocol: Protocol,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     println!("unauthenticated");
 
     // setup the session
@@ -68,12 +69,12 @@ pub fn dev(
     let socket_url = get_socket_url(&session_id)?;
 
     // in order to spawn futures we must create a tokio runtime
-    let mut runtime = TokioRuntime::new()?;
+    let runtime = TokioRuntime::new()?;
 
     // and we must block the main thread on the completion of
     // said futures
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(socket_url.clone()));
+        let devtools_listener = tokio::spawn(socket::listen(socket_url.clone(), None));
 
         let server = match local_protocol {
             Protocol::Https => tokio::spawn(server::https(

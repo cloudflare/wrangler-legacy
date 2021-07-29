@@ -1,9 +1,11 @@
 use notify::DebouncedEvent;
-use std::path::PathBuf;
-use std::sync::mpsc::Receiver;
-use std::time::Duration;
+use std::{
+    path::PathBuf,
+    sync::mpsc::{Receiver, Sender},
+    time::Duration,
+};
 
-use failure::{format_err, Error};
+use anyhow::{anyhow, Result};
 
 use crate::terminal::message::{Message, StdOut};
 use log::info;
@@ -11,10 +13,16 @@ use log::info;
 // Add cooldown for all types of events to watching logic
 pub fn wait_for_changes(
     rx: &Receiver<DebouncedEvent>,
+    check_channel: Option<Sender<Option<()>>>,
     cooldown: Duration,
-) -> Result<PathBuf, Error> {
+) -> Result<PathBuf> {
     loop {
         let event = rx.recv()?;
+        // Sending a None to the channel will only succeed if there is a
+        // receiver and return from this fn otherwise
+        if let Some(check_channel) = &check_channel {
+            check_channel.send(None)?;
+        }
         match get_changed_path_from_event(event) {
             Ok(Some(path)) => {
                 StdOut::working("Detected changes...");
@@ -33,10 +41,10 @@ pub fn wait_for_changes(
     }
 }
 
-fn get_changed_path_from_event(event: DebouncedEvent) -> Result<Option<PathBuf>, Error> {
+fn get_changed_path_from_event(event: DebouncedEvent) -> Result<Option<PathBuf>> {
     info!("Detected Event {:?}", event);
     match event {
-        DebouncedEvent::Error(error, _) => Err(format_err!("{:?}", error)),
+        DebouncedEvent::Error(error, _) => Err(anyhow!(error)),
         DebouncedEvent::NoticeWrite(path) => Ok(Some(path)),
         DebouncedEvent::Write(path) => Ok(Some(path)),
         DebouncedEvent::NoticeRemove(path) => Ok(Some(path)),

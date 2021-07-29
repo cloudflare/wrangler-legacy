@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use cloudflare::framework::response::ApiFailure;
 
+use anyhow::Result;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
 use crate::http;
@@ -38,23 +39,6 @@ fn kv_help(error_code: u16) -> &'static str {
     }
 }
 
-pub fn validate_target(target: &Target) -> Result<(), failure::Error> {
-    let mut missing_fields = Vec::new();
-
-    if target.account_id.is_empty() {
-        missing_fields.push("account_id")
-    };
-
-    if !missing_fields.is_empty() {
-        failure::bail!(
-            "Your configuration file is missing the following field(s): {:?}",
-            missing_fields
-        )
-    } else {
-        Ok(())
-    }
-}
-
 fn check_duplicate_namespaces(target: &Target) -> bool {
     // HashSet for detecting duplicate namespace bindings
     let mut binding_names: HashSet<String> = HashSet::new();
@@ -72,9 +56,9 @@ fn check_duplicate_namespaces(target: &Target) -> bool {
 }
 
 // Get namespace id for a given binding name.
-pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failure::Error> {
+pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String> {
     if check_duplicate_namespaces(&target) {
-        failure::bail!(
+        anyhow::bail!(
             "Namespace binding \"{}\" is duplicated in \"{}\"",
             binding,
             target.name
@@ -87,7 +71,7 @@ pub fn get_namespace_id(target: &Target, binding: &str) -> Result<String, failur
         }
     }
 
-    failure::bail!(
+    anyhow::bail!(
         "Namespace binding \"{}\" not found in \"{}\"",
         binding,
         target.name
@@ -108,7 +92,7 @@ mod tests {
     #[test]
     fn it_can_detect_duplicate_bindings() {
         let target_with_dup_kv_bindings = Target {
-            account_id: "".to_string(),
+            account_id: None.into(),
             kv_namespaces: vec![
                 KvNamespace {
                     id: "fake".to_string(),
@@ -119,23 +103,30 @@ mod tests {
                     binding: "KV".to_string(),
                 },
             ],
+            durable_objects: None,
+            migrations: None,
             name: "test-target".to_string(),
             target_type: TargetType::Webpack,
             webpack_config: None,
             site: None,
             vars: None,
             text_blobs: None,
+            build: None,
+            wasm_modules: None,
+            usage_model: None,
+            compatibility_date: None,
+            compatibility_flags: Vec::new(),
         };
         assert!(kv::get_namespace_id(&target_with_dup_kv_bindings, "").is_err());
     }
 
     #[test]
     fn it_encodes_slash() {
-        assert_eq!(kv::url_encode_key("/slash").to_string(), "%2Fslash");
+        assert_eq!(kv::url_encode_key("/slash"), "%2Fslash");
     }
 
     #[test]
     fn it_doesnt_double_encode_slash() {
-        assert_eq!(kv::url_encode_key("%2Fslash").to_string(), "%2Fslash");
+        assert_eq!(kv::url_encode_key("%2Fslash"), "%2Fslash");
     }
 }

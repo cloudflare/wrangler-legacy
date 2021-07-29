@@ -9,13 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install Rust
-        run: |
-          rustup update stable
-          rustup default stable
-          rustup component add rustfmt
-          rustup component add clippy
-
       - name: Check Formatting
         run: cargo fmt --all -- --check
 

@@ -14,6 +14,7 @@ use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use std::time::Duration;
 
+use anyhow::Result;
 use fs2::FileExt;
 use notify::{self, RecursiveMode, Watcher};
 use output::WranglerjsOutput;
@@ -35,7 +36,7 @@ use guarded_command::GuardedCommand;
 // executable and wait for completion. The file will receive a serialized
 // {WranglerjsOutput} struct.
 // Note that the ability to pass a fd is platform-specific
-pub fn run_build(target: &Target) -> Result<WranglerjsOutput, failure::Error> {
+pub fn run_build(target: &Target) -> Result<WranglerjsOutput> {
     let (mut command, temp_file, bundle) = setup_build(target)?;
 
     log::info!("Running {:?}", command);
@@ -52,11 +53,11 @@ pub fn run_build(target: &Target) -> Result<WranglerjsOutput, failure::Error> {
         write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack)?;
         Ok(wranglerjs_output)
     } else {
-        failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+        anyhow::bail!("failed to execute `{:?}`: exited with {}", command, status)
     }
 }
 
-pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<(), failure::Error> {
+pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()> {
     let (mut command, temp_file, bundle) = setup_build(target)?;
     command.arg("--watch=1");
 
@@ -66,7 +67,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
     log::info!("Running {:?} in watch mode", command);
 
     // Turbofish the result of the closure so we can use ?
-    thread::spawn::<_, Result<(), failure::Error>>(move || {
+    thread::spawn::<_, Result<()>>(move || {
         let _command_guard = GuardedCommand::spawn(command);
 
         let (watcher_tx, watcher_rx) = channel();
@@ -81,7 +82,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                 watcher.watch(&bucket, RecursiveMode::Recursive)?;
                 log::info!("watching static sites asset file {:?}", &bucket);
             } else {
-                failure::bail!(
+                anyhow::bail!(
                     "Attempting to watch static assets bucket \"{}\" which doesn't exist",
                     bucket.display()
                 );
@@ -91,7 +92,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
         let mut is_first = true;
 
         loop {
-            match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
+            match wait_for_changes(&watcher_rx, None, COOLDOWN_PERIOD) {
                 Ok(_) => {
                     if is_first {
                         is_first = false;
@@ -124,15 +125,15 @@ fn write_wranglerjs_output(
     bundle: &Bundle,
     output: &WranglerjsOutput,
     custom_webpack: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     if output.has_errors() {
         StdErr::user_error(output.get_errors().as_str());
         if custom_webpack {
-            failure::bail!(
+            anyhow::bail!(
             "webpack returned an error. Try configuring `entry` in your webpack config relative to the current working directory, or setting `context = __dirname` in your webpack config."
         );
         } else {
-            failure::bail!(
+            anyhow::bail!(
             "webpack returned an error. You may be able to resolve this issue by running npm install."
         );
         }
@@ -148,18 +149,18 @@ fn write_wranglerjs_output(
 }
 
 //setup a build to run wranglerjs, return the command, the ipc temp file, and the bundle
-fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::Error> {
+fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle)> {
     for tool in &["node", "npm"] {
         env_dep_installed(tool)?;
     }
 
-    let build_dir = target.build_dir()?;
+    let package_dir = target.package_dir()?;
 
     if let Some(site) = &target.site {
         site.scaffold_worker()?;
     }
 
-    run_npm_install(&build_dir).expect("could not run `npm install`");
+    run_npm_install(&package_dir).expect("could not run `npm install`");
 
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
@@ -176,7 +177,7 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
         temp_file.to_str().unwrap().to_string()
     ));
 
-    let bundle = Bundle::new(&build_dir);
+    let bundle = Bundle::new(&package_dir);
 
     command.arg(format!("--wasm-binding={}", bundle.get_wasm_binding()));
 
@@ -196,26 +197,23 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
     if let Some(webpack_config_path) = custom_webpack_config_path {
         build_with_custom_webpack(&mut command, &webpack_config_path);
     } else {
-        build_with_default_webpack(&mut command, &build_dir)?;
+        build_with_default_webpack(&mut command, &package_dir)?;
     }
 
     Ok((command, temp_file, bundle))
 }
 
-fn build_with_custom_webpack(command: &mut Command, webpack_config_path: &PathBuf) {
+fn build_with_custom_webpack(command: &mut Command, webpack_config_path: &Path) {
     command.arg(format!(
         "--webpack-config={}",
         &webpack_config_path.to_str().unwrap().to_string()
     ));
 }
 
-fn build_with_default_webpack(
-    command: &mut Command,
-    build_dir: &PathBuf,
-) -> Result<(), failure::Error> {
-    let package = Package::new(&build_dir)?;
-    let package_main = build_dir
-        .join(package.main(&build_dir)?)
+fn build_with_default_webpack(command: &mut Command, package_dir: &Path) -> Result<()> {
+    let package = Package::new(package_dir)?;
+    let package_main = package_dir
+        .join(package.main(package_dir)?)
         .to_str()
         .unwrap()
         .to_string();
@@ -226,7 +224,7 @@ fn build_with_default_webpack(
 
 // Run {npm install} in the specified directory. Skips the install if a
 // {node_modules} is found in the directory.
-fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
+fn run_npm_install(dir: &Path) -> Result<()> {
     let flock_path = dir.join(&".install.lock");
     let flock = File::create(&flock_path)?;
     // avoid running multiple {npm install} at the same time (eg. in tests)
@@ -234,14 +232,14 @@ fn run_npm_install(dir: &PathBuf) -> Result<(), failure::Error> {
 
     if !dir.join("node_modules").exists() {
         let mut command = build_npm_command();
-        command.current_dir(dir.clone());
+        command.current_dir(dir.to_path_buf());
         command.arg("install");
         log::info!("Running {:?} in directory {:?}", command, dir);
 
         let status = command.status()?;
 
         if !status.success() {
-            failure::bail!("failed to execute `{:?}`: exited with {}", command, status)
+            anyhow::bail!("failed to execute `{:?}`: exited with {}", command, status)
         }
     } else {
         log::info!("skipping npm install because node_modules exists");
@@ -274,9 +272,9 @@ fn build_npm_command() -> Command {
 }
 
 // Ensures the specified tool is available in our env.
-fn env_dep_installed(tool: &str) -> Result<(), failure::Error> {
+fn env_dep_installed(tool: &str) -> Result<()> {
     if which::which(tool).is_err() {
-        failure::bail!("You need to install {}", tool)
+        anyhow::bail!("You need to install {}", tool)
     }
     Ok(())
 }
@@ -290,7 +288,7 @@ fn get_source_dir() -> PathBuf {
 }
 
 // Install {wranglerjs} from our GitHub releases
-fn install() -> Result<PathBuf, failure::Error> {
+fn install() -> Result<PathBuf> {
     let wranglerjs_path = if install::target::DEBUG {
         let source_path = get_source_dir();
         let wranglerjs_path = source_path.join("wranglerjs");
@@ -314,6 +312,7 @@ fn random_chars(n: usize) -> String {
     let mut rng = thread_rng();
     iter::repeat(())
         .map(|()| rng.sample(Alphanumeric))
+        .map(char::from)
         .take(n)
         .collect()
 }

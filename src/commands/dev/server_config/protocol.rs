@@ -1,6 +1,9 @@
-pub use std::convert::TryFrom;
+use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
+use std::{convert::TryFrom, str::FromStr};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Protocol {
     Http,
     Https,
@@ -17,13 +20,21 @@ impl Protocol {
 }
 
 impl TryFrom<&str> for Protocol {
-    type Error = failure::Error;
+    type Error = <Self as FromStr>::Err;
 
-    fn try_from(p: &str) -> Result<Protocol, failure::Error> {
-        match p {
+    fn try_from(p: &str) -> Result<Protocol> {
+        p.parse()
+    }
+}
+
+impl FromStr for Protocol {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s {
             "http" => Ok(Protocol::Http),
             "https" => Ok(Protocol::Https),
-            _ => failure::bail!("Invalid protocol, must be http or https"),
+            _ => Err(anyhow!("Invalid protocol, must be http or https")),
         }
     }
 }

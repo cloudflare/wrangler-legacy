@@ -13,6 +13,7 @@ pub use upload::upload;
 use std::sync::mpsc::channel;
 use std::thread;
 
+use anyhow::Result;
 use log::info;
 use url::Url;
 use ws::{Sender, WebSocket};
@@ -20,7 +21,7 @@ use ws::{Sender, WebSocket};
 use crate::build::build_target;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
-use crate::settings::toml::Target;
+use crate::settings::toml::{Target, UploadFormat};
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::open_browser;
 use crate::watch::watch_and_build;
@@ -30,7 +31,17 @@ pub fn preview(
     user: Option<GlobalUser>,
     options: PreviewOpt,
     verbose: bool,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
+    if let Some(build) = &target.build {
+        if matches!(build.upload, UploadFormat::Modules { .. }) {
+            anyhow::bail!("wrangler preview does not support previewing modules scripts. Please use wrangler dev instead.");
+        }
+    }
+
+    if target.durable_objects.is_some() {
+        anyhow::bail!("wrangler preview is not yet supported for scripts that use Durable Objects. Please use wrangler dev instead.");
+    }
+
     build_target(&target)?;
 
     let sites_preview: bool = target.site.is_some();
@@ -115,11 +126,7 @@ fn client_request(payload: &RequestPayload, script_id: &str, sites_preview: bool
     StdOut::preview(&msg);
 }
 
-fn get(
-    url: &str,
-    cookie: &str,
-    client: &reqwest::blocking::Client,
-) -> Result<String, failure::Error> {
+fn get(url: &str, cookie: &str, client: &reqwest::blocking::Client) -> Result<String> {
     let res = client.get(url).header("Cookie", cookie).send();
     Ok(res?.text()?)
 }
@@ -129,7 +136,7 @@ fn post(
     cookie: &str,
     body: &Option<String>,
     client: &reqwest::blocking::Client,
-) -> Result<String, failure::Error> {
+) -> Result<String> {
     let res = match body {
         Some(s) => client
             .post(url)
@@ -150,11 +157,11 @@ fn watch_for_changes(
     verbose: bool,
     headless: bool,
     request_payload: RequestPayload,
-) -> Result<(), failure::Error> {
+) -> Result<()> {
     let sites_preview: bool = target.site.is_some();
 
     let (tx, rx) = channel();
-    watch_and_build(&target, Some(tx))?;
+    watch_and_build(&target, Some(tx), None)?;
 
     while rx.recv().is_ok() {
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {

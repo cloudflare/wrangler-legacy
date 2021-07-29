@@ -1,13 +1,520 @@
 # Changelog
 
+## v1.18.0
+
+- ### Features
+
+  - **feat: add test for kv sync for site projects - [nilslice], [pull/1996]**
+
+    Adds test for quickfix made in #1976.
+
+    TODO: consider adding types for the Key / Value pairs used in this code. It's a bit confusing to rely the comparison of `String` types which have been considerably modified from the assumed original
+    ... truncated
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1996]: https://github.com/cloudflare/wrangler/pull/1996
+
+  - **feat: add usage_model to metadata - [taylorlee], [pull/1961]**
+
+    and remove toggling usage model after upload
+    this shouldn't be merged until the upload api supports usage_model in
+    metadata
+
+    [taylorlee]: https://github.com/taylorlee
+    [pull/1961]: https://github.com/cloudflare/wrangler/pull/1961
+
+  - **Don't require an account_id in wrangler.toml - [jyn514], [pull/1966]**
+
+    Helps with https://github.com/cloudflare/wrangler/issues/331. I recommend reviewing this commit-by-commit.
+
+    Note that unlike the suggestion in the original issue, this actually never writes to the wrangler.toml at all, which will hopefull
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/1966]: https://github.com/cloudflare/wrangler/pull/1966
+
+- ### Fixes
+
+  - **fix: improve error message when no deployment info is provided - [nilslice], [pull/1997]**
+
+    Fixes #1694.
+
+    Adds clarification and links to documentation on how the project must be configured in order to deploy it.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1997]: https://github.com/cloudflare/wrangler/pull/1997
+
+  - **Fixed issue with tail not deserailzing event properly - [jspspike], [pull/1994]**
+
+    Also added color to `wrangler dev` and `wrangler tail -f pretty` json outputs if deserialized properly
+    Fixes #1990
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1994]: https://github.com/cloudflare/wrangler/pull/1994
+
+  - **Temporary workaround to avoid dropping a tokio::runtime while another is running - [jyn514], [pull/1991]**
+
+    This fixes the following error from `wrangler tail`:
+
+    ```
+    $ wrangler tail
+    🦚  Setting up log streaming from Worker script "test-project". Using ports 8080 and 8081.
+    This may take a few seconds...
+
+    Oops! wrangler encountered an error.
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/1991]: https://github.com/cloudflare/wrangler/pull/1991
+
+    ``` 
+
+  - **Made config add target_type to type instead of "target_type" - [jspspike], [pull/1988]**
+
+    Fixes #1960
+
+    We used serde to rename the `target_type` field to `type` but when making the toml ourselves we still used `target_type`
+
+    [jspspike]: https://github.com/jspspike
+    [pull/1988]: https://github.com/cloudflare/wrangler/pull/1988
+
+  - **fix: use asset manifest for sync op - [nilslice], [pull/1976]**
+
+    After #1970, the `vec` of assets used in the sync operation no longer included the assets that were already uploaded. this diff of assets was re-used to determine remote assets to delete, which would in turn remove files that should have re
+    ... truncated
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1976]: https://github.com/cloudflare/wrangler/pull/1976
+
+  - **Remove misleading `rustup install` and update rust-toolchain - [jyn514], [pull/1968]**
+
+    Previously, CI ran `rustup install stable` just before running lints, but didn't
+    actually use the new toolchain. This removes the unneeded download and updates
+    rust-toolchain to the latest stable version.
+
+    This also fixes a bunch of cli
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/1968]: https://github.com/cloudflare/wrangler/pull/1968
+
+- ### Maintenance
+
+  - **Cleanup code in socket.rs - [jyn514], [pull/2000]**
+
+    This can just use `?` instead of an explicit match.
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2000]: https://github.com/cloudflare/wrangler/pull/2000
+ 
+  - **Tell Dependabot to only make PRs for new major versions - [jyn514], [pull/1987]**
+
+    This avoids constant small PRs which aren't necessary. Dependabot will still
+    make PRs for security updates, which is good because we keep Cargo.lock checked
+    into git and Cargo will keep using yanked versions until you update Cargo.lock.
+
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/1987]: https://github.com/cloudflare/wrangler/pull/1987
+
+## v1.17.0
+
+- ### Features
+
+  - **feat: capture panics and generate error report - [nilslice], [pull/1888]**
+
+    This PR adds support for wrangler error reporting. Currently, all panics are caught and a report is generated, then written to disk. `wrangler report` or `wrangler report --log <file-name.log>` will upload the corresponding error report to Cloudflare
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1888]: https://github.com/cloudflare/wrangler/pull/1888
+
+- ### Fixes
+
+  - **fix: clarify error messages around durable objects beta - [nilslice], [pull/1921]**
+
+    Disambiguates error message described in #1859, adds more clarity around other places where Durable Object usage in beta may conflict with `wrangler` functionality.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1921]: https://github.com/cloudflare/wrangler/pull/1921
+
+  - **Fix filtering by extension for js assets - [rubenamorim], [pull/1722]**
+
+    Fixes [#1719](https://github.com/cloudflare/wrangler/issues/1719)
+
+    [rubenamorim]: https://github.com/rubenamorim
+    [pull/1722]: https://github.com/cloudflare/wrangler/pull/1722
+
+  - **fix: use latest cloudflare api client, resolving wrangler whoami issue - [nilslice], [pull/1920]**
+
+    Updates `cloudflare-rs` crate to https://github.com/cloudflare/cloudflare-rs/commit/ae936d4b180155bafe5c44482a746fa490513df2, which should fix #1914.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1920]: https://github.com/cloudflare/wrangler/pull/1920
+
+  - **Handle String panic payloads when generating reports - [ObsidianMinor], [pull/1934]**
+
+    Standard panics will only produce &str and String, but we were only handling &str, so this adds handling for String.
+
+    [obsidianminor]: https://github.com/ObsidianMinor
+    [pull/1934]: https://github.com/cloudflare/wrangler/pull/1934
+
+- ### Maintenance
+
+  - **chore: tokio ecosystem update - [nataliescottdavidson], [pull/1886]**
+
+    Update [tokio ecosystem](https://github.com/tokio-rs/tokio) crates including hyper, rustls, openssl and necessary API changes
+    Rewrite get_tunnel_url to use tokio-retry
+
+    [nataliescottdavidson]: https://github.com/nataliescottdavidson
+    [pull/1886]: https://github.com/cloudflare/wrangler/pull/1886
+
+  - **failure --> anyhow - [caass], [pull/1881]**
+
+    Follow up to [#1880](https://github.com/cloudflare/wrangler/pull/1880)
+
+    Switch from deprecated `failure` to `anyhow`. [read this](https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md)
+
+    [caass]: https://github.com/caass
+    [pull/1881]: https://github.com/cloudflare/wrangler/pull/1881
+
+  - **further reduce complexity of main - [nilslice], [pull/1937]**
+
+    In many ways, thanks to @ObsidianMinor's work on #1932, we can split up the cli code further and keep a simple `main.rs`.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1937]: https://github.com/cloudflare/wrangler/pull/1937
+
+  - **rebases & updates durable-objects-rc branch - [nilslice], [pull/1919]**
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1919]: https://github.com/cloudflare/wrangler/pull/1919
+
+  - **Reduce cognitive complexity in main - [ObsidianMinor], [pull/1932]**
+
+    This replaces our massive clap App with a much simpler Cli struct that
+    has all the same information in an easier to understand and modify
+    format (types).
+
+    [obsidianminor]: https://github.com/ObsidianMinor
+    [pull/1932]: https://github.com/cloudflare/wrangler/pull/1932
+
+  - **sorry i got excited with dependabot - [caass], [pull/1917]**
+
+    [caass]: https://github.com/caass
+    [pull/1917]: https://github.com/cloudflare/wrangler/pull/1917
+
+  - **update copy on text binding size limit - [caass], [pull/1911]**
+
+    [caass]: https://github.com/caass
+    [pull/1911]: https://github.com/cloudflare/wrangler/pull/1911
+
+  - **Updated cloudflared download link - [arunesh90], [pull/1900]**
+
+    The commit included with this PR updates the download link for cloudflared, as the previous link is no longer current and is now a redirect to https://developers.cloudflare.com/cloudflare-one/connections/connect-apps
+
+    [arunesh90]: https://github.com/arunesh90
+    [pull/1900]: https://github.com/cloudflare/wrangler/pull/1900
+
+  - **Upgrade to GitHub-native Dependabot - [dependabot], [pull/1887]**
+
+    [dependabot]: https://dependabot.com/
+    [pull/1887]: https://github.com/cloudflare/wrangler/pull/1887
+
+
+## 🍏 v1.16.1
+
+- ### Features
+  - **Add `wasm_modules` config field for bundling arbitrary WebAssembly modules. - [losfair], [pull/1803]**
+
+    Currently it seems that wrangler only supports WebAssembly modules included from a `rust` or `webpack` project.
+
+    This pull request enables the inclusion of arbitrary WebAssembly modules through a `wasm_modules` config field.
+
+    [losfair]: https://github.com/losfair
+    [pull/1803]: https://github.com/cloudflare/wrangler/pull/1803
+
+- ### Fixes
+  - **fix: use x86_64 arch for pre-built downloads on M1 devices - [nilslice], [pull/1876]**
+
+    This PR forces the use of a pre-built x86_64 binary on a aarch64/arm64 Apple system. For M1 devices specifically, it will fix `wrangler generate`, and `wrangler build` for `type = "rust"` wrangler projects.
+
+    There is another semi-related
+    ... truncated
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1876]: https://github.com/cloudflare/wrangler/pull/1876
+
+  - **chore: include @cloudflare/binary-install directly as source - [nilslice], [pull/1877]**
+
+    This PR inlines the `@cloudflare/binary-install` dependency as a quickfix for #1811, in which usage reports indicated that the module occasionally failed to install.
+
+    I tested this by running `npm i && node run-wrangler.js` on both `npm
+    ... truncated
+
+    [nilslice]: https://github.com/nilslice
+    [pull/1877]: https://github.com/cloudflare/wrangler/pull/1877
+
+  - **Stop assuming KV values are UTF8 text - [koeninger], [pull/1878]**
+
+    Implementation of kv:key get is calling text() on the result of the api call, so it's replacing non-utf8 values with ef bf bd, the unicode REPLACEMENT CHAR. KV values can be arbitrary bytes, we shouldn't assume they're UTF8 text, so this p
+    ... truncated
+
+    [koeninger]: https://github.com/koeninger
+    [pull/1878]: https://github.com/cloudflare/wrangler/pull/1878
+
+
+## 1.16.0
+
+- ### Features
+
+  - **Custom Builds and Modules - [xortive], [caass], [pull/1855]**
+
+    Custom Builds and Modules has finally landed in a main release!
+    There's too many new features to write about in a changelog, so here's a
+    [link to the docs](https://developers.cloudflare.com/workers/cli-wrangler/configuration#build).
+
+    [xortive]: https://github.com/xortive
+    [caass]: https://github.com/caass
+    [pull/1855]: https://github.com/cloudflare/wrangler/pull/1855
+
+  - **add `--format` option, including default `json` and new `pretty` - [caass], [pull/1851]**
+
+    You can now pass `--format pretty` to `wrangler tail` to get pretty printed logs!
+    `--format json` is also available, and gives you the existing JSON-formatted logs.
+
+    [caass]: https://github.com/caass
+    [pull/1851]: https://github.com/cloudflare/wrangler/pull/1851
+
+- ### Fixes
+
+  - **Revert "Print line and column numbers for exception thrown (#1645)" - [Electroid], [pull/1835]**
+
+    This reverts commit 74a89f7c383bc22758cbe55096ce3016c5c319d7.
+
+    Closes #1826
+
+    This commit is causing `wrangler dev` to not show uncaught exceptions. Reverting `chrome-devtools-rs` was also necessary.
+
+    We have a fix in progress to fix the underlying issue and re-introduce line and column numbers.
+
+    [electroid]: https://github.com/Electroid
+    [pull/1835]: https://github.com/cloudflare/wrangler/pull/1835
+
+  - **Don't generate `usage_model = ""` by default - [xortive], [issues/1850]**
+
+    Generating `usage_model = ""` by default was violating the toml spec, which broke
+    `wrangler init --site` as `usage_model` came after `[site]`.
+
+    [xortive]: https://github.com/xortive
+    [issues/1850]: https://github.com/cloudflare/wrangler/pull/1850
+
+## 1.15.1
+
+- ### Features
+
+  - **Add config option to switch usage model to unbound - [ObsidianMinor], [pull/1837]**
+
+    [obsidianminor]: https://github.com/ObsidianMinor
+    [pull/1837]: https://github.com/cloudflare/wrangler/pull/1837
+
+- ### Fixes
+
+  - **fix: remove unused import of WasmMainTemplatePlugin - [jasikpark], [pull/1802]**
+
+    This should improve #1721. https://github.com/cloudflare/wrangler/issues/1721#issuecomment-791974664
+
+    [jasikpark]: https://github.com/jasikpark
+    [pull/1802]: https://github.com/cloudflare/wrangler/pull/1802
+
+  - **Hot fix for error message helper not working - [Electroid], [pull/1847]**
+
+    The JSON is pretty printed, which means it contains a space.
+
+    [electroid]: https://github.com/Electroid
+    [pull/1847]: https://github.com/cloudflare/wrangler/pull/1847
+
+  - **Revert "Print line and column numbers for exception thrown (#1645)" - [Electroid], [pull/1835]**
+
+    This reverts commit 74a89f7c383bc22758cbe55096ce3016c5c319d7.
+
+    Closes #1826
+
+    This commit is causing `wrangler dev` to not show uncaught exceptions. Reverting `chrome-devtools-rs` was also necessary.
+
+    [electroid]: https://github.com/Electroid
+    [pull/1835]: https://github.com/cloudflare/wrangler/pull/1835
+
+## 1.15.0
+
+- ### Fixes
+
+  - **fix: remove unused import of WasmMainTemplatePlugin - [jasikpark], [pull/1802]**
+
+    This should improve #1721. https://github.com/cloudflare/wrangler/issues/1721#issuecomment-791974664
+
+    [jasikpark]: https://github.com/jasikpark
+    [pull/1802]: https://github.com/cloudflare/wrangler/pull/1802
+
+  - **Revert [pull/1748] - [xortive], [pull/1804]**
+
+    [pull/1748] turned out to interact poorly with workers-sites projects, causing `npm install` to not be run, breaking the build.
+
+    We're going to revert this change. Folks already depending on it should use custom builds ([pull/1677]) once it makes it into a release candidate.
+
+    We incremented the minor version number instead of making a patch release, as this change is more significant than a simple bugfix.
+
+    [xortive]: https://github.com/xortive
+    [pull/1748]: https://github.com/cloudflare/wrangler/pull/1748
+    [pull/1804]: https://github.com/cloudflare/wrangler/pull/1804
+    [pull/1677]: https://github.com/cloudflare/wrangler/pull/1677
+
+## 1.14.1
+
+- ### Fixes
+
+  - **revert default install location change - [xortive], [pull/1798]**
+
+    In 1.14.0, we changed the default install location from `~/.wrangler` to `node_modules`,
+    to allow `npx wrangler` to use the pinned version in a project's dependencies. It seems that
+    this is causing issues, so we're rolling it back in favor of having folks who want this behavior,
+    to specify a the install location in the `config` section of package.json. We'll document this soon.
+
+    [xortive]: https://github.com/xortive
+    [pull/1798]: https://github.com/cloudflare/wrangler/pull/1798
+
+## 1.14.0
+
+- ### Features
+
+  - **Display account ID's when possible - [caass], [pull/1786]**
+
+    Previously, users had to log in to their dash to view their account IDs. This PR extracts some of the code used in `whoami` to log their account IDs to the terminal, instead. If for some reason that doesn't work, it'll fall back to telling them to look at the dashboard
+
+    [caass]: https://github.com/caass
+    [pull/1786]: https://github.com/cloudflare/wrangler/pull/1786
+
+  - **Feature/monorepo support - [thefill], [pull/1748]**
+
+    Improvement of the detection of node_modules dir - adds bottom-up traversing to find it in parent dirs.
+
+    This should resolve some issues experienced with monorepos (e.g. with nx).
+
+    [thefill]: https://github.com/thefill
+    [pull/1748]: https://github.com/cloudflare/wrangler/pull/1748
+
+  - **fix installer - [xortive], [pull/1780]**
+
+    binary-install@0.1.1 broke semver, this PR changes our installer to use a cloudflare-owned version of binary-install with updated dependencies to resolve the previous vulnerability warnings from the old version of axios that was being used.
+
+    This is also a feature, since we now install the `wrangler` binary in `node_modules` instead of `~/.wrangler`.
+    This means installing wrangler as a dev dependency works as expected -- `npx wrangler` will run the version
+    in your dev dependencies, not the globally installed wrangler.
+
+    Wrangler will now also support setting the `WRANGLER_INSTALL_PATH` environment variable to choose where you install the wrangler binary.
+    This environment variable must be set when running wrangler, as well as when installing it.
+
+    [xortive]: https://github.com/xortive
+    [pull/1780]: https://github.com/cloudflare/wrangler/pull/1780
+
+  - **kv put with metadata - [ags799], [pull/1740]**
+
+    Closes #1734
+
+    [ags799]: https://github.com/ags799
+    [pull/1740]: https://github.com/cloudflare/wrangler/pull/1740
+- ### Fixes
+
+  - **don't panic on Client build - [ags799], [pull/1750]**
+
+    This won't fix the issue #1743 but it should give us some more context.
+
+    [ags799]: https://github.com/ags799
+    [pull/1750]: https://github.com/cloudflare/wrangler/pull/1750
+
+  - **endlessly retry connection to devtools websocket - [ags799], [pull/1752]**
+
+    Endlessly retry connection to preview's devtools websocket on `wrangler dev`. With exponential backoff.
+
+    Keeps us from panicking in [issue/1510](https://github.com/cloudflare/wrangler/issues/1510).
+
+    [ags799]: https://github.com/ags799
+    [pull/1752]: https://github.com/cloudflare/wrangler/pull/1752
+
+  - **fix console formatting - [mdycz], [pull/1749]**
+
+    Fixes #1707
+
+    [mdycz]: https://github.com/mdycz
+    [pull/1749]: https://github.com/cloudflare/wrangler/pull/1749
+
+- ### Maintenance
+
+  - **Bump futures-util from 0.3.11 to 0.3.13 - [dependabot], [pull/1778]**
+
+    [dependabot]: https://dependabot.com/
+    [pull/1778]: https://github.com/cloudflare/wrangler/pull/1778
+
+  - **Remove extra required_override call from sites ignore logic - [xortive], [pull/1754]**
+
+    [xortive]: https://github.com/xortive
+    [pull/1754]: https://github.com/cloudflare/wrangler/pull/1754
+
+  - **remove webpack specific change - [xtuc], [pull/1730]**
+
+    We used to hook directly into webpack internals to rewrite the runtime
+    that loads Wasm to make it point to the Worker binding instead of a
+    network fetch.
+
+    This change removes the webpack specific change and injects a generic
+    runtime to
+    ... truncated
+
+    [xtuc]: https://github.com/xtuc
+    [pull/1730]: https://github.com/cloudflare/wrangler/pull/1730
+
+  - **Set panic to abort in release mode - [ObsidianMinor], [pull/1762]**
+
+    This should fix cases where we spawn threads that panic and get us in an invalid state that requires us to get killed anyway.
+
+    [obsidianminor]: https://github.com/ObsidianMinor
+    [pull/1762]: https://github.com/cloudflare/wrangler/pull/1762
+
+  - **Tweak issue templates - [Electroid], [pull/1776]**
+
+    Made minor edits to the issue templates
+
+    [electroid]: https://github.com/Electroid
+    [pull/1776]: https://github.com/cloudflare/wrangler/pull/1776
+
+  - **update binary-install to avoid vulnerable axios version - [simonhaenisch], [pull/1726]**
+
+    Fixes the security warnings when installing the wrangler npm package!
+
+    [simonhaenisch]: https://github.com/simonhaenisch
+    [pull/1726]: https://github.com/cloudflare/wrangler/pull/1726
+
+  - **Update README.md for windows install - [koeninger], [pull/1779]**
+
+    note about https://github.com/cloudflare/wrangler/issues/1765
+
+    [koeninger]: https://github.com/koeninger
+    [pull/1779]: https://github.com/cloudflare/wrangler/pull/1779
+
+  - **Update release.yml - [xortive], [pull/1783]**
+
+    thanks @rajatsharma for spotting this :)
+
+    [xortive]: https://github.com/xortive
+    [pull/1783]: https://github.com/cloudflare/wrangler/pull/1783
 ## 1.13.0
 
 - ### Features
 
   - **Add support for text blob bindings - [xortive], [pull/1543], [issue/483]**
-    
+
     Wrangler now supports text blobs! Text blobs are values to use in your workers, but are read from a file instead of a string in your TOML.
-    
+
     Usage:
 
       `text_blobs = { FOO = "path/to/foo.txt", BAR = "path/to/bar.txt" }`
@@ -957,7 +1464,7 @@
 
   - **Plain text binding support - [EverlastingBugstopper] - [issue/993] [pull/1014]**
 
-    In addition to secrets, Wrangler now also supports setting "plain text" bindings – values that will be available as constants in your Workers code, but aren't encrypted. This can be done by passing values in `wrangler.toml` under the `vars` key:
+    In addition to secrets, Wrangler now also supports setting "plain text" bindings – values that will be available as constants in your Workers code, but aren't encrypted. This can be done by passing values in `wrangler.toml` under the `vars` key:
 
     ```toml
     name = "worker"
@@ -990,7 +1497,7 @@
 
   - **Upload "draft" worker if secret is created before initial worker script has been uploaded - [gabbifish], [issue/913] [pull/1087]**
 
-    If your script hasn't yet been deployed to the Workers platform, creating and deleting secrets will also create a "draft" Worker – allowing you to still manage secret bindings before you deploy the first version of your script.
+    If your script hasn't yet been deployed to the Workers platform, creating and deleting secrets will also create a "draft" Worker – allowing you to still manage secret bindings before you deploy the first version of your script.
 
     [issue/913]: https://github.com/cloudflare/wrangler/issues/913
     [pull/1087]: https://github.com/cloudflare/wrangler/pull/1087
@@ -1639,7 +2146,7 @@
 
   - **Make install actually fail if the release can't be downloaded - [zackbloom], [pull/672]**
 
-    When Wrangler's installation shim attempts to install Wrangler on your machine, there's the possibility that the installation can fail – instead of failing silently, the installation shim now properly throws an error, allowing us to better diagnose installation failures.
+    When Wrangler's installation shim attempts to install Wrangler on your machine, there's the possibility that the installation can fail – instead of failing silently, the installation shim now properly throws an error, allowing us to better diagnose installation failures.
 
     [zackbloom]: https://github.com/zackbloom
     [pull/672]: https://github.com/cloudflare/wrangler/pull/672
@@ -2094,7 +2601,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
 
   - **Use stdin instead of arguments for wrangler config - [xtuc], [pull/329]**
 
-    We've made the `wrangler config` command interactive – the previous version of the command, `wrangler config $email $apiKey`, would be captured by your terminal's history, often exposing that information in a `~/.bash_history` or a similar file. The new version of `wrangler config` will prompt you for your `email` and `api_key` via `stdin`.
+    We've made the `wrangler config` command interactive – the previous version of the command, `wrangler config $email $apiKey`, would be captured by your terminal's history, often exposing that information in a `~/.bash_history` or a similar file. The new version of `wrangler config` will prompt you for your `email` and `api_key` via `stdin`.
 
     In addition, this PR also adds support for a `WRANGLER_HOME` environment variable, which will be the location for Wrangler's "home" directory, if you need to customize where Wrangler saves its configuration information.
 
@@ -2164,7 +2671,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
 
   - **Adds more descriptive subdomain errors - [EverlastingBugstopper], [issue/207][pull/259]**
 
-    It's super easy to grab a workers.dev subdomain using the `subdomain` command in `wrangler` – so easy, in fact, that many people were trying to use it without even having a Cloudflare account! `wrangler` now warns users when they attempt to add a subdomain without configuring their `account_id` in `wrangler.toml`, as well as when you've already registered a subdomain, or if the subdomain you're trying to register has already been claimed.
+    It's super easy to grab a workers.dev subdomain using the `subdomain` command in `wrangler` – so easy, in fact, that many people were trying to use it without even having a Cloudflare account! `wrangler` now warns users when they attempt to add a subdomain without configuring their `account_id` in `wrangler.toml`, as well as when you've already registered a subdomain, or if the subdomain you're trying to register has already been claimed.
 
     [everlastingbugstopper]: https://github.com/EverlastingBugstopper
     [issue/207]: https://github.com/cloudflare/wrangler/issue/207
@@ -2244,7 +2751,7 @@ Wrangler 1.1.0 includes a number of improvements to documentation and project st
 
   - **Enforce one Webpack entry in configuration - [xtuc], [pull/245]**
 
-    `wrangler` now returns an error during the build process if you use a webpack configuration with more than one export – `wrangler` needs to have a single known export from webpack to know what to build!
+    `wrangler` now returns an error during the build process if you use a webpack configuration with more than one export – `wrangler` needs to have a single known export from webpack to know what to build!
 
     [xtuc]: https://github.com/xtuc
     [pull/245]: https://github.com/cloudflare/wrangler/pull/245

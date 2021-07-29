@@ -6,19 +6,16 @@ This is a list of the things that need to happen during a release.
 
 ### Prepare the Changelog (Full release only)
 
-1. Open the associated milestone. All issues and PRs should be closed. If
+1. Open the associated milestone, if it exists. All issues and PRs should be closed. If
    they are not you should reassign all open issues and PRs to future
    milestones.
-1. Go through the commit history since the last release. Ensure that all PRs
-   that have landed are marked with the milestone. You can use this to
-   show all the PRs that are merged on or after YYY-MM-DD:
-   `https://github.com/issues?utf8=%E2%9C%93&q=repo%3Acloudflare%2Fwrangler+merged%3A%3E%3DYYYY-MM-DD`
-1. Go through the closed PRs in the milestone. Each should have a changelog
-   label indicating if the change is docs, fix, feature, or maintenance. If
-   there is a missing label, please add one.
+1. Run the changelog generator in `./changelog-generator`.
+   1. Get the date after the most recent release,
+   1. run `cd ./changelog-generator && npm install && node index.js cloudflare wrangler YYYY-MM-DD`
+   1. the generated changelog is in `./changelog-generator/output.md`. Open it, and add the version at the top, and move the entries to their proper category.
 1. Choose an emoji for the release. Try to make it semi-related to something that's been included in the release (point releases can be a little weirder).
-1. Add this release to the `CHANGELOG.md`. Use the structure of previous
-   entries. If you use VS Code, you can use [this snippet](https://gist.github.com/EverlastingBugstopper/04d1adb99506388ff9d7abd8d0a82bc3) to insert new changelog sections. If it is a release candidate, no official changelog is needed, but testing instructions will be added later in the process.
+1. Add the contents of `output.md` to the top of `CHANGELOG.md`, matching the structure of previous
+   entries. If it is a release candidate, no official changelog is needed, but testing instructions will be added later in the process.
 
 ### Update cargo manifest
 
@@ -31,7 +28,7 @@ This is a list of the things that need to happen during a release.
 
 1. Copy `README.md` to `npm/README.md`
 1. Bump the version number in `npm/package.json`
-1. `cd npm && npm install` _Note: This step will appear to fail, however its utility is re-building npm-shrinkwrap.json_
+1. `cd npm && npm install` _Note: This step will appear to fail due to the new version not existing yet, however its utility is re-building npm-shrinkwrap.json_
 
 ### Start a release PR
 
@@ -46,14 +43,21 @@ Most of your comments will be about the changelog. Once the PR is finalized and 
 
 1. If you made changes, squash or fixup all changes into a single commit.
 1. Run `git push` and wait for CI to pass.
+## Merge
+
+1. Hit the big green Merge button on the release PR.
+1. `git checkout master` and `git pull --rebase origin master`
 
 ### Tag and build release
 
 This part of the release process is handled by GitHub Actions, and our binaries are distributed as GitHub Releases. When you push a version tag, it kicks off an action that creates a new GitHub release for that tag, builds release binaries and attaches them to the release.
 
-1. Once ready to merge, tag the commit by running either `git tag -a v#.#.# -m #.#.#` (release), or `git tag -a v#.#.#-rc.# -m #.#.#` (release candidate)
+1. After pulling `master` in the step above, tag the commit by running either `git tag -a v#.#.# -m #.#.#` (release), or `git tag -a v#.#.#-rc.# -m #.#.#` (release candidate)
 1. Run `git push --tags`.
 1. Wait for CI to pass.
+1. If CI fails, delete the tag locally and remotely
+1. Fix whatever caused the CI failure
+1. Re-tag the healthy commit, and wait for CI to pass again.
 
 ### Edit the release
 
@@ -76,11 +80,6 @@ After CI builds the release binaries and they appear on the [releases page](http
    ```
 
    The new release candidate should then include updated testing instructions with a small changelog at the top to get folks who installed the old release candidate up to speed.
-
-## Publish
-
-1. Hit the big green Merge button on the release PR.
-1. `git checkout master` and `git pull --rebase origin master`
 
 ### Publish to crates.io (full release only)
 

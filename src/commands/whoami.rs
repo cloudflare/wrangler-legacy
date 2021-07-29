@@ -7,9 +7,11 @@ use cloudflare::endpoints::user::GetUserDetails;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 
+use anyhow::Result;
 use prettytable::{Cell, Row, Table};
 
-pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
+/// Tells the user who they are
+pub fn whoami(user: &GlobalUser) -> Result<()> {
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {
@@ -52,17 +54,45 @@ pub fn whoami(user: &GlobalUser) -> Result<(), failure::Error> {
         }
         msg.push_str(&format!("\n\nPlease generate a new token and authenticate with {} or {}\nfor more information when running {}", login_msg, config_msg, whoami_msg));
     }
+
     StdOut::billboard(&msg);
+
     if table.len() > 1 {
         println!("{}", &table);
     }
     Ok(())
 }
 
+/// Print information either containing the user's account IDs,
+/// or at least tell them where to get them.
+pub fn display_account_id_maybe() {
+    let account_id_msg = styles::highlight("account_id");
+    let mut showed_account_id = false;
+
+    if let Ok(user) = GlobalUser::new() {
+        if let Ok(accounts) = fetch_accounts(&user) {
+            let mut missing_permissions = Vec::with_capacity(2);
+            let table = format_accounts(&user, accounts, &mut missing_permissions);
+            if missing_permissions.is_empty() {
+                StdOut::help(&format!("You can copy your {} below", account_id_msg));
+                // table includes a newline so just `print!()` is fine
+                print!("{}", &table);
+                showed_account_id = true;
+            }
+        }
+    }
+    if !showed_account_id {
+        StdOut::help(&format!(
+            "You can find your {} in the right sidebar of your account's Workers page",
+            account_id_msg
+        ));
+    }
+}
+
 fn fetch_api_token_email(
     user: &GlobalUser,
     missing_permissions: &mut Vec<String>,
-) -> Result<Option<String>, failure::Error> {
+) -> Result<Option<String>> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&GetUserDetails {});
     match response {
@@ -75,20 +105,22 @@ fn fetch_api_token_email(
                 }
                 Ok(None)
             }
-            ApiFailure::Invalid(_) => failure::bail!(http::format_error(e, None)),
+            ApiFailure::Invalid(_) => anyhow::bail!(http::format_error(e, None)),
         },
     }
 }
 
-fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>, failure::Error> {
+/// Fetch the accounts associated with a user
+pub(crate) fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&account::ListAccounts { params: None });
     match response {
         Ok(res) => Ok(res.result),
-        Err(e) => failure::bail!(http::format_error(e, None)),
+        Err(e) => anyhow::bail!(http::format_error(e, None)),
     }
 }
 
+/// Format a user's accounts into a nice table
 fn format_accounts(
     user: &GlobalUser,
     accounts: Vec<Account>,
