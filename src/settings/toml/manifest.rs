@@ -478,7 +478,6 @@ impl Manifest {
             let dash_url = styles::url("https://dash.cloudflare.com");
             let account_id_msg = styles::highlight("account_id");
 
-
             StdOut::help(&format!(
                 "You can find your {} in the right sidebar of a zone's overview tab at {}",
                 zone_id_msg, dash_url
