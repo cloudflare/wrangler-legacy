@@ -31,3 +31,7 @@ fn get_user_agent(feature: Option<Feature>) -> String {
     }
     agent
 }
+
+pub fn user_agent() -> String {
+    get_user_agent(None)
+}
