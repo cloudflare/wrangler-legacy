@@ -74,9 +74,9 @@ impl Display for TraceEvent {
         .dim();
         let outcome = match self.outcome.as_ref() {
             "ok" => style("Ok").green(),
-            "canceled" => style("Canceled").blue(),
+            "canceled" => style("Canceled").yellow(),
             "exception" => style("Error").red(),
-            "exceededCpu" => style("Exceeded Limit").yellow(),
+            "exceededCpu" => style("Exceeded Limit").red(),
             _ => style("System Error").red(),
         };
         match self.event.request.clone() {
