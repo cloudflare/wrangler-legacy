@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.19.0
+
+- ### Features
+ - **wrangler tail using WebSockets - [nataliescottdavidson], [pull/2005]**
+
+    [electroid]: https://github.com/electroid
+    [nataliescottdavidson]: https://github.com/nataliescottdavidson
+    [pull/2005]: https://github.com/cloudflare/wrangler/pull/2005
+
+    This change removed dependency on `cloudflared` binary, and increased tail script RPS limit to 100!
+
 ## v1.18.0
 
 - ### Features
