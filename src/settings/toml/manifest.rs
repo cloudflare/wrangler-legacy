@@ -280,24 +280,24 @@ impl Manifest {
 
         let crons = match env {
             Some(e) => {
-                let account_id = e
-                    .account_id
-                    .as_ref()
-                    .or_else(|| self.account_id.if_present());
+                let account_id = match e.account_id.as_ref() {
+                    Some(id) => id,
+                    None => self.account_id.load()?,
+                };
                 e.triggers
                     .as_ref()
                     .or_else(|| self.triggers.as_ref())
                     .map(|t| (t.crons.as_slice(), account_id))
             }
-            None => self
-                .triggers
-                .as_ref()
-                .map(|t| (t.crons.as_slice(), self.account_id.if_present())),
+            None => match self.triggers.as_ref() {
+                None => None,
+                Some(t) => Some((t.crons.as_slice(), self.account_id.load()?)),
+            },
         };
 
         if let Some((crons, account)) = crons {
             let scheduled = deploy::ScheduleTarget {
-                account_id: account.cloned().unwrap_or_default(),
+                account_id: account.clone(),
                 script_name: script.clone(),
                 crons: crons.to_vec(),
             };
