@@ -278,8 +278,11 @@ impl Manifest {
         };
 
         if let Some((crons, account)) = crons {
-            let scheduled =
-                deploy::ScheduleTarget::build(account.cloned(), script.clone(), crons.to_vec())?;
+            let scheduled = deploy::ScheduleTarget {
+                account_id: account.cloned().unwrap_or_default(),
+                script_name: script.clone(),
+                crons: crons.to_vec(),
+            };
             deployments.push(DeployTarget::Schedule(scheduled));
         }
 
