@@ -20,7 +20,7 @@ binary-install = "0.0.3-alpha.1"
 chrome-devtools-rs = { version = "0.0.0-alpha.3", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
-cloudflare = "0.8.3"
+cloudflare = { path = "../cloudflare-rs/cloudflare" }
 colored_json = "2.1.0"
 config = "0.11.0"
 console = "0.14.1"
@@ -40,6 +40,7 @@ indicatif = "0.15.0"
 log = "0.4.11"
 notify = "4.0.15"
 number_prefix = "0.4.0"
+oauth2 = { path = "../oauth2-rs" }
 once_cell = "1"
 openssl = { version = "0.10.35", optional = true }
 os-version = "0.1.1"
