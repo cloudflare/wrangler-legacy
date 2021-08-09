@@ -100,7 +100,8 @@ impl GlobalUser {
             match s.merge(config::File::with_name(config_str)) {
                 Ok(_) => (),
                 Err(_) => {
-                    return Self::show_config_err_info(s);
+                    let error_info = "\nFailed to read information from configuration file.";
+                    return Self::show_config_err_info(Some(error_info.to_string()), s);
                 }
             }
         } else {
@@ -114,6 +115,7 @@ impl GlobalUser {
     }
 
     pub fn to_file(&self, config_path: &Path) -> Result<()> {
+        // convert in-memory representation of authentication method to on-disk format
         let toml: std::string::String = match self {
             Self::TokenAuth { token_type, value } => match token_type {
                 TokenType::Api => toml::to_string(&ApiTokenDisk {
@@ -125,6 +127,7 @@ impl GlobalUser {
             },
             Self::GlobalKeyAuth { .. } => toml::to_string(self)?,
         };
+
         fs::create_dir_all(&config_path.parent().unwrap())?;
         fs::write(&config_path, toml)?;
 
@@ -140,8 +143,8 @@ impl GlobalUser {
         if (api_token.is_ok() && oauth_token.is_ok())
             || (oauth_token.is_ok() && email.is_ok() && api_key.is_ok())
         {
-            log::info!("More than one authentication methods have been found in the configuration file. Please use only one.");
-            return Self::show_config_err_info(config);
+            let error_info = "\nMore than one authentication method (e.g. API token and OAuth token, or OAuth token and Global API key) has been found in the configuration file. Please use only one.";
+            return Self::show_config_err_info(Some(error_info.to_string()), config);
         } else if api_token.is_ok() {
             return Ok(Self::TokenAuth {
                 token_type: TokenType::Api,
@@ -158,21 +161,28 @@ impl GlobalUser {
                 value: oauth_token.expect("Failed to read OAuth token"),
             });
         } else {
-            return Self::show_config_err_info(config);
+            return Self::show_config_err_info(None, config);
         }
     }
 
-    fn show_config_err_info(config: config::Config) -> Result<Self> {
+    fn show_config_err_info(info: Option<std::string::String>, config: config::Config) -> Result<Self> {
         let wrangler_login_msg = styles::highlight("`wrangler login`");
         let wrangler_config_msg = styles::highlight("`wrangler config`");
         let vars_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
+        let additional_info = match info {
+            Some(text) => text,
+            None => "".to_string(),
+        };
+
         let msg = format!(
-            "{} Your authentication details are improperly configured.\nPlease run {}, {}, or visit\n{}\nfor info on configuring with environment variables",
+            "{} Your authentication details are improperly configured.{}\nPlease run {}, {}, or visit\n{}\nfor info on configuring with environment variables",
             emoji::WARN,
+            additional_info,
             wrangler_login_msg,
             wrangler_config_msg,
             vars_msg
         );
+
         log::info!("{:?}", config);
         anyhow::bail!(msg)
     }
