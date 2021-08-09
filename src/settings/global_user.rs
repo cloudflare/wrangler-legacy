@@ -5,17 +5,29 @@ use anyhow::Result;
 use cloudflare::framework::auth::Credentials;
 use serde::{Deserialize, Serialize};
 
-use crate::settings::{get_global_config_path, Environment, QueryEnvironment};
+#[cfg(test)]
+use crate::settings::{environment::MockEnvironment, DEFAULT_CONFIG_FILE_NAME};
+use crate::settings::QueryEnvironment;
 use crate::terminal::{emoji, styles};
 
 const CF_API_TOKEN: &str = "CF_API_TOKEN";
 const CF_API_KEY: &str = "CF_API_KEY";
 const CF_EMAIL: &str = "CF_EMAIL";
 
-static ENV_VAR_WHITELIST: [&str; 3] = [CF_API_TOKEN, CF_API_KEY, CF_EMAIL];
-
 #[cfg(test)]
 use std::io::Write;
+
+#[cfg(test)]
+fn test_config_dir(tmp_dir: &tempfile::TempDir, user: Option<GlobalUser>) -> Result<PathBuf> {
+    let tmp_config_path = tmp_dir.path().join(DEFAULT_CONFIG_FILE_NAME);
+    if let Some(user_config) = user {
+        user_config.to_file(&tmp_config_path)?;
+    } else {
+        std::fs::File::create(&tmp_config_path)?;
+    }
+
+    Ok(tmp_config_path)
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
@@ -26,10 +38,29 @@ pub enum GlobalUser {
 
 impl GlobalUser {
     pub fn new() -> Result<Self> {
-        let environment = Environment::with_whitelist(ENV_VAR_WHITELIST.to_vec());
+        // Skip loading the config in tests - the behavior of the tests should not require being logged in.
+        #[cfg(test)]
+        {
+            let mock_env = MockEnvironment::default();
 
-        let config_path = get_global_config_path();
-        GlobalUser::build(environment, config_path)
+            let user = GlobalUser::TokenAuth {
+                api_token: "thisisanapitoken".to_string(),
+            };
+
+            let tmp_dir = tempfile::tempdir().unwrap();
+            let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+            GlobalUser::build(mock_env, tmp_config_path)
+        }
+        #[cfg(not(test))]
+        {
+            use crate::settings::{get_global_config_path, Environment};
+
+            static ENV_VAR_WHITELIST: [&str; 3] = [CF_API_TOKEN, CF_API_KEY, CF_EMAIL];
+            let config_path = get_global_config_path();
+            let environment = Environment::with_whitelist(ENV_VAR_WHITELIST.to_vec());
+
+            GlobalUser::build(environment, config_path)
+        }
     }
 
     fn build<T: 'static + QueryEnvironment>(environment: T, config_path: PathBuf) -> Result<Self>
@@ -131,10 +162,7 @@ impl From<GlobalUser> for Credentials {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs::File;
     use tempfile::tempdir;
-
-    use crate::settings::{environment::MockEnvironment, DEFAULT_CONFIG_FILE_NAME};
 
     #[test]
     fn it_can_prioritize_token_input() {
@@ -241,16 +269,5 @@ mod tests {
         let new_user = GlobalUser::build(mock_env, dummy_path);
 
         assert!(new_user.is_ok());
-    }
-
-    fn test_config_dir(tmp_dir: &tempfile::TempDir, user: Option<GlobalUser>) -> Result<PathBuf> {
-        let tmp_config_path = tmp_dir.path().join(DEFAULT_CONFIG_FILE_NAME);
-        if let Some(user_config) = user {
-            user_config.to_file(&tmp_config_path)?;
-        } else {
-            File::create(&tmp_config_path)?;
-        }
-
-        Ok(tmp_config_path)
     }
 }
