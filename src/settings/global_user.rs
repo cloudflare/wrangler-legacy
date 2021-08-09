@@ -165,7 +165,10 @@ impl GlobalUser {
         }
     }
 
-    fn show_config_err_info(info: Option<std::string::String>, config: config::Config) -> Result<Self> {
+    fn show_config_err_info(
+        info: Option<std::string::String>,
+        config: config::Config,
+    ) -> Result<Self> {
         let wrangler_login_msg = styles::highlight("`wrangler login`");
         let wrangler_config_msg = styles::highlight("`wrangler config`");
         let vars_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
@@ -280,11 +283,10 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn it_fails_if_api_and_oauth_both_exist() {
+    fn it_fails_if_api_and_oauth_tokens_both_exist() {
         // This test checks whether GlobalUser returns an error
         // when both api_token and oauth_token are set in the config file.
-        // Expected behavior: panic when unwrapping the newly created GlobalUser.
+        // Expected behavior: the newly created GlobalUser should return an error.
         let mock_env = MockEnvironment::default();
 
         let user = GlobalUser::TokenAuth {
@@ -294,43 +296,50 @@ mod tests {
 
         let user_extra_toml: std::string::String = toml::to_string(&OauthTokenDisk {
             oauth_token: "thisisanoauthtoken".to_string(),
-        }).unwrap();
+        })
+        .unwrap();
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
 
-        let mut temp_file = fs::OpenOptions::new().append(true).open(&tmp_config_path).unwrap();
+        let mut temp_file = fs::OpenOptions::new()
+            .append(true)
+            .open(&tmp_config_path)
+            .unwrap();
         temp_file.write(user_extra_toml.as_bytes()).unwrap();
-        
-        // This line must panic
-        let _new_user = GlobalUser::build(mock_env, tmp_config_path).unwrap();
+
+        let file_user = GlobalUser::build(mock_env, tmp_config_path);
+        assert!(file_user.is_err());
     }
 
     #[test]
-    #[should_panic]
     fn it_fails_if_global_key_and_oauth_token_both_exist() {
         // This test checks whether GlobalUser returns an error
-        // when both api_token and oauth_token are set in the config file.
-        // Expected behavior: panic when unwrapping the newly created GlobalUser.
+        // when both global api key and oauth_token are set in the config file.
+        // Expected behavior: the newly created GlobalUser should return an error.
         let mock_env = MockEnvironment::default();
 
         let user = GlobalUser::GlobalKeyAuth {
             email: "user@example.com".to_string(),
-            api_key: "reallylongglobalapikey".to_string()
+            api_key: "reallylongglobalapikey".to_string(),
         };
 
         let user_extra_toml: std::string::String = toml::to_string(&OauthTokenDisk {
             oauth_token: "thisisanoauthtoken".to_string(),
-        }).unwrap();
+        })
+        .unwrap();
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
 
-        let mut temp_file = fs::OpenOptions::new().append(true).open(&tmp_config_path).unwrap();
+        let mut temp_file = fs::OpenOptions::new()
+            .append(true)
+            .open(&tmp_config_path)
+            .unwrap();
         temp_file.write(user_extra_toml.as_bytes()).unwrap();
-        
-        // This line must panic
-        let _new_user = GlobalUser::build(mock_env, tmp_config_path).unwrap();
+
+        let file_user = GlobalUser::build(mock_env, tmp_config_path);
+        assert!(file_user.is_err());
     }
 
     #[test]

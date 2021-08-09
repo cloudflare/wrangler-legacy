@@ -64,11 +64,11 @@ async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result
 pub fn run() -> Result<()> {
     // -------------------------
     // Temporary authentication
-    // TODO: Remove when ready 
+    // TODO: Remove when ready
     let env_key = "CLIENT_ID";
     let client_id = match env::var(env_key) {
         Ok(value) => value,
-        Err(_) => panic!("client_id not provided")
+        Err(_) => panic!("client_id not provided"),
     };
 
     // -------------------------
