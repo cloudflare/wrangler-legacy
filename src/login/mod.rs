@@ -1,104 +1,176 @@
-use anyhow::Result;
-use eventual::Timer;
-use indicatif::{ProgressBar, ProgressStyle};
-use openssl::base64;
-use openssl::rsa::{Padding, Rsa};
-use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
-use serde::Deserialize;
-use std::collections::HashMap;
-use std::str;
+use oauth2::basic::BasicClient;
+use oauth2::reqwest::http_client;
 
-use crate::commands::config::global_config;
-use crate::settings::global_user::GlobalUser;
+use oauth2::{
+    AuthType, AuthUrl, AuthorizationCode, ClientId, CsrfToken, PkceCodeChallenge, RedirectUrl,
+    Scope, TokenResponse, TokenUrl,
+};
+
+use std::env; // TODO: remove
+
+use hyper::server::conn::AddrStream;
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Request, Response, Server, StatusCode};
+
+use tokio::sync::mpsc;
+
+use anyhow::Result;
+
 use crate::terminal::{interactive, open_browser};
 
-pub fn run() -> Result<()> {
-    let rsa = Rsa::generate(1024)?;
-    let pubkey = rsa.public_key_to_pem_pkcs1()?;
+use crate::commands::config::global_config;
+use crate::settings::global_user::{GlobalUser, TokenType};
 
-    // Convert key to string and remove header and footer
-    let pubkey_str = str::from_utf8(&pubkey)?;
-    let pubkey_filtered = pubkey_str
-        .lines()
-        .filter(|line| !line.starts_with("---"))
-        .fold(String::new(), |mut data, line| {
-            data.push_str(line);
-            data
-        });
-    let pubkey_encoded = percent_encode(pubkey_filtered.as_bytes(), NON_ALPHANUMERIC).to_string();
+// HTTP Server request handler
+async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result<Response<Body>> {
+    match req.uri().path() {
+        // Endpoint given when registering oauth client
+        "/oauth/callback" => {
+            // Get authorization code from request
+            let params = req
+                .uri()
+                .query()
+                .map(|v| url::form_urlencoded::parse(v.as_bytes()))
+                .unwrap();
+
+            // Get authorization code and csrf state
+            let mut params_values: Vec<String> = Vec::with_capacity(2);
+            for (key, value) in params {
+                if key == "code" || key == "state" {
+                    params_values.push(value.to_string());
+                }
+            }
+
+            // Send authorization code back
+            let params_values_str = format!("{} {}", params_values[0], params_values[1]);
+            tx.send(params_values_str).await?;
+
+            // TODO: Ask if there is anything more official
+            let response = Response::new("You have authorized wrangler. Please close this window and return to your terminal! :)".into());
+
+            Ok(response)
+        }
+        _ => {
+            let response = Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body(Body::empty())
+                .unwrap();
+
+            Ok(response)
+        }
+    }
+}
+
+pub fn run() -> Result<()> {
+    // -------------------------
+    // Temporary authentication
+    // TODO: Remove when ready 
+    let env_key = "CLIENT_ID";
+    let client_id = match env::var(env_key) {
+        Ok(value) => value,
+        Err(_) => panic!("client_id not provided")
+    };
+
+    // -------------------------
+
+    // Create oauth2 client
+    let client = BasicClient::new(
+        ClientId::new(client_id.to_string()),
+        None,
+        AuthUrl::new("https://dash.staging.cloudflare.com/oauth2/auth".to_string())
+            .expect("Invalid authorization endpoint URL"),
+        Some(
+            TokenUrl::new("https://dash.staging.cloudflare.com/oauth2/token".to_string())
+                .expect("Invalid token endpoint URL"),
+        ),
+    )
+    .set_redirect_uri(
+        RedirectUrl::new("http://localhost:8976/oauth/callback".to_string())
+            .expect("Invalid redirect URL"),
+    )
+    .set_auth_type(AuthType::RequestBody);
+
+    let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
+
+    // Create URL for user
+    let (auth_url, csrf_state) = client
+        .authorize_url(CsrfToken::new_random)
+        .add_scope(Scope::new("account:read".to_string()))
+        .add_scope(Scope::new("user:read".to_string()))
+        .add_scope(Scope::new("workers:write".to_string())) // TODO: double check that this is needed
+        .add_scope(Scope::new("workers_kv:write".to_string()))
+        .add_scope(Scope::new("workers_routes:write".to_string()))
+        .add_scope(Scope::new("workers_scripts:write".to_string()))
+        .add_scope(Scope::new("workers_tail:read".to_string()))
+        .add_scope(Scope::new("zone:read".to_string()))
+        .set_pkce_challenge(pkce_challenge)
+        .url();
 
     let browser_permission =
         interactive::confirm("Allow Wrangler to open a page in your browser?")?;
     if !browser_permission {
         anyhow::bail!("In order to log in you must allow Wrangler to open your browser. If you don't want to do this consider using `wrangler config`");
     }
+    open_browser(auth_url.as_str())?;
 
-    open_browser(&format!(
-        "https://dash.cloudflare.com/wrangler?key={0}",
-        pubkey_encoded
-    ))?;
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(1);
 
-    let encrypted_token_str = poll_token(pubkey_filtered)?;
-    let encrypted_token = base64::decode_block(encrypted_token_str.as_str())?;
-    let mut token_bytes: [u8; 128] = [0; 128];
-
-    rsa.private_decrypt(&encrypted_token, &mut token_bytes, Padding::PKCS1)?;
-    let token = str::from_utf8(&token_bytes)?.trim_matches(char::from(0));
-
-    let user = GlobalUser::TokenAuth {
-        api_token: token.to_string(),
+    // Create and start listening for redirect on local HTTP server
+    let server_fn_gen = |tx: mpsc::Sender<String>| {
+        service_fn(move |req: Request<Body>| {
+            let tx_clone = tx.clone();
+            handle_callback(req, tx_clone)
+        })
     };
-    global_config(&user, true)?;
+
+    let service = make_service_fn(move |_socket: &AddrStream| {
+        let tx_clone = tx.clone();
+        async move { Ok::<_, hyper::Error>(server_fn_gen(tx_clone)) }
+    });
+
+    let runtime = tokio::runtime::Runtime::new()?;
+    runtime.spawn(async {
+        let addr = ([127, 0, 0, 1], 8976).into();
+
+        let server = Server::bind(&addr).serve(service);
+        server.await.unwrap();
+    });
+
+    // Receive authorization code and csrf state from HTTP server
+    let params_values = runtime.block_on(async { rx.recv().await.unwrap() });
+    let mut params_values_iter = params_values.split_whitespace();
+    let auth_code = params_values_iter
+        .next()
+        .expect("Failed to retrieve authorization code");
+    let recv_csrf_state = params_values_iter
+        .next()
+        .expect("Failed to retrieve csrf state");
+
+    // Check CSRF token to ensure redirect is legit
+    let recv_csrf_state = CsrfToken::new(recv_csrf_state.to_string());
+    if recv_csrf_state.secret() != csrf_state.secret() {
+        anyhow::bail!(
+            "Redirect URI CSRF state check failed. Received: {}, expected: {}",
+            recv_csrf_state.secret(),
+            csrf_state.secret()
+        );
+    }
+
+    // Exchange authorization token for access token
+    let token_response = client
+        .exchange_code(AuthorizationCode::new(auth_code.to_string()))
+        .set_pkce_verifier(pkce_verifier)
+        .request(http_client)
+        .expect("Failed to retrieve access token");
+
+    // Configure user with new token
+    let user = GlobalUser::TokenAuth {
+        token_type: TokenType::Oauth,
+        value: TokenResponse::access_token(&token_response)
+            .secret()
+            .to_string(),
+    };
+    global_config(&user, false)?;
 
     Ok(())
-}
-
-#[derive(Deserialize)]
-struct TokenResponse {
-    result: String,
-}
-
-/// Poll for token, bail after 500 seconds.
-fn poll_token(token_id: String) -> Result<String> {
-    let mut request_params = HashMap::new();
-    request_params.insert("token-id", token_id);
-
-    let client = reqwest::blocking::Client::builder().build()?;
-    let timer = Timer::new().interval_ms(1000).iter();
-
-    let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
-    let spinner = ProgressBar::new_spinner().with_style(style);
-    spinner.set_message("Waiting for API token...");
-    spinner.enable_steady_tick(20);
-
-    for (seconds, _) in timer.enumerate() {
-        let res = client
-            .get("https://api.cloudflare.com/client/v4/workers/token")
-            .json(&request_params)
-            .send()?;
-
-        if res.status().is_success() {
-            let body: TokenResponse = res.json()?;
-            return Ok(body.result);
-        }
-
-        if seconds >= 500 {
-            break;
-        }
-    }
-
-    anyhow::bail!(
-        "Timed out while waiting for API token. Try using `wrangler config` if login fails to work."
-    );
-}
-
-#[cfg(test)]
-mod tests {
-    use openssl::rsa::Rsa;
-
-    #[test]
-    fn test_rsa() {
-        let rsa = Rsa::generate(1024).unwrap();
-        rsa.public_key_to_pem_pkcs1().unwrap();
-    }
 }

@@ -1,5 +1,5 @@
 use crate::http;
-use crate::settings::global_user::GlobalUser;
+use crate::settings::global_user::{GlobalUser, TokenType};
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::{emoji, styles};
 use cloudflare::endpoints::account::{self, Account};
@@ -18,16 +18,21 @@ pub fn whoami(user: &GlobalUser) -> Result<()> {
         GlobalUser::GlobalKeyAuth { email, .. } => {
             format!("a Global API Key, associated with the email '{}'", email,)
         }
-        GlobalUser::TokenAuth { .. } => {
-            let token_auth_email = fetch_api_token_email(user, &mut missing_permissions)?;
+        GlobalUser::TokenAuth { token_type, .. } => {
+            let token_auth_email = fetch_auth_token_email(user, &mut missing_permissions)?;
+
+            let token_type_str = match token_type {
+                TokenType::Api => "API",
+                TokenType::Oauth => "OAuth",
+            };
 
             if let Some(token_auth_email) = token_auth_email {
                 format!(
-                    "an API Token, associated with the email '{}'",
-                    token_auth_email,
+                    "an {} Token, associated with the email '{}'",
+                    token_type_str, token_auth_email,
                 )
             } else {
-                "an API Token".to_string()
+                format!("an {} Token", token_type_str)
             }
         }
     };
@@ -89,7 +94,7 @@ pub fn display_account_id_maybe() {
     }
 }
 
-fn fetch_api_token_email(
+fn fetch_auth_token_email(
     user: &GlobalUser,
     missing_permissions: &mut Vec<String>,
 ) -> Result<Option<String>> {

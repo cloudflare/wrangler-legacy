@@ -21,7 +21,7 @@ pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient> {
     HttpApiClient::new(
         Credentials::from(user.to_owned()),
         config,
-        Environment::Production,
+        Environment::new(),
     )
 }
 
@@ -34,7 +34,7 @@ pub fn cf_v4_api_client_async(user: &GlobalUser) -> Result<async_api::Client> {
     async_api::Client::new(
         Credentials::from(user.to_owned()),
         config,
-        Environment::Production,
+        Environment::new(),
     )
 }
 

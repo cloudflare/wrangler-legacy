@@ -32,7 +32,7 @@ fn bulk_api_client(user: &GlobalUser) -> Result<HttpApiClient> {
     HttpApiClient::new(
         Credentials::from(user.to_owned()),
         config,
-        Environment::Production,
+        Environment::new(),
     )
 }
 

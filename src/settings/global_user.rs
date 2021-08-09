@@ -18,10 +18,32 @@ static ENV_VAR_WHITELIST: [&str; 3] = [CF_API_TOKEN, CF_API_KEY, CF_EMAIL];
 use std::io::Write;
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub enum TokenType {
+    Api,
+    Oauth,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum GlobalUser {
-    TokenAuth { api_token: String },
-    GlobalKeyAuth { email: String, api_key: String },
+    TokenAuth {
+        token_type: TokenType,
+        value: String,
+    },
+    GlobalKeyAuth {
+        email: String,
+        api_key: String,
+    },
+}
+
+#[derive(Deserialize, Serialize)]
+struct ApiTokenDisk {
+    api_token: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct OauthTokenDisk {
+    oauth_token: String,
 }
 
 impl GlobalUser {
@@ -74,7 +96,13 @@ impl GlobalUser {
                 "Config path exists. Reading from config file, {}",
                 config_str
             );
-            s.merge(config::File::with_name(config_str))?;
+
+            match s.merge(config::File::with_name(config_str)) {
+                Ok(_) => (),
+                Err(_) => {
+                    return Self::show_config_err_info(s);
+                }
+            }
         } else {
             anyhow::bail!(
                 "config path does not exist {}. Try running `wrangler login` or `wrangler config`",
@@ -86,8 +114,17 @@ impl GlobalUser {
     }
 
     pub fn to_file(&self, config_path: &Path) -> Result<()> {
-        let toml = toml::to_string(self)?;
-
+        let toml: std::string::String = match self {
+            Self::TokenAuth { token_type, value } => match token_type {
+                TokenType::Api => toml::to_string(&ApiTokenDisk {
+                    api_token: value.to_string(),
+                })?,
+                TokenType::Oauth => toml::to_string(&OauthTokenDisk {
+                    oauth_token: value.to_string(),
+                })?,
+            },
+            Self::GlobalKeyAuth { .. } => toml::to_string(self)?,
+        };
         fs::create_dir_all(&config_path.parent().unwrap())?;
         fs::write(&config_path, toml)?;
 
@@ -95,31 +132,59 @@ impl GlobalUser {
     }
 
     fn from_config(config: config::Config) -> Result<Self> {
-        let global_user: Result<GlobalUser, config::ConfigError> = config.clone().try_into();
-        match global_user {
-            Ok(user) => Ok(user),
-            Err(_) => {
-                let wrangler_login_msg = styles::highlight("`wrangler login`");
-                let wrangler_config_msg = styles::highlight("`wrangler config`");
-                let vars_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
-                let msg = format!(
-                    "{} Your authentication details are improperly configured.\nPlease run {}, {}, or visit\n{}\nfor info on configuring with environment variables",
-                    emoji::WARN,
-                    wrangler_login_msg,
-                    wrangler_config_msg,
-                    vars_msg
-                );
-                log::info!("{:?}", config);
-                anyhow::bail!(msg)
-            }
+        let api_token = config.get_str("api_token");
+        let oauth_token = config.get_str("oauth_token");
+        let email = config.get_str("email");
+        let api_key = config.get_str("api_key");
+
+        if (api_token.is_ok() && oauth_token.is_ok())
+            || (oauth_token.is_ok() && email.is_ok() && api_key.is_ok())
+        {
+            log::info!("More than one authentication methods have been found in the configuration file. Please use only one.");
+            return Self::show_config_err_info(config);
+        } else if api_token.is_ok() {
+            return Ok(Self::TokenAuth {
+                token_type: TokenType::Api,
+                value: api_token.expect("Failed to read API token"),
+            });
+        } else if email.is_ok() && api_key.is_ok() {
+            return Ok(Self::GlobalKeyAuth {
+                email: email.expect("Failed to read email"),
+                api_key: api_key.expect("Failed to read api_key"),
+            });
+        } else if oauth_token.is_ok() {
+            return Ok(Self::TokenAuth {
+                token_type: TokenType::Oauth,
+                value: oauth_token.expect("Failed to read OAuth token"),
+            });
+        } else {
+            return Self::show_config_err_info(config);
         }
+    }
+
+    fn show_config_err_info(config: config::Config) -> Result<Self> {
+        let wrangler_login_msg = styles::highlight("`wrangler login`");
+        let wrangler_config_msg = styles::highlight("`wrangler config`");
+        let vars_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
+        let msg = format!(
+            "{} Your authentication details are improperly configured.\nPlease run {}, {}, or visit\n{}\nfor info on configuring with environment variables",
+            emoji::WARN,
+            wrangler_login_msg,
+            wrangler_config_msg,
+            vars_msg
+        );
+        log::info!("{:?}", config);
+        anyhow::bail!(msg)
     }
 }
 
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
         match user {
-            GlobalUser::TokenAuth { api_token } => Credentials::UserAuthToken { token: api_token },
+            GlobalUser::TokenAuth {
+                token_type: _,
+                value,
+            } => Credentials::UserAuthToken { token: value },
             GlobalUser::GlobalKeyAuth { email, api_key } => Credentials::UserAuthKey {
                 key: api_key,
                 email,
@@ -154,7 +219,8 @@ mod tests {
         assert_eq!(
             user,
             GlobalUser::TokenAuth {
-                api_token: "foo".to_string()
+                token_type: TokenType::Api,
+                value: "foo".to_string(),
             }
         );
     }
@@ -166,7 +232,8 @@ mod tests {
         let email = "user@example.com";
 
         let file_user = GlobalUser::TokenAuth {
-            api_token: api_token.to_string(),
+            token_type: TokenType::Api,
+            value: api_token.to_string(),
         };
         let env_user = GlobalUser::GlobalKeyAuth {
             api_key: api_key.to_string(),
@@ -190,7 +257,8 @@ mod tests {
         let mock_env = MockEnvironment::default();
 
         let user = GlobalUser::TokenAuth {
-            api_token: "thisisanapitoken".to_string(),
+            token_type: TokenType::Api,
+            value: "thisisanapitoken".to_string(),
         };
 
         let tmp_dir = tempdir().unwrap();
@@ -199,6 +267,60 @@ mod tests {
         let new_user = GlobalUser::build(mock_env, tmp_config_path).unwrap();
 
         assert_eq!(new_user, user);
+    }
+
+    #[test]
+    #[should_panic]
+    fn it_fails_if_api_and_oauth_both_exist() {
+        // This test checks whether GlobalUser returns an error
+        // when both api_token and oauth_token are set in the config file.
+        // Expected behavior: panic when unwrapping the newly created GlobalUser.
+        let mock_env = MockEnvironment::default();
+
+        let user = GlobalUser::TokenAuth {
+            token_type: TokenType::Api,
+            value: "thisisanapitoken".to_string(),
+        };
+
+        let user_extra_toml: std::string::String = toml::to_string(&OauthTokenDisk {
+            oauth_token: "thisisanoauthtoken".to_string(),
+        }).unwrap();
+
+        let tmp_dir = tempdir().unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+
+        let mut temp_file = fs::OpenOptions::new().append(true).open(&tmp_config_path).unwrap();
+        temp_file.write(user_extra_toml.as_bytes()).unwrap();
+        
+        // This line must panic
+        let _new_user = GlobalUser::build(mock_env, tmp_config_path).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn it_fails_if_global_key_and_oauth_token_both_exist() {
+        // This test checks whether GlobalUser returns an error
+        // when both api_token and oauth_token are set in the config file.
+        // Expected behavior: panic when unwrapping the newly created GlobalUser.
+        let mock_env = MockEnvironment::default();
+
+        let user = GlobalUser::GlobalKeyAuth {
+            email: "user@example.com".to_string(),
+            api_key: "reallylongglobalapikey".to_string()
+        };
+
+        let user_extra_toml: std::string::String = toml::to_string(&OauthTokenDisk {
+            oauth_token: "thisisanoauthtoken".to_string(),
+        }).unwrap();
+
+        let tmp_dir = tempdir().unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+
+        let mut temp_file = fs::OpenOptions::new().append(true).open(&tmp_config_path).unwrap();
+        temp_file.write(user_extra_toml.as_bytes()).unwrap();
+        
+        // This line must panic
+        let _new_user = GlobalUser::build(mock_env, tmp_config_path).unwrap();
     }
 
     #[test]
