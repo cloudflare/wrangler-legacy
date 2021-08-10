@@ -289,7 +289,7 @@ impl Manifest {
         };
 
         if durable_objects.is_none() && deployments.is_empty() {
-            anyhow::bail!("Please specify your deployment routes or `wrangler_dev = true` inside of your configuration file. For more information, see: https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys")
+            StdOut::warn("No depolyment routes specified, worker will not be triggered. Please specify your deployment routes or set `wrangler_dev = true` inside of your configuration file in order to trigger your worker. For more information, see: https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys");
         }
 
         Ok(deployments)
