@@ -90,18 +90,15 @@ async fn connect_retry(
             }
             Err(e) => {
                 failed = true;
-                StdErr::warn(&format!("Failed to connect to devtools instance: {}", e));
-                StdErr::warn(&format!(
-                    "Will retry connection in {} seconds",
+                log::info!(
+                    "Failed to connect to devtools instance: {}. Retrying in {} seconds",
+                    e,
                     wait_seconds
-                ));
+                );
                 sleep(Duration::from_secs(wait_seconds)).await;
                 wait_seconds *= 2;
                 if let (Some(sender), tungstenite::Error::Http(resp)) = (&sender, e) {
                     if resp.status().as_u16() >= 400 && resp.status().as_u16() < 500 {
-                        StdOut::info(
-                            "Starting a new session to retry the connection with a new token",
-                        );
                         sender.send(Some(())).ok();
                     }
                 }
@@ -109,7 +106,7 @@ async fn connect_retry(
                     // max out at 60 seconds
                     wait_seconds = maximum_wait_seconds;
                 }
-                StdErr::working("Retrying...");
+                log::info!("Attempting to reconnect to devtools instance...");
             }
         }
     }
