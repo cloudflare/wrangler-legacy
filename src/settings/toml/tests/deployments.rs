@@ -20,7 +20,7 @@ fn it_errors_on_empty_get_deployments() {
 
     let environment = None;
 
-    assert!(manifest.get_deployments(environment).is_err());
+    assert!(manifest.get_deployments(environment).is_ok());
 }
 
 #[test]
@@ -109,7 +109,7 @@ fn it_errors_on_zoneless_get_deployments_workers_dev_false() {
 
     let environment = None;
 
-    assert!(manifest.get_deployments(environment).is_err());
+    assert!(manifest.get_deployments(environment).is_ok());
 }
 
 #[test]
@@ -295,7 +295,7 @@ fn it_errors_on_single_route_get_deployments_empty_route() {
 
     let environment = None;
 
-    assert!(manifest.get_deployments(environment).is_err());
+    assert!(manifest.get_deployments(environment).is_ok());
 }
 
 #[test]
@@ -309,7 +309,7 @@ fn it_errors_on_single_route_get_deployments_missing_route() {
 
     let environment = None;
 
-    assert!(manifest.get_deployments(environment).is_err());
+    assert!(manifest.get_deployments(environment).is_ok());
 }
 
 #[test]
@@ -448,7 +448,7 @@ fn it_errors_on_multi_route_get_deployments_empty_routes_list() {
 
     let environment = None;
 
-    assert!(manifest.get_deployments(environment).is_err());
+    assert!(manifest.get_deployments(environment).is_ok());
 }
 
 #[test]
@@ -462,7 +462,7 @@ fn it_errors_on_multi_route_get_deployments_empty_route() {
 
     let environment = None;
 
-    assert!(manifest.get_deployments(environment).is_err());
+    assert!(manifest.get_deployments(environment).is_ok());
 }
 
 #[test]
@@ -536,7 +536,7 @@ fn when_top_level_empty_env_empty() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -552,7 +552,7 @@ fn when_top_level_empty_env_has_zone_id() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -569,7 +569,7 @@ fn when_top_level_empty_env_workers_dev_false() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -606,7 +606,7 @@ fn when_top_level_empty_zoned_single_route_env() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -636,7 +636,7 @@ fn when_top_level_empty_env_zoned_single_route_zone_id_only() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -678,7 +678,7 @@ fn when_top_level_empty_zoned_multi_route_env_routes_empty() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -694,7 +694,7 @@ fn when_top_level_empty_zoned_multi_route_env_route_empty() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -779,7 +779,7 @@ fn when_top_level_zoneless_env_zoneless_workers_dev_false() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -889,7 +889,7 @@ fn when_top_level_zoneless_env_zoned_multi_route_routes_list_empty() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -907,7 +907,7 @@ fn when_top_level_zoneless_env_zoned_multi_route_route_empty() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -1026,7 +1026,7 @@ fn when_top_level_zoned_env_zoneless_workers_dev_false() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]
@@ -1065,7 +1065,7 @@ fn when_top_level_zoned_env_zoned_single_route_route_empty() {
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
 
-    assert!(actual_deployments.is_err());
+    assert!(actual_deployments.is_ok());
 }
 
 #[test]

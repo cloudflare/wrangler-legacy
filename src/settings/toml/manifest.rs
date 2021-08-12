@@ -215,6 +215,11 @@ impl Manifest {
         let mut add_routed_deployments = |route_config: &RouteConfig| -> Result<()> {
             if route_config.is_zoned() {
                 let zoned = deploy::ZonedTarget::build(&script, route_config)?;
+
+                if zoned.routes.is_empty() {
+                    return Ok(());
+                }
+
                 // This checks all of the configured routes for the wildcard ending and warns
                 // the user that their site may not work as expected without it.
                 if self.site.is_some() {
@@ -238,6 +243,17 @@ impl Manifest {
             if route_config.is_zoneless() {
                 let zoneless = deploy::ZonelessTarget::build(&script, route_config)?;
                 deployments.push(DeployTarget::Zoneless(zoneless));
+            }
+
+            if !route_config.is_zoned() && !route_config.is_zoneless() {
+                if route_config.route.is_some()
+                    || (route_config.routes.is_some()
+                        && !route_config.routes.as_ref().unwrap().is_empty())
+                {
+                    anyhow::bail!(
+                        "Routes specified with no zone, specify `zone_id` in your wrangler.toml"
+                    )
+                }
             }
 
             Ok(())

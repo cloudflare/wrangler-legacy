@@ -43,7 +43,11 @@ impl Environment {
         let account_id = self.account_id.clone().or(top_level_account_id).into();
         let zone_id = self.zone_id.clone().or(top_level_zone_id);
 
-        if self.workers_dev.is_none() && self.route.is_none() && self.routes.is_none() {
+        if self.workers_dev.is_none()
+            && self.zone_id.is_none()
+            && self.route.is_none()
+            && self.routes.is_none()
+        {
             None
         } else {
             Some(RouteConfig {
