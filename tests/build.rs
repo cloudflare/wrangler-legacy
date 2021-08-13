@@ -412,11 +412,11 @@ fn build_fails_with(fixture: &Fixture, expected_message: &str) {
     build.arg("build");
 
     let output = build.output().expect("failed to execute process");
+    let stderr = str::from_utf8(&output.stderr).unwrap();
+    eprintln!("{}", stderr);
     assert!(!output.status.success());
     assert!(
-        str::from_utf8(&output.stderr)
-            .unwrap()
-            .contains(expected_message),
+        stderr.contains(expected_message),
         "expected {:?} not found, given: {:?}",
         expected_message,
         str::from_utf8(&output.stderr)
