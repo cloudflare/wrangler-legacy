@@ -603,8 +603,13 @@ impl LazyAccountId {
     }
 
     /// Load the account ID, possibly prompting the user.
+    #[cfg_attr(test, allow(unreachable_code))]
     pub(crate) fn load(&self) -> Result<&String> {
         self.0.get_or_try_init(|| {
+            #[cfg(test)]
+            // don't try to fetch the accounts for this ID, since it's not valid.
+            anyhow::bail!("tried to load account id");
+
             let user = GlobalUser::new()?;
             match fetch_accounts(&user)?.as_slice() {
                 [] => {
