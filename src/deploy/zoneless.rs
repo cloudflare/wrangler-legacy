@@ -1,3 +1,4 @@
+use crate::settings::toml::target::LazyAccountId;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -7,30 +8,29 @@ use anyhow::Result;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ZonelessTarget {
-    pub account_id: String,
+    pub account_id: LazyAccountId,
     pub script_name: String,
 }
 
 impl ZonelessTarget {
     pub fn build(script_name: &str, route_config: &RouteConfig) -> Result<Self> {
-        let account_id = route_config.account_id.load()?;
         Ok(Self {
             script_name: script_name.to_string(),
-            account_id: account_id.to_string(),
+            account_id: route_config.account_id.clone(),
         })
     }
 
     pub fn deploy(&self, user: &GlobalUser) -> Result<String> {
         log::info!("publishing to workers.dev subdomain");
         log::info!("checking that subdomain is registered");
-        let subdomain = match Subdomain::get(&self.account_id, user)? {
+        let subdomain = match Subdomain::get(self.account_id.load()?, user)? {
             Some(subdomain) => subdomain,
             None => anyhow::bail!("Before publishing to workers.dev, you must register a subdomain. Please choose a name for your subdomain and run `wrangler subdomain <name>`.")
         };
 
         let sd_worker_addr = format!(
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
-            self.account_id, self.script_name,
+            self.account_id.load()?, self.script_name,
         );
 
         let client = http::legacy_auth_client(user);

@@ -129,8 +129,8 @@ fn get_session_config(target: &DeployTarget) -> serde_json::Value {
     }
 }
 
-fn get_session_address(target: &DeployTarget) -> String {
-    match target {
+fn get_session_address(target: &DeployTarget) -> Result<String> {
+    let addr = match target {
         DeployTarget::Zoned(config) => format!(
             "https://api.cloudflare.com/client/v4/zones/{}/workers/edge-preview",
             config.zone_id
@@ -138,10 +138,11 @@ fn get_session_address(target: &DeployTarget) -> String {
         // TODO: zoneless is probably wrong
         DeployTarget::Zoneless(config) => format!(
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/subdomain/edge-preview",
-            config.account_id
+            config.account_id.load()?,
         ),
         _ => unreachable!(),
-    }
+    };
+    Ok(addr)
 }
 
 fn get_upload_address(target: &mut Target) -> Result<String> {
@@ -154,7 +155,7 @@ fn get_upload_address(target: &mut Target) -> Result<String> {
 
 fn get_exchange_url(deploy_target: &DeployTarget, user: &GlobalUser) -> Result<Url> {
     let client = crate::http::legacy_auth_client(user);
-    let address = get_session_address(deploy_target);
+    let address = get_session_address(deploy_target)?;
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;
     let text = &response.text()?;
