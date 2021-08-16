@@ -1,7 +1,7 @@
-use crate::settings::toml::target::LazyAccountId;
 use crate::commands::subdomain::Subdomain;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
+use crate::settings::toml::target::LazyAccountId;
 use crate::settings::toml::RouteConfig;
 
 use anyhow::Result;
@@ -30,7 +30,8 @@ impl ZonelessTarget {
 
         let sd_worker_addr = format!(
             "https://api.cloudflare.com/client/v4/accounts/{}/workers/scripts/{}/subdomain",
-            self.account_id.load()?, self.script_name,
+            self.account_id.load()?,
+            self.script_name,
         );
 
         let client = http::legacy_auth_client(user);

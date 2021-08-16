@@ -44,6 +44,18 @@ pub fn dev(
         verbose,
     )?;
 
+    // prewarm the request so `--inspect` works right away
+    // note that this doesn't make a normal GET request, since that might affect the worker state
+    if inspect.is_some() {
+        let client = reqwest::blocking::Client::builder().build()?;
+        client
+            .post("https://prewarm.cloudflareworkers.com/")
+            .header("CF-EW-Preview", &preview_id)
+            .body("") // so reqwest will set the Content-Length header
+            .send()?
+            .error_for_status()?;
+    }
+
     // the local server needs the preview ID to properly route
     // HTTP requests
     //

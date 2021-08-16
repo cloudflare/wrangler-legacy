@@ -49,21 +49,8 @@ pub async fn listen(
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
-        // TODO: replace this with a prewarm call
-        if inspect.is_some() {
-            // Startup the edge isolate.
-            // TODO: does this need to be https in some cases?
-            // let scheme = if server_config.host.is_https() { "https" } else { "http" };
-
-            // Sleep for a bit first to give the webserver time to start up.
-            tokio::time::sleep(Duration::from_millis(200)).await;
-            // TODO: should this be retried? It definitely doesn't need special logic to refresh the token,
-            // since anyone can access the worker's HTTP server.
-            reqwest::get(format!("http://{}", server_config.listening_address)).await?;
-        }
         let sender = refresh_session_sender.clone();
         let mut ws_stream = connect_retry(&socket_url, sender).await;
-        // let mut ws_stream = connect_retry(|| connect_async(&socket_url), sender).await.0;
 
         // console.log messages are in the Runtime domain
         // we must signal that we want to receive messages from the Runtime domain

@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use core::fmt;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, str::FromStr};
 
@@ -36,5 +37,15 @@ impl FromStr for Protocol {
             "https" => Ok(Protocol::Https),
             _ => Err(anyhow!("Invalid protocol, must be http or https")),
         }
+    }
+}
+
+impl fmt::Display for Protocol {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Protocol::Http => "http",
+            Protocol::Https => "https",
+        };
+        s.fmt(f)
     }
 }

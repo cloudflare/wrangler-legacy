@@ -97,13 +97,24 @@ fn dev_once(
         verbose,
     )?;
 
-    let preview_token = Arc::new(Mutex::new(preview_token));
     let inspect = if inspect {
+        // prewarm the isolate
+        let client = reqwest::blocking::Client::builder().build()?;
+        let url = format!(
+            "{}://{}/cdn-cgi/workers/preview/prewarm",
+            upstream_protocol, session.host
+        );
+        client
+            .post(url)
+            .header("cf-workers-preview-token", &preview_token)
+            .send()?
+            .error_for_status()?;
         Some(target.name.clone())
     } else {
         None
     };
 
+    let preview_token = Arc::new(Mutex::new(preview_token));
     {
         let preview_token = preview_token.clone();
         let session_token = session.preview_token.clone();
