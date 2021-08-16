@@ -7,7 +7,7 @@ mod manifest;
 pub mod migrations;
 mod route;
 mod site;
-mod target;
+pub(crate) mod target;
 mod target_type;
 mod triggers;
 
