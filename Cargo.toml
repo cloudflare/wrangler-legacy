@@ -8,7 +8,6 @@ description = "Command-line interface for all things Cloudflare Workers"
 readme = "README.md"
 repository = "https://github.com/cloudflare/wrangler"
 categories = ["wasm", "development-tools", "command-line-utilities", "web-programming"]
-build = "build.rs"
 
 [dependencies]
 anyhow = "1.0"
