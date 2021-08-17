@@ -92,7 +92,7 @@ pub fn run() -> Result<()> {
 
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-    // Create URL for user
+    // Create URL for user with the necessary scopes
     let (auth_url, csrf_state) = client
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("account:read".to_string()))
@@ -106,6 +106,7 @@ pub fn run() -> Result<()> {
         .set_pkce_challenge(pkce_challenge)
         .url();
 
+    // Navigate to authorizatione endpoint
     let browser_permission =
         interactive::confirm("Allow Wrangler to open a page in your browser?")?;
     if !browser_permission {
@@ -115,7 +116,7 @@ pub fn run() -> Result<()> {
 
     let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(1);
 
-    // Create and start listening for redirect on local HTTP server
+    // Create and start listening for authorization redirect on local HTTP server
     let server_fn_gen = |tx: mpsc::Sender<String>| {
         service_fn(move |req: Request<Body>| {
             let tx_clone = tx.clone();
