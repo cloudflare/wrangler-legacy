@@ -13,7 +13,7 @@ const ACCOUNT_ID: &str = "fakeaccountid";
 
 // TOP LEVEL TESTS
 #[test]
-fn it_errors_on_empty_get_deployments() {
+fn it_can_get_empty_deployments() {
     let test_toml = WranglerToml::webpack("empty");
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
@@ -100,7 +100,7 @@ fn it_errors_on_get_deployments_missing_account_id() {
 }
 
 #[test]
-fn it_errors_on_zoneless_get_deployments_workers_dev_false() {
+fn it_can_zoneless_get_deployments_workers_dev_false() {
     let script_name = "zoneless_false";
     let workers_dev = false;
     let test_toml = WranglerToml::zoneless(script_name, ACCOUNT_ID, workers_dev);
@@ -285,7 +285,7 @@ fn it_errors_on_single_route_get_deployments_missing_zone_id() {
 }
 
 #[test]
-fn it_errors_on_single_route_get_deployments_empty_route() {
+fn it_can_single_route_get_deployments_empty_route() {
     let script_name = "single_route_empty_route";
     let pattern = "";
 
@@ -299,7 +299,7 @@ fn it_errors_on_single_route_get_deployments_empty_route() {
 }
 
 #[test]
-fn it_errors_on_single_route_get_deployments_missing_route() {
+fn it_can_single_route_get_deployments_missing_route() {
     let script_name = "single_route_missing_route";
 
     let mut test_toml = WranglerToml::zoned_single_route(script_name, ZONE_ID, "");
@@ -438,7 +438,7 @@ fn it_errors_on_multi_route_get_deployments_missing_zone_id() {
 }
 
 #[test]
-fn it_errors_on_multi_route_get_deployments_empty_routes_list() {
+fn it_can_multi_route_get_deployments_empty_routes_list() {
     let script_name = "multi_route_empty_routes_list";
     let patterns = [];
 
@@ -452,7 +452,7 @@ fn it_errors_on_multi_route_get_deployments_empty_routes_list() {
 }
 
 #[test]
-fn it_errors_on_multi_route_get_deployments_empty_route() {
+fn it_can_multi_route_get_deployments_empty_route() {
     let script_name = "multi_route_empty_route";
     let patterns = [""];
 
