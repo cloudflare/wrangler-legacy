@@ -39,9 +39,11 @@ impl Environment {
         &self,
         top_level_account_id: Option<String>,
         top_level_zone_id: Option<String>,
+        top_level_workers_dev: Option<bool>,
     ) -> Option<RouteConfig> {
         let account_id = self.account_id.clone().or(top_level_account_id).into();
         let zone_id = self.zone_id.clone().or(top_level_zone_id);
+        let workers_dev = self.workers_dev.or(top_level_workers_dev);
 
         if self.workers_dev.is_none()
             && self.zone_id.is_none()
@@ -52,7 +54,7 @@ impl Environment {
         } else {
             Some(RouteConfig {
                 account_id,
-                workers_dev: self.workers_dev,
+                workers_dev,
                 route: self.route.clone(),
                 routes: self.routes.clone(),
                 zone_id,

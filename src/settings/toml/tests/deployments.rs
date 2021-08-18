@@ -840,9 +840,14 @@ fn when_top_level_zoneless_env_zoned_single_route_zone_id_missing() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
+    let environment = Some(TEST_ENV_NAME);
+    let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deployments = vec![DeployTarget::Zoneless(ZonelessTarget {
+        account_id: ACCOUNT_ID.to_string(),
+        script_name: manifest.worker_name(environment),
+    })];
 
-    assert!(actual_deployments.is_err());
+    assert_eq!(actual_deployments, expected_deployments);
 }
 
 #[test]
@@ -861,15 +866,22 @@ fn when_top_level_zoneless_env_zoned_single_route() {
 
     let expected_name = manifest.worker_name(Some(TEST_ENV_NAME));
 
+    let environment = Some(TEST_ENV_NAME);
     let expected_routes = vec![Route {
         script: Some(expected_name),
         pattern: PATTERN.to_string(),
         id: None,
     }];
-    let expected_deployments = vec![DeployTarget::Zoned(ZonedTarget {
-        zone_id: ZONE_ID.to_string(),
-        routes: expected_routes,
-    })];
+    let expected_deployments = vec![
+        DeployTarget::Zoned(ZonedTarget {
+            zone_id: ZONE_ID.to_string(),
+            routes: expected_routes,
+        }),
+        DeployTarget::Zoneless(ZonelessTarget {
+            account_id: ACCOUNT_ID.to_string(),
+            script_name: manifest.worker_name(environment),
+        }),
+    ];
 
     assert_eq!(actual_deployments, expected_deployments);
 }
@@ -935,10 +947,16 @@ fn when_top_level_zoneless_env_zoned_multi_route_route_key_present() {
         })
         .collect();
 
-    let expected_deployments = vec![DeployTarget::Zoned(ZonedTarget {
-        routes: expected_routes,
-        zone_id: ZONE_ID.to_owned(),
-    })];
+    let expected_deployments = vec![
+        DeployTarget::Zoned(ZonedTarget {
+            routes: expected_routes,
+            zone_id: ZONE_ID.to_owned(),
+        }),
+        DeployTarget::Zoneless(ZonelessTarget {
+            account_id: ACCOUNT_ID.to_string(),
+            script_name: expected_name,
+        }),
+    ];
 
     let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME)).unwrap();
 
@@ -958,9 +976,13 @@ fn when_top_level_zoneless_env_zoned_multi_route_zone_id_missing() {
     let toml_string = toml::to_string(&test_toml).unwrap();
     let manifest = Manifest::from_str(&toml_string).unwrap();
 
-    let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME));
+    let actual_deployments = manifest.get_deployments(Some(TEST_ENV_NAME)).unwrap();
+    let expected_deployments = vec![DeployTarget::Zoneless(ZonelessTarget {
+        account_id: ACCOUNT_ID.to_string(),
+        script_name: manifest.worker_name(Some(TEST_ENV_NAME)),
+    })];
 
-    assert!(actual_deployments.is_err());
+    assert_eq!(expected_deployments, actual_deployments);
 }
 
 #[test]
@@ -989,10 +1011,16 @@ fn when_top_level_zoneless_env_zoned_multi_route() {
         })
         .collect();
 
-    let expected_deployments = vec![DeployTarget::Zoned(ZonedTarget {
-        zone_id: ZONE_ID.to_string(),
-        routes: expected_routes,
-    })];
+    let expected_deployments = vec![
+        DeployTarget::Zoned(ZonedTarget {
+            zone_id: ZONE_ID.to_string(),
+            routes: expected_routes,
+        }),
+        DeployTarget::Zoneless(ZonelessTarget {
+            account_id: ACCOUNT_ID.to_string(),
+            script_name: expected_name,
+        }),
+    ];
 
     assert_eq!(actual_deployments, expected_deployments);
 }

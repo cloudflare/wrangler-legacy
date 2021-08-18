@@ -245,24 +245,26 @@ impl Manifest {
                 deployments.push(DeployTarget::Zoneless(zoneless));
             }
 
-            if !route_config.is_zoned() && !route_config.is_zoneless() {
-                if route_config.route.is_some()
+            if !route_config.is_zoned()
+                && !route_config.is_zoneless()
+                && (route_config.route.is_some()
                     || (route_config.routes.is_some()
-                        && !route_config.routes.as_ref().unwrap().is_empty())
-                {
-                    anyhow::bail!(
-                        "Routes specified with no zone, specify `zone_id` in your wrangler.toml"
-                    )
-                }
+                        && !route_config.routes.as_ref().unwrap().is_empty()))
+            {
+                anyhow::bail!(
+                    "Routes specified with no zone, specify `zone_id` in your wrangler.toml"
+                )
             }
 
             Ok(())
         };
 
         if let Some(env) = env {
-            if let Some(env_route_cfg) =
-                env.route_config(self.account_id.if_present().cloned(), self.zone_id.clone())
-            {
+            if let Some(env_route_cfg) = env.route_config(
+                self.account_id.if_present().cloned(),
+                self.zone_id.clone(),
+                self.workers_dev,
+            ) {
                 add_routed_deployments(&env_route_cfg)
             } else {
                 let config = self.route_config();
