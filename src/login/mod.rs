@@ -38,15 +38,31 @@ async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result
             for (key, value) in params {
                 if key == "code" || key == "state" {
                     params_values.push(value.to_string());
-                }
+                } 
+            }
+            
+            if params_values.len() != 2 {
+                // user denied consent
+                let params_response = "err".to_string();
+                tx.send(params_response).await?;
+                // TODO: placeholder, probably change to a specific denied consent page
+                let response = Response::builder()
+                    .status(StatusCode::PERMANENT_REDIRECT)
+                    .header("Location", "https://welcome.developers.workers.dev")
+                    .body(Body::empty())
+                    .unwrap();
+                return Ok(response);
             }
 
             // Send authorization code back
-            let params_values_str = format!("{} {}", params_values[0], params_values[1]);
+            let params_values_str = format!("ok {} {}", params_values[0], params_values[1]);
             tx.send(params_values_str).await?;
 
-            // TODO: Ask if there is anything more official
-            let response = Response::new("You have authorized wrangler. Please close this window and return to your terminal! :)".into());
+            let response = Response::builder()
+                .status(StatusCode::PERMANENT_REDIRECT)
+                .header("Location", "https://welcome.developers.workers.dev")
+                .body(Body::empty())
+                .unwrap();
 
             Ok(response)
         }
@@ -140,6 +156,16 @@ pub fn run() -> Result<()> {
     // Receive authorization code and csrf state from HTTP server
     let params_values = runtime.block_on(async { rx.recv().await.unwrap() });
     let mut params_values_iter = params_values.split_whitespace();
+
+    // Check if user has given consent
+    let response_status = params_values_iter
+        .next()
+        .expect("Failed to retrieve response code"); 
+    if response_status == "err" {
+        anyhow::bail!("You should give authorization consent in order to log in with Wrangler.")
+    }
+
+    // Get authorization code and CSRF state
     let auth_code = params_values_iter
         .next()
         .expect("Failed to retrieve authorization code");
