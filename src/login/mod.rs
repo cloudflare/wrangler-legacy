@@ -106,7 +106,7 @@ pub fn run() -> Result<()> {
         .set_pkce_challenge(pkce_challenge)
         .url();
 
-    // Navigate to authorizatione endpoint
+    // Navigate to authorization endpoint
     let browser_permission =
         interactive::confirm("Allow Wrangler to open a page in your browser?")?;
     if !browser_permission {

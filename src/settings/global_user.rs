@@ -148,6 +148,7 @@ impl GlobalUser {
         // The only cases that are not allowed are:
         //      1) OAuth token + API token
         //      2) OAuth token + Global API key (partial or complete)
+        //      3) Invalid authentication methods (e.g. partial Global API key, empty configuration file, or no environment variables)
         // API token has priority over global API key both in environment variables and in configuration file
         if (api_token.is_ok() && oauth_token.is_ok())
             || (oauth_token.is_ok() && (email.is_ok() || api_key.is_ok()))
@@ -170,7 +171,7 @@ impl GlobalUser {
                 value: oauth_token.expect("Failed to read OAuth token"),
             });
         } else {
-            // Empty configuration file and no enviroment variables, or missing variable for global API key
+            // Empty configuration file and no environment variables, or missing variable for global API key
             let error_info = "\nNo (valid) authentication method has been found.";
             return Self::show_config_err_info(Some(error_info.to_string()), config);
         }
