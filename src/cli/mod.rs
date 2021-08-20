@@ -4,6 +4,7 @@ pub mod dev;
 pub mod generate;
 pub mod init;
 pub mod kv;
+pub mod login;
 pub mod preview;
 pub mod publish;
 pub mod route;
@@ -21,6 +22,7 @@ pub mod exec {
     pub use super::kv::kv_bulk;
     pub use super::kv::kv_key;
     pub use super::kv::kv_namespace;
+    pub use super::login::login;
     pub use super::preview::preview;
     pub use super::publish::publish;
     pub use super::route::route;
@@ -271,7 +273,11 @@ pub enum Command {
 
     /// Authenticate wrangler with your Cloudflare username and password
     #[structopt(name = "login")]
-    Login,
+    Login {
+        // Allow user to define their desired scopes
+        #[structopt(name = "scopes", long)]
+        scopes: bool,
+    },
 
     /// Report an error caught by wrangler to Cloudflare
     #[structopt(name = "report")]

@@ -131,7 +131,7 @@ fn run() -> Result<()> {
             search,
             &cli_params,
         ),
-        Command::Login => commands::login::run(),
+        Command::Login { scopes } => exec::login(scopes),
         Command::Report { log } => commands::report::run(log.as_deref()).map(|_| {
             eprintln!("Report submission sucessful. Thank you!");
         }),
