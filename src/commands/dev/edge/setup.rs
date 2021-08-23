@@ -53,7 +53,7 @@ pub(super) fn upload(
         .multipart(script_upload_form)
         .send()?;
 
-    if &response.status() == &StatusCode::BAD_REQUEST {
+    if response.status() == StatusCode::BAD_REQUEST {
         return Err(BadRequestError(crate::format_api_errors(response.text()?)).into());
     }
     let response = response.error_for_status()?;
