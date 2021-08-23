@@ -274,7 +274,7 @@ pub enum Command {
     /// Authenticate wrangler with your Cloudflare username and password
     #[structopt(name = "login")]
     Login {
-        // Allow user to define their desired scopes
+        /// Allows to choose set of scopes
         #[structopt(name = "scopes", long)]
         scopes: bool,
     },

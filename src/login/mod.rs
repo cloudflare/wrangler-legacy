@@ -57,12 +57,13 @@ async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result
 
             if params_values.len() != 2 {
                 // user denied consent
-                let params_response = "err".to_string();
+                let params_response = "denied".to_string();
                 tx.send(params_response).await?;
                 // TODO: placeholder, probably change to a specific denied consent page
                 let response = Response::builder()
                     .status(StatusCode::PERMANENT_REDIRECT)
-                    .header("Location", "https://welcome.developers.workers.dev")
+                    //.header("Location", "https://welcome.developers.workers.dev")
+                    .header("Location", "http://127.0.0.1:8787/wrangler-oauth-consent-denied")
                     .body(Body::empty())
                     .unwrap();
                 return Ok(response);
@@ -74,13 +75,17 @@ async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result
 
             let response = Response::builder()
                 .status(StatusCode::PERMANENT_REDIRECT)
-                .header("Location", "https://welcome.developers.workers.dev")
+                //.header("Location", "https://welcome.developers.workers.dev")
+                .header("Location", "http://127.0.0.1:8787/wrangler-oauth-consent-granted")
                 .body(Body::empty())
                 .unwrap();
 
             Ok(response)
         }
         _ => {
+            let params_response = "error".to_string();
+            tx.send(params_response).await?;
+
             let response = Response::builder()
                 .status(StatusCode::NOT_FOUND)
                 .body(Body::empty())
@@ -193,9 +198,11 @@ pub fn run(scopes: Option<&[&str]>) -> Result<()> {
         anyhow::bail!("Failed to receive authorization code from local HTTP server")
     }
 
-    // Check if user has given consent
+    // Check if user has given consent, or if an error has been encountered
     let response_status = params_values_vec[0];
-    if response_status == "err" {
+    if response_status == "denied" {
+        anyhow::bail!("Consent denied. You must grant consent to Wrangler in order to login. If you don't want to do this consider using `wrangler config`")
+    } else if response_status == "err" {
         anyhow::bail!("Failed to receive authorization code from local HTTP server")
     }
 
