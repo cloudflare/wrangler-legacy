@@ -275,8 +275,12 @@ pub enum Command {
     #[structopt(name = "login")]
     Login {
         /// Allows to choose set of scopes
-        #[structopt(name = "scopes", long)]
-        scopes: bool,
+        #[structopt(name = "scopes", long, possible_values = login::SCOPES_LIST.as_ref())]
+        scopes: Vec<String>,
+
+        /// List all scopes
+        #[structopt(name = "scopes-list", long)]
+        scopes_list: bool,
     },
 
     /// Report an error caught by wrangler to Cloudflare
