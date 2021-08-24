@@ -6,8 +6,10 @@ use hyper::{Body, Request, Response, Server, StatusCode};
 
 use tokio::sync::mpsc;
 
-static CONSENT_GRANTED_URL: &str = "https://welcome.developers.workers.dev/wrangler-oauth-consent-granted";
-static CONSENT_DENIED_URL: &str = "https://welcome.developers.workers.dev/wrangler-oauth-consent-denied";
+static CONSENT_GRANTED_URL: &str =
+    "https://welcome.developers.workers.dev/wrangler-oauth-consent-granted";
+static CONSENT_DENIED_URL: &str =
+    "https://welcome.developers.workers.dev/wrangler-oauth-consent-denied";
 
 // HTTP Server request handler
 async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result<Response<Body>> {
