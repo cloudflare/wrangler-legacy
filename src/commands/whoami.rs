@@ -1,5 +1,5 @@
 use crate::http;
-use crate::settings::global_user::{GlobalUser, TokenType};
+use crate::settings::global_user::GlobalUser;
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::{emoji, styles};
 use cloudflare::endpoints::account::{self, Account};
@@ -10,6 +10,20 @@ use cloudflare::framework::response::ApiFailure;
 use anyhow::Result;
 use prettytable::{Cell, Row, Table};
 
+/// Return a string representing the token type based on user
+fn get_token_type(user: &GlobalUser, missing_permissions: &mut Vec<String>, token_type: &str) -> Result<String> {
+    let token_auth_email = fetch_auth_token_email(user, missing_permissions)?;
+
+    if let Some(token_auth_email) = token_auth_email {
+        Ok(format!(
+            "an {} Token, associated with the email '{}'",
+            token_type, token_auth_email,
+        ))
+    } else {
+        Ok(format!("an {} Token", token_type))
+    }
+}
+
 /// Tells the user who they are
 pub fn whoami(user: &GlobalUser) -> Result<()> {
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
@@ -18,23 +32,8 @@ pub fn whoami(user: &GlobalUser) -> Result<()> {
         GlobalUser::GlobalKeyAuth { email, .. } => {
             format!("a Global API Key, associated with the email '{}'", email,)
         }
-        GlobalUser::TokenAuth { token_type, .. } => {
-            let token_auth_email = fetch_auth_token_email(user, &mut missing_permissions)?;
-
-            let token_type_str = match token_type {
-                TokenType::Api => "API",
-                TokenType::Oauth => "OAuth",
-            };
-
-            if let Some(token_auth_email) = token_auth_email {
-                format!(
-                    "an {} Token, associated with the email '{}'",
-                    token_type_str, token_auth_email,
-                )
-            } else {
-                format!("an {} Token", token_type_str)
-            }
-        }
+        GlobalUser::ApiTokenAuth { .. } => get_token_type(user, &mut missing_permissions, "API").expect("Failed to get Api token type."),
+        GlobalUser::OAuthTokenAuth { .. } => get_token_type(user, &mut missing_permissions, "OAuth").expect("Failed to get OAuth token type."),
     };
 
     let accounts = fetch_accounts(user)?;
@@ -135,9 +134,12 @@ fn format_accounts(
     let table_head = Row::new(vec![Cell::new("Account Name"), Cell::new("Account ID")]);
     table.add_row(table_head);
 
-    if let GlobalUser::TokenAuth { .. } = user {
-        if accounts.is_empty() {
-            missing_permissions.push("Account Settings: Read".to_string());
+    match user {
+        GlobalUser::GlobalKeyAuth { .. } => (),
+        _ => {
+            if accounts.is_empty() {
+                missing_permissions.push("Account Settings: Read".to_string());
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 use crate::commands;
-use crate::settings::global_user::{GlobalUser, TokenType};
+use crate::settings::global_user::GlobalUser;
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::{interactive, styles};
 
@@ -24,9 +24,8 @@ pub fn configure(api_key: bool, no_verify: bool) -> Result<()> {
             styles::highlight("`wrangler config --api-key`")
         ));
         let api_token: String = interactive::get_user_input("Enter API Token: ");
-        GlobalUser::TokenAuth {
-            token_type: TokenType::Api,
-            value: api_token,
+        GlobalUser::ApiTokenAuth {
+            api_token: api_token,
         }
     } else {
         StdOut::billboard(&format!(concat!(

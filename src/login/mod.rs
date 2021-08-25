@@ -18,7 +18,7 @@ use crate::terminal::{interactive, open_browser};
 use crate::cli::login::SCOPES_LIST;
 use crate::commands::config::global_config;
 use crate::login::http::http_server_get_params;
-use crate::settings::global_user::{GlobalUser, TokenType};
+use crate::settings::global_user::GlobalUser;
 
 static AUTH_URL: &str = "https://dash.staging.cloudflare.com/oauth2/auth";
 static TOKEN_URL: &str = "https://dash.staging.cloudflare.com/oauth2/token";
@@ -120,11 +120,15 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
         .expect("Failed to retrieve access token");
 
     // Configure user with new token
-    let user = GlobalUser::TokenAuth {
-        token_type: TokenType::Oauth,
-        value: TokenResponse::access_token(&token_response)
+    let user = GlobalUser::OAuthTokenAuth {
+        oauth_token: TokenResponse::access_token(&token_response)
             .secret()
             .to_string(),
+        refresh_token: "temp".to_string(), // place holder 
+//        refresh_token: TokenResponse::refresh_token(&token_response)
+            //.expect("Failed to receive refresh token")
+            //.secret()
+            //.to_string(),
     };
     global_config(&user, false)?;
 

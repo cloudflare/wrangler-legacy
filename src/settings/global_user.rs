@@ -18,35 +18,19 @@ static ENV_VAR_WHITELIST: [&str; 3] = [CF_API_TOKEN, CF_API_KEY, CF_EMAIL];
 use std::io::Write;
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub enum TokenType {
-    Api,
-    Oauth,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum GlobalUser {
-    TokenAuth {
-        token_type: TokenType,
-        value: String,
+    ApiTokenAuth {
+        api_token: String,
+    },
+    OAuthTokenAuth {
+        oauth_token: String,
+        refresh_token: String,
     },
     GlobalKeyAuth {
         email: String,
         api_key: String,
     },
-}
-
-// On-disk representation of authentication methods.
-// Global API key and email has same representation on-disk and in-memory,
-// so there's no need for extra struct.
-#[derive(Deserialize, Serialize)]
-struct ApiTokenDisk {
-    api_token: String,
-}
-
-#[derive(Deserialize, Serialize)]
-struct OauthTokenDisk {
-    oauth_token: String,
 }
 
 impl GlobalUser {
@@ -119,17 +103,7 @@ impl GlobalUser {
 
     pub fn to_file(&self, config_path: &Path) -> Result<()> {
         // convert in-memory representation of authentication method to on-disk format
-        let toml: std::string::String = match self {
-            Self::TokenAuth { token_type, value } => match token_type {
-                TokenType::Api => toml::to_string(&ApiTokenDisk {
-                    api_token: value.to_string(),
-                })?,
-                TokenType::Oauth => toml::to_string(&OauthTokenDisk {
-                    oauth_token: value.to_string(),
-                })?,
-            },
-            Self::GlobalKeyAuth { .. } => toml::to_string(self)?,
-        };
+        let toml: std::string::String = toml::to_string(self)?;
 
         // create configuration path if non-existent, and write to configuration file
         fs::create_dir_all(&config_path.parent().unwrap())?;
@@ -144,31 +118,31 @@ impl GlobalUser {
         let oauth_token = config.get_str("oauth_token");
         let email = config.get_str("email");
         let api_key = config.get_str("api_key");
+        let refresh_token = config.get_str("refresh_token");
 
         // The only cases that are not allowed are:
         //      1) OAuth token + API token
         //      2) OAuth token + Global API key (partial or complete)
         //      3) Invalid authentication methods (e.g. partial Global API key, empty configuration file, or no environment variables)
         // API token has priority over global API key both in environment variables and in configuration file
-        if (api_token.is_ok() && oauth_token.is_ok())
-            || (oauth_token.is_ok() && (email.is_ok() || api_key.is_ok()))
+        if (api_token.is_ok() && (oauth_token.is_ok() || refresh_token.is_ok()))
+            || ((oauth_token.is_ok() || refresh_token.is_ok()) && (email.is_ok() || api_key.is_ok()))
         {
             let error_info = "\nMore than one authentication method (e.g. API token and OAuth token, or OAuth token and Global API key) has been found in the configuration file. Please use only one.";
             return Self::show_config_err_info(Some(error_info.to_string()), config);
         } else if api_token.is_ok() {
-            return Ok(Self::TokenAuth {
-                token_type: TokenType::Api,
-                value: api_token.expect("Failed to read API token"),
+            return Ok(Self::ApiTokenAuth {
+                api_token: api_token.expect("Failed to read API token"),
             });
         } else if email.is_ok() && api_key.is_ok() {
             return Ok(Self::GlobalKeyAuth {
                 email: email.expect("Failed to read email"),
                 api_key: api_key.expect("Failed to read api_key"),
             });
-        } else if oauth_token.is_ok() {
-            return Ok(Self::TokenAuth {
-                token_type: TokenType::Oauth,
-                value: oauth_token.expect("Failed to read OAuth token"),
+        } else if oauth_token.is_ok() && refresh_token.is_ok() {
+            return Ok(Self::OAuthTokenAuth {
+                oauth_token: oauth_token.expect("Failed to read OAuth token"),
+                refresh_token: refresh_token.expect("Failed to read OAuth refersh token"),
             });
         } else {
             // Empty configuration file and no environment variables, or missing variable for global API key
@@ -206,10 +180,13 @@ impl GlobalUser {
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
         match user {
-            GlobalUser::TokenAuth {
-                token_type: _,
-                value,
-            } => Credentials::UserAuthToken { token: value },
+            GlobalUser::ApiTokenAuth {
+                api_token
+            } => Credentials::UserAuthToken { token: api_token },
+            GlobalUser::OAuthTokenAuth {
+                oauth_token,
+                refresh_token: _,
+            } => Credentials::UserAuthToken { token: oauth_token },
             GlobalUser::GlobalKeyAuth { email, api_key } => Credentials::UserAuthKey {
                 key: api_key,
                 email,
@@ -243,9 +220,8 @@ mod tests {
         let user = GlobalUser::build(mock_env, config_dir).unwrap();
         assert_eq!(
             user,
-            GlobalUser::TokenAuth {
-                token_type: TokenType::Api,
-                value: "foo".to_string(),
+            GlobalUser::ApiTokenAuth {
+                api_token: "foo".to_string(),
             }
         );
     }
@@ -256,9 +232,8 @@ mod tests {
         let api_key = "reallylongglobalapikey";
         let email = "user@example.com";
 
-        let file_user = GlobalUser::TokenAuth {
-            token_type: TokenType::Api,
-            value: api_token.to_string(),
+        let file_user = GlobalUser::ApiTokenAuth {
+            api_token: api_token.to_string(),
         };
         let env_user = GlobalUser::GlobalKeyAuth {
             api_key: api_key.to_string(),
@@ -281,9 +256,8 @@ mod tests {
     fn it_falls_through_to_config_with_no_env_vars() {
         let mock_env = MockEnvironment::default();
 
-        let user = GlobalUser::TokenAuth {
-            token_type: TokenType::Api,
-            value: "thisisanapitoken".to_string(),
+        let user = GlobalUser::ApiTokenAuth {
+            api_token: "thisisanapitoken".to_string(),
         };
 
         let tmp_dir = tempdir().unwrap();
@@ -296,9 +270,9 @@ mod tests {
 
     #[test]
     fn it_succeeds_with_oauth_token() {
-        let user = GlobalUser::TokenAuth {
-            token_type: TokenType::Oauth,
-            value: "thisisanoauthtoken".to_string(),
+        let user = GlobalUser::OAuthTokenAuth {
+            oauth_token: "thisisanoauthtoken".to_string(),
+            refresh_token: "thisisarefreshtoken".to_string(),
         };
 
         let tmp_dir = tempdir().unwrap();
@@ -309,19 +283,60 @@ mod tests {
     }
 
     #[test]
+    fn it_fails_if_oauth_token_incomplete_in_file() {
+        let tmp_dir = tempdir().unwrap();
+        let config_dir = test_config_dir(&tmp_dir, None).unwrap();
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .open(&config_dir.as_path())
+            .unwrap();
+
+        let oauth_token = "oauth_token = \"thisisanoauthtoken\"";
+        file.write_all(oauth_token.as_bytes()).unwrap();
+
+        let file_user = GlobalUser::from_file(config_dir);
+
+        assert!(file_user.is_err());
+    }
+
+    #[test]
     fn it_fails_if_oauth_and_api_tokens_both_exist() {
         // This test checks whether GlobalUser returns an error
         // when both api_token and oauth_token are set in the config file.
         // Expected behavior: the newly created GlobalUser should return an error.
-        let user = GlobalUser::TokenAuth {
-            token_type: TokenType::Api,
-            value: "thisisanapitoken".to_string(),
+        let user = GlobalUser::ApiTokenAuth {
+            api_token: "thisisanapitoken".to_string(),
         };
 
-        let user_extra_toml: std::string::String = toml::to_string(&OauthTokenDisk {
+        let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
-        })
-        .unwrap();
+            refresh_token: "thisisarefreshtoken".to_string(),
+        }).unwrap();
+
+        let tmp_dir = tempdir().unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+
+        let mut temp_file = fs::OpenOptions::new()
+            .append(true)
+            .open(&tmp_config_path)
+            .unwrap();
+        temp_file.write(user_extra_toml.as_bytes()).unwrap();
+
+        let file_user = GlobalUser::from_file(tmp_config_path);
+        assert!(file_user.is_err());
+    }
+
+    #[test]
+    fn it_fails_if_partial_oauth_and_api_tokens_both_exist() {
+        // This test checks whether GlobalUser returns an error
+        // when both api_token and refresh_token are set in the config file.
+        // Expected behavior: the newly created GlobalUser should return an error.
+        let user = GlobalUser::ApiTokenAuth {
+            api_token: "thisisanapitoken".to_string(),
+        };
+
+        let user_extra_toml = "refresh_token: \"thisisarefreshtoken\"";
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
@@ -346,10 +361,35 @@ mod tests {
             api_key: "reallylongglobalapikey".to_string(),
         };
 
-        let user_extra_toml: std::string::String = toml::to_string(&OauthTokenDisk {
+        let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
-        })
-        .unwrap();
+            refresh_token: "thisisarefreshtoken".to_string(),
+        }).unwrap();
+
+        let tmp_dir = tempdir().unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+
+        let mut temp_file = fs::OpenOptions::new()
+            .append(true)
+            .open(&tmp_config_path)
+            .unwrap();
+        temp_file.write(user_extra_toml.as_bytes()).unwrap();
+
+        let file_user = GlobalUser::from_file(tmp_config_path);
+        assert!(file_user.is_err());
+    }
+
+    #[test]
+    fn it_fails_if_partial_oauth_token_and_complete_global_key_both_exist() {
+        // This test checks whether GlobalUser returns an error
+        // when both global api key with email and refresh_token are set in the config file.
+        // Expected behavior: the newly created GlobalUser should return an error.
+        let user = GlobalUser::GlobalKeyAuth {
+            email: "user@example.com".to_string(),
+            api_key: "reallylongglobalapikey".to_string(),
+        };
+
+        let user_extra_toml = "refresh_token: \"thisisarefreshtoken\"";
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
@@ -371,10 +411,10 @@ mod tests {
         // Expected behavior: the newly created GlobalUser should return an error.
         let email_config = "email = \"user@example.com\"";
 
-        let user_extra_toml: std::string::String = toml::to_string(&OauthTokenDisk {
+        let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
-        })
-        .unwrap();
+            refresh_token: "thisisarefreshtoken".to_string(),
+        }).unwrap();
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, None).unwrap();
@@ -398,10 +438,10 @@ mod tests {
         // Expected behavior: the newly created GlobalUser should return an error.
         let api_key = "api_key = \"reallylongglobalapikey\"";
 
-        let user_extra_toml: std::string::String = toml::to_string(&OauthTokenDisk {
+        let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
-        })
-        .unwrap();
+            refresh_token: "thisisarefreshtoken".to_string(),
+        }).unwrap();
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, None).unwrap();

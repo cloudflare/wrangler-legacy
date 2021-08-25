@@ -50,7 +50,7 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<()> {
     let client = http::cf_v4_client(user)?;
 
     match user {
-        GlobalUser::TokenAuth { .. } => match client.request(&GetUserTokenStatus {}) {
+        GlobalUser::ApiTokenAuth { .. } => match client.request(&GetUserTokenStatus {}) {
             Ok(success) => {
                 if success.result.status == "active" {
                     Ok(())
@@ -72,5 +72,6 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<()> {
                 anyhow::bail!("Authentication check failed. Please make sure your email and global API key pair are correct.\nSee {}", api_docs_url)
             }
         },
+        GlobalUser::OAuthTokenAuth { .. } => anyhow::bail!("OAuth token cannot be verified."),
     }
 }
