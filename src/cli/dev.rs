@@ -2,6 +2,7 @@ use std::net::{IpAddr, Ipv4Addr};
 
 use super::Cli;
 use crate::commands::{self, dev::Protocol};
+use crate::login::check_update_oauth_token;
 use crate::settings::{global_user::GlobalUser, toml::Manifest};
 
 use anyhow::Result;
@@ -32,7 +33,12 @@ pub fn dev(
 
     let deployments = manifest.get_deployments(cli_params.environment.as_deref())?;
     let target = manifest.get_target(cli_params.environment.as_deref(), true)?;
-    let user = GlobalUser::new().ok();
+    let mut user = GlobalUser::new().ok();
+
+    // Check if oauth token is expired
+    if let Some(ref mut oauth_user) = user {
+        let _res = check_update_oauth_token(oauth_user).expect("Failed to refresh access token");
+    }
 
     let server_config = commands::dev::ServerConfig::new(host, ip, port, upstream_protocol)?;
 

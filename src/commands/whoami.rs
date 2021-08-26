@@ -1,5 +1,4 @@
 use crate::http;
-use crate::login::check_update_oauth_token;
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::{emoji, styles};
@@ -31,9 +30,6 @@ fn get_token_type(
 
 /// Tells the user who they are
 pub fn whoami(user: &mut GlobalUser) -> Result<()> {
-    // Check if oauth token is expired
-    check_update_oauth_token(user).expect("Failed to refresh access token");
-
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {

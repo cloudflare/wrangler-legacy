@@ -1,6 +1,7 @@
 use super::Cli;
 use super::{AdhocMigration, Migrations};
 use crate::commands;
+use crate::login::check_update_oauth_token;
 use crate::settings::{global_user::GlobalUser, toml::Manifest};
 use crate::terminal::message::{Message, Output, StdOut};
 use crate::terminal::styles;
@@ -14,7 +15,10 @@ pub fn publish(
     cli_params: &Cli,
 ) -> Result<()> {
     log::info!("Getting User settings");
-    let user = GlobalUser::new()?;
+    let mut user = GlobalUser::new()?;
+
+    // Check if oauth token is expired
+    let _res = check_update_oauth_token(&mut user).expect("Failed to refresh access token");
 
     if release {
         StdOut::warn(&format!(concat!(

@@ -1,5 +1,6 @@
 use super::Cli;
 use crate::commands;
+use crate::login::check_update_oauth_token;
 use crate::preview::{HttpMethod, PreviewOpt};
 use crate::settings::{global_user::GlobalUser, toml::Manifest};
 
@@ -20,7 +21,12 @@ pub fn preview(
 
     // the preview command can be called with or without a Global User having been config'd
     // so we convert this Result into an Option
-    let user = GlobalUser::new().ok();
+    let mut user = GlobalUser::new().ok();
+
+    // Check if oauth token is expired
+    if let Some(ref mut oauth_user) = user {
+        let _res = check_update_oauth_token(oauth_user).expect("Failed to refresh access token");
+    }
 
     // Validate the URL scheme
     ensure!(

@@ -1,6 +1,9 @@
 pub mod http;
 
+use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
+use futures::executor::block_on;
+use indicatif::{ProgressBar, ProgressStyle};
 
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
@@ -12,15 +15,13 @@ use oauth2::{
 
 use std::env; // TODO: remove
 
-use anyhow::Result;
-use futures::executor::block_on;
-
 use crate::terminal::{interactive, open_browser};
 
 use crate::cli::login::SCOPES_LIST;
 use crate::commands::config::global_config;
 use crate::login::http::http_server_get_params;
 use crate::settings::{get_global_config_path, global_user::GlobalUser};
+use crate::terminal::message::{Message, StdOut};
 
 static AUTH_URL: &str = "https://dash.staging.cloudflare.com/oauth2/auth";
 static TOKEN_URL: &str = "https://dash.staging.cloudflare.com/oauth2/token";
@@ -148,8 +149,12 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
 
 // Refresh an expired access token
 pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
-    if let GlobalUser::OAuthTokenAuth{ .. } = user {
-        println!("refreshing token");
+    if let GlobalUser::OAuthTokenAuth { .. } = user {
+        let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
+        let spinner = ProgressBar::new_spinner().with_style(style);
+        spinner.set_message("Refreshing access token...");
+        spinner.enable_steady_tick(20);
+
         let expiration_time = DateTime::parse_from_rfc3339(user.get_expiration_time()).unwrap();
         let current_time = Utc::now();
         // Note: duration can panic if the time elapsed (in seconds) cannot be stored in i64
@@ -171,7 +176,9 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
                 AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
                 Some(TokenUrl::new(TOKEN_URL.to_string()).expect("Invalid token endpoint URL")),
             )
-            .set_redirect_uri(RedirectUrl::new(CALLBACK_URL.to_string()).expect("Invalid redirect URL"))
+            .set_redirect_uri(
+                RedirectUrl::new(CALLBACK_URL.to_string()).expect("Invalid redirect URL"),
+            )
             .set_auth_type(AuthType::RequestBody);
 
             // Exchange refresh token with new access token
@@ -203,9 +210,11 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
 
             // Update configuration file on disk
             let config_file = get_global_config_path();
-            user.to_file(&config_file)?;
+            let _ = user
+                .to_file(&config_file)
+                .expect("Failed to update configuration file");
 
-            println!("refreshed access token");
+            StdOut::info("Access token refreshed.");
         }
     }
     Ok(())

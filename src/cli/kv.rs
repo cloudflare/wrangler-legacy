@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use super::Cli;
 use crate::commands;
 use crate::commands::kv::key::{parse_metadata, KVMetaData};
+use crate::login::check_update_oauth_token;
 use crate::settings::{global_user::GlobalUser, toml::Manifest};
 
 use anyhow::{anyhow, Result};
@@ -137,7 +138,11 @@ pub enum KvBulk {
 }
 
 pub fn kv_namespace(namespace: KvNamespace, cli_params: &Cli) -> Result<()> {
-    let user = GlobalUser::new()?;
+    let mut user = GlobalUser::new()?;
+
+    // Check if oauth token is expired
+    let _res = check_update_oauth_token(&mut user).expect("Failed to refresh access token");
+
     let manifest = Manifest::new(&cli_params.config)?;
     let env = cli_params.environment.as_deref();
 
@@ -164,7 +169,11 @@ pub fn kv_namespace(namespace: KvNamespace, cli_params: &Cli) -> Result<()> {
 }
 
 pub fn kv_key(key: KvKey, cli_params: &Cli) -> Result<()> {
-    let user = GlobalUser::new()?;
+    let mut user = GlobalUser::new()?;
+
+    // Check if oauth token is expired
+    let _res = check_update_oauth_token(&mut user).expect("Failed to refresh access token");
+
     let manifest = Manifest::new(&cli_params.config)?;
     let env = cli_params.environment.as_deref();
 
@@ -228,7 +237,11 @@ pub fn kv_key(key: KvKey, cli_params: &Cli) -> Result<()> {
 pub fn kv_bulk(bulk: KvBulk, cli_params: &Cli) -> Result<()> {
     // Get environment and bindings
     let manifest = Manifest::new(&cli_params.config)?;
-    let user = GlobalUser::new()?;
+    let mut user = GlobalUser::new()?;
+
+    // Check if oauth token is expired
+    let _res = check_update_oauth_token(&mut user).expect("Failed to refresh access token");
+
     let env = cli_params.environment.as_deref();
 
     let target_and_namespace = |namespace: Namespace| -> Result<(_, _)> {
