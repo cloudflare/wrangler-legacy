@@ -9,6 +9,7 @@ use watch::watch_for_changes;
 
 use crate::commands::dev::{socket, Protocol, ServerConfig};
 use crate::deploy::DeployTarget;
+use crate::login::check_update_oauth_token;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
@@ -34,7 +35,11 @@ pub fn dev(
     let runtime = TokioRuntime::new()?;
     loop {
         let target = target.clone();
-        let user = user.clone();
+        let mut user = user.clone();
+
+        // Check if oauth token is expired
+        let _res = check_update_oauth_token(&mut user).expect("Failed to refresh access token");
+
         let server_config = server_config.clone();
         let deploy_target = deploy_target.clone();
         let (sender, receiver) = mpsc::channel();
