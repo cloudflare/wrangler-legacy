@@ -1,6 +1,5 @@
 use super::Cli;
 use crate::commands;
-use crate::login::check_update_oauth_token;
 use crate::settings::{global_user::GlobalUser, toml::Manifest};
 
 use anyhow::Result;
@@ -24,10 +23,7 @@ pub enum Secret {
 
 pub fn secret(secret: Secret, cli_params: &Cli) -> Result<()> {
     log::info!("Getting User settings");
-    let mut user = GlobalUser::new()?;
-
-    // Check if oauth token is expired
-    let _res = check_update_oauth_token(&mut user).expect("Failed to refresh access token");
+    let user = GlobalUser::new()?;
 
     log::info!("Getting project settings");
     let manifest = Manifest::new(&cli_params.config)?;

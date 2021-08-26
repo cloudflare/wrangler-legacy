@@ -1,6 +1,5 @@
 use super::Cli;
 use crate::commands;
-use crate::login::check_update_oauth_token;
 use crate::settings::{global_user::GlobalUser, toml::Manifest};
 
 use anyhow::Result;
@@ -20,11 +19,7 @@ pub enum Route {
 }
 
 pub fn route(route: Route, cli_params: &Cli) -> Result<()> {
-    let mut user = GlobalUser::new()?;
-
-    // Check if oauth token is expired
-    let _res = check_update_oauth_token(&mut user).expect("Failed to refresh access token");
-
+    let user = GlobalUser::new()?;
     let manifest = Manifest::new(&cli_params.config)?;
     let zone_id = manifest
         .get_environment(cli_params.environment.as_deref())?

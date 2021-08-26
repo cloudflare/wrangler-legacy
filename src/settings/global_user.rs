@@ -5,6 +5,7 @@ use anyhow::Result;
 use cloudflare::framework::auth::Credentials;
 use serde::{Deserialize, Serialize};
 
+use crate::login::check_update_oauth_token;
 use crate::settings::{get_global_config_path, Environment, QueryEnvironment};
 use crate::terminal::{emoji, styles};
 
@@ -39,7 +40,14 @@ impl GlobalUser {
         let environment = Environment::with_whitelist(ENV_VAR_WHITELIST.to_vec());
 
         let config_path = get_global_config_path();
-        GlobalUser::build(environment, config_path)
+        let mut new_user = GlobalUser::build(environment, config_path);
+
+        // Check if oauth token is expired
+        if let Ok(ref mut oauth_user) = new_user {
+            let _res =
+                check_update_oauth_token(oauth_user).expect("Failed to refresh access token");
+        }
+        new_user
     }
 
     fn build<T: 'static + QueryEnvironment>(environment: T, config_path: PathBuf) -> Result<Self>
@@ -176,13 +184,15 @@ impl GlobalUser {
         let api_key = config.get_str("api_key");
         let refresh_token = config.get_str("refresh_token");
         let expiration_time = config.get_str("expiration_time");
+
         // The only cases that are not allowed are:
-        //      1) OAuth token + API token
-        //      2) OAuth token + Global API key (partial or complete)
-        //      3) Invalid authentication methods (e.g. partial Global API key, empty configuration file, or no environment variables)
+        //      1) (partial or complete) OAuth token + API token
+        //      2) (partial or complete) OAuth token + Global API key (partial or complete)
+        //      3) Invalid authentication methods (e.g. partial Oauth token, partial Global API key, and empty configuration file + no environment variables)
         // API token has priority over global API key both in environment variables and in configuration file
-        if (api_token.is_ok() && (oauth_token.is_ok() || refresh_token.is_ok()))
-            || ((oauth_token.is_ok() || refresh_token.is_ok())
+        if (api_token.is_ok()
+            && (oauth_token.is_ok() || refresh_token.is_ok() || expiration_time.is_ok()))
+            || ((oauth_token.is_ok() || refresh_token.is_ok() || expiration_time.is_ok())
                 && (email.is_ok() || api_key.is_ok()))
         {
             let error_info = "\nMore than one authentication method (e.g. API token and OAuth token, or OAuth token and Global API key) has been found in the configuration file. Please use only one.";
@@ -196,7 +206,7 @@ impl GlobalUser {
                 email: email.expect("Failed to read email"),
                 api_key: api_key.expect("Failed to read api_key"),
             });
-        } else if oauth_token.is_ok() && refresh_token.is_ok() {
+        } else if oauth_token.is_ok() && refresh_token.is_ok() && expiration_time.is_ok() {
             return Ok(Self::OAuthTokenAuth {
                 oauth_token: oauth_token.expect("Failed to read OAuth token"),
                 refresh_token: refresh_token.expect("Failed to read OAuth refresh token"),

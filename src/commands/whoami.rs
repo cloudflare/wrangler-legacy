@@ -12,7 +12,7 @@ use prettytable::{Cell, Row, Table};
 
 /// Return a string representing the token type based on user
 fn get_token_type(
-    user: &mut GlobalUser,
+    user: &GlobalUser,
     missing_permissions: &mut Vec<String>,
     token_type: &str,
 ) -> Result<String> {
@@ -29,7 +29,7 @@ fn get_token_type(
 }
 
 /// Tells the user who they are
-pub fn whoami(user: &mut GlobalUser) -> Result<()> {
+pub fn whoami(user: &GlobalUser) -> Result<()> {
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {
@@ -81,8 +81,8 @@ pub fn display_account_id_maybe() {
     let account_id_msg = styles::highlight("account_id");
     let mut showed_account_id = false;
 
-    if let Ok(mut user) = GlobalUser::new() {
-        if let Ok(accounts) = fetch_accounts(&mut user) {
+    if let Ok(user) = GlobalUser::new() {
+        if let Ok(accounts) = fetch_accounts(&user) {
             let mut missing_permissions = Vec::with_capacity(2);
             let table = format_accounts(&user, accounts, &mut missing_permissions);
             if missing_permissions.is_empty() {
@@ -125,7 +125,7 @@ fn fetch_auth_token_email(
 }
 
 /// Fetch the accounts associated with a user
-pub(crate) fn fetch_accounts(user: &mut GlobalUser) -> Result<Vec<Account>> {
+pub(crate) fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&account::ListAccounts { params: None });
     match response {

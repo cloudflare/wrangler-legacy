@@ -571,7 +571,7 @@ impl LazyAccountId {
 
         if let Some(mut accounts) = GlobalUser::new()
             .ok()
-            .and_then(|mut user| fetch_accounts(&mut user).ok())
+            .and_then(|user| fetch_accounts(&user).ok())
         {
             if accounts.len() == 1 {
                 return Some(accounts.pop().unwrap().id);
@@ -584,8 +584,8 @@ impl LazyAccountId {
     /// Load the account ID, possibly prompting the user.
     pub(crate) fn load(&self) -> Result<&String> {
         self.0.get_or_try_init(|| {
-            let mut user = GlobalUser::new()?;
-            match fetch_accounts(&mut user)?.as_slice() {
+            let user = GlobalUser::new()?;
+            match fetch_accounts(&user)?.as_slice() {
                 [] => unreachable!("auth token without account?"),
                 [single] => Ok(single.id.clone()),
                 _multiple => {
