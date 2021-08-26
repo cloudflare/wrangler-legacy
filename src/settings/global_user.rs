@@ -26,6 +26,7 @@ pub enum GlobalUser {
     OAuthTokenAuth {
         oauth_token: String,
         refresh_token: String,
+        expiration_time: String,
     },
     GlobalKeyAuth {
         email: String,
@@ -52,22 +53,24 @@ impl GlobalUser {
         }
     }
 
+    pub fn get_expiration_time(&self) -> &String {
+        match self {
+            GlobalUser::OAuthTokenAuth {
+                oauth_token: _,
+                refresh_token: _,
+                expiration_time,
+            } => &expiration_time,
+            _ => unreachable!(),
+        }
+    }
+
     pub fn get_refresh_token(&self) -> &String {
         match self {
             GlobalUser::OAuthTokenAuth {
                 oauth_token: _,
                 refresh_token,
+                expiration_time: _,
             } => &refresh_token,
-            _ => unreachable!(),
-        }
-    }
-
-    pub fn set_refresh_token(&mut self, new_refresh_token: String) {
-        match self {
-            GlobalUser::OAuthTokenAuth {
-                oauth_token: _,
-                ref mut refresh_token,
-            } => *refresh_token = new_refresh_token,
             _ => unreachable!(),
         }
     }
@@ -77,7 +80,30 @@ impl GlobalUser {
             GlobalUser::OAuthTokenAuth {
                 ref mut oauth_token,
                 refresh_token: _,
+                expiration_time: _,
             } => *oauth_token = new_oauth_token,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_refresh_token(&mut self, new_refresh_token: String) {
+        match self {
+            GlobalUser::OAuthTokenAuth {
+                oauth_token: _,
+                ref mut refresh_token,
+                expiration_time: _,
+            } => *refresh_token = new_refresh_token,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_expiration_time(&mut self, new_expiration_time: String) {
+        match self {
+            GlobalUser::OAuthTokenAuth {
+                oauth_token: _,
+                refresh_token: _,
+                expiration_time,
+            } => *expiration_time = new_expiration_time,
             _ => unreachable!(),
         }
     }
@@ -149,7 +175,7 @@ impl GlobalUser {
         let email = config.get_str("email");
         let api_key = config.get_str("api_key");
         let refresh_token = config.get_str("refresh_token");
-
+        let expiration_time = config.get_str("expiration_time");
         // The only cases that are not allowed are:
         //      1) OAuth token + API token
         //      2) OAuth token + Global API key (partial or complete)
@@ -173,7 +199,9 @@ impl GlobalUser {
         } else if oauth_token.is_ok() && refresh_token.is_ok() {
             return Ok(Self::OAuthTokenAuth {
                 oauth_token: oauth_token.expect("Failed to read OAuth token"),
-                refresh_token: refresh_token.expect("Failed to read OAuth refersh token"),
+                refresh_token: refresh_token.expect("Failed to read OAuth refresh token"),
+                expiration_time: expiration_time
+                    .expect("Failed to read access token expiration time"),
             });
         } else {
             // Empty configuration file and no environment variables, or missing variable for global API key
@@ -217,6 +245,7 @@ impl From<GlobalUser> for Credentials {
             GlobalUser::OAuthTokenAuth {
                 oauth_token,
                 refresh_token: _,
+                expiration_time: _,
             } => Credentials::UserAuthToken { token: oauth_token },
             GlobalUser::GlobalKeyAuth { email, api_key } => Credentials::UserAuthKey {
                 key: api_key,
@@ -304,6 +333,7 @@ mod tests {
         let user = GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
+            expiration_time: "thisisexpirationtime".to_string(),
         };
 
         let tmp_dir = tempdir().unwrap();
@@ -343,6 +373,7 @@ mod tests {
         let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
+            expiration_time: "thisisexpirationtime".to_string(),
         })
         .unwrap();
 
@@ -396,6 +427,7 @@ mod tests {
         let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
+            expiration_time: "thisisexpirationtime".to_string(),
         })
         .unwrap();
 
@@ -447,6 +479,7 @@ mod tests {
         let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
+            expiration_time: "thisisexpirationtime".to_string(),
         })
         .unwrap();
 
@@ -475,6 +508,7 @@ mod tests {
         let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
+            expiration_time: "thisisexpirationtime".to_string(),
         })
         .unwrap();
 

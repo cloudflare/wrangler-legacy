@@ -51,6 +51,7 @@ fn add_auth_headers(headers: &mut HeaderMap, user: &GlobalUser) {
         GlobalUser::OAuthTokenAuth {
             oauth_token,
             refresh_token: _,
+            expiration_time: _,
         } => {
             headers.insert(
                 "Authorization",

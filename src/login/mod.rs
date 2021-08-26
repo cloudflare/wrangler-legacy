@@ -1,5 +1,7 @@
 pub mod http;
 
+use chrono::{DateTime, Duration, Utc};
+
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
 
@@ -120,6 +122,14 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
         .request(http_client)
         .expect("Failed to retrieve access token");
 
+    // Get access token expiration time
+    let expires_in =
+        TokenResponse::expires_in(&token_response).expect("Failed to receive access expire time");
+    let expiration_time = Utc::now()
+        .checked_add_signed(Duration::from_std(expires_in).unwrap())
+        .unwrap()
+        .to_rfc3339();
+
     // Configure user with new token
     let user = GlobalUser::OAuthTokenAuth {
         oauth_token: TokenResponse::access_token(&token_response)
@@ -129,6 +139,7 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
             .expect("Failed to receive refresh token")
             .secret()
             .to_string(),
+        expiration_time: expiration_time,
     };
     global_config(&user, false)?;
 
@@ -136,45 +147,66 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
 }
 
 // Refresh an expired access token
-pub fn update_oauth_token(user: &mut GlobalUser) -> Result<()> {
-    let env_key = "CLIENT_ID";
-    let client_id = match env::var(env_key) {
-        Ok(value) => value,
-        Err(_) => panic!("client_id not provided"),
-    };
+pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
+    if let GlobalUser::OAuthTokenAuth{ .. } = user {
+        println!("refreshing token");
+        let expiration_time = DateTime::parse_from_rfc3339(user.get_expiration_time()).unwrap();
+        let current_time = Utc::now();
+        // Note: duration can panic if the time elapsed (in seconds) cannot be stored in i64
+        let duration = current_time.signed_duration_since(expiration_time);
 
-    // -------------------------
+        // Access token expired
+        // Refresh token before 20 seconds from actual expiration time to avoid minute details
+        if duration.num_seconds() >= -20 {
+            let env_key = "CLIENT_ID";
+            let client_id = match env::var(env_key) {
+                Ok(value) => value,
+                Err(_) => panic!("client_id not provided"),
+            };
 
-    // Create oauth2 client
-    let client = BasicClient::new(
-        ClientId::new(client_id.to_string()),
-        None,
-        AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
-        Some(TokenUrl::new(TOKEN_URL.to_string()).expect("Invalid token endpoint URL")),
-    )
-    .set_redirect_uri(RedirectUrl::new(CALLBACK_URL.to_string()).expect("Invalid redirect URL"))
-    .set_auth_type(AuthType::RequestBody);
+            // Create oauth2 client
+            let client = BasicClient::new(
+                ClientId::new(client_id.to_string()),
+                None,
+                AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
+                Some(TokenUrl::new(TOKEN_URL.to_string()).expect("Invalid token endpoint URL")),
+            )
+            .set_redirect_uri(RedirectUrl::new(CALLBACK_URL.to_string()).expect("Invalid redirect URL"))
+            .set_auth_type(AuthType::RequestBody);
 
-    // Exchange refresh token with new access token
-    let refresh_token = user.get_refresh_token();
-    let token_response = client
-        .exchange_refresh_token(&RefreshToken::new(refresh_token.to_string()))
-        .request(http_client)
-        .expect("Failed to refresh OAuth access token");
+            // Exchange refresh token with new access token
+            let refresh_token = user.get_refresh_token();
+            let token_response = client
+                .exchange_refresh_token(&RefreshToken::new(refresh_token.to_string()))
+                .request(http_client)
+                .expect("Failed to refresh OAuth access token");
 
-    // Set new access token
-    let access_token = token_response.access_token().secret();
-    user.set_oauth_token(access_token.to_string());
+            // Set new access token
+            let access_token = token_response.access_token().secret();
+            user.set_oauth_token(access_token.to_string());
 
-    // Set new refresh token
-    let new_refresh_token = token_response.refresh_token();
-    if let Some(token) = new_refresh_token {
-        user.set_refresh_token(token.secret().to_string());
+            // Set new refresh token
+            let new_refresh_token = token_response.refresh_token();
+            if let Some(token) = new_refresh_token {
+                user.set_refresh_token(token.secret().to_string());
+            }
+
+            // Set new expiration time
+            let expires_in = token_response
+                .expires_in()
+                .expect("Failed to receive access expire time");
+            let expiration_time = Utc::now()
+                .checked_add_signed(Duration::from_std(expires_in).unwrap())
+                .unwrap()
+                .to_rfc3339();
+            user.set_expiration_time(expiration_time);
+
+            // Update configuration file on disk
+            let config_file = get_global_config_path();
+            user.to_file(&config_file)?;
+
+            println!("refreshed access token");
+        }
     }
-
-    // Update configuration file on disk
-    let config_file = get_global_config_path();
-    user.to_file(&config_file)?;
-
     Ok(())
 }

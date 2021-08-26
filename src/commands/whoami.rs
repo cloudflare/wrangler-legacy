@@ -1,5 +1,5 @@
 use crate::http;
-use crate::login::update_oauth_token;
+use crate::login::check_update_oauth_token;
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::{emoji, styles};
@@ -31,6 +31,9 @@ fn get_token_type(
 
 /// Tells the user who they are
 pub fn whoami(user: &mut GlobalUser) -> Result<()> {
+    // Check if oauth token is expired
+    check_update_oauth_token(user).expect("Failed to refresh access token");
+
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {
@@ -131,26 +134,7 @@ pub(crate) fn fetch_accounts(user: &mut GlobalUser) -> Result<Vec<Account>> {
     let response = client.request(&account::ListAccounts { params: None });
     match response {
         Ok(res) => Ok(res.result),
-        Err(e) => match e {
-            ApiFailure::Error(_, ref api_errors) => {
-                let error = &api_errors.errors[0];
-                if error.code == 9109 {
-                    if let GlobalUser::OAuthTokenAuth { .. } = user {
-                        update_oauth_token(user)
-                            .expect("Failed to exchange refresh token with access token in whoami");
-                        let new_client = http::cf_v4_client(user)?;
-                        let new_response =
-                            new_client.request(&account::ListAccounts { params: None });
-                        match new_response {
-                            Ok(new_res) => return Ok(new_res.result),
-                            Err(new_err) => anyhow::bail!(http::format_error(new_err, None)),
-                        }
-                    }
-                }
-                anyhow::bail!(http::format_error(e, None))
-            }
-            ApiFailure::Invalid(_) => anyhow::bail!(http::format_error(e, None)),
-        },
+        Err(e) => anyhow::bail!(http::format_error(e, None)),
     }
 }
 
