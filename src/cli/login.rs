@@ -24,7 +24,7 @@ static DESCRIPTION_LIST: [&str; 8] = [
     "See and change Cloudflare Workers data such as filters and routes.",
     "See and change Cloudflare Workers scripts, durable objects, subdomains, triggers, and tail data.",
     "See Cloudflare Workers tail and script data.",
-    "Grants read level access to account zone."
+    "Grants read level access to account zone.",
 ];
 
 /// Format OAuth scopes into a nice table

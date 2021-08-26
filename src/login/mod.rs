@@ -5,7 +5,7 @@ use oauth2::reqwest::http_client;
 
 use oauth2::{
     AuthType, AuthUrl, AuthorizationCode, ClientId, CsrfToken, PkceCodeChallenge, RedirectUrl,
-    Scope, TokenResponse, TokenUrl,
+    RefreshToken, Scope, TokenResponse, TokenUrl,
 };
 
 use std::env; // TODO: remove
@@ -18,7 +18,7 @@ use crate::terminal::{interactive, open_browser};
 use crate::cli::login::SCOPES_LIST;
 use crate::commands::config::global_config;
 use crate::login::http::http_server_get_params;
-use crate::settings::global_user::GlobalUser;
+use crate::settings::{get_global_config_path, global_user::GlobalUser};
 
 static AUTH_URL: &str = "https://dash.staging.cloudflare.com/oauth2/auth";
 static TOKEN_URL: &str = "https://dash.staging.cloudflare.com/oauth2/token";
@@ -64,6 +64,7 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
             client_state = client_state.add_scope(Scope::new(scope.to_string()));
         }
     }
+    client_state = client_state.add_scope(Scope::new("offline_access".to_string()));
     let (auth_url, csrf_state) = client_state.url();
 
     // Navigate to authorization endpoint
@@ -124,13 +125,56 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
         oauth_token: TokenResponse::access_token(&token_response)
             .secret()
             .to_string(),
-        refresh_token: "temp".to_string(), // place holder 
-//        refresh_token: TokenResponse::refresh_token(&token_response)
-            //.expect("Failed to receive refresh token")
-            //.secret()
-            //.to_string(),
+        refresh_token: TokenResponse::refresh_token(&token_response)
+            .expect("Failed to receive refresh token")
+            .secret()
+            .to_string(),
     };
     global_config(&user, false)?;
+
+    Ok(())
+}
+
+// Refresh an expired access token
+pub fn update_oauth_token(user: &mut GlobalUser) -> Result<()> {
+    let env_key = "CLIENT_ID";
+    let client_id = match env::var(env_key) {
+        Ok(value) => value,
+        Err(_) => panic!("client_id not provided"),
+    };
+
+    // -------------------------
+
+    // Create oauth2 client
+    let client = BasicClient::new(
+        ClientId::new(client_id.to_string()),
+        None,
+        AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
+        Some(TokenUrl::new(TOKEN_URL.to_string()).expect("Invalid token endpoint URL")),
+    )
+    .set_redirect_uri(RedirectUrl::new(CALLBACK_URL.to_string()).expect("Invalid redirect URL"))
+    .set_auth_type(AuthType::RequestBody);
+
+    // Exchange refresh token with new access token
+    let refresh_token = user.get_refresh_token();
+    let token_response = client
+        .exchange_refresh_token(&RefreshToken::new(refresh_token.to_string()))
+        .request(http_client)
+        .expect("Failed to refresh OAuth access token");
+
+    // Set new access token
+    let access_token = token_response.access_token().secret();
+    user.set_oauth_token(access_token.to_string());
+
+    // Set new refresh token
+    let new_refresh_token = token_response.refresh_token();
+    if let Some(token) = new_refresh_token {
+        user.set_refresh_token(token.secret().to_string());
+    }
+
+    // Update configuration file on disk
+    let config_file = get_global_config_path();
+    user.to_file(&config_file)?;
 
     Ok(())
 }

@@ -1,4 +1,5 @@
 use crate::http;
+use crate::login::update_oauth_token;
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::{emoji, styles};
@@ -11,7 +12,11 @@ use anyhow::Result;
 use prettytable::{Cell, Row, Table};
 
 /// Return a string representing the token type based on user
-fn get_token_type(user: &GlobalUser, missing_permissions: &mut Vec<String>, token_type: &str) -> Result<String> {
+fn get_token_type(
+    user: &mut GlobalUser,
+    missing_permissions: &mut Vec<String>,
+    token_type: &str,
+) -> Result<String> {
     let token_auth_email = fetch_auth_token_email(user, missing_permissions)?;
 
     if let Some(token_auth_email) = token_auth_email {
@@ -25,15 +30,19 @@ fn get_token_type(user: &GlobalUser, missing_permissions: &mut Vec<String>, toke
 }
 
 /// Tells the user who they are
-pub fn whoami(user: &GlobalUser) -> Result<()> {
+pub fn whoami(user: &mut GlobalUser) -> Result<()> {
     let mut missing_permissions: Vec<String> = Vec::with_capacity(2);
     // Attempt to print email for both GlobalKeyAuth and TokenAuth users
     let auth: String = match user {
         GlobalUser::GlobalKeyAuth { email, .. } => {
             format!("a Global API Key, associated with the email '{}'", email,)
         }
-        GlobalUser::ApiTokenAuth { .. } => get_token_type(user, &mut missing_permissions, "API").expect("Failed to get Api token type."),
-        GlobalUser::OAuthTokenAuth { .. } => get_token_type(user, &mut missing_permissions, "OAuth").expect("Failed to get OAuth token type."),
+        GlobalUser::ApiTokenAuth { .. } => get_token_type(user, &mut missing_permissions, "API")
+            .expect("Failed to get Api token type."),
+        GlobalUser::OAuthTokenAuth { .. } => {
+            get_token_type(user, &mut missing_permissions, "OAuth")
+                .expect("Failed to get OAuth token type.")
+        }
     };
 
     let accounts = fetch_accounts(user)?;
@@ -73,8 +82,8 @@ pub fn display_account_id_maybe() {
     let account_id_msg = styles::highlight("account_id");
     let mut showed_account_id = false;
 
-    if let Ok(user) = GlobalUser::new() {
-        if let Ok(accounts) = fetch_accounts(&user) {
+    if let Ok(mut user) = GlobalUser::new() {
+        if let Ok(accounts) = fetch_accounts(&mut user) {
             let mut missing_permissions = Vec::with_capacity(2);
             let table = format_accounts(&user, accounts, &mut missing_permissions);
             if missing_permissions.is_empty() {
@@ -104,6 +113,8 @@ fn fetch_auth_token_email(
         Err(e) => match e {
             ApiFailure::Error(_, api_errors) => {
                 let error = &api_errors.errors[0];
+                // TODO: this message also appears when access token is expired, but it has the user:read scope
+                // need to distinguish the two cases
                 if error.code == 9109 {
                     missing_permissions.push("User Details: Read".to_string());
                 }
@@ -115,12 +126,31 @@ fn fetch_auth_token_email(
 }
 
 /// Fetch the accounts associated with a user
-pub(crate) fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
+pub(crate) fn fetch_accounts(user: &mut GlobalUser) -> Result<Vec<Account>> {
     let client = http::cf_v4_client(user)?;
     let response = client.request(&account::ListAccounts { params: None });
     match response {
         Ok(res) => Ok(res.result),
-        Err(e) => anyhow::bail!(http::format_error(e, None)),
+        Err(e) => match e {
+            ApiFailure::Error(_, ref api_errors) => {
+                let error = &api_errors.errors[0];
+                if error.code == 9109 {
+                    if let GlobalUser::OAuthTokenAuth { .. } = user {
+                        update_oauth_token(user)
+                            .expect("Failed to exchange refresh token with access token in whoami");
+                        let new_client = http::cf_v4_client(user)?;
+                        let new_response =
+                            new_client.request(&account::ListAccounts { params: None });
+                        match new_response {
+                            Ok(new_res) => return Ok(new_res.result),
+                            Err(new_err) => anyhow::bail!(http::format_error(new_err, None)),
+                        }
+                    }
+                }
+                anyhow::bail!(http::format_error(e, None))
+            }
+            ApiFailure::Invalid(_) => anyhow::bail!(http::format_error(e, None)),
+        },
     }
 }
 

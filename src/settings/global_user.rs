@@ -52,6 +52,36 @@ impl GlobalUser {
         }
     }
 
+    pub fn get_refresh_token(&self) -> &String {
+        match self {
+            GlobalUser::OAuthTokenAuth {
+                oauth_token: _,
+                refresh_token,
+            } => &refresh_token,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_refresh_token(&mut self, new_refresh_token: String) {
+        match self {
+            GlobalUser::OAuthTokenAuth {
+                oauth_token: _,
+                ref mut refresh_token,
+            } => *refresh_token = new_refresh_token,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn set_oauth_token(&mut self, new_oauth_token: String) {
+        match self {
+            GlobalUser::OAuthTokenAuth {
+                ref mut oauth_token,
+                refresh_token: _,
+            } => *oauth_token = new_oauth_token,
+            _ => unreachable!(),
+        }
+    }
+
     fn from_env<T: 'static + QueryEnvironment>(environment: T) -> Option<Result<Self>>
     where
         T: config::Source + Send + Sync,
@@ -126,7 +156,8 @@ impl GlobalUser {
         //      3) Invalid authentication methods (e.g. partial Global API key, empty configuration file, or no environment variables)
         // API token has priority over global API key both in environment variables and in configuration file
         if (api_token.is_ok() && (oauth_token.is_ok() || refresh_token.is_ok()))
-            || ((oauth_token.is_ok() || refresh_token.is_ok()) && (email.is_ok() || api_key.is_ok()))
+            || ((oauth_token.is_ok() || refresh_token.is_ok())
+                && (email.is_ok() || api_key.is_ok()))
         {
             let error_info = "\nMore than one authentication method (e.g. API token and OAuth token, or OAuth token and Global API key) has been found in the configuration file. Please use only one.";
             return Self::show_config_err_info(Some(error_info.to_string()), config);
@@ -180,9 +211,9 @@ impl GlobalUser {
 impl From<GlobalUser> for Credentials {
     fn from(user: GlobalUser) -> Credentials {
         match user {
-            GlobalUser::ApiTokenAuth {
-                api_token
-            } => Credentials::UserAuthToken { token: api_token },
+            GlobalUser::ApiTokenAuth { api_token } => {
+                Credentials::UserAuthToken { token: api_token }
+            }
             GlobalUser::OAuthTokenAuth {
                 oauth_token,
                 refresh_token: _,
@@ -312,7 +343,8 @@ mod tests {
         let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
-        }).unwrap();
+        })
+        .unwrap();
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
@@ -364,7 +396,8 @@ mod tests {
         let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
-        }).unwrap();
+        })
+        .unwrap();
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
@@ -414,7 +447,8 @@ mod tests {
         let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
-        }).unwrap();
+        })
+        .unwrap();
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, None).unwrap();
@@ -441,7 +475,8 @@ mod tests {
         let user_extra_toml: std::string::String = toml::to_string(&GlobalUser::OAuthTokenAuth {
             oauth_token: "thisisanoauthtoken".to_string(),
             refresh_token: "thisisarefreshtoken".to_string(),
-        }).unwrap();
+        })
+        .unwrap();
 
         let tmp_dir = tempdir().unwrap();
         let tmp_config_path = test_config_dir(&tmp_dir, None).unwrap();
