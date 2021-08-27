@@ -40,10 +40,6 @@ impl ZonedTarget {
                     }))
                     .collect();
 
-                if routes.is_empty() {
-                    anyhow::bail!("No routes specified");
-                }
-
                 Ok(Self {
                     zone_id: zone_id.to_owned(),
                     routes,

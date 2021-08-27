@@ -124,11 +124,15 @@ impl WranglerToml {
         account_id: &'static str,
         workers_dev: bool,
     ) -> WranglerToml {
-        WranglerToml {
+        let wrangler_toml = WranglerToml {
             workers_dev: Some(workers_dev),
             account_id: Some(account_id),
             ..WranglerToml::webpack(name)
-        }
+        };
+
+        eprintln!("{:#?}", &wrangler_toml);
+
+        wrangler_toml
     }
 
     pub fn zoned_single_route(

@@ -215,6 +215,11 @@ impl Manifest {
         let mut add_routed_deployments = |route_config: &RouteConfig| -> Result<()> {
             if route_config.is_zoned() {
                 let zoned = deploy::ZonedTarget::build(&script, route_config)?;
+
+                if zoned.routes.is_empty() {
+                    return Ok(());
+                }
+
                 // This checks all of the configured routes for the wildcard ending and warns
                 // the user that their site may not work as expected without it.
                 if self.site.is_some() {
@@ -240,13 +245,26 @@ impl Manifest {
                 deployments.push(DeployTarget::Zoneless(zoneless));
             }
 
+            if !route_config.is_zoned()
+                && !route_config.is_zoneless()
+                && (route_config.route.is_some()
+                    || (route_config.routes.is_some()
+                        && !route_config.routes.as_ref().unwrap().is_empty()))
+            {
+                anyhow::bail!(
+                    "Routes specified with no zone, specify `zone_id` in your wrangler.toml"
+                )
+            }
+
             Ok(())
         };
 
         if let Some(env) = env {
-            if let Some(env_route_cfg) =
-                env.route_config(self.account_id.if_present().cloned(), self.zone_id.clone())
-            {
+            if let Some(env_route_cfg) = env.route_config(
+                self.account_id.if_present().cloned(),
+                self.zone_id.clone(),
+                self.workers_dev,
+            ) {
                 add_routed_deployments(&env_route_cfg)
             } else {
                 let config = self.route_config();
@@ -289,7 +307,7 @@ impl Manifest {
         };
 
         if durable_objects.is_none() && deployments.is_empty() {
-            anyhow::bail!("Please specify your deployment routes or `workers_dev = true` inside of your configuration file. For more information, see: https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys")
+            StdOut::warn("No deployment routes specified, worker will not be triggered. Please specify your deployment routes or set `workers_dev = true` inside of your configuration file in order to trigger your worker. For more information, see: https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys");
         }
 
         Ok(deployments)
