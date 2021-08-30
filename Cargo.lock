@@ -363,7 +363,9 @@ dependencies = [
 
 [[package]]
 name = "cloudflare"
-version = "0.8.5"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "344e76c7955e573b4c76111705d7acd185d2784943cb0c6e9bb4a9a6f7444f0d"
 dependencies = [
  "anyhow",
  "async-trait",

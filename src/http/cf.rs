@@ -1,3 +1,4 @@
+use std::env;
 use std::time::Duration;
 
 use cloudflare::framework::async_api;
@@ -12,6 +13,19 @@ use crate::http::{feature::headers, DEFAULT_HTTP_TIMEOUT_SECONDS};
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
+
+const ENDPOINT_URL: &str = "ENDPOINT_URL";
+
+// Allow endpoint to be configured via an environment variable
+pub fn get_environment() -> Environment {
+    let env_hostname = match env::var(ENDPOINT_URL) {
+        Ok(value) => url::Url::parse(&value).expect("Invalid API endpoint URL"),
+        Err(_) => return Environment::Production,
+    };
+
+    Environment::Custom(env_hostname)
+}
+
 pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient> {
     let config = HttpApiClientConfig {
         http_timeout: Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS),
@@ -21,7 +35,7 @@ pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient> {
     HttpApiClient::new(
         Credentials::from(user.to_owned()),
         config,
-        Environment::new(),
+        get_environment(),
     )
 }
 
@@ -34,7 +48,7 @@ pub fn cf_v4_api_client_async(user: &GlobalUser) -> Result<async_api::Client> {
     async_api::Client::new(
         Credentials::from(user.to_owned()),
         config,
-        Environment::new(),
+        get_environment(),
     )
 }
 
