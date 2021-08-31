@@ -215,6 +215,11 @@ impl Manifest {
         let mut add_routed_deployments = |route_config: &RouteConfig| -> Result<()> {
             if route_config.is_zoned() {
                 let zoned = deploy::ZonedTarget::build(&script, route_config)?;
+
+                if zoned.routes.is_empty() {
+                    return Ok(());
+                }
+
                 // This checks all of the configured routes for the wildcard ending and warns
                 // the user that their site may not work as expected without it.
                 if self.site.is_some() {
@@ -240,13 +245,26 @@ impl Manifest {
                 deployments.push(DeployTarget::Zoneless(zoneless));
             }
 
+            if !route_config.is_zoned()
+                && !route_config.is_zoneless()
+                && (route_config.route.is_some()
+                    || (route_config.routes.is_some()
+                        && !route_config.routes.as_ref().unwrap().is_empty()))
+            {
+                anyhow::bail!(
+                    "Routes specified with no zone, specify `zone_id` in your wrangler.toml"
+                )
+            }
+
             Ok(())
         };
 
         if let Some(env) = env {
-            if let Some(env_route_cfg) =
-                env.route_config(self.account_id.if_present().cloned(), self.zone_id.clone())
-            {
+            if let Some(env_route_cfg) = env.route_config(
+                self.account_id.if_present().cloned(),
+                self.zone_id.clone(),
+                self.workers_dev,
+            ) {
                 add_routed_deployments(&env_route_cfg)
             } else {
                 let config = self.route_config();
@@ -262,24 +280,27 @@ impl Manifest {
 
         let crons = match env {
             Some(e) => {
-                let account_id = e
-                    .account_id
-                    .as_ref()
-                    .or_else(|| self.account_id.if_present());
+                let account_id = match e.account_id.as_ref() {
+                    Some(id) => id,
+                    None => self.account_id.load()?,
+                };
                 e.triggers
                     .as_ref()
                     .or_else(|| self.triggers.as_ref())
                     .map(|t| (t.crons.as_slice(), account_id))
             }
-            None => self
-                .triggers
-                .as_ref()
-                .map(|t| (t.crons.as_slice(), self.account_id.if_present())),
+            None => match self.triggers.as_ref() {
+                None => None,
+                Some(t) => Some((t.crons.as_slice(), self.account_id.load()?)),
+            },
         };
 
         if let Some((crons, account)) = crons {
-            let scheduled =
-                deploy::ScheduleTarget::build(account.cloned(), script.clone(), crons.to_vec())?;
+            let scheduled = deploy::ScheduleTarget {
+                account_id: account.clone(),
+                script_name: script.clone(),
+                crons: crons.to_vec(),
+            };
             deployments.push(DeployTarget::Schedule(scheduled));
         }
 
@@ -289,7 +310,7 @@ impl Manifest {
         };
 
         if durable_objects.is_none() && deployments.is_empty() {
-            anyhow::bail!("Please specify your deployment routes or `workers_dev = true` inside of your configuration file. For more information, see: https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys")
+            StdOut::warn("No deployment routes specified, worker will not be triggered. Please specify your deployment routes or set `workers_dev = true` inside of your configuration file in order to trigger your worker. For more information, see: https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys");
         }
 
         Ok(deployments)
@@ -582,11 +603,20 @@ impl LazyAccountId {
     }
 
     /// Load the account ID, possibly prompting the user.
+    #[cfg_attr(test, allow(unreachable_code))]
     pub(crate) fn load(&self) -> Result<&String> {
         self.0.get_or_try_init(|| {
+            #[cfg(test)]
+            // don't try to fetch the accounts for this ID, since it's not valid.
+            anyhow::bail!("tried to load account id");
+
             let user = GlobalUser::new()?;
             match fetch_accounts(&user)?.as_slice() {
-                [] => unreachable!("auth token without account?"),
+                [] => {
+                    StdOut::user_error("Your authentication token does not match any account ID.");
+                    whoami::display_account_id_maybe();
+                    anyhow::bail!("field `account_id` is required")
+                }
                 [single] => Ok(single.id.clone()),
                 _multiple => {
                     StdOut::user_error("You have multiple accounts.");
