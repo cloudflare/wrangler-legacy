@@ -11,20 +11,6 @@ pub struct ScheduleTarget {
 }
 
 impl ScheduleTarget {
-    pub fn build(
-        account_id: Option<String>,
-        script_name: String,
-        crons: Vec<String>,
-    ) -> Result<Self> {
-        // TODO: add validation for expressions before pushing them to the API
-        // we can do this once the cron parser is open sourced
-        Ok(Self {
-            account_id: account_id.unwrap_or_default(),
-            script_name,
-            crons,
-        })
-    }
-
     pub fn deploy(&self, user: &GlobalUser) -> Result<Vec<String>> {
         log::info!("publishing schedules");
         let schedule_worker_addr = format!(

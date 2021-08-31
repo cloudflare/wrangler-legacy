@@ -115,6 +115,7 @@ impl WranglerToml {
         WranglerToml {
             name: Some(name),
             target_type: Some("webpack"),
+            account_id: Some("fakeaccountid"),
             ..Default::default()
         }
     }
@@ -124,11 +125,15 @@ impl WranglerToml {
         account_id: &'static str,
         workers_dev: bool,
     ) -> WranglerToml {
-        WranglerToml {
+        let wrangler_toml = WranglerToml {
             workers_dev: Some(workers_dev),
             account_id: Some(account_id),
             ..WranglerToml::webpack(name)
-        }
+        };
+
+        eprintln!("{:#?}", &wrangler_toml);
+
+        wrangler_toml
     }
 
     pub fn zoned_single_route(
@@ -186,7 +191,7 @@ impl WranglerToml {
         wrangler_toml
     }
 
-    pub fn zoned_single_route_with_env(
+    pub fn zoned_single_route_with_env_and_account_id(
         name: &'static str,
         zone_id: &'static str,
         route: &'static str,
@@ -194,6 +199,7 @@ impl WranglerToml {
     ) -> WranglerToml {
         let wrangler_toml = WranglerToml {
             env: Some(test_env(env_config)),
+            account_id: Some("fakeaccountid"),
             ..WranglerToml::zoned_single_route(name, zone_id, route)
         };
         eprintln!("{:#?}", &wrangler_toml);
