@@ -718,9 +718,11 @@ mod tests {
     #[test]
     fn serialize() {
         let manifest = Manifest {
-            vars: Some(vec![
-                (String::from("FOO"), String::from("some value")),
-            ].into_iter().collect()),
+            vars: Some(
+                vec![(String::from("FOO"), String::from("some value"))]
+                    .into_iter()
+                    .collect(),
+            ),
             ..Default::default()
         };
         assert!(toml::to_string(&manifest).is_ok());
