@@ -64,7 +64,7 @@ pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> R
 }
 
 #[derive(Debug, Clone)]
-struct NotADirectoryError;
+pub struct NotADirectoryError;
 
 impl fmt::Display for NotADirectoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
