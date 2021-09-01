@@ -13,8 +13,6 @@ use oauth2::{
     RefreshToken, Scope, TokenResponse, TokenUrl,
 };
 
-use std::env; // TODO: remove
-
 use crate::terminal::{interactive, open_browser};
 
 use crate::cli::login::SCOPES_LIST;
@@ -23,25 +21,15 @@ use crate::login::http::http_server_get_params;
 use crate::settings::{get_global_config_path, global_user::GlobalUser};
 use crate::terminal::message::{Message, StdOut};
 
+static CLIENT_ID: &str = "54d11594-84e4-41aa-b438-e81b8fa78ee7";
 static AUTH_URL: &str = "https://dash.cloudflare.com/oauth2/auth";
 static TOKEN_URL: &str = "https://dash.cloudflare.com/oauth2/token";
 static CALLBACK_URL: &str = "http://localhost:8976/oauth/callback";
 
-pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
-    // -------------------------
-    // Temporary authentication
-    // TODO: Remove when ready
-    let env_key = "CLIENT_ID";
-    let client_id = match env::var(env_key) {
-        Ok(value) => value,
-        Err(_) => panic!("client_id not provided"),
-    };
-
-    // -------------------------
-
+pub fn run(scopes: Option<&[String]>) -> Result<()> {
     // Create oauth2 client
     let client = BasicClient::new(
-        ClientId::new(client_id.to_string()),
+        ClientId::new(CLIENT_ID.to_string()),
         None,
         AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
         Some(TokenUrl::new(TOKEN_URL.to_string()).expect("Invalid token endpoint URL")),
@@ -126,7 +114,7 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
     // Get access token expiration time
     let expires_in =
         TokenResponse::expires_in(&token_response).expect("Failed to receive access expire time");
-    let expiration_time = Utc::now()
+    let expiration_time_value = Utc::now()
         .checked_add_signed(Duration::from_std(expires_in).unwrap())
         .unwrap()
         .to_rfc3339();
@@ -140,7 +128,7 @@ pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
             .expect("Failed to receive refresh token")
             .secret()
             .to_string(),
-        expiration_time: expiration_time,
+        expiration_time: expiration_time_value,
     };
     global_config(&user, false)?;
 
@@ -163,15 +151,9 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
         // Access token expired
         // Refresh token before 20 seconds from actual expiration time to avoid minute details
         if duration.num_seconds() >= -20 {
-            let env_key = "CLIENT_ID";
-            let client_id = match env::var(env_key) {
-                Ok(value) => value,
-                Err(_) => panic!("client_id not provided"),
-            };
-
             // Create oauth2 client
             let client = BasicClient::new(
-                ClientId::new(client_id.to_string()),
+                ClientId::new(CLIENT_ID.to_string()),
                 None,
                 AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
                 Some(TokenUrl::new(TOKEN_URL.to_string()).expect("Invalid token endpoint URL")),

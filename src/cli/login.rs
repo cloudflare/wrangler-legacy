@@ -40,7 +40,7 @@ fn format_scopes(scopes: &[&str], descriptions: &[&str]) -> Table {
     table
 }
 
-pub fn login(scopes: &Vec<String>, scopes_list: bool) -> Result<(), anyhow::Error> {
+pub fn login(scopes: &[String], scopes_list: bool) -> Result<(), anyhow::Error> {
     if scopes_list {
         StdOut::info(&format!(
             "Available scopes \n\n{}",
