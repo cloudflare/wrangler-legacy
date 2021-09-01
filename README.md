@@ -2,7 +2,7 @@
 
 ![Banner](/banner.png)
 
-[![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
+[![crates.io](https://img.shields.io/crates/v/wrangler.svg)](https://crates.io/crates/wrangler) &nbsp;
 [![npm](https://img.shields.io/npm/v/@cloudflare/wrangler.svg)](https://www.npmjs.com/package/@cloudflare/wrangler) &nbsp;
 [![GitHub Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions) &nbsp;
 [![GitHub Actions - Linter Status](https://github.com/cloudflare/wrangler/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler/actions) &nbsp;
