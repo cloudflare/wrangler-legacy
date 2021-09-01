@@ -23,8 +23,8 @@ use crate::login::http::http_server_get_params;
 use crate::settings::{get_global_config_path, global_user::GlobalUser};
 use crate::terminal::message::{Message, StdOut};
 
-static AUTH_URL: &str = "https://dash.staging.cloudflare.com/oauth2/auth";
-static TOKEN_URL: &str = "https://dash.staging.cloudflare.com/oauth2/token";
+static AUTH_URL: &str = "https://dash.cloudflare.com/oauth2/auth";
+static TOKEN_URL: &str = "https://dash.cloudflare.com/oauth2/token";
 static CALLBACK_URL: &str = "http://localhost:8976/oauth/callback";
 
 pub fn run(scopes: Option<&Vec<String>>) -> Result<()> {
