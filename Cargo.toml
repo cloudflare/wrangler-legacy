@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.19.0"
+version = "1.19.1"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -72,7 +72,7 @@ twox-hash = "1.6.0"
 url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }
 which = "4.0.2"
-ws = "0.9.1"
+ws = { version = "0.11", package = "parity-ws" }
 
 [dev-dependencies]
 assert_cmd = "2.0.0"

@@ -1,3 +1,5 @@
+use std::error::Error;
+use std::fmt;
 use std::path::Path;
 
 use crate::deploy::DeployTarget;
@@ -9,7 +11,7 @@ use crate::terminal::message::{Message, StdOut};
 use crate::upload;
 
 use anyhow::{anyhow, Result};
-use reqwest::Url;
+use reqwest::{StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -49,8 +51,12 @@ pub(super) fn upload(
         .post(&address)
         .header("cf-preview-upload-config-token", session_token)
         .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
+        .send()?;
+
+    if response.status() == StatusCode::BAD_REQUEST {
+        return Err(BadRequestError(crate::format_api_errors(response.text()?)).into());
+    }
+    let response = response.error_for_status()?;
 
     if !to_delete.is_empty() {
         if verbose {
@@ -188,4 +194,15 @@ struct Preview {
 #[derive(Debug, Serialize, Deserialize)]
 struct PreviewV4ApiResponse {
     pub result: Preview,
+}
+
+#[derive(Debug)]
+pub(crate) struct BadRequestError(pub(crate) String);
+
+impl Error for BadRequestError {}
+
+impl fmt::Display for BadRequestError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
 }
