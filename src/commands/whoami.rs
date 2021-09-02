@@ -125,7 +125,7 @@ pub(crate) fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
                         StdOut::info("Your API token might be expired, or might not have the necessary permissions. Please re-authenticate wrangler by running `wrangler login` or `wrangler config`.");
                     } else if error.code == 6003 {
                         // 6003 error code = Invalid request headers. A common case is when the value of an authorization method has been changed outside of wrangler commands
-                        StdOut::info("Your authentication method might be corrupted (e.g. API token value has been altered). Please consider re-authenticating wrangler through `wrangler login` or `wrangler config`.")
+                        StdOut::info("Your authentication method might be corrupted (e.g. API token value has been altered). Please re-authenticate wrangler by running `wrangler login` or `wrangler config`.")
                     }
 
                 }
