@@ -35,7 +35,7 @@ const generate = async (owner, repo, since) => {
     };
 
     if (!pr.user.login.includes("dependabot")) {
-      if (pr.body.length > 240) {
+      if (pr.body && pr.body.length > 240) {
         data.body = pr.body.substr(0, 240) + "\n... truncated";
       } else {
         data.body = pr.body;
