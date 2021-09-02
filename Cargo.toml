@@ -10,7 +10,7 @@ repository = "https://github.com/cloudflare/wrangler"
 categories = ["wasm", "development-tools", "command-line-utilities", "web-programming"]
 
 [dependencies]
-anyhow = "1.0"
+anyhow = { version = "1.0", features = ["backtrace"] }
 atty = "0.2.14"
 backtrace = { version = "0.3.58" }
 base64 = "0.13.0"

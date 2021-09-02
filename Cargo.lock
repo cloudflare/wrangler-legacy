@@ -55,6 +55,9 @@ name = "anyhow"
 version = "1.0.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28ae2b3dec75a406790005a200b1bd89785afc02517a00ca99ecfe093ee9e6cf"
+dependencies = [
+ "backtrace",
+]
 
 [[package]]
 name = "arc-swap"
