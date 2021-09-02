@@ -5,6 +5,7 @@ pub mod generate;
 pub mod init;
 pub mod kv;
 pub mod login;
+pub mod logout;
 pub mod preview;
 pub mod publish;
 pub mod route;
@@ -23,6 +24,7 @@ pub mod exec {
     pub use super::kv::kv_key;
     pub use super::kv::kv_namespace;
     pub use super::login::login;
+    pub use super::logout::logout;
     pub use super::preview::preview;
     pub use super::publish::publish;
     pub use super::route::route;
@@ -282,6 +284,11 @@ pub enum Command {
         #[structopt(name = "scopes-list", long)]
         scopes_list: bool,
     },
+
+    /// Logout from your current authentication method and remove any configuration files.
+    /// It does not logout if you have authenticated wrangler through envrionment variables.
+    #[structopt(name = "logout")]
+    Logout,
 
     /// Report an error caught by wrangler to Cloudflare
     #[structopt(name = "report")]
