@@ -421,7 +421,9 @@ async fn keep_alive(tx: mpsc::UnboundedSender<tungstenite::protocol::Message>) -
         let keep_alive_message = serde_json::to_string(&keep_alive_message)
             .expect("Could not convert keep alive message to JSON");
         let keep_alive_message = tungstenite::protocol::Message::Text(keep_alive_message);
-        tx.send(keep_alive_message).unwrap();
+        if let Err(e) = tx.send(keep_alive_message) {
+            log::error!("failed to send keepalive message: {}", e);
+        }
         id += 1;
         delay = sleep(duration);
     }
