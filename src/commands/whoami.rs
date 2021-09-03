@@ -130,7 +130,24 @@ pub(crate) fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
     let response = client.request(&account::ListAccounts { params: None });
     match response {
         Ok(res) => Ok(res.result),
-        Err(e) => anyhow::bail!(http::format_error(e, None)),
+        Err(e) => {
+            match e {
+                ApiFailure::Error(_, ref api_errors) => {
+                    let error = &api_errors.errors[0];
+                    if error.code == 9109 {
+                        // 9109 error code = Invalid access token
+                        StdOut::info("Your API token might be expired, or might not have the necessary permissions. Please re-authenticate wrangler by running `wrangler login` or `wrangler config`.");
+                    } else if error.code == 6003 {
+                        // 6003 error code = Invalid request headers. A common case is when the value of an authorization method has been changed outside of wrangler commands
+                        StdOut::info("Your authentication method might be corrupted (e.g. API token value has been altered). Please re-authenticate wrangler by running `wrangler login` or `wrangler config`.");
+                    }
+
+                }
+                ApiFailure::Invalid(_) => StdOut::info("Something went wrong in processing a request. Please consider raising an issue at https://github.com/cloudflare/wrangler/issues"),
+            }
+
+            anyhow::bail!(http::format_error(e, None))
+        }
     }
 }
 
