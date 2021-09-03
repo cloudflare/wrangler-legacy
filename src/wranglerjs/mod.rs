@@ -109,7 +109,9 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                     if write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack).is_ok()
                     {
                         if let Some(tx) = tx.clone() {
-                            tx.send(()).expect("--watch change message failed to send");
+                            if tx.send(()).is_err() {
+                                log::error!("wranglerjs watch operation failed to notify");
+                            }
                         }
                     }
                 }
