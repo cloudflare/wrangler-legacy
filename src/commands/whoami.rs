@@ -112,8 +112,7 @@ fn fetch_auth_token_email(
         Err(e) => match e {
             ApiFailure::Error(_, api_errors) => {
                 let error = &api_errors.errors[0];
-                // TODO: this message also appears when access token is expired, but it has the user:read scope
-                // need to distinguish the two cases
+
                 if error.code == 9109 {
                     missing_permissions.push("User Details: Read".to_string());
                 }
