@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 
 use anyhow::Result;
 
-pub fn open_browser(url: &str) -> Result<()> {
+pub fn open_browser(url: &str, log_url: bool) -> Result<()> {
     if cfg!(target_os = "windows") {
         let url_escaped = url.replace("&", "^&");
         let windows_cmd = format!("start {}", url_escaped);
@@ -30,7 +30,11 @@ pub fn open_browser(url: &str) -> Result<()> {
             .spawn()?;
     };
 
-    let msg = format!("Opened a link in your default browser: {}", url);
+    let msg = match log_url {
+        true => format!("Opened a link in your default browser: {}", url),
+        false => "Opened a link in your default browser.".to_string(),
+    };
+
     StdOut::info(&msg);
     Ok(())
 }

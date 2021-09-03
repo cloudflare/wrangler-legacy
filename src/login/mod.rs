@@ -3,7 +3,7 @@ pub mod http;
 use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
 use futures::executor::block_on;
-use indicatif::{ProgressBar, ProgressStyle};
+use wsl;
 
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
@@ -17,9 +17,9 @@ use crate::terminal::{interactive, open_browser};
 
 use crate::cli::login::SCOPES_LIST;
 use crate::commands::config::global_config;
+use crate::commands::logout::revoke_token;
 use crate::login::http::http_server_get_params;
 use crate::settings::{get_global_config_path, global_user::GlobalUser};
-use crate::terminal::message::{Message, StdOut};
 
 pub static CLIENT_ID: &str = "54d11594-84e4-41aa-b438-e81b8fa78ee7";
 pub static AUTH_URL: &str = "https://dash.cloudflare.com/oauth2/auth";
@@ -64,7 +64,12 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
     if !browser_permission {
         anyhow::bail!("In order to log in you must allow Wrangler to open your browser. If you don't want to do this consider using `wrangler config`");
     }
-    open_browser(auth_url.as_str())?;
+
+    if wsl::is_wsl() {
+        open_browser(auth_url.as_str(), true)?;
+    } else {
+        open_browser(auth_url.as_str(), false)?;
+    }
 
     // Get authorization code and CSRF state from local HTTP server
     let params_response = match block_on(http_server_get_params()) {
@@ -130,6 +135,9 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
             .to_string(),
         expiration_time: expiration_time_value,
     };
+
+    // Invalidate previous OAuth token if present
+    invalidate_oauth_token();
     global_config(&user, false)?;
 
     Ok(())
@@ -138,10 +146,7 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
 // Refresh an expired access token
 pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
     if let GlobalUser::OAuthTokenAuth { .. } = user {
-        let style = ProgressStyle::default_spinner().template("{spinner}   {msg}");
-        let spinner = ProgressBar::new_spinner().with_style(style);
-        spinner.set_message("Refreshing access token...");
-        spinner.enable_steady_tick(20);
+        log::debug!("Refreshing access token..");
 
         let expiration_time = DateTime::parse_from_rfc3339(user.get_expiration_time()).unwrap();
         let current_time = Utc::now();
@@ -195,9 +200,21 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
             let _ = user
                 .to_file(&config_file)
                 .expect("Failed to update configuration file");
-
-            StdOut::info("Access token refreshed.");
         }
     }
     Ok(())
+}
+
+// Invalidatess previous OAuth token if present
+fn invalidate_oauth_token() {
+    let user_create = GlobalUser::new();
+    if let Ok(user) = user_create {
+        if let GlobalUser::OAuthTokenAuth { .. } = user {
+            // Try to invalidate previous token
+            let result = revoke_token(&user);
+            if result.is_err() {
+                log::debug!("Failed to invalidate OAuth token before login.");
+            }
+        }
+    }
 }

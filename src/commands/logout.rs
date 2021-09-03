@@ -20,29 +20,10 @@ pub fn run() -> Result<()> {
         match user {
             GlobalUser::OAuthTokenAuth { .. } => {
                 // Set up OAuth client
-                let client = BasicClient::new(
-                    ClientId::new(CLIENT_ID.to_string()),
-                    None,
-                    AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
-                    None,
-                )
-                .set_revocation_uri(
-                    RevocationUrl::new(REVOKE_URL.to_string())
-                        .expect("Invalid revocation endpoint URL"),
-                )
-                .set_auth_type(AuthType::RequestBody);
-
-                // Revoke refresh token, which also invalidates the current access token
-                let token_to_revoke = StandardRevocableToken::RefreshToken(RefreshToken::new(
-                    user.get_refresh_token().to_string(),
-                ));
-                client
-                    .revoke_token(token_to_revoke)
-                    .unwrap()
-                    .request(http_client)
-                    .expect("Failed to revoke token");
-
-                StdOut::info("Wrangler is configured with an OAuth token. The token has been successfully revoked.");
+                match revoke_token(&user) {
+                    Ok(_) => StdOut::info("Wrangler is configured with an OAuth token. The token has been successfully revoked."),
+                    Err(e) => anyhow::bail!(e),
+                }
             }
             GlobalUser::ApiTokenAuth { .. } => {
                 // API token can only be modified in the dashboard
@@ -70,4 +51,30 @@ pub fn run() -> Result<()> {
     }
 
     Ok(())
+}
+
+// Revoke refresh token, which also invalidates the current access token
+pub fn revoke_token(user: &GlobalUser) -> Result<()> {
+    let client = BasicClient::new(
+        ClientId::new(CLIENT_ID.to_string()),
+        None,
+        AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
+        None,
+    )
+    .set_revocation_uri(
+        RevocationUrl::new(REVOKE_URL.to_string()).expect("Invalid revocation endpoint URL"),
+    )
+    .set_auth_type(AuthType::RequestBody);
+
+    let token_to_revoke = StandardRevocableToken::RefreshToken(RefreshToken::new(
+        user.get_refresh_token().to_string(),
+    ));
+    match client
+        .revoke_token(token_to_revoke)
+        .unwrap()
+        .request(http_client)
+    {
+        Ok(_) => Ok(()),
+        Err(err) => Err(anyhow::Error::new(err)),
+    }
 }

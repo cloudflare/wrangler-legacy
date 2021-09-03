@@ -74,6 +74,7 @@ url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }
 which = "4.0.2"
 ws = { version = "0.11", package = "parity-ws" }
+wsl = "0.1.0"
 
 [dev-dependencies]
 assert_cmd = "2.0.0"

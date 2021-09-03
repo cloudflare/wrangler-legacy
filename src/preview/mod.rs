@@ -65,7 +65,7 @@ pub fn preview(
             open_browser(&format!(
                 "https://cloudflareworkers.com/?wrangler_session_id={0}&wrangler_ws_port={1}&hide_editor#{2}:{3}",
                 session, ws_port, script_id, browser_url
-            ))?;
+            ), true)?;
         }
 
         // Make a the initial request to the URL
@@ -83,10 +83,13 @@ pub fn preview(
         )?;
     } else {
         if !options.headless {
-            open_browser(&format!(
-                "https://cloudflareworkers.com/?hide_editor#{0}:{1}",
-                script_id, browser_url
-            ))?;
+            open_browser(
+                &format!(
+                    "https://cloudflareworkers.com/?hide_editor#{0}:{1}",
+                    script_id, browser_url
+                ),
+                true,
+            )?;
         }
 
         client_request(&request_payload, &script_id, sites_preview);
