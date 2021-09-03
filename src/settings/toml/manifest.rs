@@ -143,7 +143,11 @@ impl Manifest {
             config_template_doc["workers_dev"] = toml_edit::value(default_workers_dev);
         }
         if let Some(target_type) = &target_type {
-            config_template_doc["type"] = toml_edit::value(target_type.to_string());
+            if target_type.to_string() == "rust" {
+                config_template_doc["type"] = toml_edit::value(TargetType::JavaScript.to_string());
+            } else {
+                config_template_doc["type"] = toml_edit::value(target_type.to_string());
+            }
         }
         if let Some(site) = site {
             if config_template.site.is_none() {

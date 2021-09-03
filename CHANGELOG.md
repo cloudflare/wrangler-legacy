@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.19.2
+
+- ### Maintenance
+
+  - **fix: override rust type to javascript - [nilslice], [pull/2055]**
+
+    the `rust` type seems to only have been added as a way to automatically trigger wasm-pack, but it's much better to put that in a custom `[build]` step instead. eventually, we really should phase out the `rust` type from `wrangler` altogether.
+
+    this is a side-effect of releasing the new Rust template https://github.com/cloudflare/rustwasm-worker-template
+
+    [nilslice]: https://github.com/nilslice
+    [pull/2055]: https://github.com/cloudflare/wrangler/pull/2055
+
+  - **update crates.io badge in the readme - [jim4067], [pull/2052]**
+
+    [jim4067]: https://github.com/jim4067
+    [pull/2052]: https://github.com/cloudflare/wrangler/pull/2052
+
 ## v1.19.1
 
 - ### Fixes
