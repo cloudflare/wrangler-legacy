@@ -1,3 +1,4 @@
+use std::env;
 use std::time::Duration;
 
 use cloudflare::framework::async_api;
@@ -12,17 +13,37 @@ use crate::http::{feature::headers, DEFAULT_HTTP_TIMEOUT_SECONDS};
 use crate::settings::global_user::GlobalUser;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
+
+const ENDPOINT_URL: &str = "ENDPOINT_URL";
+
+// Allow endpoint to be configured via an environment variable
+pub fn get_environment() -> Result<Environment> {
+    let env_hostname = match env::var(ENDPOINT_URL) {
+        Ok(value) => {
+            if let Ok(url) = url::Url::parse(&value) {
+                url
+            } else {
+                anyhow::bail!("Failed to parse URL from environment variable. Please make sure your API endpoint URL is valid.")
+            }
+        }
+        Err(_) => return Ok(Environment::Production),
+    };
+
+    Ok(Environment::Custom(env_hostname))
+}
+
 pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient> {
     let config = HttpApiClientConfig {
         http_timeout: Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS),
         default_headers: headers(None),
     };
 
-    HttpApiClient::new(
-        Credentials::from(user.to_owned()),
-        config,
-        Environment::Production,
-    )
+    let environment = match get_environment() {
+        Ok(env) => env,
+        Err(err) => anyhow::bail!(err),
+    };
+
+    HttpApiClient::new(Credentials::from(user.to_owned()), config, environment)
 }
 
 pub fn cf_v4_api_client_async(user: &GlobalUser) -> Result<async_api::Client> {
@@ -31,11 +52,12 @@ pub fn cf_v4_api_client_async(user: &GlobalUser) -> Result<async_api::Client> {
         default_headers: headers(None),
     };
 
-    async_api::Client::new(
-        Credentials::from(user.to_owned()),
-        config,
-        Environment::Production,
-    )
+    let environment = match get_environment() {
+        Ok(env) => env,
+        Err(err) => anyhow::bail!(err),
+    };
+
+    async_api::Client::new(Credentials::from(user.to_owned()), config, environment)
 }
 
 // Format errors from the cloudflare-rs cli for printing.
