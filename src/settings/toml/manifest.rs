@@ -116,11 +116,6 @@ impl Manifest {
             });
 
         config_template.warn_on_account_info();
-        if let Some(target_type) = &target_type {
-            if config_template.target_type != *target_type {
-                StdOut::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config_template.target_type, target_type, config_template.target_type));
-            }
-        }
 
         let default_workers_dev = match &config_template.route {
             Some(route) if route.is_empty() => Some(true),
