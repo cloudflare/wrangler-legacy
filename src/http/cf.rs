@@ -38,10 +38,7 @@ pub fn cf_v4_client(user: &GlobalUser) -> Result<HttpApiClient> {
         default_headers: headers(None),
     };
 
-    let environment = match get_environment() {
-        Ok(env) => env,
-        Err(err) => anyhow::bail!(err),
-    };
+    let environment = get_environment()?;
 
     HttpApiClient::new(Credentials::from(user.to_owned()), config, environment)
 }
@@ -52,10 +49,7 @@ pub fn cf_v4_api_client_async(user: &GlobalUser) -> Result<async_api::Client> {
         default_headers: headers(None),
     };
 
-    let environment = match get_environment() {
-        Ok(env) => env,
-        Err(err) => anyhow::bail!(err),
-    };
+    let environment = get_environment()?;
 
     async_api::Client::new(Credentials::from(user.to_owned()), config, environment)
 }
