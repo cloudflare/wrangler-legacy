@@ -14,11 +14,11 @@ use crate::settings::global_user::GlobalUser;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, StdOut};
 
-const ENDPOINT_URL: &str = "ENDPOINT_URL";
+const ENDPOINT_BASE_URL: &str = "ENDPOINT_BASE_URL";
 
 // Allow endpoint to be configured via an environment variable
 pub fn get_environment() -> Result<Environment> {
-    let env_hostname = match env::var(ENDPOINT_URL) {
+    let env_hostname = match env::var(ENDPOINT_BASE_URL) {
         Ok(value) => {
             if let Ok(url) = url::Url::parse(&value) {
                 url
@@ -95,4 +95,46 @@ fn print_status_code_context(status_code: StatusCode) {
       StatusCode::GATEWAY_TIMEOUT => StdOut::warn("Returned status code 504, Gateway Timeout. Please try again in a few seconds"),
       _ => (),
   }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gets_environment_tests() {
+        // Tests are run in parallel, so dividing these three tests can lead
+        // to an undesired interleaving in set and unset of the environment variables.
+
+        // Test #1
+        // Tests that the API endpoint base URL can be read from an environment variable
+        let url = "https://github.com/cloudflare/wrangler";
+
+        env::set_var(ENDPOINT_BASE_URL, url);
+        let test_environment_url = url::Url::from(&get_environment().unwrap());
+
+        let expected_environment_url = url::Url::parse(url).unwrap();
+        assert_eq!(test_environment_url, expected_environment_url);
+        env::remove_var(ENDPOINT_BASE_URL);
+
+        // Test #2
+        // Tests that it fails with an invalid url
+        let url = "thisisaninvalidurl";
+
+        env::set_var(ENDPOINT_BASE_URL, url);
+        let test_environment = get_environment();
+
+        assert!(test_environment.is_err());
+        env::remove_var(ENDPOINT_BASE_URL);
+
+        // Test #3
+        // Tests that the API endpoint base URL is set to production if no environment variable is set
+
+        // unset the environment variable
+        env::remove_var(ENDPOINT_BASE_URL);
+        let test_environment_url = url::Url::from(&get_environment().unwrap());
+
+        let expected_environment_url = url::Url::from(&Environment::Production);
+        assert_eq!(test_environment_url, expected_environment_url);
+    }
 }
