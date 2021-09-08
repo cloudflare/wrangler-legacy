@@ -30,11 +30,12 @@ fn bulk_api_client(user: &GlobalUser) -> Result<HttpApiClient> {
         default_headers: headers(None),
     };
 
-    HttpApiClient::new(
-        Credentials::from(user.to_owned()),
-        config,
-        http::get_environment(),
-    )
+    let environment = match http::get_environment() {
+        Ok(env) => env,
+        Err(err) => anyhow::bail!(err),
+    };
+
+    HttpApiClient::new(Credentials::from(user.to_owned()), config, environment)
 }
 
 pub fn put(

@@ -14,9 +14,8 @@ use std::fs;
 static REVOKE_URL: &str = "https://dash.cloudflare.com/oauth2/revoke";
 
 pub fn run() -> Result<()> {
-    let user_create = GlobalUser::new();
     let mut has_auth = true;
-    if let Ok(user) = user_create {
+    if let Ok(user) = GlobalUser::new() {
         match user {
             GlobalUser::OAuthTokenAuth { .. } => {
                 // Set up OAuth client

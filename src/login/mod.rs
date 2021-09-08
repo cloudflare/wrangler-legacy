@@ -3,7 +3,6 @@ pub mod http;
 use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
 use futures::executor::block_on;
-use wsl;
 
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
@@ -27,14 +26,18 @@ static TOKEN_URL: &str = "https://dash.cloudflare.com/oauth2/token";
 static CALLBACK_URL: &str = "http://localhost:8976/oauth/callback";
 
 pub fn run(scopes: Option<&[String]>) -> Result<()> {
+    let auth_url = AuthUrl::new(AUTH_URL.to_string())?;
+    let token_url = TokenUrl::new(TOKEN_URL.to_string())?;
+    let redirect_url = RedirectUrl::new(CALLBACK_URL.to_string())?;
+
     // Create oauth2 client
     let client = BasicClient::new(
         ClientId::new(CLIENT_ID.to_string()),
         None,
-        AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
-        Some(TokenUrl::new(TOKEN_URL.to_string()).expect("Invalid token endpoint URL")),
+        auth_url,
+        Some(token_url),
     )
-    .set_redirect_uri(RedirectUrl::new(CALLBACK_URL.to_string()).expect("Invalid redirect URL"))
+    .set_redirect_uri(redirect_url)
     .set_auth_type(AuthType::RequestBody);
 
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
@@ -65,11 +68,7 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
         anyhow::bail!("In order to log in you must allow Wrangler to open your browser. If you don't want to do this consider using `wrangler config`");
     }
 
-    if wsl::is_wsl() {
-        open_browser(auth_url.as_str(), true)?;
-    } else {
-        open_browser(auth_url.as_str(), false)?;
-    }
+    open_browser(auth_url.as_str())?;
 
     // Get authorization code and CSRF state from local HTTP server
     let params_response = match block_on(http_server_get_params()) {
@@ -102,35 +101,39 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
     // Check CSRF token to ensure redirect is legit
     let recv_csrf_state = CsrfToken::new(recv_csrf_state.to_string());
     if recv_csrf_state.secret() != csrf_state.secret() {
-        anyhow::bail!(
-            "Redirect URI CSRF state check failed. Received: {}, expected: {}",
-            recv_csrf_state.secret(),
-            csrf_state.secret()
-        );
+        anyhow::bail!("Redirect URI CSRF state check failed.");
     }
 
     // Exchange authorization token for access token
     let token_response = client
         .exchange_code(AuthorizationCode::new(auth_code.to_string()))
         .set_pkce_verifier(pkce_verifier)
-        .request(http_client)
-        .expect("Failed to retrieve access token");
+        .request(http_client)?;
 
     // Get access token expiration time
-    let expires_in =
-        TokenResponse::expires_in(&token_response).expect("Failed to receive access expire time");
-    let expiration_time_value = Utc::now()
-        .checked_add_signed(Duration::from_std(expires_in).unwrap())
-        .unwrap()
-        .to_rfc3339();
+    let expires_in = match TokenResponse::expires_in(&token_response) {
+        Some(time) => time,
+        None => anyhow::bail!("Failed to receive access_token expire time"),
+    };
+
+    let expiration_time_value = match Utc::now()
+        .checked_add_signed(Duration::from_std(expires_in)?) {
+            Some(time) => time,
+            None => anyhow::bail!("Failed to calculate access_token expiration time"),
+        };
+    let expiration_time_value = expiration_time_value.to_rfc3339();
+
+    let refresh_token_value = match token_response.refresh_token() {
+        Some(token) => token,
+        None => anyhow::bail!("Failed to receive refresh token"),
+    };
 
     // Configure user with new token
     let user = GlobalUser::OAuthTokenAuth {
         oauth_token: TokenResponse::access_token(&token_response)
             .secret()
             .to_string(),
-        refresh_token: TokenResponse::refresh_token(&token_response)
-            .expect("Failed to receive refresh token")
+        refresh_token: refresh_token_value
             .secret()
             .to_string(),
         expiration_time: expiration_time_value,
@@ -148,7 +151,7 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
     if let GlobalUser::OAuthTokenAuth { .. } = user {
         log::debug!("Refreshing access token..");
 
-        let expiration_time = DateTime::parse_from_rfc3339(user.get_expiration_time()).unwrap();
+        let expiration_time = DateTime::parse_from_rfc3339(user.get_expiration_time())?;
         let current_time = Utc::now();
         // Note: duration can panic if the time elapsed (in seconds) cannot be stored in i64
         let duration = current_time.signed_duration_since(expiration_time);
@@ -156,24 +159,25 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
         // Access token expired
         // Refresh token before 20 seconds from actual expiration time to avoid minute details
         if duration.num_seconds() >= -20 {
+            let auth_url = AuthUrl::new(AUTH_URL.to_string())?;
+            let token_url = TokenUrl::new(TOKEN_URL.to_string())?;
+            let redirect_url = RedirectUrl::new(CALLBACK_URL.to_string())?;
+
             // Create oauth2 client
             let client = BasicClient::new(
                 ClientId::new(CLIENT_ID.to_string()),
                 None,
-                AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
-                Some(TokenUrl::new(TOKEN_URL.to_string()).expect("Invalid token endpoint URL")),
+                auth_url,
+                Some(token_url),
             )
-            .set_redirect_uri(
-                RedirectUrl::new(CALLBACK_URL.to_string()).expect("Invalid redirect URL"),
-            )
+            .set_redirect_uri(redirect_url)
             .set_auth_type(AuthType::RequestBody);
 
             // Exchange refresh token with new access token
             let refresh_token = user.get_refresh_token();
             let token_response = client
                 .exchange_refresh_token(&RefreshToken::new(refresh_token.to_string()))
-                .request(http_client)
-                .expect("Failed to refresh OAuth access token");
+                .request(http_client)?;
 
             // Set new access token
             let access_token = token_response.access_token().secret();
@@ -183,23 +187,26 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
             let new_refresh_token = token_response.refresh_token();
             if let Some(token) = new_refresh_token {
                 user.set_refresh_token(token.secret().to_string());
+            } else {
+                anyhow::bail!("Failed to receive refresh token while updating access token")
             }
 
             // Set new expiration time
-            let expires_in = token_response
-                .expires_in()
-                .expect("Failed to receive access expire time");
-            let expiration_time = Utc::now()
-                .checked_add_signed(Duration::from_std(expires_in).unwrap())
-                .unwrap()
-                .to_rfc3339();
+            let expires_in = match token_response.expires_in() {
+                Some(time) => time,
+                None => anyhow::bail!("Failed to receive access_token expire time"),
+            };
+            let expiration_time = match Utc::now()
+                .checked_add_signed(Duration::from_std(expires_in)?) {
+                    Some(time) => time,
+                    None => anyhow::bail!("Failed to calculate access_token expiration time"),
+                };
+            let expiration_time = expiration_time.to_rfc3339();
             user.set_expiration_time(expiration_time);
 
             // Update configuration file on disk
             let config_file = get_global_config_path();
-            let _ = user
-                .to_file(&config_file)
-                .expect("Failed to update configuration file");
+            user.to_file(&config_file)?
         }
     }
     Ok(())

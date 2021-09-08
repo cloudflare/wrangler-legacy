@@ -44,8 +44,10 @@ impl GlobalUser {
 
         // Check if oauth token is expired
         if let Ok(ref mut oauth_user) = new_user {
-            let _res =
-                check_update_oauth_token(oauth_user).expect("Failed to refresh access token");
+            if let Err(_) = check_update_oauth_token(oauth_user) {
+                // Let caller handle the error, log the error for debugging
+                log::debug!("Failed to update an expired OAuth access token.");
+            }
         }
         new_user
     }
@@ -196,22 +198,25 @@ impl GlobalUser {
                 && (email.is_ok() || api_key.is_ok()))
         {
             let error_info = "\nMore than one authentication method (e.g. API token and OAuth token, or OAuth token and Global API key) has been found in the configuration file. Please use only one.";
-            Self::show_config_err_info(Some(error_info.to_string()), config)
+            let wrangler_logout_msg = styles::highlight("`wrangler logout`");
+            let config_path = get_global_config_path();
+            let more_info = format!("{}\nIf you'd like to edit the configuration file, it can be found at {}. Consider also running {} to clean up the configuration file.", error_info, config_path.to_str().unwrap(), wrangler_logout_msg);
+
+            Self::show_config_err_info(Some(more_info.to_string()), config)
         } else if api_token.is_ok() {
             Ok(Self::ApiTokenAuth {
-                api_token: api_token.expect("Failed to read API token"),
+                api_token: api_token.unwrap(),
             })
         } else if email.is_ok() && api_key.is_ok() {
             Ok(Self::GlobalKeyAuth {
-                email: email.expect("Failed to read email"),
-                api_key: api_key.expect("Failed to read api_key"),
+                email: email.unwrap(),
+                api_key: api_key.unwrap(),
             })
         } else if oauth_token.is_ok() && refresh_token.is_ok() && expiration_time.is_ok() {
             Ok(Self::OAuthTokenAuth {
-                oauth_token: oauth_token.expect("Failed to read OAuth token"),
-                refresh_token: refresh_token.expect("Failed to read OAuth refresh token"),
-                expiration_time: expiration_time
-                    .expect("Failed to read access token expiration time"),
+                oauth_token: oauth_token.unwrap(),
+                refresh_token: refresh_token.unwrap(),
+                expiration_time: expiration_time.unwrap(),
             })
         } else {
             // Empty configuration file and no environment variables, or missing variable for global API key

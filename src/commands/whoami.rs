@@ -16,15 +16,15 @@ fn get_token_type(
     missing_permissions: &mut Vec<String>,
     token_type: &str,
 ) -> Result<String> {
-    let token_auth_email = fetch_auth_token_email(user, missing_permissions)?;
-
-    if let Some(token_auth_email) = token_auth_email {
+    if let Some(token_auth_email) = fetch_auth_token_email(user, missing_permissions)? {
         Ok(format!(
             "an {} Token, associated with the email '{}'",
             token_type, token_auth_email,
         ))
     } else {
-        Ok(format!("an {} Token", token_type))
+        let wrangler_login_msg = styles::highlight("`wrangler login`");
+        let wrangler_config_msg = styles::highlight("`wrangler config`");
+        anyhow::bail!("Failed to retrieve information about the email associated with {} token. Please run {} or {}.", token_type, wrangler_login_msg, wrangler_config_msg)
     }
 }
 
@@ -36,11 +36,9 @@ pub fn whoami(user: &GlobalUser) -> Result<()> {
         GlobalUser::GlobalKeyAuth { email, .. } => {
             format!("a Global API Key, associated with the email '{}'", email,)
         }
-        GlobalUser::ApiTokenAuth { .. } => get_token_type(user, &mut missing_permissions, "API")
-            .expect("Failed to get Api token type."),
+        GlobalUser::ApiTokenAuth { .. } => get_token_type(user, &mut missing_permissions, "API")?,
         GlobalUser::OAuthTokenAuth { .. } => {
-            get_token_type(user, &mut missing_permissions, "OAuth")
-                .expect("Failed to get OAuth token type.")
+            get_token_type(user, &mut missing_permissions, "OAuth")?
         }
     };
 
