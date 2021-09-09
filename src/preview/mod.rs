@@ -114,8 +114,8 @@ fn client_request(payload: &RequestPayload, script_id: &str, sites_preview: bool
     let cookie = payload.cookie(script_id);
 
     let worker_res = match method {
-        HttpMethod::Get => get(&url, &cookie, &client).unwrap(),
-        HttpMethod::Post => post(&url, &cookie, &body, &client).unwrap(),
+        HttpMethod::Get => get(url, &cookie, &client).unwrap(),
+        HttpMethod::Post => post(url, &cookie, body, &client).unwrap(),
     };
 
     let msg = if sites_preview {
@@ -161,7 +161,7 @@ fn watch_for_changes(
     let sites_preview: bool = target.site.is_some();
 
     let (tx, rx) = channel();
-    watch_and_build(&target, Some(tx))?;
+    watch_and_build(&target, Some(tx), None)?;
 
     while rx.recv().is_ok() {
         if let Ok(new_id) = upload(&mut target, user, sites_preview, verbose) {

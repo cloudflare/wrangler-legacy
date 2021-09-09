@@ -56,15 +56,18 @@ pub struct Manifest {
     pub dev: Option<Dev>,
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
-    pub env: Option<HashMap<String, Environment>>,
-    pub vars: Option<HashMap<String, String>>,
-    pub text_blobs: Option<HashMap<String, PathBuf>>,
-    pub wasm_modules: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
     pub durable_objects: Option<DurableObjects>,
     pub migrations: Option<Vec<MigrationConfig>>,
     #[serde(default, with = "string_empty_as_none")]
     pub usage_model: Option<UsageModel>,
+    pub compatibility_date: Option<String>,
+    #[serde(default)]
+    pub compatibility_flags: Vec<String>,
+    pub env: Option<HashMap<String, Environment>>,
+    pub vars: Option<HashMap<String, String>>,
+    pub text_blobs: Option<HashMap<String, PathBuf>>,
+    pub wasm_modules: Option<HashMap<String, PathBuf>>,
 }
 
 impl Manifest {
@@ -115,11 +118,6 @@ impl Manifest {
             });
 
         config_template.warn_on_account_info();
-        if let Some(target_type) = &target_type {
-            if config_template.target_type != *target_type {
-                StdOut::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config_template.target_type, target_type, config_template.target_type));
-            }
-        }
 
         let default_workers_dev = match &config_template.route {
             Some(route) if route.is_empty() => Some(true),
@@ -142,7 +140,11 @@ impl Manifest {
             config_template_doc["workers_dev"] = toml_edit::value(default_workers_dev);
         }
         if let Some(target_type) = &target_type {
-            config_template_doc["type"] = toml_edit::value(target_type.to_string());
+            if target_type.to_string() == "rust" {
+                config_template_doc["type"] = toml_edit::value(TargetType::JavaScript.to_string());
+            } else {
+                config_template_doc["type"] = toml_edit::value(target_type.to_string());
+            }
         }
         if let Some(site) = site {
             if config_template.site.is_none() {
@@ -214,6 +216,11 @@ impl Manifest {
         let mut add_routed_deployments = |route_config: &RouteConfig| -> Result<()> {
             if route_config.is_zoned() {
                 let zoned = deploy::ZonedTarget::build(&script, route_config)?;
+
+                if zoned.routes.is_empty() {
+                    return Ok(());
+                }
+
                 // This checks all of the configured routes for the wildcard ending and warns
                 // the user that their site may not work as expected without it.
                 if self.site.is_some() {
@@ -239,13 +246,26 @@ impl Manifest {
                 deployments.push(DeployTarget::Zoneless(zoneless));
             }
 
+            if !route_config.is_zoned()
+                && !route_config.is_zoneless()
+                && (route_config.route.is_some()
+                    || (route_config.routes.is_some()
+                        && !route_config.routes.as_ref().unwrap().is_empty()))
+            {
+                anyhow::bail!(
+                    "Routes specified with no zone, specify `zone_id` in your wrangler.toml"
+                )
+            }
+
             Ok(())
         };
 
         if let Some(env) = env {
-            if let Some(env_route_cfg) =
-                env.route_config(self.account_id.if_present().cloned(), self.zone_id.clone())
-            {
+            if let Some(env_route_cfg) = env.route_config(
+                self.account_id.if_present().cloned(),
+                self.zone_id.clone(),
+                self.workers_dev,
+            ) {
                 add_routed_deployments(&env_route_cfg)
             } else {
                 let config = self.route_config();
@@ -261,24 +281,27 @@ impl Manifest {
 
         let crons = match env {
             Some(e) => {
-                let account_id = e
-                    .account_id
-                    .as_ref()
-                    .or_else(|| self.account_id.if_present());
+                let account_id = match e.account_id.as_ref() {
+                    Some(id) => id,
+                    None => self.account_id.load()?,
+                };
                 e.triggers
                     .as_ref()
                     .or_else(|| self.triggers.as_ref())
                     .map(|t| (t.crons.as_slice(), account_id))
             }
-            None => self
-                .triggers
-                .as_ref()
-                .map(|t| (t.crons.as_slice(), self.account_id.if_present())),
+            None => match self.triggers.as_ref() {
+                None => None,
+                Some(t) => Some((t.crons.as_slice(), self.account_id.load()?)),
+            },
         };
 
         if let Some((crons, account)) = crons {
-            let scheduled =
-                deploy::ScheduleTarget::build(account.cloned(), script.clone(), crons.to_vec())?;
+            let scheduled = deploy::ScheduleTarget {
+                account_id: account.clone(),
+                script_name: script.clone(),
+                crons: crons.to_vec(),
+            };
             deployments.push(DeployTarget::Schedule(scheduled));
         }
 
@@ -288,7 +311,7 @@ impl Manifest {
         };
 
         if durable_objects.is_none() && deployments.is_empty() {
-            anyhow::bail!("No deployments specified!")
+            StdOut::warn("No deployment routes specified, worker will not be triggered. Please specify your deployment routes or set `workers_dev = true` inside of your configuration file in order to trigger your worker. For more information, see: https://developers.cloudflare.com/workers/cli-wrangler/configuration#keys");
         }
 
         Ok(deployments)
@@ -357,6 +380,8 @@ impl Manifest {
             text_blobs: self.text_blobs.clone(), // Inherited
             usage_model: self.usage_model, // Top level
             wasm_modules: self.wasm_modules.clone(),
+            compatibility_date: self.compatibility_date.clone(),
+            compatibility_flags: self.compatibility_flags.clone(),
         };
 
         let environment = self.get_environment(environment_name)?;
@@ -476,6 +501,7 @@ impl Manifest {
             let toml_msg = styles::highlight("wrangler.toml");
             let zone_id_msg = styles::highlight("zone_id");
             let dash_url = styles::url("https://dash.cloudflare.com");
+            let account_id_msg = styles::highlight("account_id");
 
             StdOut::help(&format!(
                 "You can find your {} in the right sidebar of a zone's overview tab at {}",
@@ -487,6 +513,10 @@ impl Manifest {
             StdOut::help(
                 &format!("You will need to update the following fields in the created {} file before continuing:", toml_msg)
             );
+            StdOut::help(&format!(
+                "You can find your {} in the right sidebar of your account's Workers page, and {} in the right sidebar of a zone's overview tab at {} (if you have only a workers.dev domain, you can skip adding the {} )",
+                account_id_msg, zone_id_msg, dash_url, zone_id_msg
+            ));
 
             if has_top_level_fields {
                 needs_new_line = true;
@@ -577,24 +607,27 @@ impl LazyAccountId {
     }
 
     /// Load the account ID, possibly prompting the user.
+    #[cfg_attr(test, allow(unreachable_code))]
     pub(crate) fn load(&self) -> Result<&String> {
         self.0.get_or_try_init(|| {
-            if let Ok(user) = GlobalUser::new() {
-                let accounts = fetch_accounts(&user)?;
-                let account_id = match accounts.as_slice() {
-                    [] => unreachable!("auth token without account?"),
-                    [single] => single.id.clone(),
-                    _multiple => {
-                        StdOut::user_error("You have multiple accounts.");
-                        whoami::display_account_id_maybe();
-                        anyhow::bail!("field `account_id` is required")
-                    }
-                };
+            #[cfg(test)]
+            // don't try to fetch the accounts for this ID, since it's not valid.
+            anyhow::bail!("tried to load account id");
 
-                return Ok(account_id);
+            let user = GlobalUser::new()?;
+            match fetch_accounts(&user)?.as_slice() {
+                [] => {
+                    StdOut::user_error("Your authentication token does not match any account ID.");
+                    whoami::display_account_id_maybe();
+                    anyhow::bail!("field `account_id` is required")
+                }
+                [single] => Ok(single.id.clone()),
+                _multiple => {
+                    StdOut::user_error("You have multiple accounts.");
+                    whoami::display_account_id_maybe();
+                    anyhow::bail!("field `account_id` is required")
+                }
             }
-
-            todo!()
         })
     }
 }
@@ -705,7 +738,7 @@ mod tests {
             toml_path,
             None,
         )?;
-        assert_eq!(toml.name.to_string(), "test".to_string());
+        assert_eq!(toml.name, "test".to_string());
         assert_eq!(toml.target_type.to_string(), "javascript".to_string());
         fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
 
@@ -714,5 +747,18 @@ mod tests {
         fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
 
         Ok(())
+    }
+
+    #[test]
+    fn serialize() {
+        let manifest = Manifest {
+            vars: Some(
+                vec![(String::from("FOO"), String::from("some value"))]
+                    .into_iter()
+                    .collect(),
+            ),
+            ..Default::default()
+        };
+        assert!(toml::to_string(&manifest).is_ok());
     }
 }

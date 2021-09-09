@@ -37,17 +37,18 @@ const NO: &str = "n";
 // For interactively handling destructive commands (and discouraging accidental deletes).
 // Input like "yes", "Yes", "no", "No" will be accepted, thanks to the whitespace-stripping
 // and lowercasing logic below.
-// TODO: loop this to retry until valid input is received.
 pub fn confirm(prompt_string: &str) -> Result<bool> {
     println!("{} [y/n]", prompt_string);
-    let mut response: String = read!("{}\n");
-    response = response.split_whitespace().collect(); // remove whitespace
-    response.make_ascii_lowercase(); // ensure response is all lowercase
-    response.truncate(INTERACTIVE_RESPONSE_LEN); // at this point, all valid input will be "y" or "n"
-    match response.as_ref() {
-        YES => Ok(true),
-        NO => Ok(false),
-        _ => anyhow::bail!("Response must either be \"y\" for yes or \"n\" for no"),
+    loop {
+        let mut response: String = read!("{}\n");
+        response = response.split_whitespace().collect(); // remove whitespace
+        response.make_ascii_lowercase(); // ensure response is all lowercase
+        response.truncate(INTERACTIVE_RESPONSE_LEN); // at this point, all valid input will be "y" or "n"
+        match response.as_ref() {
+            YES => return Ok(true),
+            NO => return Ok(false),
+            _ => println!("Response must either be \"y\" for yes or \"n\" for no"),
+        };
     }
 }
 

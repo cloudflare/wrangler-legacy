@@ -16,7 +16,7 @@ use crate::settings::get_wrangler_home_dir;
 use crate::terminal::message::{Message, StdOut};
 /// Create files for cert and private key
 fn create_output_files() -> Result<Option<(PathBuf, PathBuf)>> {
-    let home = get_wrangler_home_dir()?.join("config");
+    let home = get_wrangler_home_dir().join("config");
     let cert = home.join("dev-cert.pem");
     let privkey = home.join("dev-privkey.rsa");
 
@@ -80,7 +80,7 @@ fn create_ca() -> Result<(X509, PKey<Private>)> {
 
 fn create_req(privkey: &PKey<Private>) -> Result<X509Req> {
     let mut req_builder = X509ReqBuilder::new()?;
-    req_builder.set_pubkey(&privkey)?;
+    req_builder.set_pubkey(privkey)?;
 
     let mut x509_name = X509NameBuilder::new()?;
     x509_name.append_entry_by_text("C", "US")?;
@@ -90,7 +90,7 @@ fn create_req(privkey: &PKey<Private>) -> Result<X509Req> {
     let x509_name = x509_name.build();
     req_builder.set_subject_name(&x509_name)?;
 
-    req_builder.sign(&privkey, MessageDigest::sha256())?;
+    req_builder.sign(privkey, MessageDigest::sha256())?;
     let req = req_builder.build();
     Ok(req)
 }

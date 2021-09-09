@@ -159,7 +159,7 @@ pub fn set_subdomain(name: &str, user: &GlobalUser, target: &Target) -> Result<(
         }
     }
 
-    register_subdomain(&name, &user, &target)
+    register_subdomain(name, user, target)
 }
 
 pub fn get_subdomain(user: &GlobalUser, target: &Target) -> Result<()> {

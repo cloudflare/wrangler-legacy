@@ -32,8 +32,10 @@ pub mod exec {
 
 use std::net::IpAddr;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use crate::commands::dev::Protocol;
+use crate::commands::tail::websocket::TailFormat;
 use crate::preview::HttpMethod;
 use crate::settings::toml::migrations::{
     DurableObjectsMigration, Migration, MigrationTag, Migrations, RenameClass, TransferClass,
@@ -215,23 +217,59 @@ pub enum Command {
     #[structopt(name = "whoami")]
     Whoami,
 
-    /// Aggregate logs from production worker
+    /// View a stream of logs from a published worker
     #[structopt(name = "tail")]
     Tail {
-        /// Specify an output format
-        #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
-        format: String,
+        /// Name of the worker to tail
+        #[structopt(index = 1)]
+        name: Option<String>,
 
-        /// Port to accept tail log requests
-        #[structopt(long = "port", short = "p")]
+        /// Output format for log messages
+        #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
+        format: TailFormat,
+
+        /// Stops the tail after receiving the first log (useful for testing)
+        #[structopt(long)]
+        once: bool,
+
+        /// Adds a sampling rate (0.01 for 1%)
+        #[structopt(long = "sampling-rate", default_value = "1")]
+        sampling_rate: f64,
+
+        /// Filter by invocation status
+        #[structopt(long, possible_values = &["ok", "error", "canceled"])]
+        status: Vec<String>,
+
+        /// Filter by HTTP method
+        #[structopt(long)]
+        method: Vec<String>,
+
+        /// Filter by HTTP header
+        #[structopt(long)]
+        header: Vec<String>,
+
+        /// Filter by IP address ("self" to filter your own IP address)
+        #[structopt(long = "ip-address", parse(try_from_str = parse_ip_address))]
+        ip_address: Vec<String>,
+
+        /// Filter by a text match in console.log messages
+        #[structopt(long)]
+        search: Option<String>,
+
+        /// Set the URL to forward log messages
+        #[structopt(hidden = true)]
+        url: Option<Url>,
+
+        /// Deprecated, no longer used.
+        #[structopt(hidden = true, long = "port", short = "p")]
         tunnel_port: Option<u16>,
 
-        /// Provides endpoint for cloudflared metrics. Used to retrieve tunnel url
-        #[structopt(long = "metrics")]
+        /// Deprecated, no longer used.
+        #[structopt(hidden = true, long = "metrics")]
         metrics_port: Option<u16>,
     },
 
-    /// Authenticate Wrangler with your Cloudflare username and password
+    /// Authenticate wrangler with your Cloudflare username and password
     #[structopt(name = "login")]
     Login,
 
@@ -331,6 +369,16 @@ impl AdhocMigration {
         } else {
             None
         }
+    }
+}
+
+fn parse_ip_address(input: &str) -> Result<String, anyhow::Error> {
+    match input {
+        "self" => Ok(String::from("self")),
+        address => match IpAddr::from_str(address) {
+            Ok(_) => Ok(address.to_owned()),
+            Err(err) => anyhow::bail!("{}: {}", err, input),
+        },
     }
 }
 

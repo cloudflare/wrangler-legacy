@@ -1,7 +1,11 @@
 #![cfg_attr(feature = "strict", deny(warnings))]
+#![warn(clippy::todo)] // TODO(jyn514): remove this once clippy warns about it by default
 
 #[macro_use]
 extern crate text_io;
+
+#[macro_use]
+extern crate erased_serde;
 
 use cloudflare::framework::response::ApiErrors;
 
@@ -19,14 +23,11 @@ pub mod login;
 pub mod reporter;
 pub mod settings;
 pub mod sites;
-pub mod tail;
 pub mod terminal;
 pub mod upload;
 pub mod version;
 pub mod watch;
 pub mod wranglerjs;
-
-pub mod fixtures;
 
 const TEMP_NOTICE_ES_MODULES_DO_BETA: &str = "Your account does not have permission to do this! While Durable Objects are in Beta, the modules format is limited to accounts which have opted-in to the Beta. You may do so by following the instructions here: https://developers.cloudflare.com/workers/learning/using-durable-objects";
 

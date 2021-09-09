@@ -1,3 +1,4 @@
+use std::sync::mpsc::Sender;
 use std::time::Duration;
 
 use chrome_devtools as protocol;
@@ -7,7 +8,9 @@ use futures_util::sink::SinkExt;
 use futures_util::stream::{SplitStream, StreamExt};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
+use crate::terminal::colored_json_string;
 use crate::terminal::message::{Message, StdErr, StdOut};
+use protocol::domain::runtime::event::Event::ExceptionThrown;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
@@ -21,11 +24,15 @@ const KEEP_ALIVE_INTERVAL: u64 = 10;
 
 /// connect to a Workers runtime WebSocket emitting the Chrome Devtools Protocol
 /// parse all console messages, and print them to stdout
-pub async fn listen(socket_url: Url) -> Result<()> {
+pub async fn listen(
+    socket_url: Url,
+    refresh_session_sender: Option<Sender<Option<()>>>,
+) -> Result<()> {
     // we loop here so we can issue a reconnect when something
     // goes wrong with the websocket connection
     loop {
-        let ws_stream = connect_retry(&socket_url).await;
+        let sender = refresh_session_sender.clone();
+        let ws_stream = connect_retry(&socket_url, sender).await;
 
         let (mut write, read) = ws_stream.split();
 
@@ -65,7 +72,10 @@ pub async fn listen(socket_url: Url) -> Result<()> {
 
 // Endlessly retry connecting to the chrome devtools instance with exponential backoff.
 // The backoff maxes out at 60 seconds.
-async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
+async fn connect_retry(
+    socket_url: &Url,
+    sender: Option<Sender<Option<()>>>,
+) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
     let mut wait_seconds = 2;
     let maximum_wait_seconds = 60;
     let mut failed = false;
@@ -80,20 +90,37 @@ async fn connect_retry(socket_url: &Url) -> WebSocketStream<MaybeTlsStream<TcpSt
             }
             Err(e) => {
                 failed = true;
-                StdErr::warn(&format!("Failed to connect to devtools instance: {}", e));
-                StdErr::warn(&format!(
-                    "Will retry connection in {} seconds",
+                log::info!(
+                    "Failed to connect to devtools instance: {}. Retrying in {} seconds",
+                    e,
                     wait_seconds
-                ));
+                );
                 sleep(Duration::from_secs(wait_seconds)).await;
-                wait_seconds = wait_seconds.pow(2);
+                wait_seconds *= 2;
+                if let (Some(sender), tungstenite::Error::Http(resp)) = (&sender, e) {
+                    if resp.status().as_u16() >= 400 && resp.status().as_u16() < 500 {
+                        sender.send(Some(())).ok();
+                    }
+                }
                 if wait_seconds > maximum_wait_seconds {
                     // max out at 60 seconds
                     wait_seconds = maximum_wait_seconds;
                 }
-                StdErr::working("Retrying...");
+                log::info!("Attempting to reconnect to devtools instance...");
             }
         }
+    }
+}
+
+fn print_json(value: Result<serde_json::Value, serde_json::Error>, fallback: String) {
+    if let Ok(json) = value {
+        if let Ok(json_str) = colored_json_string(&json) {
+            println!("{}", json_str);
+        } else {
+            StdOut::message(fallback.as_str());
+        }
+    } else {
+        println!("{}", fallback);
     }
 }
 
@@ -101,30 +128,41 @@ async fn print_ws_messages(
     mut read: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
 ) -> Result<()> {
     while let Some(message) = read.next().await {
-        match message {
-            Ok(message) => {
-                let message_text = message.into_text().unwrap();
-                log::info!("{}", &message_text);
+        let message = message?;
+        let message_text = message.into_text().unwrap();
+        log::info!("{}", &message_text);
 
-                let parsed_message: Result<protocol::Runtime> = serde_json::from_str(&message_text)
-                    .map_err(|e| anyhow!("this event could not be parsed:\n{}", e));
+        let parsed_message: Result<protocol::Runtime> = serde_json::from_str(&message_text)
+            .map_err(|e| anyhow!("Failed to parse event:\n{}", e));
 
-                if let Ok(protocol::Runtime::Event(event)) = parsed_message {
-                    // Try to parse json to pretty print, otherwise just print string
-                    let json_parse: Result<serde_json::Value, serde_json::Error> =
-                        serde_json::from_str(&*event.to_string());
-                    if let Ok(json) = json_parse {
-                        if let Ok(json_str) = serde_json::to_string_pretty(&json) {
-                            println!("{}", json_str);
-                        } else {
-                            StdOut::message(&format!("{:?}", event.to_string()));
-                        }
-                    } else {
-                        println!("{}", event);
-                    }
-                }
+        match parsed_message {
+            Ok(protocol::Runtime::Event(ExceptionThrown(params))) => {
+                let default_description = "N/A".to_string();
+                let description = params
+                    .exception_details
+                    .exception
+                    .description
+                    .as_ref()
+                    .unwrap_or(&default_description);
+
+                StdOut::message(&format!(
+                    "{} at line {:?}, col {:?}",
+                    description,
+                    params.exception_details.line_number,
+                    params.exception_details.column_number,
+                ));
+
+                let json_parse = serde_json::to_value(params.clone());
+                print_json(json_parse, format!("{:?}", params));
             }
-            Err(error) => return Err(error.into()),
+            Ok(protocol::Runtime::Event(event)) => {
+                // Try to parse json to pretty print, otherwise just print string
+                let json_parse: Result<serde_json::Value, serde_json::Error> =
+                    serde_json::from_str(&*event.to_string());
+                print_json(json_parse, event.to_string());
+            }
+            Ok(protocol::Runtime::Method(_)) => {}
+            Err(err) => log::debug!("{}", err),
         }
     }
     Ok(())

@@ -1,3 +1,5 @@
+use std::error::Error;
+use std::fmt;
 use std::path::Path;
 
 use crate::deploy::DeployTarget;
@@ -9,7 +11,7 @@ use crate::terminal::message::{Message, StdOut};
 use crate::upload;
 
 use anyhow::{anyhow, Result};
-use reqwest::Url;
+use reqwest::{StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -20,7 +22,7 @@ pub(super) fn upload(
     session_token: String,
     verbose: bool,
 ) -> Result<String> {
-    let client = crate::http::legacy_auth_client(&user);
+    let client = crate::http::legacy_auth_client(user);
 
     let (to_delete, asset_manifest, site_namespace_id) = if let Some(site_config) =
         target.site.clone()
@@ -49,8 +51,12 @@ pub(super) fn upload(
         .post(&address)
         .header("cf-preview-upload-config-token", session_token)
         .multipart(script_upload_form)
-        .send()?
-        .error_for_status()?;
+        .send()?;
+
+    if response.status() == StatusCode::BAD_REQUEST {
+        return Err(BadRequestError(crate::format_api_errors(response.text()?)).into());
+    }
+    let response = response.error_for_status()?;
 
     if !to_delete.is_empty() {
         if verbose {
@@ -96,7 +102,7 @@ impl Session {
             _ => unreachable!(),
         };
 
-        let client = crate::http::legacy_auth_client(&user);
+        let client = crate::http::legacy_auth_client(user);
         let response = client.get(exchange_url).send()?.error_for_status()?;
         let text = &response.text()?;
         let response: InspectorV4ApiResponse = serde_json::from_str(text)?;
@@ -153,7 +159,7 @@ fn get_upload_address(target: &mut Target) -> Result<String> {
 }
 
 fn get_exchange_url(deploy_target: &DeployTarget, user: &GlobalUser) -> Result<Url> {
-    let client = crate::http::legacy_auth_client(&user);
+    let client = crate::http::legacy_auth_client(user);
     let address = get_session_address(deploy_target);
     let url = Url::parse(&address)?;
     let response = client.get(url).send()?.error_for_status()?;
@@ -188,4 +194,15 @@ struct Preview {
 #[derive(Debug, Serialize, Deserialize)]
 struct PreviewV4ApiResponse {
     pub result: Preview,
+}
+
+#[derive(Debug)]
+pub(crate) struct BadRequestError(pub(crate) String);
+
+impl Error for BadRequestError {}
+
+impl fmt::Display for BadRequestError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
 }

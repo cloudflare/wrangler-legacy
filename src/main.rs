@@ -17,7 +17,9 @@ use anyhow::Result;
 use structopt::StructOpt;
 
 fn main() -> Result<()> {
-    reporter::init();
+    if !cfg!(debug_assertions) {
+        reporter::init();
+    }
     env_logger::init();
 
     let latest_version_receiver = background_check_for_updates();
@@ -105,10 +107,30 @@ fn run() -> Result<()> {
         Command::KvKey(key) => exec::kv_key(key, &cli_params),
         Command::KvBulk(bulk) => exec::kv_bulk(bulk, &cli_params),
         Command::Tail {
+            name,
+            url,
             format,
-            tunnel_port,
-            metrics_port,
-        } => exec::tail(format, tunnel_port, metrics_port, &cli_params),
+            once,
+            sampling_rate,
+            status,
+            method,
+            header,
+            ip_address,
+            search,
+            ..
+        } => exec::tail(
+            name,
+            url,
+            format,
+            once,
+            sampling_rate,
+            status,
+            method,
+            header,
+            ip_address,
+            search,
+            &cli_params,
+        ),
         Command::Login => commands::login::run(),
         Command::Report { log } => commands::report::run(log.as_deref()).map(|_| {
             eprintln!("Report submission sucessful. Thank you!");

@@ -11,9 +11,8 @@ mod target;
 mod target_type;
 mod triggers;
 
-pub use builder::{Builder, ModuleRule, UploadFormat};
+pub use builder::{ModuleRule, UploadFormat};
 pub use durable_objects::{DurableObjects, DurableObjectsClass};
-pub use environment::Environment;
 pub use kv_namespace::{ConfigKvNamespace, KvNamespace};
 pub use manifest::Manifest;
 pub use route::{Route, RouteConfig};

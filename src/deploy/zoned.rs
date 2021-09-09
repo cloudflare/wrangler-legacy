@@ -40,10 +40,6 @@ impl ZonedTarget {
                     }))
                     .collect();
 
-                if routes.is_empty() {
-                    anyhow::bail!("No routes specified");
-                }
-
                 Ok(Self {
                     zone_id: zone_id.to_owned(),
                     routes,
@@ -56,7 +52,7 @@ impl ZonedTarget {
     pub fn deploy(&self, user: &GlobalUser) -> Result<Vec<String>> {
         log::info!("publishing to zone {}", self.zone_id);
 
-        let published_routes = publish_routes(&user, self)?;
+        let published_routes = publish_routes(user, self)?;
 
         let display_results: Vec<String> = published_routes.iter().map(|r| r.to_string()).collect();
 
@@ -180,7 +176,7 @@ fn deploy_route(
     }
 
     // if none of the existing routes match this one, we should create a new route
-    match create(user, zone_id, &route) {
+    match create(user, zone_id, route) {
         // we want to show the new route along with its id
         Ok(created) => RouteUploadResult::New(created),
         // if there is an error, we want to know which route triggered it

@@ -13,29 +13,17 @@
 
 use console::Emoji;
 
-pub static BICEP: Emoji = Emoji("💪 ", "");
-pub static BUG: Emoji = Emoji("🐛", "");
-pub static CRAB: Emoji = Emoji("🦀 ", "");
-pub static COMPUTER: Emoji = Emoji("💻 ", "");
-pub static DANCERS: Emoji = Emoji("👯 ", "");
 pub static DOWN: Emoji = Emoji("⬇️ ", "");
 pub static EAR: Emoji = Emoji("👂 ", "");
 pub static EYES: Emoji = Emoji("👀 ", "");
 pub static FILES: Emoji = Emoji("🗂️ ", "");
-pub static INBOX: Emoji = Emoji("📥 ", "");
 pub static INFO: Emoji = Emoji("💁 ", "");
-pub static KEY: Emoji = Emoji("🔑 ", "");
 pub static MICROSCOPE: Emoji = Emoji("🔬 ", "");
-pub static ROUTE: Emoji = Emoji("➡️ ", "");
-pub static SECRET: Emoji = Emoji("🤫 ", "");
-pub static SHEEP: Emoji = Emoji("🐑 ", "");
 pub static SLEUTH: Emoji = Emoji("🕵️ ", "");
 pub static SPARKLES: Emoji = Emoji("✨ ", "");
 pub static SWIRL: Emoji = Emoji("🌀 ", "");
 pub static TAIL: Emoji = Emoji("🦚 ", "");
-pub static UP: Emoji = Emoji("🆙 ", "");
 pub static WARN: Emoji = Emoji("⚠️ ", "");
 pub static WAVING: Emoji = Emoji("👋 ", "");
 pub static WORKER: Emoji = Emoji("👷 ", "");
-pub static UNLOCKED: Emoji = Emoji("🔓", "");
 pub static X: Emoji = Emoji("❌ ", "");

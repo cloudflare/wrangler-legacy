@@ -20,8 +20,9 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
 pub struct ServiceWorkerAssets {
-    script_name: String,
-    script_path: PathBuf,
+    pub(crate) script_path: PathBuf,
+    pub compatibility_date: Option<String>,
+    pub compatibility_flags: Vec<String>,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
     pub durable_object_classes: Vec<DurableObjectsClass>,
@@ -31,30 +32,6 @@ pub struct ServiceWorkerAssets {
 }
 
 impl ServiceWorkerAssets {
-    pub fn new(
-        script_path: PathBuf,
-        wasm_modules: Vec<WasmModule>,
-        kv_namespaces: Vec<KvNamespace>,
-        durable_object_classes: Vec<DurableObjectsClass>,
-        text_blobs: Vec<TextBlob>,
-        plain_texts: Vec<PlainText>,
-        usage_model: Option<UsageModel>,
-    ) -> Result<Self> {
-        let script_name = filestem_from_path(&script_path)
-            .ok_or_else(|| anyhow!("filename should not be empty: {}", script_path.display()))?;
-
-        Ok(Self {
-            script_name,
-            script_path,
-            wasm_modules,
-            kv_namespaces,
-            durable_object_classes,
-            text_blobs,
-            plain_texts,
-            usage_model,
-        })
-    }
-
     pub fn bindings(&self) -> Vec<Binding> {
         let mut bindings = Vec::new();
 
@@ -82,8 +59,13 @@ impl ServiceWorkerAssets {
         bindings
     }
 
-    pub fn script_name(&self) -> String {
-        self.script_name.to_string()
+    pub fn script_name(&self) -> Result<String> {
+        filestem_from_path(&self.script_path).ok_or_else(|| {
+            anyhow!(
+                "filename should not be empty: {}",
+                self.script_path.display()
+            )
+        })
     }
 
     pub fn script_path(&self) -> PathBuf {
@@ -299,7 +281,7 @@ fn build_type_matchers(rules: Vec<ModuleRule>) -> Result<Vec<ModuleMatcher>> {
             let mut builder = GlobSetBuilder::new();
 
             for glob in &r.globs {
-                let glob = new_glob(&glob)?;
+                let glob = new_glob(glob)?;
                 builder.add(glob);
             }
 
@@ -330,6 +312,8 @@ fn build_type_matchers(rules: Vec<ModuleRule>) -> Result<Vec<ModuleMatcher>> {
 }
 
 pub struct ModulesAssets {
+    pub compatibility_date: Option<String>,
+    pub compatibility_flags: Vec<String>,
     pub manifest: ModuleManifest,
     pub kv_namespaces: Vec<KvNamespace>,
     pub durable_object_classes: Vec<DurableObjectsClass>,
@@ -339,7 +323,10 @@ pub struct ModulesAssets {
 }
 
 impl ModulesAssets {
+    #[allow(clippy::too_many_arguments)] // TODO: refactor?
     pub fn new(
+        compatibility_date: Option<String>,
+        compatibility_flags: Vec<String>,
         manifest: ModuleManifest,
         kv_namespaces: Vec<KvNamespace>,
         durable_object_classes: Vec<DurableObjectsClass>,
@@ -348,6 +335,8 @@ impl ModulesAssets {
         usage_model: Option<UsageModel>,
     ) -> Result<Self> {
         Ok(Self {
+            compatibility_date,
+            compatibility_flags,
             manifest,
             kv_namespaces,
             durable_object_classes,

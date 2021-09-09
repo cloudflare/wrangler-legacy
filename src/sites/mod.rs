@@ -7,7 +7,9 @@ pub use manifest::AssetManifest;
 pub use sync::sync;
 
 use std::collections::HashSet;
+use std::error::Error;
 use std::ffi::OsString;
+use std::fmt;
 use std::fs;
 use std::hash::Hasher;
 use std::path::Path;
@@ -36,7 +38,7 @@ pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> R
         format!("__{}-{}", target.name, "workers_sites_assets")
     };
 
-    let site_namespace = match upsert(target, &user, title)? {
+    let site_namespace = match upsert(target, user, title)? {
         UpsertedNamespace::Created(namespace) => {
             let msg = format!("Created namespace for Workers Site \"{}\"", namespace.title);
             StdErr::working(&msg);
@@ -60,6 +62,17 @@ pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> R
 
     Ok(site_namespace)
 }
+
+#[derive(Debug, Clone)]
+pub struct NotADirectoryError;
+
+impl fmt::Display for NotADirectoryError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Not a directory. Check your configuration file; the `bucket` attribute for [site] should point to a directory.")
+    }
+}
+
+impl Error for NotADirectoryError {}
 
 // Returns the hashed key and value pair for all files in a directory.
 pub fn directory_keys_values(
@@ -85,7 +98,7 @@ pub fn directory_keys_values(
                     spinner.set_message(&format!("{}", path.display()));
 
                     file_list.push(path.to_str().unwrap().to_string());
-                    validate_file_size(&path)?;
+                    validate_file_size(path)?;
 
                     let value = std::fs::read(path)?;
 
@@ -120,8 +133,7 @@ pub fn directory_keys_values(
         }
         Ok(_file_type) => {
             // any other file types (files, symlinks)
-            // TODO: return an error type here, like NotADirectoryError
-            Err(anyhow!("Check your configuration file; the `bucket` attribute for [site] should point to a directory."))
+            Err(anyhow::Error::new(NotADirectoryError))
         }
         Err(e) => Err(anyhow!(e)),
     }
@@ -192,7 +204,7 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override> {
         if let Some(included) = &site.include {
             required_ignore(&mut required_override)?;
             for i in included {
-                required_override.add(&i)?;
+                required_override.add(i)?;
                 log::info!("Including {}", i);
             }
         } else {
@@ -313,6 +325,7 @@ mod tests {
     use std::fs;
     use std::io::Write;
     use std::path::{Path, PathBuf};
+    use tempfile::TempDir;
 
     use crate::settings::toml::{Site, Target, TargetType};
 
@@ -331,7 +344,74 @@ mod tests {
             text_blobs: None,
             usage_model: None,
             wasm_modules: None,
+            compatibility_date: None,
+            compatibility_flags: Vec::new(),
         }
+    }
+
+    fn tmpdir_with_default_files() -> (PathBuf, Vec<PathBuf>) {
+        let files = vec![
+            PathBuf::new().join("file_a.txt"),
+            PathBuf::new().join("file_b.txt"),
+            PathBuf::new().join("file_c.txt"),
+        ];
+
+        let tmpdir = TempDir::new().unwrap();
+        let tmp_path = tmpdir.into_path();
+
+        files.iter().for_each(|path| {
+            std::fs::File::create(tmp_path.clone().join(path)).unwrap();
+        });
+
+        (tmp_path, files)
+    }
+
+    #[test]
+    fn it_runs_directory_keys_values_returning_expected_valyes() {
+        let (tmpdir, all_files) = tmpdir_with_default_files();
+
+        // check that no files are excluded from the upload set or the asset manifest.
+        let (to_upload, asset_manifest, _) =
+            directory_keys_values(&make_target(Site::default()), &tmpdir, None).unwrap();
+        let mut keys = vec![];
+        for file in &all_files {
+            let filename = file.to_str().unwrap();
+            assert!(asset_manifest.get(filename).is_some());
+            keys.push(asset_manifest.get(filename).unwrap());
+        }
+        for kv in to_upload {
+            assert!(keys.contains(&&kv.key))
+        }
+
+        // check that the correct files are excluded (as if they already are uploaded).
+        // asset manifest should have all the files, to_upload should be filtered.
+        let mut exclude = HashSet::new();
+        for f in &["file_a.txt", "file_b.txt"] {
+            let path = tmpdir.join(f);
+            let path = path.to_str().unwrap();
+            // in calling code, `exclude` is the list of keys from KV, and thus needs to contain the
+            // partial hash digest of the file in the "key". call generate_path_and_key to obtain
+            // for later comparison.
+            let (_, key_with_hash) =
+                generate_path_and_key(Path::new(path), &tmpdir, Some("".into())).unwrap();
+            exclude.insert(key_with_hash);
+        }
+
+        let (to_upload, asset_manifest, _) =
+            directory_keys_values(&make_target(Site::default()), &tmpdir, Some(&exclude)).unwrap();
+        for file in &all_files {
+            let filename = file.to_str().unwrap();
+            assert!(asset_manifest.get(filename).is_some());
+        }
+        // construct a list of keys from the upload list to then ensure it does _not_ contain any
+        // key for a file which we have designated for exclusion.
+        let upload_keys: Vec<String> = to_upload.iter().map(|kv| kv.key.clone()).collect();
+        for file in exclude.iter() {
+            assert!(!upload_keys.contains(&file.to_string()));
+        }
+        assert_eq!(upload_keys.len(), 1);
+        assert!(upload_keys.first().unwrap().starts_with("file_c"));
+        assert_eq!(to_upload.len(), all_files.len() - exclude.len());
     }
 
     #[test]

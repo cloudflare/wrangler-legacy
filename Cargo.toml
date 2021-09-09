@@ -1,6 +1,6 @@
 [package]
 name = "wrangler"
-version = "1.17.1-rc.1"
+version = "1.19.2"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -8,7 +8,6 @@ description = "Command-line interface for all things Cloudflare Workers"
 readme = "README.md"
 repository = "https://github.com/cloudflare/wrangler"
 categories = ["wasm", "development-tools", "command-line-utilities", "web-programming"]
-build = "build.rs"
 
 [dependencies]
 anyhow = "1.0"
@@ -17,10 +16,11 @@ backtrace = { version = "0.3.58" }
 base64 = "0.13.0"
 billboard = "0.1.0"
 binary-install = "0.0.3-alpha.1"
-chrome-devtools-rs = { version = "=0.0.0-alpha.1", features = ["color"] }
+chrome-devtools-rs = { version = "0.0.0-alpha.3", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
 cloudflare = "0.8.3"
+colored_json = "2.1.0"
 config = "0.11.0"
 console = "0.14.1"
 dirs = "3.0.1"
@@ -28,6 +28,7 @@ env_logger = "0.8.4"
 eventual = "0.1.7"
 flate2 = "1.0.18"
 fs2 = "0.4.3"
+futures = "0.3.15"
 futures-util = "0.3"
 globset = "0.4.6"
 http = "0.2.1"
@@ -53,6 +54,7 @@ semver = "1.0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.60"
 serde_with = "1.5.1"
+erased-serde = "0.3"
 structopt = "0.3.21"
 sys-info = "0.9"
 tempfile = "3.1.0"
@@ -70,10 +72,10 @@ twox-hash = "1.6.0"
 url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }
 which = "4.0.2"
-ws = "0.9.1"
+ws = { version = "0.11", package = "parity-ws" }
 
 [dev-dependencies]
-assert_cmd = "1.0.2"
+assert_cmd = "2.0.0"
 fs_extra = "1.2.0"
 predicates = "2.0.0"
 

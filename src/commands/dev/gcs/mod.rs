@@ -74,7 +74,7 @@ pub fn dev(
     // and we must block the main thread on the completion of
     // said futures
     runtime.block_on(async {
-        let devtools_listener = tokio::spawn(socket::listen(socket_url.clone()));
+        let devtools_listener = tokio::spawn(socket::listen(socket_url.clone(), None));
 
         let server = match local_protocol {
             Protocol::Https => tokio::spawn(server::https(

@@ -39,8 +39,6 @@ pub struct Report {
 /// Overrides any panic hooks with wrangler's error reporting, which logs error reports to disl with
 /// details from a panic and useful information from the wrangler user's system for debugging.
 pub fn init() {
-    // TODO: consider using panic::take_hook, and showing the original panic to the end-user without
-    // polluting the console to the point the wrangler error report message is lost in the noise.
     panic::set_hook(Box::new(|panic_info| generate_report(Some(panic_info))));
 }
 
@@ -114,11 +112,19 @@ pub fn generate_report(panic_info: Option<&PanicInfo>) {
         err_exit(format!("wrangler encountered an unrecoverable error and failed to write the report: \n{:#?}", report), 1);
     }
 
+    // show the original error
+    if let Some(info) = panic_info {
+        eprintln!("\nOops! Wrangler encountered an error:\n\n{}", info)
+    } else {
+        eprintln!("Oops! Wrangler encountered an error.\n")
+    }
+
     // print message to user with note about the crash and how to report it using the command
     // `wrangler report --log=<filename.log>`
     eprintln!(
         r#"
-Oops! wrangler encountered an error... please help Cloudflare debug this issue by submitting an error report ({})
+Please help Cloudflare debug this issue by submitting the error report
+({})
 
 To submit this error report to Cloudflare, run:
 
@@ -153,7 +159,7 @@ fn latest_report() -> Result<Report> {
 
 // returns the path to the location of wrangler's error report log files
 fn error_report_dir() -> Result<PathBuf> {
-    let base = settings::get_wrangler_home_dir()?;
+    let base = settings::get_wrangler_home_dir();
     let report_dir = base.join(Path::new("errors"));
     fs::create_dir_all(report_dir.clone())?;
     Ok(report_dir)

@@ -26,7 +26,7 @@ pub fn sync(
     // Turn it into a HashSet. This will be used by upload() to figure out which
     // files to exclude from upload (because their current version already exists in
     // the Workers KV remote).
-    let client = http::cf_v4_client(&user)?;
+    let client = http::cf_v4_client(user)?;
     let remote_keys_iter = KeyList::new(target, client, namespace_id, None)?;
     let mut remote_keys: HashSet<String> = HashSet::new();
     for remote_key in remote_keys_iter {
