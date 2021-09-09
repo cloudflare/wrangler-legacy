@@ -38,11 +38,18 @@ pub fn run() -> Result<()> {
         has_auth = false;
     }
 
-    // Delete file if existent
+    // Delete configuration file if existent
     let config_path = get_global_config_path();
     if config_path.exists() {
-        print!("Removing {}...", config_path.to_str().unwrap());
-        fs::remove_file(config_path).expect("Failed to remove config file");
+        let config_path_str = match config_path.to_str() {
+            Some(path_name) => path_name,
+            None => {
+                log::debug!("Failed to convert config_path to str.");
+                "configuration file"
+            }
+        };
+        print!("Removing {}..", config_path_str);
+        fs::remove_file(config_path)?;
         println!(" success!");
     } else if has_auth {
         // (in)correct environment variables are set
@@ -54,25 +61,17 @@ pub fn run() -> Result<()> {
 
 // Revoke refresh token, which also invalidates the current access token
 pub fn revoke_token(user: &GlobalUser) -> Result<()> {
-    let client = BasicClient::new(
-        ClientId::new(CLIENT_ID.to_string()),
-        None,
-        AuthUrl::new(AUTH_URL.to_string()).expect("Invalid authorization endpoint URL"),
-        None,
-    )
-    .set_revocation_uri(
-        RevocationUrl::new(REVOKE_URL.to_string()).expect("Invalid revocation endpoint URL"),
-    )
-    .set_auth_type(AuthType::RequestBody);
+    let auth_url = AuthUrl::new(AUTH_URL.to_string())?;
+    let revoke_url = RevocationUrl::new(REVOKE_URL.to_string())?;
+
+    let client = BasicClient::new(ClientId::new(CLIENT_ID.to_string()), None, auth_url, None)
+        .set_revocation_uri(revoke_url)
+        .set_auth_type(AuthType::RequestBody);
 
     let token_to_revoke = StandardRevocableToken::RefreshToken(RefreshToken::new(
         user.get_refresh_token().to_string(),
     ));
-    match client
-        .revoke_token(token_to_revoke)
-        .unwrap()
-        .request(http_client)
-    {
+    match client.revoke_token(token_to_revoke)?.request(http_client) {
         Ok(_) => Ok(()),
         Err(err) => Err(anyhow::Error::new(err)),
     }

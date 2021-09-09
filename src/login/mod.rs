@@ -73,11 +73,15 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
     // Get authorization code and CSRF state from local HTTP server
     let params_response = match block_on(http_server_get_params()) {
         Ok(params) => params,
-        Err(_) => anyhow::bail!("Failed to receive authorization code from local HTTP server"),
+        Err(_) => anyhow::bail!(display_error_info(
+            "Failed to receive authorization code from local HTTP server."
+        )),
     };
     let params_values: Vec<&str> = params_response.split_whitespace().collect();
     if params_values.is_empty() {
-        anyhow::bail!("Failed to receive authorization code from local HTTP server")
+        anyhow::bail!(display_error_info(
+            "Failed to receive authorization code from local HTTP server."
+        ))
     }
 
     // Check if user has given consent, or if an error has been encountered
@@ -85,14 +89,16 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
     if response_status == "denied" {
         anyhow::bail!("Consent denied. You must grant consent to Wrangler in order to login. If you don't want to do this consider using `wrangler config`")
     } else if response_status == "error" {
-        anyhow::bail!("Failed to receive authorization code from local HTTP server")
+        anyhow::bail!(display_error_info(
+            "Failed to receive authorization code from local HTTP server."
+        ))
     }
 
     // Get authorization code and CSRF state
     if params_values.len() != 3 {
-        anyhow::bail!(
-            "Failed to receive authorization code and/or csrf state from local HTTP server"
-        )
+        anyhow::bail!(display_error_info(
+            "Failed to receive authorization code and/or csrf state from local HTTP server."
+        ))
     }
 
     let auth_code = params_values[1];
@@ -101,7 +107,7 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
     // Check CSRF token to ensure redirect is legit
     let recv_csrf_state = CsrfToken::new(recv_csrf_state.to_string());
     if recv_csrf_state.secret() != csrf_state.secret() {
-        anyhow::bail!("Redirect URI CSRF state check failed.");
+        anyhow::bail!(display_error_info("Redirect URI CSRF state check failed."))
     }
 
     // Exchange authorization token for access token
@@ -113,19 +119,25 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
     // Get access token expiration time
     let expires_in = match TokenResponse::expires_in(&token_response) {
         Some(time) => time,
-        None => anyhow::bail!("Failed to receive access_token expire time"),
+        None => anyhow::bail!(display_error_info(
+            "Failed to receive access_token expire time."
+        )),
     };
 
-    let expiration_time_value = match Utc::now()
-        .checked_add_signed(Duration::from_std(expires_in)?) {
-            Some(time) => time,
-            None => anyhow::bail!("Failed to calculate access_token expiration time"),
-        };
+    let expiration_time_value = match Utc::now().checked_add_signed(Duration::from_std(expires_in)?)
+    {
+        Some(time) => time,
+        None => anyhow::bail!(display_error_info(
+            "Failed to calculate access_token expiration time."
+        )),
+    };
     let expiration_time_value = expiration_time_value.to_rfc3339();
 
     let refresh_token_value = match token_response.refresh_token() {
         Some(token) => token,
-        None => anyhow::bail!("Failed to receive refresh token"),
+        None => anyhow::bail!(display_error_info(
+            "Failed to receive refresh token. Please run `wrangler login` again."
+        )),
     };
 
     // Configure user with new token
@@ -133,9 +145,7 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
         oauth_token: TokenResponse::access_token(&token_response)
             .secret()
             .to_string(),
-        refresh_token: refresh_token_value
-            .secret()
-            .to_string(),
+        refresh_token: refresh_token_value.secret().to_string(),
         expiration_time: expiration_time_value,
     };
 
@@ -196,8 +206,8 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
                 Some(time) => time,
                 None => anyhow::bail!("Failed to receive access_token expire time"),
             };
-            let expiration_time = match Utc::now()
-                .checked_add_signed(Duration::from_std(expires_in)?) {
+            let expiration_time =
+                match Utc::now().checked_add_signed(Duration::from_std(expires_in)?) {
                     Some(time) => time,
                     None => anyhow::bail!("Failed to calculate access_token expiration time"),
                 };
@@ -210,6 +220,11 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn display_error_info(error_msg: &str) -> String {
+    let error_info = format!("{} Please run `wrangler login` again. If the error persists, consider reporting the issue through `wrangler report`.", error_msg);
+    error_info.to_string()
 }
 
 // Invalidatess previous OAuth token if present

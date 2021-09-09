@@ -17,11 +17,14 @@ async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result
         // Endpoint given when registering oauth client
         "/oauth/callback" => {
             // Get authorization code from request
-            let params = req
+            let params = match req
                 .uri()
                 .query()
                 .map(|v| url::form_urlencoded::parse(v.as_bytes()))
-                .unwrap();
+            {
+                Some(values) => values,
+                None => anyhow::bail!("Failed to map params from HTTP response"),
+            };
 
             // Get authorization code and csrf state
             let mut params_values: Vec<String> = Vec::with_capacity(2);
@@ -39,8 +42,7 @@ async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result
                 let response = Response::builder()
                     .status(StatusCode::PERMANENT_REDIRECT)
                     .header("Location", CONSENT_DENIED_URL)
-                    .body(Body::empty())
-                    .unwrap();
+                    .body(Body::empty())?;
                 return Ok(response);
             }
 
@@ -51,8 +53,7 @@ async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result
             let response = Response::builder()
                 .status(StatusCode::PERMANENT_REDIRECT)
                 .header("Location", CONSENT_GRANTED_URL)
-                .body(Body::empty())
-                .unwrap();
+                .body(Body::empty())?;
 
             Ok(response)
         }
@@ -62,8 +63,7 @@ async fn handle_callback(req: Request<Body>, tx: mpsc::Sender<String>) -> Result
 
             let response = Response::builder()
                 .status(StatusCode::NOT_FOUND)
-                .body(Body::empty())
-                .unwrap();
+                .body(Body::empty())?;
 
             Ok(response)
         }
@@ -88,14 +88,22 @@ pub async fn http_server_get_params() -> Result<String> {
     });
 
     let runtime = tokio::runtime::Runtime::new()?;
-    runtime.spawn(async {
+    let _handle: tokio::task::JoinHandle<Result<(), anyhow::Error>> = runtime.spawn(async {
         let addr = ([127, 0, 0, 1], 8976).into();
 
         let server = Server::bind(&addr).serve(service);
-        server.await.unwrap();
+        match server.await {
+            Ok(_) => Ok(()),
+            Err(_) => anyhow::bail!("Server binding failed"),
+        }
     });
 
     // Receive authorization code and csrf state from HTTP server
-    let params = runtime.block_on(async { rx.recv().await.unwrap() });
+    let params = runtime.block_on(async {
+        match rx.recv().await {
+            Some(values) => values,
+            None => "error".to_string(),
+        }
+    });
     Ok(params)
 }
