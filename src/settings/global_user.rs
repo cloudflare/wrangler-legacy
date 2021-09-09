@@ -45,8 +45,8 @@ impl GlobalUser {
         // Check if oauth token is expired
         if let Ok(ref mut oauth_user) = new_user {
             if let Err(_) = check_update_oauth_token(oauth_user) {
-                // Let caller handle the error, log the error for debugging
-                log::debug!("Failed to update an expired OAuth access token.");
+                // Let caller handle the error
+                anyhow::bail!("OAuth token is expired and the update of the token has failed. Please run `wrangler login` again.")
             }
         }
         new_user

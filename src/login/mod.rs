@@ -235,6 +235,7 @@ fn invalidate_oauth_token() {
             // Try to invalidate previous token
             let result = revoke_token(&user);
             if result.is_err() {
+                // A failure to invalidate a previous token should not block the user from being able to login with a new OAuth token
                 log::debug!("Failed to invalidate OAuth token before login.");
             }
         }

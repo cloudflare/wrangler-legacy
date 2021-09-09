@@ -38,7 +38,10 @@ pub fn dev(
         let mut user = user.clone();
 
         // Check if oauth token is expired
-        let _res = check_update_oauth_token(&mut user).expect("Failed to refresh access token");
+        let _res = match check_update_oauth_token(&mut user) {
+            Ok(_) => (),
+            Err(_) => anyhow::bail!("Attempt to update an expired OAuth token has failed. Please run `wrangler login` or `wrangler config` to authorize Wrangler.")
+        };
 
         let server_config = server_config.clone();
         let deploy_target = deploy_target.clone();
