@@ -193,18 +193,24 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
             if let Some(token) = new_refresh_token {
                 user.set_refresh_token(token.secret().to_string());
             } else {
-                anyhow::bail!("Failed to receive refresh token while updating access token")
+                anyhow::bail!(display_error_info(
+                    "Failed to receive refresh token while updating access token."
+                ))
             }
 
             // Set new expiration time
             let expires_in = match token_response.expires_in() {
                 Some(time) => time,
-                None => anyhow::bail!("Failed to receive access_token expire time"),
+                None => anyhow::bail!(display_error_info(
+                    "Failed to receive access_token expire time while updating access token."
+                )),
             };
             let expiration_time =
                 match Utc::now().checked_add_signed(Duration::from_std(expires_in)?) {
                     Some(time) => time,
-                    None => anyhow::bail!("Failed to calculate access_token expiration time"),
+                    None => anyhow::bail!(display_error_info(
+                    "Failed to calculate access_token expiration time while updating access token."
+                )),
                 };
             let expiration_time = expiration_time.to_rfc3339();
             user.set_expiration_time(expiration_time);
