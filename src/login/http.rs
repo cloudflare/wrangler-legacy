@@ -6,6 +6,8 @@ use hyper::{Body, Request, Response, Server, StatusCode};
 
 use tokio::sync::mpsc;
 
+use crate::login::display_error_info;
+
 static CONSENT_GRANTED_URL: &str =
     "https://welcome.developers.workers.dev/wrangler-oauth-consent-granted";
 static CONSENT_DENIED_URL: &str =
@@ -87,23 +89,24 @@ pub async fn http_server_get_params() -> Result<String> {
         async move { Ok::<_, hyper::Error>(server_fn_gen(tx_clone)) }
     });
 
-    let runtime = tokio::runtime::Runtime::new()?;
-    let _handle: tokio::task::JoinHandle<Result<(), anyhow::Error>> = runtime.spawn(async {
+    let _handle: tokio::task::JoinHandle<Result<(), anyhow::Error>> = tokio::task::spawn(async {
         let addr = ([127, 0, 0, 1], 8976).into();
 
         let server = Server::bind(&addr).serve(service);
         match server.await {
             Ok(_) => Ok(()),
-            Err(_) => anyhow::bail!("Server binding failed"),
+            Err(_) => anyhow::bail!(display_error_info("Local HTTP Server binding failed.")),
         }
     });
 
     // Receive authorization code and csrf state from HTTP server
-    let params = runtime.block_on(async {
+    let params = tokio::task::spawn(async move {
         match rx.recv().await {
             Some(values) => values,
             None => "error".to_string(),
         }
-    });
+    })
+    .await?;
+
     Ok(params)
 }

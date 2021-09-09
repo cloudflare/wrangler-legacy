@@ -10,6 +10,7 @@ use watch::watch_for_changes;
 use crate::commands::dev::{socket, Protocol, ServerConfig};
 use crate::deploy::DeployTarget;
 use crate::login::check_update_oauth_token;
+use crate::login::display_error_info;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::message::{Message, StdOut};
@@ -40,7 +41,9 @@ pub fn dev(
         // Check if oauth token is expired
         let _res = match check_update_oauth_token(&mut user) {
             Ok(_) => (),
-            Err(_) => anyhow::bail!("Attempt to update an expired OAuth token has failed. Please run `wrangler login` or `wrangler config` to authorize Wrangler.")
+            Err(_) => anyhow::bail!(display_error_info(
+                "Attempt to update an expired OAuth token has failed."
+            )),
         };
 
         let server_config = server_config.clone();

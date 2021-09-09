@@ -2,7 +2,6 @@ pub mod http;
 
 use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
-use futures::executor::block_on;
 
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::http_client;
@@ -71,12 +70,8 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
     open_browser(auth_url.as_str())?;
 
     // Get authorization code and CSRF state from local HTTP server
-    let params_response = match block_on(http_server_get_params()) {
-        Ok(params) => params,
-        Err(_) => anyhow::bail!(display_error_info(
-            "Failed to receive authorization code from local HTTP server."
-        )),
-    };
+    let runtime = tokio::runtime::Runtime::new()?;
+    let params_response = runtime.block_on(http_server_get_params())?;
     let params_values: Vec<&str> = params_response.split_whitespace().collect();
     if params_values.is_empty() {
         anyhow::bail!(display_error_info(
@@ -222,9 +217,10 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
     Ok(())
 }
 
-fn display_error_info(error_msg: &str) -> String {
+// Adds additional info besides an error message
+pub fn display_error_info(error_msg: &str) -> String {
     let error_info = format!("{} Please run `wrangler login` again. If the error persists, consider reporting the issue through `wrangler report`.", error_msg);
-    error_info.to_string()
+    error_info
 }
 
 // Invalidatess previous OAuth token if present
