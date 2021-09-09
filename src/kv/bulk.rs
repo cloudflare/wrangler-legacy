@@ -8,9 +8,10 @@ use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use cloudflare::endpoints::workerskv::write_bulk::WriteBulk;
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::auth::Credentials;
-use cloudflare::framework::{Environment, HttpApiClient, HttpApiClientConfig};
+use cloudflare::framework::{HttpApiClient, HttpApiClientConfig};
 
 use crate::commands::kv::format_error;
+use crate::http;
 use crate::http::feature::headers;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
@@ -29,11 +30,9 @@ fn bulk_api_client(user: &GlobalUser) -> Result<HttpApiClient> {
         default_headers: headers(None),
     };
 
-    HttpApiClient::new(
-        Credentials::from(user.to_owned()),
-        config,
-        Environment::Production,
-    )
+    let environment = http::get_environment()?;
+
+    HttpApiClient::new(Credentials::from(user.to_owned()), config, environment)
 }
 
 pub fn put(
