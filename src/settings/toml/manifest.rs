@@ -55,10 +55,6 @@ pub struct Manifest {
     pub dev: Option<Dev>,
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
-    pub env: Option<HashMap<String, Environment>>,
-    pub vars: Option<HashMap<String, String>>,
-    pub text_blobs: Option<HashMap<String, PathBuf>>,
-    pub wasm_modules: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
     pub durable_objects: Option<DurableObjects>,
     #[serde(default, with = "string_empty_as_none")]
@@ -66,6 +62,10 @@ pub struct Manifest {
     pub compatibility_date: Option<String>,
     #[serde(default)]
     pub compatibility_flags: Vec<String>,
+    pub env: Option<HashMap<String, Environment>>,
+    pub vars: Option<HashMap<String, String>>,
+    pub text_blobs: Option<HashMap<String, PathBuf>>,
+    pub wasm_modules: Option<HashMap<String, PathBuf>>,
 }
 
 impl Manifest {
@@ -742,5 +742,18 @@ mod tests {
         fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
 
         Ok(())
+    }
+
+    #[test]
+    fn serialize() {
+        let manifest = Manifest {
+            vars: Some(
+                vec![(String::from("FOO"), String::from("some value"))]
+                    .into_iter()
+                    .collect(),
+            ),
+            ..Default::default()
+        };
+        assert!(toml::to_string(&manifest).is_ok());
     }
 }
