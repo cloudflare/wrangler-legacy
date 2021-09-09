@@ -103,7 +103,10 @@ pub async fn http_server_get_params() -> Result<String> {
     let params = tokio::task::spawn(async move {
         match rx.recv().await {
             Some(values) => values,
-            None => "error".to_string(),
+            None => {
+                log::debug!("Sender side of the channel has been closed. Cannot read any values on the receiver side.");
+                "error".to_string()
+            },
         }
     })
     .await?;

@@ -201,22 +201,17 @@ impl GlobalUser {
             let more_info = format!("{}\nIf you'd like to edit the configuration file, it can be found at {}. Consider also running {} to clean up the configuration file.", error_info, config_path.to_str().unwrap(), wrangler_logout_msg);
 
             Self::show_config_err_info(Some(more_info), config)
-        } else if let Ok(api_token_value) = api_token {
-            Ok(Self::ApiTokenAuth {
-                api_token: api_token_value,
-            })
-        } else if let (Ok(email_value), Ok(api_key_value)) = (email, api_key) {
-            Ok(Self::GlobalKeyAuth {
-                email: email_value,
-                api_key: api_key_value,
-            })
-        } else if let (Ok(oauth_token_value), Ok(refresh_token_value), Ok(expiration_time_value)) =
+        } else if let Ok(api_token) = api_token {
+            Ok(Self::ApiTokenAuth { api_token })
+        } else if let (Ok(email), Ok(api_key)) = (email, api_key) {
+            Ok(Self::GlobalKeyAuth { email, api_key })
+        } else if let (Ok(oauth_token), Ok(refresh_token), Ok(expiration_time)) =
             (oauth_token, refresh_token, expiration_time)
         {
             Ok(Self::OAuthTokenAuth {
-                oauth_token: oauth_token_value,
-                refresh_token: refresh_token_value,
-                expiration_time: expiration_time_value,
+                oauth_token,
+                refresh_token,
+                expiration_time,
             })
         } else {
             // Empty configuration file and no environment variables, or missing variable for global API key
