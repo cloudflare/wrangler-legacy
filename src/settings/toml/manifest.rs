@@ -11,6 +11,7 @@ use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
+use super::migrations::{MigrationConfig, MigrationTag, Migrations};
 use super::UsageModel;
 use crate::commands::whoami::fetch_accounts;
 use crate::commands::{validate_worker_name, whoami, DEFAULT_CONFIG_PATH};
@@ -57,6 +58,7 @@ pub struct Manifest {
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub triggers: Option<Triggers>,
     pub durable_objects: Option<DurableObjects>,
+    pub migrations: Option<Vec<MigrationConfig>>,
     #[serde(default, with = "string_empty_as_none")]
     pub usage_model: Option<UsageModel>,
     pub compatibility_date: Option<String>,
@@ -369,7 +371,10 @@ impl Manifest {
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
             durable_objects: self.durable_objects.clone(), // Not inherited
-            migrations: None,        // TODO(soon) Allow migrations in wrangler.toml
+            migrations: self.migrations.as_ref().map(|migrations| Migrations::List {
+                script_tag: MigrationTag::Unknown,
+                migrations: migrations.clone(),
+            }), // Top Level
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited
