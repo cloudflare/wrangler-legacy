@@ -109,7 +109,7 @@ $ wrangler publish
 
 ### 🔓 `login`
 
-  Authenticate Wrangler with your Cloudflare login. This will prompt you with a Cloudflare account login page and a permissions consent page. 
+  Authorize Wrangler with your Cloudflare login. This will prompt you with a Cloudflare account login page and a permissions consent page. 
   This command is the alternative to `wrangler config` and it uses OAuth tokens.
 
   ```bash
