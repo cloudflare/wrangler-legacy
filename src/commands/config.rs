@@ -9,6 +9,7 @@ use anyhow::Result;
 use cloudflare::endpoints::user::{GetUserDetails, GetUserTokenStatus};
 use cloudflare::framework::apiclient::ApiClient;
 
+use crate::commands::logout::invalidate_oauth_token;
 use crate::http;
 use crate::settings::{get_global_config_path, global_user::GlobalUser};
 use crate::terminal::message::{Message, StdOut};
@@ -28,6 +29,9 @@ pub fn global_config(user: &GlobalUser, verify: bool) -> Result<()> {
         StdOut::info("Validating credentials...");
         validate_credentials(user)?;
     }
+
+    // Invalidate previous oauth token if present
+    invalidate_oauth_token("`wrangler config`".to_string());
 
     let config_file = get_global_config_path();
     user.to_file(&config_file)?;

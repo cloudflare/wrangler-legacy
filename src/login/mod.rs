@@ -15,7 +15,7 @@ use crate::terminal::{interactive, open_browser};
 
 use crate::cli::login::SCOPES_LIST;
 use crate::commands::config::global_config;
-use crate::commands::logout::revoke_token;
+use crate::commands::logout::invalidate_oauth_token;
 use crate::login::http::http_server_get_params;
 use crate::settings::{get_global_config_path, global_user::GlobalUser};
 
@@ -130,9 +130,7 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
 
     let refresh_token_value = match token_response.refresh_token() {
         Some(token) => token,
-        None => anyhow::bail!(display_error_info(
-            "Failed to receive refresh token. Please run `wrangler login` again."
-        )),
+        None => anyhow::bail!(display_error_info("Failed to receive refresh token.")),
     };
 
     // Configure user with new token
@@ -145,7 +143,7 @@ pub fn run(scopes: Option<&[String]>) -> Result<()> {
     };
 
     // Invalidate previous OAuth token if present
-    invalidate_oauth_token();
+    invalidate_oauth_token("`wrangler login`".to_string());
     global_config(&user, false)?;
 
     Ok(())
@@ -227,19 +225,4 @@ pub fn check_update_oauth_token(user: &mut GlobalUser) -> Result<()> {
 pub fn display_error_info(error_msg: &str) -> String {
     let error_info = format!("{} Please run `wrangler login` again. If the error persists, consider reporting the issue through `wrangler report`.", error_msg);
     error_info
-}
-
-// Invalidatess previous OAuth token if present
-fn invalidate_oauth_token() {
-    let user_create = GlobalUser::new();
-    if let Ok(user) = user_create {
-        if let GlobalUser::OAuthTokenAuth { .. } = user {
-            // Try to invalidate previous token
-            let result = revoke_token(&user);
-            if result.is_err() {
-                // A failure to invalidate a previous token should not block the user from being able to login with a new OAuth token
-                log::debug!("Failed to invalidate OAuth token before login.");
-            }
-        }
-    }
 }
