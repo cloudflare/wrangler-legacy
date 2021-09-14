@@ -123,7 +123,7 @@ pub fn build(
                 }
                 UploadFormat::Modules { main, dir, rules } => {
                     let migration = match &target.migrations {
-                        Some(migrations) => Some(migrations.api_migration()?),
+                        Some(migrations) => migrations.api_migration()?,
                         None => None,
                     };
 

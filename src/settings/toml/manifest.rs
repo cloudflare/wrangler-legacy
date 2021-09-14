@@ -11,6 +11,7 @@ use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
 
+use super::migrations::{MigrationConfig, MigrationTag, Migrations};
 use super::UsageModel;
 use crate::commands::whoami::fetch_accounts;
 use crate::commands::{validate_worker_name, whoami, DEFAULT_CONFIG_PATH};
@@ -55,17 +56,18 @@ pub struct Manifest {
     pub dev: Option<Dev>,
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
-    pub env: Option<HashMap<String, Environment>>,
-    pub vars: Option<HashMap<String, String>>,
-    pub text_blobs: Option<HashMap<String, PathBuf>>,
-    pub wasm_modules: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
     pub durable_objects: Option<DurableObjects>,
+    pub migrations: Option<Vec<MigrationConfig>>,
     #[serde(default, with = "string_empty_as_none")]
     pub usage_model: Option<UsageModel>,
     pub compatibility_date: Option<String>,
     #[serde(default)]
     pub compatibility_flags: Vec<String>,
+    pub env: Option<HashMap<String, Environment>>,
+    pub vars: Option<HashMap<String, String>>,
+    pub text_blobs: Option<HashMap<String, PathBuf>>,
+    pub wasm_modules: Option<HashMap<String, PathBuf>>,
 }
 
 impl Manifest {
@@ -116,11 +118,6 @@ impl Manifest {
             });
 
         config_template.warn_on_account_info();
-        if let Some(target_type) = &target_type {
-            if config_template.target_type != *target_type {
-                StdOut::warn(&format!("The template recommends the \"{}\" type. Using type \"{}\" may cause errors, we recommend changing the type field in wrangler.toml to \"{}\"", config_template.target_type, target_type, config_template.target_type));
-            }
-        }
 
         let default_workers_dev = match &config_template.route {
             Some(route) if route.is_empty() => Some(true),
@@ -374,7 +371,10 @@ impl Manifest {
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
             durable_objects: self.durable_objects.clone(), // Not inherited
-            migrations: None,        // TODO(soon) Allow migrations in wrangler.toml
+            migrations: self.migrations.as_ref().map(|migrations| Migrations::List {
+                script_tag: MigrationTag::Unknown,
+                migrations: migrations.clone(),
+            }), // Top Level
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited
@@ -747,5 +747,18 @@ mod tests {
         fs::remove_file(toml_path.with_file_name("wrangler.toml"))?;
 
         Ok(())
+    }
+
+    #[test]
+    fn serialize() {
+        let manifest = Manifest {
+            vars: Some(
+                vec![(String::from("FOO"), String::from("some value"))]
+                    .into_iter()
+                    .collect(),
+            ),
+            ..Default::default()
+        };
+        assert!(toml::to_string(&manifest).is_ok());
     }
 }

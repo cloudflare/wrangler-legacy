@@ -22,6 +22,7 @@ use std::sync::{
 };
 use std::thread;
 
+#[allow(clippy::too_many_arguments)]
 pub fn dev(
     target: Target,
     user: GlobalUser,
@@ -30,6 +31,7 @@ pub fn dev(
     local_protocol: Protocol,
     upstream_protocol: Protocol,
     verbose: bool,
+    inspect: bool,
 ) -> Result<()> {
     let runtime = TokioRuntime::new()?;
     loop {
@@ -49,6 +51,7 @@ pub fn dev(
             local_protocol,
             upstream_protocol,
             verbose,
+            inspect,
             &runtime,
             sender,
             (rx_init_shutdown, tx_ack_shutdown),
@@ -79,6 +82,7 @@ fn dev_once(
     local_protocol: Protocol,
     upstream_protocol: Protocol,
     verbose: bool,
+    inspect: bool,
     runtime: &TokioRuntime,
     refresh_session_sender: Sender<Option<()>>,
     shutdown_channel: (oneshot::Receiver<()>, oneshot::Sender<()>),
@@ -93,8 +97,20 @@ fn dev_once(
         verbose,
     )?;
 
-    let preview_token = Arc::new(Mutex::new(preview_token));
+    let inspect = if inspect {
+        // prewarm the isolate
+        let client = crate::http::client();
+        client
+            .post(session.prewarm_url)
+            .header("cf-workers-preview-token", &preview_token)
+            .send()?
+            .error_for_status()?;
+        Some(target.name.clone())
+    } else {
+        None
+    };
 
+    let preview_token = Arc::new(Mutex::new(preview_token));
     {
         let preview_token = preview_token.clone();
         let session_token = session.preview_token.clone();
@@ -115,6 +131,8 @@ fn dev_once(
 
     let devtools_listener = runtime.spawn(socket::listen(
         session.websocket_url,
+        server_config.clone(),
+        inspect,
         Some(refresh_session_sender),
     ));
     let server = match local_protocol {
