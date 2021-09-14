@@ -7,6 +7,7 @@ use std::str::FromStr;
 use config::{Config, File};
 
 use anyhow::{anyhow, Result};
+use chrono::Utc;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
@@ -171,6 +172,9 @@ impl Manifest {
                 }
             }
         }
+
+        config_template_doc["compatibility_date"] =
+            toml_edit::value(format!("{}", Utc::now().format("%F")));
 
         // TODO: https://github.com/cloudflare/wrangler/issues/773
 
