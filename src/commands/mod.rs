@@ -6,6 +6,7 @@ pub mod generate;
 pub mod init;
 pub mod kv;
 pub mod login;
+pub mod logout;
 mod preview;
 pub mod publish;
 pub mod report;

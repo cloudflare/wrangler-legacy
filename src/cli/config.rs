@@ -23,8 +23,10 @@ pub fn configure(api_key: bool, no_verify: bool) -> Result<()> {
             styles::warning("(Not Recommended)"),
             styles::highlight("`wrangler config --api-key`")
         ));
-        let api_token: String = interactive::get_user_input("Enter API Token: ");
-        GlobalUser::TokenAuth { api_token }
+        let api_token_value: String = interactive::get_user_input("Enter API Token: ");
+        GlobalUser::ApiTokenAuth {
+            api_token: api_token_value,
+        }
     } else {
         StdOut::billboard(&format!(concat!(
             "We don't recommend using your Global API Key!\n",

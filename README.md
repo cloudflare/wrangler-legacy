@@ -109,7 +109,20 @@ $ wrangler publish
 
 ### 🔓 `login`
 
-  Authenticate Wrangler with your Cloudflare login. This will prompt you with a Cloudflare account login page and is the alternative to `wrangler config`.
+  Authorize Wrangler with your Cloudflare login. This will prompt you with a Cloudflare account login page and a permissions consent page. 
+  This command is the alternative to `wrangler config` and it uses OAuth tokens.
+
+  ```bash
+  wrangler login --scopes-list --scopes <scopes>
+  ```
+
+  All of the arguments and flags to this command are optional:
+
+  - `scopes-list`: list all the available OAuth scopes with descriptions.
+  - `scopes`: allows to choose your set of OAuth scopes.
+
+  Read more about this command in [Wrangler Login Documentation](https://developers.cloudflare.com/workers/cli-wrangler/commands#login).
+
 
 ### 🔧 `config`
 
