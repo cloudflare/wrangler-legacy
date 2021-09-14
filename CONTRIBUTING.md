@@ -9,7 +9,7 @@ If you want to learn about how to get started developing Wrangler, [click here](
 
 ## People
 
-Wrangler is owned by the [Cloudflare Workers](https://workers.cloudflare.com) Team and maintained by community members like you! The core maintainers are @EverlastingBugstopper and @ashleymichal, and everything that gets merged must be approved by at least one team member.
+Wrangler is owned by the [Cloudflare Workers](https://workers.cloudflare.com) Team and maintained by community members like you! The core maintainers are [the wrangler team](https://github.com/orgs/cloudflare/teams/wrangler/members), and everything that gets merged must be approved by at least one team member.
 
 ## Developing Wrangler
 
