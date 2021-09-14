@@ -181,7 +181,7 @@ impl Manifest {
         }
 
         config_template_doc["compatibility_date"] =
-            toml_edit::value(format!("{}", Utc::now().format("%F")));
+            toml_edit::value(Utc::now().format("%F").to_string());
 
         // TODO: https://github.com/cloudflare/wrangler/issues/773
 
