@@ -85,8 +85,9 @@ pub async fn http(
     if let Err(e) = server.await {
         eprintln!("{}", e);
     }
-    tx.send(())
-        .expect("Could not acknowledge listener shutdown");
+    if let Err(e) = tx.send(()) {
+        log::error!("Could not acknowledge dev http listener shutdown: {:?}", e);
+    }
 
     Ok(())
 }
