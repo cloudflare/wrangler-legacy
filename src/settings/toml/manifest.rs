@@ -7,6 +7,7 @@ use std::str::FromStr;
 use config::{Config, File};
 
 use anyhow::{anyhow, Result};
+use chrono::Utc;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
@@ -93,6 +94,13 @@ impl Manifest {
 
         check_for_duplicate_names(&manifest)?;
 
+        if manifest.compatibility_date.is_none() {
+            StdOut::warn(&format!(
+                "Your configuration file is missing compatibility_date, so a distant past date is assumed. To get the latest possibly-breaking bug fixes, add this line to your wrangler.toml:\n\n    compatibility_date = \"{}\"\n",
+                Utc::now().format("%F")));
+            StdOut::warn("For more information about compatibility dates, see: https://developers.cloudflare.com/workers/platform/compatibility-dates");
+        }
+
         Ok(manifest)
     }
 
@@ -171,6 +179,9 @@ impl Manifest {
                 }
             }
         }
+
+        config_template_doc["compatibility_date"] =
+            toml_edit::value(Utc::now().format("%F").to_string());
 
         // TODO: https://github.com/cloudflare/wrangler/issues/773
 
