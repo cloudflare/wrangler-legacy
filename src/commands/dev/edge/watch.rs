@@ -44,6 +44,8 @@ pub fn watch_for_changes(
                 *preview_token = token;
             }
             Err(err) => {
+                // TODO: should probably replace legacy client to handle API errors properly.
+                //       Also shutdown `wrangler dev` more gracefully.
                 if let Some(err) = err.downcast_ref::<setup::BadRequestError>() {
                     // if the API error code is 10049, then it's an expired preview token
                     if err.0.contains("10049") {
@@ -52,12 +54,10 @@ pub fn watch_for_changes(
                     }
 
                     // otherwise it is a non recoverable error
-                    StdOut::warn(&format!(
-                        "{}\nPlease terminate `wrangler dev` using Ctrl+C.",
-                        &err.0
-                    ));
+                    StdOut::warn(&format!("{}\nTerminating `wrangler dev`..", &err.0));
+                    std::process::exit(1);
                 } else {
-                    // For all other errors, we can retry refreshing. TODO: maybe find out all possible errors
+                    // For all other errors, we can retry refreshing.
                     refresh_session_channel.send(Some(()))?;
                     break;
                 }
