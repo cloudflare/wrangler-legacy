@@ -51,11 +51,14 @@ pub fn watch_for_changes(
                     if err.0.contains("10049") {
                         refresh_session_channel.send(Some(()))?;
                         break;
+                    } else if err.0.contains("10021") {
+                        // Continue to watch for changes if it's a syntax error
+                        StdOut::warn(&format!("{}\nPlease update the your code.", &err.0));
+                    } else {
+                        // Other errors are non-recoverable
+                        StdOut::warn(&format!("{}\nTerminating `wrangler dev`..", &err.0));
+                        std::process::exit(1);
                     }
-
-                    // otherwise it is a non recoverable error
-                    StdOut::warn(&format!("{}\nTerminating `wrangler dev`..", &err.0));
-                    std::process::exit(1);
                 } else {
                     // For all other errors, we can retry refreshing.
                     refresh_session_channel.send(Some(()))?;
