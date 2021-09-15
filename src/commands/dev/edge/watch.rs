@@ -53,7 +53,7 @@ pub fn watch_for_changes(
                         break;
                     } else if err.0.contains("10021") {
                         // Continue to watch for changes if it's a syntax error
-                        StdOut::warn(&format!("{}\nPlease update the your code.", &err.0));
+                        StdOut::warn(&format!("{}\nPlease update your code.", &err.0));
                     } else {
                         // Other errors are non-recoverable
                         StdOut::warn(&format!("{}\nTerminating `wrangler dev`..", &err.0));
