@@ -73,14 +73,14 @@
 
     ```
 
-  - **Fix wrangler dev session expiration - [Electroid], [pull/2071]**
+  - **Fix wrangler dev session expiration - [ocsfrank], [pull/2071]**
 
     This PR fixes the issue described in #2068. API errors related to syntax or preview token return the same `bad_request` status code, and the changes should address these two particular cases.
 
     In the future, it would be great to update th
     ... truncated
 
-    [electroid]: https://github.com/Electroid
+    [ocsfrank]: https://github.com/ocsfrank
     [pull/2071]: https://github.com/cloudflare/wrangler/pull/2071
 
   - **fix: remove panic when send fails, log error instead - [nilslice], [pull/2061]**
