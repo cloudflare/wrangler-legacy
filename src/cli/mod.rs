@@ -1,5 +1,6 @@
 pub mod build;
 pub mod config;
+pub mod delete;
 pub mod dev;
 pub mod generate;
 pub mod init;
@@ -17,6 +18,7 @@ pub mod whoami;
 pub mod exec {
     pub use super::build::build;
     pub use super::config::configure;
+    pub use super::delete::delete;
     pub use super::dev::dev;
     pub use super::generate::generate;
     pub use super::init::init;
@@ -199,6 +201,24 @@ pub enum Command {
 
         #[structopt(flatten)]
         migration: AdhocMigration,
+    },
+
+    /// Delete a Workers script from an account.
+    #[structopt(name = "delete")]
+    Delete {
+        /// Disables interactive mode
+        #[structopt(long = "no-interactive", short = "n")]
+        no_interactive: bool,
+        /// Allows to delete script without confirmation step.
+        #[structopt(long, short = "f", requires = "no-interactive", requires = "account-id", requires = "script-id")]
+        force: bool,
+        /// Account ID to delete the script from. Required if interactive mode is disabled.
+        #[structopt(long = "account-id", short = "aid", requires = "no-interactive", requires = "script-id")]
+        account_id: Option<String>,
+        /// Script ID to delete. Required if interactive mode is disabled.
+        #[structopt(long = "script-id", short = "sid", requires = "no-interactive", requires = "account-id")]
+        script_id: Option<String>,
+
     },
 
     /// Authenticate Wrangler with a Cloudflare API Token or Global API Key

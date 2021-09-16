@@ -102,6 +102,7 @@ fn run() -> Result<()> {
             output,
             migration,
         } => exec::publish(release, output, migration, &cli_params),
+        Command::Delete { no_interactive, force, account_id, script_id } => exec::delete(no_interactive, force, account_id, script_id),
         Command::Subdomain { name } => exec::subdomain(name, &cli_params),
         Command::Route(route) => exec::route(route, &cli_params),
         Command::Secret(secret) => exec::secret(secret, &cli_params),

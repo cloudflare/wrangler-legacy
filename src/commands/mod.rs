@@ -1,6 +1,7 @@
 use std::process::Command;
 
 pub mod config;
+pub mod delete;
 pub mod dev;
 pub mod generate;
 pub mod init;
