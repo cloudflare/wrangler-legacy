@@ -1,5 +1,95 @@
 # Changelog
 
+## v1.19.3
+
+- ### Features
+
+  - **Generate `compatibility_date` in `wrangler init` and warn if it's missing - [kentonv], [pull/2070]**
+
+    We'd like everyone to specify a `compatibility_date` in their `wrangler.toml` going forward. This change both adds the date automatically to newly-generated `wrangler.toml` files, and warns when parsing old ones that are missing it.
+
+    See
+    ... truncated
+
+    [kentonv]: https://github.com/kentonv
+    [pull/2070]: https://github.com/cloudflare/wrangler/pull/2070
+
+  - **Implement `wrangler dev --inspect` - [jyn514], [pull/2016]**
+
+    Helps with #946.
+
+    ## How do I use this?
+
+    1. `wrangler dev --inspect`, which should have output similar to this:
+
+    ```
+    💁  watching "./"
+    👂  Listening on http://127.0.0.1:8787
+    [2021-07-28 13:38:20] GET worker.jnelson.workers.dev/ HTTP/
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2016]: https://github.com/cloudflare/wrangler/pull/2016
+
+    ```
+
+  - **OAuth integration for Wrangler login - [ocsfrank], [pull/2048]**
+
+    Still in staging, but it should be ready for review.
+
+    Please also ignore the cargo.toml, I will update it once the service goes to prod. The CI test are failing because of `oauth2` library.
+
+    [ocsfrank]: https://github.com/ocsfrank
+    [pull/2048]: https://github.com/cloudflare/wrangler/pull/2048
+
+  - **Tagged Durable Objects Migrations - [xortive], [pull/1992]**
+
+    fixes #1950
+
+    This PR adds support for tagged migrations to wrangler. Migration tags are a way to ensure that you are applying the correct migration to a given script that contains a DO.
+
+    They are also used for allowing multiple migrati
+    ... truncated
+
+    [xortive]: https://github.com/xortive
+    [pull/1992]: https://github.com/cloudflare/wrangler/pull/1992
+
+- ### Fixes
+
+  - **Allow showing a backtrace for errors returned from main - [jyn514], [pull/2059]**
+
+    Example usage:
+
+    ```
+    $ RUST_BACKTRACE=1 wrangler dev --inspect
+    Error: missing field `prewarm` at line 1 column 627
+
+    Stack backtrace:
+       0: <core::result::Result<T,F> as core::ops::try_trait::FromResidual<core::result::Result<core::con
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2059]: https://github.com/cloudflare/wrangler/pull/2059
+
+    ```
+
+  - **Fix wrangler dev session expiration - [ocsfrank], [pull/2071]**
+
+    This PR fixes the issue described in #2068. API errors related to syntax or preview token return the same `bad_request` status code, and the changes should address these two particular cases.
+
+    In the future, it would be great to update th
+    ... truncated
+
+    [ocsfrank]: https://github.com/ocsfrank
+    [pull/2071]: https://github.com/cloudflare/wrangler/pull/2071
+
+  - **fix: remove panic when send fails, log error instead - [nilslice], [pull/2061]**
+
+    Removes the panic on send failure from the last remaining place for this particular `--watch` error.
+
+    [nilslice]: https://github.com/nilslice
+    [pull/2061]: https://github.com/cloudflare/wrangler/pull/2061
+
 ## v1.19.2
 
 - ### Maintenance
