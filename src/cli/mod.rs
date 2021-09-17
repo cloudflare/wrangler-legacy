@@ -210,15 +210,30 @@ pub enum Command {
         #[structopt(long = "no-interactive", short = "n")]
         no_interactive: bool,
         /// Allows to delete script without confirmation step.
-        #[structopt(long, short = "f", requires = "no-interactive", requires = "account-id", requires = "script-id")]
+        #[structopt(
+            long,
+            short = "f",
+            requires = "no-interactive",
+            requires = "account-id",
+            requires = "script-id"
+        )]
         force: bool,
         /// Account ID to delete the script from. Required if interactive mode is disabled.
-        #[structopt(long = "account-id", short = "aid", requires = "no-interactive", requires = "script-id")]
+        #[structopt(
+            long = "account-id",
+            short = "aid",
+            requires = "no-interactive",
+            requires = "script-id"
+        )]
         account_id: Option<String>,
         /// Script ID to delete. Required if interactive mode is disabled.
-        #[structopt(long = "script-id", short = "sid", requires = "no-interactive", requires = "account-id")]
+        #[structopt(
+            long = "script-id",
+            short = "sid",
+            requires = "no-interactive",
+            requires = "account-id"
+        )]
         script_id: Option<String>,
-
     },
 
     /// Authenticate Wrangler with a Cloudflare API Token or Global API Key
