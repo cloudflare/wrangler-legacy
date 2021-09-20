@@ -94,13 +94,6 @@ impl Manifest {
 
         check_for_duplicate_names(&manifest)?;
 
-        if manifest.compatibility_date.is_none() {
-            StdOut::warn(&format!(
-                "Your configuration file is missing compatibility_date, so a distant past date is assumed. To get the latest possibly-breaking bug fixes, add this line to your wrangler.toml:\n\n    compatibility_date = \"{}\"\n",
-                Utc::now().format("%F")));
-            StdOut::warn("For more information about compatibility dates, see: https://developers.cloudflare.com/workers/platform/compatibility-dates");
-        }
-
         Ok(manifest)
     }
 
@@ -449,6 +442,25 @@ impl Manifest {
         } else {
             Ok(None)
         }
+    }
+
+    pub fn warn_about_compatibility_date(&self) {
+        if self.compatibility_date.is_some() {
+            return;
+        }
+        let current_date = Utc::now().format("%F");
+        let message = &format!(
+            r#"
+    Your configuration file is missing compatibility_date, so a past date is assumed.
+    To get the latest possibly-breaking bug fixes, add this line to your wrangler.toml:
+
+        compatibility_date = "{}"
+
+    For more information, see: https://developers.cloudflare.com/workers/platform/compatibility-dates
+        "#,
+            current_date
+        );
+        StdOut::warn(message);
     }
 
     fn warn_on_account_info(&self) {
