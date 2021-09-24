@@ -1,5 +1,6 @@
 use crate::commands;
 use crate::settings::global_user::GlobalUser;
+
 pub fn delete(
     no_interactive: bool,
     force: bool,

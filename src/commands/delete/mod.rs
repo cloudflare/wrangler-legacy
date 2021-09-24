@@ -16,11 +16,12 @@ use crate::terminal::message::{Message, StdOut};
 
 use std::collections::{HashMap, HashSet};
 
+// Wrapper for `fn script_error`
 fn format_error(e: ApiFailure) -> String {
     http::format_error(e, Some(&script_errors))
 }
 
-// secret_errors() provides more detailed explanations of API error codes.
+// Provides more detailed explanations of API error codes.
 fn script_errors(error_code: u16) -> &'static str {
     match error_code {
         10000 => "Your authentication might be expired or invalid. Please run `wrangler login` or `wrangler config` to authorize Wrangler",
@@ -30,7 +31,9 @@ fn script_errors(error_code: u16) -> &'static str {
     }
 }
 
+// Interactive mode
 pub fn run(user: &GlobalUser) -> Result<(), anyhow::Error> {
+    // Fetch and display user accounts
     let accounts = fetch_accounts(user)?;
     let (valid_accounts, table) = format_accounts(accounts)?;
     println!("{}", &table);
@@ -41,7 +44,7 @@ pub fn run(user: &GlobalUser) -> Result<(), anyhow::Error> {
         anyhow::bail!("Account name doesn't match.")
     }
 
-    // Get the scripts related to the account
+    //  Fetch and display scripts related to the account
     let account_id = valid_accounts.get(&account_name).unwrap();
     let scripts = fetch_scripts(user, account_id)?;
     let (valid_scripts, scripts_table) = format_scripts(scripts)?;
@@ -56,6 +59,8 @@ pub fn run(user: &GlobalUser) -> Result<(), anyhow::Error> {
     if !valid_scripts.contains(&script_id) {
         anyhow::bail!("Script name doesn't match.")
     }
+
+    // Delete the script
     delete_script(user, false, account_id, &script_id)
 }
 
@@ -133,6 +138,7 @@ pub fn delete_durable_objects(
             }
         }
 
+        // Only delete bound Durable Objects, because they will cause an script_delete API error otherwise
         for binding in bindings {
             if binding.r#type == "durable_object_namespace" {
                 let namespace_id = &binding.namespace_id;

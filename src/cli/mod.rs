@@ -209,7 +209,7 @@ pub enum Command {
         /// Disables interactive mode
         #[structopt(long = "no-interactive", short = "n")]
         no_interactive: bool,
-        /// Allows to delete script without confirmation step.
+        /// Allows to delete script without confirmation step. WARNING: It will delete the Worker script and any bound Durable Object namespace.
         #[structopt(
             long,
             short = "f",
