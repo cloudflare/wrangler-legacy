@@ -51,21 +51,21 @@ pub struct Manifest {
     pub webpack_config: Option<String>,
     pub build: Option<Builder>,
     pub private: Option<bool>,
-    // TODO: maybe one day, serde toml support will allow us to serialize sites
-    // as a TOML inline table (this would prevent confusion with environments too!)
-    pub site: Option<Site>,
     pub dev: Option<Dev>,
-    #[serde(alias = "kv-namespaces")]
-    pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
     pub triggers: Option<Triggers>,
-    pub durable_objects: Option<DurableObjects>,
     pub migrations: Option<Vec<MigrationConfig>>,
     #[serde(default, with = "string_empty_as_none")]
     pub usage_model: Option<UsageModel>,
     pub compatibility_date: Option<String>,
     #[serde(default)]
     pub compatibility_flags: Vec<String>,
+    pub durable_objects: Option<DurableObjects>,
     pub env: Option<HashMap<String, Environment>>,
+    #[serde(alias = "kv-namespaces")]
+    pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
+    // TODO: maybe one day, serde toml support will allow us to serialize sites
+    // as a TOML inline table (this would prevent confusion with environments too!)
+    pub site: Option<Site>,
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub wasm_modules: Option<HashMap<String, PathBuf>>,
@@ -763,8 +763,15 @@ mod tests {
     #[test]
     fn serialize() {
         let manifest = Manifest {
+            durable_objects: Some(Default::default()),
+            kv_namespaces: Some(vec![ConfigKvNamespace {
+                binding: "FOO".to_string(),
+                id: Some("123".to_string()),
+                preview_id: None,
+            }]),
+            site: Some(Default::default()),
             vars: Some(
-                vec![(String::from("FOO"), String::from("some value"))]
+                vec![("FOO".to_string(), "some value".to_string())]
                     .into_iter()
                     .collect(),
             ),
