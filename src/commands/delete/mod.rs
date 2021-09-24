@@ -1,10 +1,13 @@
+pub mod api;
+
 use cloudflare::endpoints::account::Account;
-use cloudflare::endpoints::workers::{DeleteDurableObject, DeleteScript, ListScripts, ListBindings, WorkersBinding, WorkersScript};
+use cloudflare::endpoints::workers::{DeleteDurableObject, DeleteScript, WorkersScript};
 use cloudflare::framework::apiclient::ApiClient;
-use cloudflare::framework::HttpApiClient;
 use cloudflare::framework::response::ApiFailure;
+use cloudflare::framework::HttpApiClient;
 use prettytable::{Cell, Row, Table};
 
+use crate::commands::delete::api::{fetch_bindings, fetch_scripts};
 use crate::commands::whoami::fetch_accounts;
 use crate::http;
 use crate::settings::global_user::GlobalUser;
@@ -69,7 +72,7 @@ fn format_accounts(
         let account_lowercase = match account
             .name
             .to_lowercase()
-            .split("'")
+            .split('\'')
             .take(1)
             .next() {
                 Some(name) => name.to_string(),
@@ -85,35 +88,6 @@ fn format_accounts(
         anyhow::bail!("No accounts have been found. You might be missing an \"Account Settings : Read\" permission.")
     }
     Ok((valid_accounts, table))
-}
-
-// Get scripts from an account_id
-pub(crate) fn fetch_scripts(
-    user: &GlobalUser,
-    account_id: &str,
-) -> Result<Vec<WorkersScript>, anyhow::Error> {
-    let client = http::cf_v4_client(user)?;
-    let response = client.request(&ListScripts { account_id });
-    match response {
-        Ok(res) => Ok(res.result),
-        Err(e) => {
-            match e {
-                ApiFailure::Error(_, ref api_errors) => {
-                    let error = &api_errors.errors[0];
-                    if error.code == 9109 {
-                        // 9109 error code = Invalid access token
-                        StdOut::info("Your API/OAuth token might be expired, or might not have the necessary permissions. Please re-authenticate wrangler by running `wrangler login` or `wrangler config`.");
-                    } else if error.code == 6003 {
-                        // 6003 error code = Invalid request headers. A common case is when the value of an authorization method has been changed outside of wrangler commands
-                        StdOut::info("Your authentication method might be corrupted (e.g. API token value has been altered). Please re-authenticate wrangler by running `wrangler login` or `wrangler config`.");
-                    }
-
-                }
-                ApiFailure::Invalid(_) => StdOut::info("Something went wrong in processing a request. Please consider raising an issue at https://github.com/cloudflare/wrangler/issues"),
-            }
-            anyhow::bail!(http::format_error(e, None))
-        }
-    }
 }
 
 // Formats the scripts in a table and returns an associated hashset
@@ -132,66 +106,53 @@ fn format_scripts(scripts: Vec<WorkersScript>) -> Result<(HashSet<String>, Table
     Ok((valid_scripts, table))
 }
 
-pub(crate) fn fetch_bindings(
+// Delete all durable object namespaces used in a script
+pub fn delete_durable_objects(
     client: &HttpApiClient,
     account_id: &str,
     script_id: &str,
-) -> Result<Vec<WorkersBinding>, anyhow::Error> {
-    let response = client.request(&ListBindings { account_id, script_id });
-    match response {
-        Ok(res) => Ok(res.result),
-        Err(e) => {
-            match e {
-                ApiFailure::Error(_, ref api_errors) => {
-                    let error = &api_errors.errors[0];
-                    if error.code == 9109 {
-                        // 9109 error code = Invalid access token
-                        StdOut::info("Your API/OAuth token might be expired, or might not have the necessary permissions. Please re-authenticate wrangler by running `wrangler login` or `wrangler config`.");
-                    } else if error.code == 6003 {
-                        // 6003 error code = Invalid request headers. A common case is when the value of an authorization method has been changed outside of wrangler commands
-                        StdOut::info("Your authentication method might be corrupted (e.g. API token value has been altered). Please re-authenticate wrangler by running `wrangler login` or `wrangler config`.");
-                    }
-
-                }
-                ApiFailure::Invalid(_) => StdOut::info("Something went wrong in processing a request. Please consider raising an issue at https://github.com/cloudflare/wrangler/issues"),
-            }
-            anyhow::bail!(http::format_error(e, None))
-        }
-    }
-}
-
-pub fn delete_durable_objects(client: &HttpApiClient, account_id: &str, script_id: &str) -> Result<(), anyhow::Error> {
+    force: bool,
+) -> Result<(), anyhow::Error> {
     let mut bindings = fetch_bindings(client, account_id, script_id)?;
     bindings.retain(|binding| binding.r#type == "durable_object_namespace");
 
     if !bindings.is_empty() {
-        StdOut::info(&format!("Found {} Durable Object(s) associated with the script {}", bindings.len(), script_id));
-        match interactive::confirm(&format!("Are you sure you want to permanently delete the Durable Objects? All the associated data will be permanently LOST.")) {
-            Ok(true) => (),
-            Ok(false) => {
-                return Ok(());
-            },
-            Err(e) => anyhow::bail!(e),
+        StdOut::info(&format!(
+            "Found {} Durable Object(s) associated with the script {}",
+            bindings.len(),
+            script_id
+        ));
+
+        if !force {
+            match interactive::confirm("Are you sure you want to permanently delete the Durable Objects? All the associated data will be permanently LOST.") {
+                Ok(true) => (),
+                Ok(false) => {
+                    return Ok(());
+                },
+                Err(e) => anyhow::bail!(e),
+            }
         }
 
         for binding in bindings {
             if binding.r#type == "durable_object_namespace" {
-                println!("DO: {}", binding.namespace_id);
                 let namespace_id = &binding.namespace_id;
                 match client.request(&DeleteDurableObject {
                     account_id,
                     namespace_id,
                 }) {
-                    Ok(_) => StdOut::info(&format!("Deleted Durable Object - class_name: {}, name: {}", binding.class_name.unwrap(), binding.name)),
+                    Ok(_) => StdOut::info(&format!(
+                        "Deleted Durable Object - class_name: {}, name: {}",
+                        binding.class_name.unwrap(),
+                        binding.name
+                    )),
                     Err(e) => anyhow::bail!(e),
                 }
             }
         }
-
     }
     Ok(())
-
 }
+
 // Deletes a script_id from an account_id
 pub fn delete_script(
     user: &GlobalUser,
@@ -217,7 +178,7 @@ pub fn delete_script(
 
     let client = http::cf_v4_client(user)?;
 
-    delete_durable_objects(&client, account_id, script_id)?;
+    delete_durable_objects(&client, account_id, script_id, force)?;
     match client.request(&DeleteScript {
         account_id,
         script_id,
