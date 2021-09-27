@@ -203,37 +203,12 @@ pub enum Command {
         migration: AdhocMigration,
     },
 
-    /// Delete a Workers script from an account.
+    /// Delete your Worker from the Orange Cloud
     #[structopt(name = "delete")]
     Delete {
-        /// Disables interactive mode
-        #[structopt(long = "non-interactive", short = "n")]
-        no_interactive: bool,
         /// Allows to delete script without confirmation step. WARNING: It will delete the Worker script and any bound Durable Object namespace.
-        #[structopt(
-            long,
-            short = "f",
-            requires = "non-interactive",
-            requires = "account-id",
-            requires = "script-name"
-        )]
+        #[structopt(long, short = "f")]
         force: bool,
-        /// Account ID to delete the script from. Required if interactive mode is disabled.
-        #[structopt(
-            long = "account-id",
-            short = "aid",
-            requires = "non-interactive",
-            requires = "script-name"
-        )]
-        account_id: Option<String>,
-        /// Script ID to delete. Required if interactive mode is disabled.
-        #[structopt(
-            long = "script-name",
-            short = "sid",
-            requires = "non-interactive",
-            requires = "account-id"
-        )]
-        script_name: Option<String>,
     },
 
     /// Authenticate Wrangler with a Cloudflare API Token or Global API Key

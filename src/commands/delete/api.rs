@@ -1,33 +1,11 @@
-use cloudflare::endpoints::workers::{ListBindings, ListScripts, WorkersBinding, WorkersScript};
+use cloudflare::endpoints::workers::{ListBindings, WorkersBinding};
 use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiErrors;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
 
 use crate::http;
-use crate::settings::global_user::GlobalUser;
 use crate::terminal::message::{Message, StdOut};
-
-// Get scripts from an account_id
-pub(crate) fn fetch_scripts(
-    user: &GlobalUser,
-    account_id: &str,
-) -> Result<Vec<WorkersScript>, anyhow::Error> {
-    let client = http::cf_v4_client(user)?;
-    let response = client.request(&ListScripts { account_id });
-    match response {
-        Ok(res) => Ok(res.result),
-        Err(e) => {
-            match e {
-                ApiFailure::Error(_, ref api_errors) => {
-                    api_error_info(api_errors);
-                }
-                ApiFailure::Invalid(_) => StdOut::info("Something went wrong in processing a request. Please consider raising an issue at https://github.com/cloudflare/wrangler/issues"),
-            }
-            anyhow::bail!(http::format_error(e, None))
-        }
-    }
-}
 
 // Fetches all bindings for a script_name associated with an account_id
 pub(crate) fn fetch_bindings(
