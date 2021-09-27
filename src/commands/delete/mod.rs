@@ -54,14 +54,14 @@ pub fn run(user: &GlobalUser) -> Result<(), anyhow::Error> {
         return Ok(());
     }
     println!("{}", &scripts_table);
-    let script_id =
+    let script_name =
         interactive::get_user_input("Please enter the name of the Workers script to be deleted.");
-    if !valid_scripts.contains(&script_id) {
+    if !valid_scripts.contains(&script_name) {
         anyhow::bail!("Script name doesn't match.")
     }
 
     // Delete the script
-    delete_script(user, false, account_id, &script_id)
+    delete_script(user, false, account_id, &script_name)
 }
 
 // Formats the accounts in a table and returns an associated hashtable
@@ -115,17 +115,17 @@ fn format_scripts(scripts: Vec<WorkersScript>) -> Result<(HashSet<String>, Table
 pub fn delete_durable_objects(
     client: &HttpApiClient,
     account_id: &str,
-    script_id: &str,
+    script_name: &str,
     force: bool,
 ) -> Result<(), anyhow::Error> {
-    let mut bindings = fetch_bindings(client, account_id, script_id)?;
+    let mut bindings = fetch_bindings(client, account_id, script_name)?;
     bindings.retain(|binding| binding.r#type == "durable_object_namespace");
 
     if !bindings.is_empty() {
         StdOut::info(&format!(
             "Found {} Durable Object(s) associated with the script {}",
             bindings.len(),
-            script_id
+            script_name
         ));
 
         if !force {
@@ -159,18 +159,18 @@ pub fn delete_durable_objects(
     Ok(())
 }
 
-// Deletes a script_id from an account_id
+// Deletes a script_name from an account_id
 pub fn delete_script(
     user: &GlobalUser,
     force: bool,
     account_id: &str,
-    script_id: &str,
+    script_name: &str,
 ) -> Result<(), anyhow::Error> {
     if !force {
-        match interactive::confirm(&format!("Are you sure you want to permanently delete the script name \"{}\" from the account ID {}?", script_id, account_id)) {
+        match interactive::confirm(&format!("Are you sure you want to permanently delete the script name \"{}\" from the account ID {}?", script_name, account_id)) {
             Ok(true) => (),
             Ok(false) => {
-                StdOut::info(&format!("Not deleting script \"{}\"", script_id));
+                StdOut::info(&format!("Not deleting script \"{}\"", script_name));
                 return Ok(());
             },
             Err(e) => anyhow::bail!(e),
@@ -179,18 +179,18 @@ pub fn delete_script(
 
     StdOut::working(&format!(
         "Deleting the script \"{}\" on account {}.",
-        script_id, account_id
+        script_name, account_id
     ));
 
     let client = http::cf_v4_client(user)?;
 
-    delete_durable_objects(&client, account_id, script_id, force)?;
+    delete_durable_objects(&client, account_id, script_name, force)?;
     match client.request(&DeleteScript {
         account_id,
-        script_id,
+        script_name,
     }) {
         Ok(_) => {
-            StdOut::success(&format!("Success! Deleted script \"{}\".", script_id));
+            StdOut::success(&format!("Success! Deleted script \"{}\".", script_name));
         }
         Err(e) => {
             anyhow::bail!(format_error(e))
