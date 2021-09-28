@@ -367,7 +367,7 @@ dependencies = [
 [[package]]
 name = "cloudflare"
 version = "0.8.7"
-source = "git+https://github.com/ocsfrank/cloudflare-rs#6f402424784e56b2be0fdabd7bdf7a4a1aa0433d"
+source = "git+https://github.com/ocsfrank/cloudflare-rs?branch=wrangler-delete-endpoints#0ebe2573707d06d0a513ebdb970ed71bba0e3795"
 dependencies = [
  "anyhow",
  "async-trait",
