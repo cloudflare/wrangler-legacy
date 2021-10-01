@@ -140,17 +140,25 @@ fn dev_once(
         inspect,
         Some(refresh_session_sender),
     ));
+
+    let host = if server_config.host.is_default() {
+        session.host
+    } else {
+        StdOut::warn("A provided host while running authenticated must be from the zone specified in your wrangler.toml");
+        server_config.host.to_string()
+    };
+
     let server = match local_protocol {
         Protocol::Https => runtime.spawn(server::https(
             server_config,
             Arc::clone(&preview_token),
-            session.host,
+            host,
             shutdown_channel,
         )),
         Protocol::Http => runtime.spawn(server::http(
             server_config,
             Arc::clone(&preview_token),
-            session.host,
+            host,
             upstream_protocol,
             shutdown_channel,
         )),
