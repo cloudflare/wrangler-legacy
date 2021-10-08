@@ -72,9 +72,7 @@ pub fn upload(
 
                     bulk::put(target, user, &site_namespace.id, to_upload, &None)?;
 
-                    let preview = authenticated_upload(&client, target, Some(asset_manifest))?;
-
-                    preview
+                    authenticated_upload(&client, target, Some(asset_manifest))?
                 } else {
                     authenticated_upload(&client, target, None)?
                 }
