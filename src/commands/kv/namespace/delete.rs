@@ -8,19 +8,21 @@ use crate::terminal::message::{Message, StdOut};
 
 use anyhow::Result;
 
-pub fn run(target: &Target, user: &GlobalUser, id: &str) -> Result<()> {
+pub fn run(target: &Target, user: &GlobalUser, id: &str, force: bool) -> Result<()> {
     let client = http::cf_v4_client(user)?;
 
-    match interactive::confirm(&format!(
-        "Are you sure you want to delete namespace {}?",
-        id
-    )) {
-        Ok(true) => (),
-        Ok(false) => {
-            StdOut::info(&format!("Not deleting namespace {}", id));
-            return Ok(());
+    if !force {
+        match interactive::confirm(&format!(
+            "Are you sure you want to delete namespace {}?",
+            id
+        )) {
+            Ok(true) => (),
+            Ok(false) => {
+                StdOut::info(&format!("Not deleting namespace {}", id));
+                return Ok(());
+            }
+            Err(e) => anyhow::bail!(e),
         }
-        Err(e) => anyhow::bail!(e),
     }
 
     let msg = format!("Deleting namespace {}", id);

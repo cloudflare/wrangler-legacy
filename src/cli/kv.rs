@@ -25,6 +25,10 @@ pub enum KvNamespace {
     Delete {
         #[structopt(flatten)]
         namespace: Namespace,
+
+        /// Forces delete without user confirmation
+        #[structopt(name = "force", long, short = "f")]
+        force: bool,
     },
     /// List all namespaces on your Cloudflare account
     List,
@@ -101,6 +105,10 @@ pub enum KvKey {
         /// Key whose value to get
         #[structopt(name = "key", index = 1)]
         key: String,
+
+        /// Forces delete without user confirmation
+        #[structopt(name = "force", long, short = "f")]
+        force: bool,
     },
     /// List all keys in a namespace. Produces JSON output
     List {
@@ -133,6 +141,10 @@ pub enum KvBulk {
         /// The JSON file of key-value pairs to upload, in form [\"<example-key>\", ...]
         #[structopt(index = 1)]
         path: PathBuf,
+
+        /// Forces delete without user confirmation
+        #[structopt(name = "force", long, short = "f")]
+        force: bool,
     },
 }
 
@@ -145,7 +157,7 @@ pub fn kv_namespace(namespace: KvNamespace, cli_params: &Cli) -> Result<()> {
         KvNamespace::Create { binding, preview } => {
             commands::kv::namespace::create(&manifest, preview, env, &user, &binding)
         }
-        KvNamespace::Delete { namespace } => {
+        KvNamespace::Delete { namespace, force } => {
             let target = manifest.get_target(env, namespace.preview)?;
             let id = if let Some(binding) = namespace.binding {
                 commands::kv::get_namespace_id(&target, &binding)?
@@ -154,7 +166,7 @@ pub fn kv_namespace(namespace: KvNamespace, cli_params: &Cli) -> Result<()> {
                     .namespace_id
                     .expect("Namespace ID is required if binding isn't supplied")
             };
-            commands::kv::namespace::delete(&target, &user, &id)
+            commands::kv::namespace::delete(&target, &user, &id, force)
         }
         KvNamespace::List => {
             let target = manifest.get_target(env, false)?;
@@ -214,9 +226,13 @@ pub fn kv_key(key: KvKey, cli_params: &Cli) -> Result<()> {
                 },
             )
         }
-        KvKey::Delete { namespace, key } => {
+        KvKey::Delete {
+            namespace,
+            key,
+            force,
+        } => {
             let (target, namespace_id) = target_and_namespace(namespace)?;
-            commands::kv::key::delete(&target, &user, &namespace_id, &key)
+            commands::kv::key::delete(&target, &user, &namespace_id, &key, force)
         }
         KvKey::List { namespace, prefix } => {
             let (target, namespace_id) = target_and_namespace(namespace)?;
@@ -248,9 +264,13 @@ pub fn kv_bulk(bulk: KvBulk, cli_params: &Cli) -> Result<()> {
             let (target, namespace_id) = target_and_namespace(namespace)?;
             commands::kv::bulk::put(&target, &user, &namespace_id, &path)
         }
-        KvBulk::Delete { namespace, path } => {
+        KvBulk::Delete {
+            namespace,
+            path,
+            force,
+        } => {
             let (target, namespace_id) = target_and_namespace(namespace)?;
-            commands::kv::bulk::delete(&target, &user, &namespace_id, &path)
+            commands::kv::bulk::delete(&target, &user, &namespace_id, &path, force)
         }
     }
 }
