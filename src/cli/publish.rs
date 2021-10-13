@@ -28,6 +28,8 @@ pub fn publish(
 
     log::info!("Getting project settings");
     let manifest = Manifest::new(&cli_params.config)?;
+    manifest.warn_about_compatibility_date();
+
     let mut target = manifest.get_target(cli_params.environment.as_deref(), false)?;
 
     if let Some(migration) = migration.into_migrations() {
