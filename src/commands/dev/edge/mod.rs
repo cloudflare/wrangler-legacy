@@ -144,7 +144,9 @@ fn dev_once(
     let host = if server_config.host.is_default() {
         session.host
     } else {
-        StdOut::warn("A provided host while running authenticated must be from the zone specified in your wrangler.toml");
+        if !server_config.host.to_string().contains(&session.host) {
+            StdOut::warn("The provided host appears to not be a domain or subdomain of the zone specified in your wrangler.toml. This may cause `wrangler dev` to not work properly. To use a host outside of your zone you can run `wrangler dev --unauthenticated`");
+        }
         server_config.host.to_string()
     };
 
