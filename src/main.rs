@@ -87,6 +87,7 @@ fn run() -> Result<()> {
             local_protocol,
             upstream_protocol,
             inspect,
+            unauthenticated,
         } => exec::dev(
             host,
             ip,
@@ -95,6 +96,7 @@ fn run() -> Result<()> {
             upstream_protocol,
             &cli_params,
             inspect,
+            unauthenticated,
         ),
         Command::Whoami => exec::whoami(),
         Command::Publish {

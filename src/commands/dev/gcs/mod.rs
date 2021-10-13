@@ -24,8 +24,6 @@ pub fn dev(
     verbose: bool,
     inspect: bool,
 ) -> Result<()> {
-    println!("unauthenticated");
-
     // setup the session
     let session_id = get_session_id()?;
     let inspect = if inspect {

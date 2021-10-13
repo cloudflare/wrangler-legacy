@@ -185,6 +185,10 @@ pub enum Command {
         /// Inspect the worker using Chrome DevTools
         #[structopt(long)]
         inspect: bool,
+
+        /// Run wrangler dev unauthenticated
+        #[structopt(long)]
+        unauthenticated: bool,
     },
 
     /// Publish your worker to the orange cloud

@@ -29,6 +29,7 @@ pub fn dev(
     upstream_protocol: Protocol,
     verbose: bool,
     inspect: bool,
+    unauthenticated: bool,
 ) -> Result<()> {
     // before serving requests we must first build the Worker
     build_target(&target)?;
@@ -70,8 +71,7 @@ pub fn dev(
     }
 
     if let Some(user) = user {
-        if server_config.host.is_default() {
-            // Authenticated and no host provided, run on edge with user's zone
+        if !unauthenticated {
             return edge::dev(
                 target,
                 user,
@@ -83,14 +83,12 @@ pub fn dev(
                 inspect,
             );
         }
-
-        // If user is authenticated but host is provided, use gcs with given host
-        StdOut::warn(
-            format!(
-                "{} provided, will run unauthenticated and upstream to provided host",
-                host_str
-            )
-            .as_str(),
+    } else {
+        let wrangler_config_msg = styles::highlight("`wrangler config`");
+        let wrangler_login_msg = styles::highlight("`wrangler login`");
+        let docs_url_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
+        StdOut::billboard(
+        &format!("You have not provided your Cloudflare credentials.\n\nPlease run {}, {}, or visit\n{}\nfor info on authenticating with environment variables.", wrangler_login_msg, wrangler_config_msg, docs_url_msg)
         );
     }
 
