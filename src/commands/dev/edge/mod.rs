@@ -140,17 +140,27 @@ fn dev_once(
         inspect,
         Some(refresh_session_sender),
     ));
+
+    let host = if server_config.host.is_default() {
+        session.host
+    } else {
+        if !server_config.host.to_string().contains(&session.host) {
+            StdOut::warn("The provided host appears to not be a domain or subdomain of the zone specified in your wrangler.toml. This may cause `wrangler dev` to not work properly. To use a host outside of your zone you can run `wrangler dev --unauthenticated`");
+        }
+        server_config.host.to_string()
+    };
+
     let server = match local_protocol {
         Protocol::Https => runtime.spawn(server::https(
             server_config,
             Arc::clone(&preview_token),
-            session.host,
+            host,
             shutdown_channel,
         )),
         Protocol::Http => runtime.spawn(server::http(
             server_config,
             Arc::clone(&preview_token),
-            session.host,
+            host,
             upstream_protocol,
             shutdown_channel,
         )),

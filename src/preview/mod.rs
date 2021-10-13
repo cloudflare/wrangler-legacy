@@ -24,6 +24,7 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::{Target, UploadFormat};
 use crate::terminal::message::{Message, StdOut};
 use crate::terminal::open_browser;
+use crate::terminal::styles;
 use crate::watch::watch_and_build;
 
 pub fn preview(
@@ -45,6 +46,15 @@ pub fn preview(
     build_target(&target)?;
 
     let sites_preview: bool = target.site.is_some();
+
+    if user.is_none() {
+        let wrangler_config_msg = styles::highlight("`wrangler config`");
+        let wrangler_login_msg = styles::highlight("`wrangler login`");
+        let docs_url_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
+        StdOut::billboard(
+        &format!("You have not provided your Cloudflare credentials.\n\nPlease run {}, {}, or visit\n{}\nfor info on authenticating with environment variables.", wrangler_login_msg, wrangler_config_msg, docs_url_msg)
+        );
+    }
 
     let script_id = upload(&mut target, user.as_ref(), sites_preview, verbose)?;
 
