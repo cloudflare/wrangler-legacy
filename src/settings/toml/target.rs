@@ -1,6 +1,6 @@
 use super::durable_objects::DurableObjects;
 use super::kv_namespace::KvNamespace;
-use super::manifest::LazyAccountId;
+pub(crate) use super::manifest::LazyAccountId;
 use super::site::Site;
 use super::target_type::TargetType;
 use super::UsageModel;
