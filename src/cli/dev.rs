@@ -17,6 +17,7 @@ pub fn dev(
 ) -> Result<()> {
     log::info!("Starting dev server");
     let manifest = Manifest::new(&cli_params.config)?;
+    manifest.warn_about_compatibility_date();
 
     // Check if arg not given but present in wrangler.toml
     if let Some(d) = &manifest.dev {

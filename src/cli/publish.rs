@@ -28,9 +28,6 @@ pub fn publish(
 
     log::info!("Getting project settings");
     let manifest = Manifest::new(&cli_params.config)?;
-
-    // Only warn about a missing compatibility date on publish,
-    // to avoid spamming other commands like `subdomain` and `tail` where it is not relevant.
     manifest.warn_about_compatibility_date();
 
     let mut target = manifest.get_target(cli_params.environment.as_deref(), false)?;
