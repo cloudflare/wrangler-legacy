@@ -16,17 +16,25 @@ use crate::settings::toml::Target;
 use crate::terminal::interactive;
 use crate::terminal::message::{Message, StdOut};
 
-pub fn run(target: &Target, user: &GlobalUser, namespace_id: &str, filename: &Path) -> Result<()> {
-    match interactive::confirm(&format!(
-        "Are you sure you want to delete all keys in {}?",
-        filename.display()
-    )) {
-        Ok(true) => (),
-        Ok(false) => {
-            StdOut::info(&format!("Not deleting keys in {}", filename.display()));
-            return Ok(());
+pub fn run(
+    target: &Target,
+    user: &GlobalUser,
+    namespace_id: &str,
+    filename: &Path,
+    force: bool,
+) -> Result<()> {
+    if !force {
+        match interactive::confirm(&format!(
+            "Are you sure you want to delete all keys in {}?",
+            filename.display()
+        )) {
+            Ok(true) => (),
+            Ok(false) => {
+                StdOut::info(&format!("Not deleting keys in {}", filename.display()));
+                return Ok(());
+            }
+            Err(e) => anyhow::bail!(e),
         }
-        Err(e) => anyhow::bail!(e),
     }
 
     let keys: Vec<String> = match &metadata(filename) {
