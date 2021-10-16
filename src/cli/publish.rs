@@ -1,5 +1,5 @@
+use super::AdhocMigration;
 use super::Cli;
-use super::{AdhocMigration, Migrations};
 use crate::commands;
 use crate::settings::{global_user::GlobalUser, toml::Manifest};
 use crate::terminal::message::{Message, Output, StdOut};
@@ -28,12 +28,12 @@ pub fn publish(
 
     log::info!("Getting project settings");
     let manifest = Manifest::new(&cli_params.config)?;
+    manifest.warn_about_compatibility_date();
+
     let mut target = manifest.get_target(cli_params.environment.as_deref(), false)?;
 
-    if let Some(migration) = migration.into_migration_config() {
-        target.migrations = Some(Migrations {
-            migrations: vec![migration],
-        });
+    if let Some(migration) = migration.into_migrations() {
+        target.migrations = Some(migration);
     }
 
     let output = if output.as_deref() == Some("json") {

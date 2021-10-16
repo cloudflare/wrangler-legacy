@@ -61,11 +61,11 @@ pub fn run_generate(name: &str, template: &str) -> Result<()> {
 fn generate_name(name: &str) -> Result<String> {
     let mut num = 1;
     let entry_names = read_current_dir()?;
-    let mut new_name = construct_name(&name, num);
+    let mut new_name = construct_name(name, num);
 
     while entry_names.contains(&OsString::from(&new_name)) {
         num += 1;
-        new_name = construct_name(&name, num);
+        new_name = construct_name(name, num);
     }
     Ok(new_name)
 }

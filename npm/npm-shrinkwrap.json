@@ -1,29 +1,29 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.18.0",
+  "version": "1.19.3",
   "lockfileVersion": 2,
   "requires": true,
   "packages": {
     "": {
       "name": "@cloudflare/wrangler",
-      "version": "1.18.0",
+      "version": "1.19.3",
       "hasInstallScript": true,
       "license": "MIT OR Apache-2.0",
       "dependencies": {
         "axios": "^0.21.1",
         "rimraf": "^3.0.2",
-        "tar": "^6.0.2"
+        "tar": "^6.1.10"
       },
       "bin": {
         "wrangler": "run-wrangler.js"
       }
     },
     "node_modules/axios": {
-      "version": "0.21.1",
-      "resolved": "https://registry.npmjs.org/axios/-/axios-0.21.1.tgz",
-      "integrity": "sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==",
+      "version": "0.21.4",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-0.21.4.tgz",
+      "integrity": "sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==",
       "dependencies": {
-        "follow-redirects": "^1.10.0"
+        "follow-redirects": "^1.14.0"
       }
     },
     "node_modules/balanced-match": {
@@ -54,11 +54,22 @@
       "integrity": "sha1-2Klr13/Wjfd5OnMDajug1UBdR3s="
     },
     "node_modules/follow-redirects": {
-      "version": "1.13.2",
-      "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.13.2.tgz",
-      "integrity": "sha512-6mPTgLxYm3r6Bkkg0vNM0HTjfGrOEtsfbhagQvbxDEsEkpNhw582upBaoRZylzen6krEmxXJgt9Ju6HiI4O7BA==",
+      "version": "1.14.4",
+      "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.14.4.tgz",
+      "integrity": "sha512-zwGkiSXC1MUJG/qmeIFH2HBJx9u0V46QGUe3YR1fXG8bXQxq7fLj0RjLZQ5nubr9qNJUZrH+xUcwXEoXNpfS+g==",
+      "funding": [
+        {
+          "type": "individual",
+          "url": "https://github.com/sponsors/RubenVerborgh"
+        }
+      ],
       "engines": {
         "node": ">=4.0"
+      },
+      "peerDependenciesMeta": {
+        "debug": {
+          "optional": true
+        }
       }
     },
     "node_modules/fs-minipass": {
@@ -91,6 +102,9 @@
       },
       "engines": {
         "node": "*"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
       }
     },
     "node_modules/inflight": {
@@ -177,12 +191,15 @@
       },
       "bin": {
         "rimraf": "bin.js"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/isaacs"
       }
     },
     "node_modules/tar": {
-      "version": "6.1.0",
-      "resolved": "https://registry.npmjs.org/tar/-/tar-6.1.0.tgz",
-      "integrity": "sha512-DUCttfhsnLCjwoDoFcI+B2iJgYa93vBnDUATYEeRx6sntCTdN01VnqsIuTlALXla/LWooNg0yEGeB+Y8WdFxGA==",
+      "version": "6.1.10",
+      "resolved": "https://registry.npmjs.org/tar/-/tar-6.1.10.tgz",
+      "integrity": "sha512-kvvfiVvjGMxeUNB6MyYv5z7vhfFRwbwCXJAeL0/lnbrttBVqcMOnpHUf0X42LrPMR8mMpgapkJMchFH4FSHzNA==",
       "dependencies": {
         "chownr": "^2.0.0",
         "fs-minipass": "^2.0.0",
@@ -208,11 +225,11 @@
   },
   "dependencies": {
     "axios": {
-      "version": "0.21.1",
-      "resolved": "https://registry.npmjs.org/axios/-/axios-0.21.1.tgz",
-      "integrity": "sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==",
+      "version": "0.21.4",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-0.21.4.tgz",
+      "integrity": "sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==",
       "requires": {
-        "follow-redirects": "^1.10.0"
+        "follow-redirects": "^1.14.0"
       }
     },
     "balanced-match": {
@@ -240,9 +257,9 @@
       "integrity": "sha1-2Klr13/Wjfd5OnMDajug1UBdR3s="
     },
     "follow-redirects": {
-      "version": "1.13.2",
-      "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.13.2.tgz",
-      "integrity": "sha512-6mPTgLxYm3r6Bkkg0vNM0HTjfGrOEtsfbhagQvbxDEsEkpNhw582upBaoRZylzen6krEmxXJgt9Ju6HiI4O7BA=="
+      "version": "1.14.4",
+      "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.14.4.tgz",
+      "integrity": "sha512-zwGkiSXC1MUJG/qmeIFH2HBJx9u0V46QGUe3YR1fXG8bXQxq7fLj0RjLZQ5nubr9qNJUZrH+xUcwXEoXNpfS+g=="
     },
     "fs-minipass": {
       "version": "2.1.0",
@@ -336,9 +353,9 @@
       }
     },
     "tar": {
-      "version": "6.1.0",
-      "resolved": "https://registry.npmjs.org/tar/-/tar-6.1.0.tgz",
-      "integrity": "sha512-DUCttfhsnLCjwoDoFcI+B2iJgYa93vBnDUATYEeRx6sntCTdN01VnqsIuTlALXla/LWooNg0yEGeB+Y8WdFxGA==",
+      "version": "6.1.10",
+      "resolved": "https://registry.npmjs.org/tar/-/tar-6.1.10.tgz",
+      "integrity": "sha512-kvvfiVvjGMxeUNB6MyYv5z7vhfFRwbwCXJAeL0/lnbrttBVqcMOnpHUf0X42LrPMR8mMpgapkJMchFH4FSHzNA==",
       "requires": {
         "chownr": "^2.0.0",
         "fs-minipass": "^2.0.0",

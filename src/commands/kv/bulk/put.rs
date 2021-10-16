@@ -42,7 +42,7 @@ pub fn run(target: &Target, user: &GlobalUser, namespace_id: &str, filename: &Pa
         None
     };
 
-    put(target, &user, namespace_id, pairs, &progress_bar)?;
+    put(target, user, namespace_id, pairs, &progress_bar)?;
 
     if let Some(pb) = &progress_bar {
         pb.finish_with_message(&format!("uploaded {} key value pairs", len));

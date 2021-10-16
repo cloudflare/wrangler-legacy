@@ -13,11 +13,13 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
 use hyper_rustls::HttpsConnector;
 use tokio::net::TcpListener;
+use tokio::sync::oneshot::{Receiver, Sender};
 
 pub async fn https(
     server_config: ServerConfig,
     preview_token: Arc<Mutex<String>>,
     host: String,
+    shutdown_channel: (Receiver<()>, Sender<()>),
 ) -> Result<()> {
     tls::generate_cert()?;
 
@@ -102,16 +104,23 @@ pub async fn https(
     .into_stream()
     .boxed();
 
+    let (rx, tx) = shutdown_channel;
     let server = Server::builder(tls::HyperAcceptor {
         acceptor: incoming_tls_stream,
     })
-    .serve(service);
+    .serve(service)
+    .with_graceful_shutdown(async {
+        rx.await.expect("Could not receive shutdown initiation");
+    });
 
     println!("{} Listening on https://{}", emoji::EAR, listening_address);
     StdOut::info("Generated certificate is not verified, browsers will give a warning and curl will require `--insecure`");
 
     if let Err(e) = server.await {
         eprintln!("{}", e);
+    }
+    if let Err(e) = tx.send(()) {
+        log::error!("Could not acknowledge dev https listener shutdown: {:?}", e);
     }
 
     Ok(())

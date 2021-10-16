@@ -10,12 +10,14 @@ use chrono::prelude::*;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
 use hyper_rustls::HttpsConnector;
+use tokio::sync::oneshot::{Receiver, Sender};
 
 pub async fn http(
     server_config: ServerConfig,
     preview_token: Arc<Mutex<String>>,
     host: String,
     upstream_protocol: Protocol,
+    shutdown_channel: (Receiver<()>, Sender<()>),
 ) -> Result<()> {
     // set up https client to connect to the preview service
     let https = HttpsConnector::with_native_roots();
@@ -72,11 +74,19 @@ pub async fn http(
         }
     });
 
-    let server = Server::bind(&listening_address).serve(make_service);
+    let (rx, tx) = shutdown_channel;
+    let server = Server::bind(&listening_address)
+        .serve(make_service)
+        .with_graceful_shutdown(async {
+            rx.await.expect("Could not receive shutdown initiation");
+        });
     println!("{} Listening on http://{}", emoji::EAR, listening_address);
 
     if let Err(e) = server.await {
         eprintln!("{}", e);
+    }
+    if let Err(e) = tx.send(()) {
+        log::error!("Could not acknowledge dev http listener shutdown: {:?}", e);
     }
 
     Ok(())

@@ -6,6 +6,7 @@ pub mod generate;
 pub mod init;
 pub mod kv;
 pub mod login;
+pub mod logout;
 mod preview;
 pub mod publish;
 pub mod report;
@@ -17,13 +18,9 @@ pub mod whoami;
 
 pub use self::config::global_config;
 pub use self::preview::run as preview;
-pub use dev::dev;
 pub use generate::generate;
 pub use init::init;
 pub use publish::publish;
-pub use secret::{create_secret, delete_secret, list_secrets};
-pub use subdomain::get_subdomain;
-pub use subdomain::set_subdomain;
 pub use whoami::whoami;
 
 use anyhow::Result;
@@ -50,7 +47,7 @@ pub fn run(mut command: Command, command_name: &str) -> Result<()> {
 // Ensures that Worker name is valid.
 pub fn validate_worker_name(name: &str) -> Result<()> {
     let re = Regex::new(r"^[a-z0-9_][a-z0-9-_]*$").unwrap();
-    if !re.is_match(&name) {
+    if !re.is_match(name) {
         anyhow::bail!("Worker name \"{}\" invalid. Ensure that you only use lowercase letters, dashes, underscores, and numbers.", name)
     }
     Ok(())

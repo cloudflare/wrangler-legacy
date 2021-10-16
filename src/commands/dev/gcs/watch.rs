@@ -16,7 +16,7 @@ pub fn watch_for_changes(
     verbose: bool,
 ) -> Result<()> {
     let (sender, receiver) = mpsc::channel();
-    watch_and_build(&target, Some(sender))?;
+    watch_and_build(&target, Some(sender), None)?;
 
     while receiver.recv().is_ok() {
         let target = target.clone();

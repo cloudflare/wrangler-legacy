@@ -15,5 +15,5 @@ pub fn colored_json_string(value: &serde_json::Value) -> Result<String, serde_js
         },
     );
 
-    formatter.to_colored_json_auto(&value)
+    formatter.to_colored_json_auto(value)
 }

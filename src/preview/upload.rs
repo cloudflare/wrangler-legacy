@@ -10,7 +10,6 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::sites::{add_namespace, sync, AssetManifest};
 use crate::terminal::message::{Message, StdOut};
-use crate::terminal::styles;
 use crate::upload;
 
 #[derive(Debug, Deserialize)]
@@ -54,17 +53,16 @@ pub fn upload(
         Some(user) => {
             log::info!("GlobalUser set, running with authentication");
 
-            let missing_fields = validate(&target);
+            let missing_fields = validate(target);
 
             if missing_fields.is_empty() {
-                let client = http::legacy_auth_client(&user);
+                let client = http::legacy_auth_client(user);
 
                 if let Some(site_config) = target.site.clone() {
                     let site_namespace = add_namespace(user, target, true)?;
 
                     let path = Path::new(&site_config.bucket);
-                    let (to_upload, to_delete, asset_manifest) =
-                        sync(target, user, &site_namespace.id, path)?;
+                    let (to_upload, asset_manifest) = sync(target, user, &site_namespace.id, path)?;
 
                     // First, upload all existing files in given directory
                     if verbose {
@@ -73,18 +71,9 @@ pub fn upload(
 
                     bulk::put(target, user, &site_namespace.id, to_upload, &None)?;
 
-                    let preview = authenticated_upload(&client, &target, Some(asset_manifest))?;
-                    if !to_delete.is_empty() {
-                        if verbose {
-                            StdOut::info("Deleting stale files...");
-                        }
-
-                        bulk::delete(target, user, &site_namespace.id, to_delete, &None)?;
-                    }
-
-                    preview
+                    authenticated_upload(&client, target, Some(asset_manifest))?
                 } else {
-                    authenticated_upload(&client, &target, None)?
+                    authenticated_upload(&client, target, None)?
                 }
             } else {
                 StdOut::warn(&format!(
@@ -96,24 +85,17 @@ pub fn upload(
                     anyhow::bail!(SITES_UNAUTH_PREVIEW_ERR)
                 }
 
-                unauthenticated_upload(&target)?
+                unauthenticated_upload(target)?
             }
         }
         None => {
-            let wrangler_config_msg = styles::highlight("`wrangler config`");
-            let wrangler_login_msg = styles::highlight("`wrangler login`");
-            let docs_url_msg = styles::url("https://developers.cloudflare.com/workers/tooling/wrangler/configuration/#using-environment-variables");
-            StdOut::billboard(
-            &format!("You have not provided your Cloudflare credentials.\n\nPlease run {}, {}, or visit\n{}\nfor info on authenticating with environment variables.", wrangler_login_msg, wrangler_config_msg, docs_url_msg)
-            );
-
             StdOut::info("Running preview without authentication.");
 
             if sites_preview {
                 anyhow::bail!(SITES_UNAUTH_PREVIEW_ERR)
             }
 
-            unauthenticated_upload(&target)?
+            unauthenticated_upload(target)?
         }
     };
 

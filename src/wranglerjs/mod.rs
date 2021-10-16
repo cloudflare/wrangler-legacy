@@ -92,7 +92,7 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
         let mut is_first = true;
 
         loop {
-            match wait_for_changes(&watcher_rx, COOLDOWN_PERIOD) {
+            match wait_for_changes(&watcher_rx, None, COOLDOWN_PERIOD) {
                 Ok(_) => {
                     if is_first {
                         is_first = false;
@@ -109,7 +109,9 @@ pub fn run_build_and_watch(target: &Target, tx: Option<Sender<()>>) -> Result<()
                     if write_wranglerjs_output(&bundle, &wranglerjs_output, custom_webpack).is_ok()
                     {
                         if let Some(tx) = tx.clone() {
-                            tx.send(()).expect("--watch change message failed to send");
+                            if let Err(e) = tx.send(()) {
+                                log::error!("wranglerjs watch operation failed to notify: {}", e);
+                            }
                         }
                     }
                 }
@@ -279,18 +281,10 @@ fn env_dep_installed(tool: &str) -> Result<()> {
     Ok(())
 }
 
-// Use the env-provided source directory and remove the quotes
-fn get_source_dir() -> PathBuf {
-    let mut dir = install::target::SOURCE_DIR.to_string();
-    dir.remove(0);
-    dir.remove(dir.len() - 1);
-    Path::new(&dir).to_path_buf()
-}
-
 // Install {wranglerjs} from our GitHub releases
 fn install() -> Result<PathBuf> {
     let wranglerjs_path = if install::target::DEBUG {
-        let source_path = get_source_dir();
+        let source_path = Path::new(env!("CARGO_MANIFEST_DIR"));
         let wranglerjs_path = source_path.join("wranglerjs");
         log::info!("wranglerjs at: {:?}", wranglerjs_path);
         wranglerjs_path

@@ -6,6 +6,7 @@ use crate::settings::{global_user::GlobalUser, toml::Manifest};
 
 use anyhow::Result;
 
+#[allow(clippy::too_many_arguments)]
 pub fn dev(
     host: Option<String>,
     mut ip: Option<IpAddr>,
@@ -13,9 +14,12 @@ pub fn dev(
     mut local_protocol: Option<Protocol>,
     mut upstream_protocol: Option<Protocol>,
     cli_params: &Cli,
+    inspect: bool,
+    unauthenticated: bool,
 ) -> Result<()> {
     log::info!("Starting dev server");
     let manifest = Manifest::new(&cli_params.config)?;
+    manifest.warn_about_compatibility_date();
 
     // Check if arg not given but present in wrangler.toml
     if let Some(d) = &manifest.dev {
@@ -44,5 +48,7 @@ pub fn dev(
         local_protocol,
         upstream_protocol,
         cli_params.verbose,
+        inspect,
+        unauthenticated,
     )
 }

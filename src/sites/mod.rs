@@ -7,7 +7,9 @@ pub use manifest::AssetManifest;
 pub use sync::sync;
 
 use std::collections::HashSet;
+use std::error::Error;
 use std::ffi::OsString;
+use std::fmt;
 use std::fs;
 use std::hash::Hasher;
 use std::path::Path;
@@ -36,7 +38,7 @@ pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> R
         format!("__{}-{}", target.name, "workers_sites_assets")
     };
 
-    let site_namespace = match upsert(target, &user, title)? {
+    let site_namespace = match upsert(target, user, title)? {
         UpsertedNamespace::Created(namespace) => {
             let msg = format!("Created namespace for Workers Site \"{}\"", namespace.title);
             StdErr::working(&msg);
@@ -60,6 +62,17 @@ pub fn add_namespace(user: &GlobalUser, target: &mut Target, preview: bool) -> R
 
     Ok(site_namespace)
 }
+
+#[derive(Debug, Clone)]
+pub struct NotADirectoryError;
+
+impl fmt::Display for NotADirectoryError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Not a directory. Check your configuration file; the `bucket` attribute for [site] should point to a directory.")
+    }
+}
+
+impl Error for NotADirectoryError {}
 
 // Returns the hashed key and value pair for all files in a directory.
 pub fn directory_keys_values(
@@ -85,7 +98,7 @@ pub fn directory_keys_values(
                     spinner.set_message(&format!("{}", path.display()));
 
                     file_list.push(path.to_str().unwrap().to_string());
-                    validate_file_size(&path)?;
+                    validate_file_size(path)?;
 
                     let value = std::fs::read(path)?;
 
@@ -120,8 +133,7 @@ pub fn directory_keys_values(
         }
         Ok(_file_type) => {
             // any other file types (files, symlinks)
-            // TODO: return an error type here, like NotADirectoryError
-            Err(anyhow!("Check your configuration file; the `bucket` attribute for [site] should point to a directory."))
+            Err(anyhow::Error::new(NotADirectoryError))
         }
         Err(e) => Err(anyhow!(e)),
     }
@@ -192,7 +204,7 @@ fn build_ignore(target: &Target, directory: &Path) -> Result<Override> {
         if let Some(included) = &site.include {
             required_ignore(&mut required_override)?;
             for i in included {
-                required_override.add(&i)?;
+                required_override.add(i)?;
                 log::info!("Including {}", i);
             }
         } else {
@@ -332,6 +344,8 @@ mod tests {
             text_blobs: None,
             usage_model: None,
             wasm_modules: None,
+            compatibility_date: None,
+            compatibility_flags: Vec::new(),
         }
     }
 
@@ -379,7 +393,7 @@ mod tests {
             // partial hash digest of the file in the "key". call generate_path_and_key to obtain
             // for later comparison.
             let (_, key_with_hash) =
-                generate_path_and_key(&Path::new(path), &tmpdir, Some("".into())).unwrap();
+                generate_path_and_key(Path::new(path), &tmpdir, Some("".into())).unwrap();
             exclude.insert(key_with_hash);
         }
 

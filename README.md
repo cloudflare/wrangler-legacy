@@ -2,7 +2,7 @@
 
 ![Banner](/banner.png)
 
-[![crates.io](https://meritbadge.herokuapp.com/wrangler)](https://crates.io/crates/wrangler) &nbsp;
+[![crates.io](https://img.shields.io/crates/v/wrangler.svg)](https://crates.io/crates/wrangler) &nbsp;
 [![npm](https://img.shields.io/npm/v/@cloudflare/wrangler.svg)](https://www.npmjs.com/package/@cloudflare/wrangler) &nbsp;
 [![GitHub Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions) &nbsp;
 [![GitHub Actions - Linter Status](https://github.com/cloudflare/wrangler/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler/actions) &nbsp;
@@ -109,7 +109,20 @@ $ wrangler publish
 
 ### 🔓 `login`
 
-  Authenticate Wrangler with your Cloudflare login. This will prompt you with a Cloudflare account login page and is the alternative to `wrangler config`.
+  Authorize Wrangler with your Cloudflare login. This will prompt you with a Cloudflare account login page and a permissions consent page. 
+  This command is the alternative to `wrangler config` and it uses OAuth tokens.
+
+  ```bash
+  wrangler login --scopes-list --scopes <scopes>
+  ```
+
+  All of the arguments and flags to this command are optional:
+
+  - `scopes-list`: list all the available OAuth scopes with descriptions.
+  - `scopes`: allows to choose your set of OAuth scopes.
+
+  Read more about this command in [Wrangler Login Documentation](https://developers.cloudflare.com/workers/cli-wrangler/commands#login).
+
 
 ### 🔧 `config`
 
@@ -155,7 +168,7 @@ $ wrangler publish
 
 ### 🗂 `kv`
 
-  Interact with your Workers KV store. This is actually a whole suite of subcommands. Read more about in [Wrangler KV Documentation](https://developers.cloudflare.com/workers/tooling/wrangler/kv_commands).
+  Interact with your Workers KV store. This is actually a whole suite of subcommands. Read more about in [Wrangler KV Documentation](https://developers.cloudflare.com/workers/cli-wrangler/commands#kv).
 
 ### 👂 `dev`
 

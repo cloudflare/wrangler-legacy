@@ -1,6 +1,6 @@
 use super::durable_objects::DurableObjects;
 use super::kv_namespace::KvNamespace;
-use super::manifest::LazyAccountId;
+pub(crate) use super::manifest::LazyAccountId;
 use super::site::Site;
 use super::target_type::TargetType;
 use super::UsageModel;
@@ -26,6 +26,8 @@ pub struct Target {
     pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub usage_model: Option<UsageModel>,
     pub wasm_modules: Option<HashMap<String, PathBuf>>,
+    pub compatibility_date: Option<String>,
+    pub compatibility_flags: Vec<String>,
 }
 
 impl Target {

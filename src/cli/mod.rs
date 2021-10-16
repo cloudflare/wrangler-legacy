@@ -4,6 +4,8 @@ pub mod dev;
 pub mod generate;
 pub mod init;
 pub mod kv;
+pub mod login;
+pub mod logout;
 pub mod preview;
 pub mod publish;
 pub mod route;
@@ -21,6 +23,8 @@ pub mod exec {
     pub use super::kv::kv_bulk;
     pub use super::kv::kv_key;
     pub use super::kv::kv_namespace;
+    pub use super::login::login;
+    pub use super::logout::logout;
     pub use super::preview::preview;
     pub use super::publish::publish;
     pub use super::route::route;
@@ -32,11 +36,13 @@ pub mod exec {
 
 use std::net::IpAddr;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use crate::commands::dev::Protocol;
+use crate::commands::tail::websocket::TailFormat;
 use crate::preview::HttpMethod;
 use crate::settings::toml::migrations::{
-    DurableObjectsMigration, Migration, MigrationConfig, Migrations, RenameClass, TransferClass,
+    DurableObjectsMigration, Migration, MigrationTag, Migrations, RenameClass, TransferClass,
 };
 use crate::settings::toml::TargetType;
 
@@ -175,6 +181,14 @@ pub enum Command {
         /// but can be set to http
         #[structopt(name = "upstream-protocol")]
         upstream_protocol: Option<Protocol>,
+
+        /// Inspect the worker using Chrome DevTools
+        #[structopt(long)]
+        inspect: bool,
+
+        /// Run wrangler dev unauthenticated
+        #[structopt(long)]
+        unauthenticated: bool,
     },
 
     /// Publish your worker to the orange cloud
@@ -215,25 +229,74 @@ pub enum Command {
     #[structopt(name = "whoami")]
     Whoami,
 
-    /// Aggregate logs from production worker
+    /// View a stream of logs from a published worker
     #[structopt(name = "tail")]
     Tail {
-        /// Specify an output format
-        #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
-        format: String,
+        /// Name of the worker to tail
+        #[structopt(index = 1)]
+        name: Option<String>,
 
-        /// Port to accept tail log requests
-        #[structopt(long = "port", short = "p")]
+        /// Output format for log messages
+        #[structopt(long, short = "f", default_value = "json", possible_values = &["json", "pretty"])]
+        format: TailFormat,
+
+        /// Stops the tail after receiving the first log (useful for testing)
+        #[structopt(long)]
+        once: bool,
+
+        /// Adds a sampling rate (0.01 for 1%)
+        #[structopt(long = "sampling-rate", default_value = "1")]
+        sampling_rate: f64,
+
+        /// Filter by invocation status
+        #[structopt(long, possible_values = &["ok", "error", "canceled"])]
+        status: Vec<String>,
+
+        /// Filter by HTTP method
+        #[structopt(long)]
+        method: Vec<String>,
+
+        /// Filter by HTTP header
+        #[structopt(long)]
+        header: Vec<String>,
+
+        /// Filter by IP address ("self" to filter your own IP address)
+        #[structopt(long = "ip-address", parse(try_from_str = parse_ip_address))]
+        ip_address: Vec<String>,
+
+        /// Filter by a text match in console.log messages
+        #[structopt(long)]
+        search: Option<String>,
+
+        /// Set the URL to forward log messages
+        #[structopt(hidden = true)]
+        url: Option<Url>,
+
+        /// Deprecated, no longer used.
+        #[structopt(hidden = true, long = "port", short = "p")]
         tunnel_port: Option<u16>,
 
-        /// Provides endpoint for cloudflared metrics. Used to retrieve tunnel url
-        #[structopt(long = "metrics")]
+        /// Deprecated, no longer used.
+        #[structopt(hidden = true, long = "metrics")]
         metrics_port: Option<u16>,
     },
 
-    /// Authenticate Wrangler with your Cloudflare username and password
+    /// Authenticate wrangler with your Cloudflare username and password
     #[structopt(name = "login")]
-    Login,
+    Login {
+        /// Allows to choose set of scopes
+        #[structopt(name = "scopes", long, possible_values = login::SCOPES_LIST.as_ref())]
+        scopes: Vec<String>,
+
+        /// List all scopes
+        #[structopt(name = "scopes-list", long)]
+        scopes_list: bool,
+    },
+
+    /// Logout from your current authentication method and remove any configuration files.
+    /// It does not logout if you have authenticated wrangler through envrionment variables.
+    #[structopt(name = "logout")]
+    Logout,
 
     /// Report an error caught by wrangler to Cloudflare
     #[structopt(name = "report")]
@@ -255,17 +318,25 @@ pub struct AdhocMigration {
     delete_class: Vec<String>,
 
     /// Rename a durable object class
-    #[structopt(name = "rename-class", long, number_of_values = 2)]
+    #[structopt(name = "rename-class", long, number_of_values = 2, value_names(&["from class", "to class"]))]
     rename_class: Vec<String>,
 
     /// Transfer all durable objects associated with a class in another script to a class in
     /// this script
-    #[structopt(name = "transfer-class", long, number_of_values = 3)]
+    #[structopt(name = "transfer-class", long, number_of_values = 3, value_names(&["from script", "from class", "to class"]))]
     transfer_class: Vec<String>,
+
+    /// Specify the existing migration tag for the script.
+    #[structopt(name = "old-tag", long)]
+    old_tag: Option<String>,
+
+    /// Specify the new migration tag for the script
+    #[structopt(name = "new-tag", long)]
+    new_tag: Option<String>,
 }
 
 impl AdhocMigration {
-    pub fn into_migration_config(self) -> Option<MigrationConfig> {
+    pub fn into_migrations(self) -> Option<Migrations> {
         let migration = DurableObjectsMigration {
             new_classes: self.new_class,
             deleted_classes: self.delete_class,
@@ -305,16 +376,34 @@ impl AdhocMigration {
             && migration.renamed_classes.is_empty()
             && migration.transferred_classes.is_empty();
 
-        if !is_migration_empty {
-            Some(MigrationConfig {
-                tag: None,
-                migration: Migration {
+        if !is_migration_empty || self.old_tag.is_some() || self.new_tag.is_some() {
+            let migration = if !is_migration_empty {
+                Some(Migration {
                     durable_objects: migration,
-                },
+                })
+            } else {
+                None
+            };
+
+            Some(Migrations::Adhoc {
+                script_tag: MigrationTag::Unknown,
+                provided_old_tag: self.old_tag,
+                new_tag: self.new_tag,
+                migration,
             })
         } else {
             None
         }
+    }
+}
+
+fn parse_ip_address(input: &str) -> Result<String, anyhow::Error> {
+    match input {
+        "self" => Ok(String::from("self")),
+        address => match IpAddr::from_str(address) {
+            Ok(_) => Ok(address.to_owned()),
+            Err(err) => anyhow::bail!("{}: {}", err, input),
+        },
     }
 }
 
@@ -342,6 +431,10 @@ mod tests {
         let command = Cli::from_iter(&[
             "wrangler",
             "publish",
+            "--old-tag",
+            "oldTag",
+            "--new-tag",
+            "newTag",
             "--new-class",
             "newA",
             "--new-class",
@@ -369,17 +462,19 @@ mod tests {
 
         if let Command::Publish { migration, .. } = command {
             assert_eq!(
-                migration.into_migration_config(),
-                Some(MigrationConfig {
-                    tag: None,
-                    migration: Migration {
+                migration.into_migrations(),
+                Some(Migrations::Adhoc {
+                    script_tag: MigrationTag::Unknown,
+                    provided_old_tag: Some(String::from("oldTag")),
+                    new_tag: Some(String::from("newTag")),
+                    migration: Some(Migration {
                         durable_objects: DurableObjectsMigration {
                             new_classes: vec![String::from("newA"), String::from("newB")],
                             deleted_classes: vec![String::from("deleteA"), String::from("deleteB")],
                             renamed_classes: vec![rename_class("A"), rename_class("B")],
                             transferred_classes: vec![transfer_class("A"), transfer_class("B")],
                         }
-                    }
+                    })
                 })
             );
         } else {

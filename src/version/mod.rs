@@ -73,7 +73,7 @@ fn get_installed_version() -> Result<Version> {
 }
 
 fn check_wrangler_versions() -> Result<WranglerVersion> {
-    let config_dir = get_wrangler_home_dir()?;
+    let config_dir = get_wrangler_home_dir();
     let version_file = config_dir.join("version.toml");
     let current_time = SystemTime::now();
 

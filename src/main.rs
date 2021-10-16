@@ -17,7 +17,9 @@ use anyhow::Result;
 use structopt::StructOpt;
 
 fn main() -> Result<()> {
-    reporter::init();
+    if !cfg!(debug_assertions) {
+        reporter::init();
+    }
     env_logger::init();
 
     let latest_version_receiver = background_check_for_updates();
@@ -84,6 +86,8 @@ fn run() -> Result<()> {
             port,
             local_protocol,
             upstream_protocol,
+            inspect,
+            unauthenticated,
         } => exec::dev(
             host,
             ip,
@@ -91,6 +95,8 @@ fn run() -> Result<()> {
             local_protocol,
             upstream_protocol,
             &cli_params,
+            inspect,
+            unauthenticated,
         ),
         Command::Whoami => exec::whoami(),
         Command::Publish {
@@ -105,11 +111,35 @@ fn run() -> Result<()> {
         Command::KvKey(key) => exec::kv_key(key, &cli_params),
         Command::KvBulk(bulk) => exec::kv_bulk(bulk, &cli_params),
         Command::Tail {
+            name,
+            url,
             format,
-            tunnel_port,
-            metrics_port,
-        } => exec::tail(format, tunnel_port, metrics_port, &cli_params),
-        Command::Login => commands::login::run(),
+            once,
+            sampling_rate,
+            status,
+            method,
+            header,
+            ip_address,
+            search,
+            ..
+        } => exec::tail(
+            name,
+            url,
+            format,
+            once,
+            sampling_rate,
+            status,
+            method,
+            header,
+            ip_address,
+            search,
+            &cli_params,
+        ),
+        Command::Login {
+            scopes,
+            scopes_list,
+        } => exec::login(&scopes, scopes_list),
+        Command::Logout => exec::logout(),
         Command::Report { log } => commands::report::run(log.as_deref()).map(|_| {
             eprintln!("Report submission sucessful. Thank you!");
         }),

@@ -5,7 +5,6 @@ use crate::install;
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Feature {
     Sites,
-    Bucket,
 }
 
 pub(crate) fn headers(feature: Option<Feature>) -> HeaderMap {
@@ -31,4 +30,8 @@ fn get_user_agent(feature: Option<Feature>) -> String {
         agent.push_str(&feat);
     }
     agent
+}
+
+pub fn user_agent() -> String {
+    get_user_agent(None)
 }

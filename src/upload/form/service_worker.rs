@@ -11,6 +11,10 @@ struct Metadata {
     pub body_part: String,
     pub bindings: Vec<Binding>,
     pub usage_model: Option<UsageModel>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compatibility_date: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub compatibility_flags: Vec<String>,
 }
 
 pub fn build_form(
@@ -34,7 +38,7 @@ pub fn build_form(
 }
 
 fn add_files(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
-    form = form.file(assets.script_name(), assets.script_path())?;
+    form = form.file(assets.script_name()?, assets.script_path())?;
 
     for wasm_module in &assets.wasm_modules {
         form = form.file(wasm_module.filename(), wasm_module.path())?;
@@ -53,9 +57,11 @@ fn add_files(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
 
 fn add_metadata(mut form: Form, assets: &ServiceWorkerAssets) -> Result<Form> {
     let metadata_json = serde_json::json!(&Metadata {
-        body_part: assets.script_name(),
+        body_part: assets.script_name()?,
         bindings: assets.bindings(),
         usage_model: assets.usage_model,
+        compatibility_date: assets.compatibility_date.clone(),
+        compatibility_flags: assets.compatibility_flags.clone(),
     });
 
     let metadata = Part::text(metadata_json.to_string())

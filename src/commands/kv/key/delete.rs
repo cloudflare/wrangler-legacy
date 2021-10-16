@@ -9,16 +9,18 @@ use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 use crate::terminal::interactive;
 use crate::terminal::message::{Message, StdOut};
-pub fn delete(target: &Target, user: &GlobalUser, id: &str, key: &str) -> Result<()> {
+pub fn delete(target: &Target, user: &GlobalUser, id: &str, key: &str, force: bool) -> Result<()> {
     let client = http::cf_v4_client(user)?;
 
-    match interactive::confirm(&format!("Are you sure you want to delete key \"{}\"?", key)) {
-        Ok(true) => (),
-        Ok(false) => {
-            StdOut::info(&format!("Not deleting key \"{}\"", key));
-            return Ok(());
+    if !force {
+        match interactive::confirm(&format!("Are you sure you want to delete key \"{}\"?", key)) {
+            Ok(true) => (),
+            Ok(false) => {
+                StdOut::info(&format!("Not deleting key \"{}\"", key));
+                return Ok(());
+            }
+            Err(e) => anyhow::bail!(e),
         }
-        Err(e) => anyhow::bail!(e),
     }
 
     let msg = format!("Deleting key \"{}\"", key);

@@ -42,15 +42,25 @@ fn builder() -> ClientBuilder {
 
 fn add_auth_headers(headers: &mut HeaderMap, user: &GlobalUser) {
     match user {
-        GlobalUser::TokenAuth { api_token } => {
+        GlobalUser::ApiTokenAuth { api_token } => {
             headers.insert(
                 "Authorization",
                 HeaderValue::from_str(&format!("Bearer {}", &api_token)).unwrap(),
             );
         }
+        GlobalUser::OAuthTokenAuth {
+            oauth_token,
+            refresh_token: _,
+            expiration_time: _,
+        } => {
+            headers.insert(
+                "Authorization",
+                HeaderValue::from_str(&format!("Bearer {}", &oauth_token)).unwrap(),
+            );
+        }
         GlobalUser::GlobalKeyAuth { email, api_key } => {
-            headers.insert("X-Auth-Email", HeaderValue::from_str(&email).unwrap());
-            headers.insert("X-Auth-Key", HeaderValue::from_str(&api_key).unwrap());
+            headers.insert("X-Auth-Email", HeaderValue::from_str(email).unwrap());
+            headers.insert("X-Auth-Key", HeaderValue::from_str(api_key).unwrap());
         }
     }
 }

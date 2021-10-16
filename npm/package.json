@@ -1,6 +1,6 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.18.0",
+  "version": "1.19.3",
   "description": "Command-line interface for all things Cloudflare Workers",
   "main": "binary.js",
   "scripts": {
@@ -44,6 +44,6 @@
   "dependencies": {
     "axios": "^0.21.1",
     "rimraf": "^3.0.2",
-    "tar": "^6.0.2"
+    "tar": "^6.1.10"
   }
 }

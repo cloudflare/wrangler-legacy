@@ -29,7 +29,7 @@ impl WranglerjsOutput {
         let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
 
         // approximation of how projects are gzipped
-        e.write_all(&self.script.as_bytes())
+        e.write_all(self.script.as_bytes())
             .expect("could not write script buffer");
 
         if let Some(wasm) = &self.wasm {
