@@ -1,5 +1,60 @@
 # Changelog
 
+## v1.19.4
+
+- ### Features
+
+  - **Force flag for kv commands to avoid user confirmation prompt - [andersquist], [pull/2100]**
+
+    Make it possible to override any user confirmation prompt when performing KV bulk deletes.
+
+    [andersquist]: https://github.com/andersquist
+    [pull/2100]: https://github.com/cloudflare/wrangler/pull/2100
+
+- ### Fixes
+
+  - **Allow running `wrangler dev` without an account_id - [jyn514], [pull/2030]**
+
+    Previously, running it with no account_id and no config in ~/.wrangler would give an error
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2030]: https://github.com/cloudflare/wrangler/pull/2030
+
+  - **Don't delete unused assets for sites - [threepointone], [pull/2096]**
+
+    We have a consistency issue when after uploading a new site, it takes a while for the worker to propagate, so incoming requests will try to fetch older assets, and 404.
+
+    [threepointone]: https://github.com/threepointone
+    [pull/2096]: https://github.com/cloudflare/wrangler/pull/2096
+
+  - **Allow host to be passed while authenticated - [jspspike], [pull/2091]**
+
+    This also adds an `--unauthenticated` flag to dev and fixes bad error message
+
+    [jspspike]: https://github.com/jspspike
+    [pull/2091]: https://github.com/cloudflare/wrangler/pull/2091
+
+  - **Fix wrangler dev session expiration - [Electroid], [pull/2071]**
+
+    This PR fixes the issue described in #2068. API errors related to syntax or preview token return the same `bad_request` status code, and the changes should address these two particular cases.
+
+    [electroid]: https://github.com/Electroid
+    [pull/2071]: https://github.com/cloudflare/wrangler/pull/2071
+
+  - **Move TOML table fields come later than other fields - [antiphoton], [pull/2085]**
+
+    Reorder manifest fields so that table fields (`durable_objects`, `kv_namespaces`, `site`) come later than string fields. The reason table fields need to come later is the same as #2037.
+
+    [antiphoton]: https://github.com/antiphoton
+    [pull/2085]: https://github.com/cloudflare/wrangler/pull/2085
+
+  - **Only warn about compatibility dates on publish - [Electroid], [pull/2080]**
+
+    Changes the compatibility date warning to only occur when using `wrangler publish`. We do not want this warning to be sent when using other commands like `wrangler tail`, etc.
+
+    [electroid]: https://github.com/Electroid
+    [pull/2080]: https://github.com/cloudflare/wrangler/pull/2080
+
 ## v1.19.3
 
 - ### Features

@@ -1,12 +1,12 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.19.3",
+  "version": "1.19.4",
   "lockfileVersion": 2,
   "requires": true,
   "packages": {
     "": {
       "name": "@cloudflare/wrangler",
-      "version": "1.19.3",
+      "version": "1.19.4",
       "hasInstallScript": true,
       "license": "MIT OR Apache-2.0",
       "dependencies": {
