@@ -182,6 +182,16 @@ fn validate_target_required_fields_present(target: &Target) -> Result<()> {
         }
     }
 
+    for r2 in &target.r2_buckets {
+        if r2.binding.is_empty() {
+            missing_fields.push("r2-bucket binding")
+        }
+
+        if r2.bucket_name.is_empty() {
+            missing_fields.push("r2-bucket bucket_name")
+        }
+    }
+
     let (field_pluralization, is_are) = match missing_fields.len() {
         n if n >= 2 => ("fields", "are"),
         1 => ("field", "is"),

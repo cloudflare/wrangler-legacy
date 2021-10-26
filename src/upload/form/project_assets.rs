@@ -14,7 +14,7 @@ use super::wasm_module::WasmModule;
 use super::UsageModel;
 
 use crate::settings::toml::{
-    migrations::ApiMigration, DurableObjectsClass, KvNamespace, ModuleRule,
+    migrations::ApiMigration, DurableObjectsClass, KvNamespace, ModuleRule, R2Bucket,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -25,6 +25,7 @@ pub struct ServiceWorkerAssets {
     pub compatibility_flags: Vec<String>,
     pub wasm_modules: Vec<WasmModule>,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub r2_buckets: Vec<R2Bucket>,
     pub durable_object_classes: Vec<DurableObjectsClass>,
     pub text_blobs: Vec<TextBlob>,
     pub plain_texts: Vec<PlainText>,
@@ -41,6 +42,10 @@ impl ServiceWorkerAssets {
         }
         for kv in &self.kv_namespaces {
             let binding = kv.binding();
+            bindings.push(binding);
+        }
+        for r2 in &self.r2_buckets {
+            let binding = r2.binding();
             bindings.push(binding);
         }
         for do_ns in &self.durable_object_classes {
@@ -316,6 +321,7 @@ pub struct ModulesAssets {
     pub compatibility_flags: Vec<String>,
     pub manifest: ModuleManifest,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub r2_buckets: Vec<R2Bucket>,
     pub durable_object_classes: Vec<DurableObjectsClass>,
     pub migration: Option<ApiMigration>,
     pub text_blobs: Vec<TextBlob>,
@@ -330,6 +336,7 @@ impl ModulesAssets {
         compatibility_flags: Vec<String>,
         manifest: ModuleManifest,
         kv_namespaces: Vec<KvNamespace>,
+        r2_buckets: Vec<R2Bucket>,
         durable_object_classes: Vec<DurableObjectsClass>,
         migration: Option<ApiMigration>,
         text_blobs: Vec<TextBlob>,
@@ -341,6 +348,7 @@ impl ModulesAssets {
             compatibility_flags,
             manifest,
             kv_namespaces,
+            r2_buckets,
             durable_object_classes,
             migration,
             text_blobs,
@@ -357,6 +365,10 @@ impl ModulesAssets {
 
         for kv in &self.kv_namespaces {
             let binding = kv.binding();
+            bindings.push(binding);
+        }
+        for r2 in &self.r2_buckets {
+            let binding = r2.binding();
             bindings.push(binding);
         }
         for class in &self.durable_object_classes {

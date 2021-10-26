@@ -9,6 +9,7 @@ pub mod login;
 pub mod logout;
 mod preview;
 pub mod publish;
+pub mod r2;
 pub mod report;
 pub mod route;
 pub mod secret;

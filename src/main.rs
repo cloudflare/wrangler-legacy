@@ -89,6 +89,7 @@ fn run() -> Result<()> {
         Command::Subdomain { name } => exec::subdomain(name, &cli_params),
         Command::Route(route) => exec::route(route, &cli_params),
         Command::Secret(secret) => exec::secret(secret, &cli_params),
+        Command::R2(r2) => exec::r2_bucket(r2, &cli_params),
         Command::KvNamespace(namespace) => exec::kv_namespace(namespace, &cli_params),
         Command::KvKey(key) => exec::kv_key(key, &cli_params),
         Command::KvBulk(bulk) => exec::kv_bulk(bulk, &cli_params),

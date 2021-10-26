@@ -23,6 +23,7 @@ use crate::settings::toml::dev::Dev;
 use crate::settings::toml::durable_objects::DurableObjects;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
+use crate::settings::toml::r2_bucket::{ConfigR2Bucket, R2Bucket};
 use crate::settings::toml::route::RouteConfig;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
@@ -63,6 +64,7 @@ pub struct Manifest {
     pub env: Option<HashMap<String, Environment>>,
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
+    pub r2_buckets: Option<Vec<ConfigR2Bucket>>,
     // TODO: maybe one day, serde toml support will allow us to serialize sites
     // as a TOML inline table (this would prevent confusion with environments too!)
     pub site: Option<Site>,
@@ -374,6 +376,7 @@ impl Manifest {
             // to include the name of the environment
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
+            r2_buckets: get_buckets(self.r2_buckets.clone(), preview)?, // Not inherited
             durable_objects: self.durable_objects.clone(), // Not inherited
             migrations: match (preview, &self.migrations) {
                 (false, Some(migrations)) => Some(Migrations::List {
@@ -407,6 +410,9 @@ impl Manifest {
 
             // don't inherit kv namespaces because it is an anti-pattern to use the same namespaces across multiple environments
             target.kv_namespaces = get_namespaces(environment.kv_namespaces.clone(), preview)?;
+
+            // don't inherit r2 buckets because it is an anti-pattern to use the same buckets across multiple environments
+            target.r2_buckets = get_buckets(environment.r2_buckets.clone(), preview)?;
 
             // don't inherit durable object configuration
             target.durable_objects = environment.durable_objects.clone();
@@ -743,6 +749,37 @@ fn get_namespaces(
                 })
             } else {
                 anyhow::bail!("You must specify the namespace ID in the id field for the namespace with binding \"{}\"", &ns.binding)
+            }
+        }).collect()
+    } else {
+        Ok(Vec::new())
+    }
+}
+
+fn get_buckets(r2_buckets: Option<Vec<ConfigR2Bucket>>, preview: bool) -> Result<Vec<R2Bucket>> {
+    if let Some(buckets) = r2_buckets {
+        buckets.into_iter().map(|ns| {
+            if preview {
+                if let Some(preview_bucket_name) = &ns.preview_bucket_name {
+                    if let Some(bucket_name) = &ns.bucket_name {
+                        if preview_bucket_name == bucket_name {
+                            StdOut::warn("Specifying the same r2 bucket_name for both preview and production sessions may cause bugs in your production worker! Proceed with caution.");
+                        }
+                    }
+                    Ok(R2Bucket {
+                        bucket_name: preview_bucket_name.to_string(),
+                        binding: ns.binding.to_string(),
+                    })
+                } else {
+                    anyhow::bail!("In order to preview a worker with r2 buckets, you must designate a preview_bucket_name in your configuration file for each r2 bucket you'd like to preview.")
+                }
+            } else if let Some(bucket_name) = &ns.bucket_name {
+                Ok(R2Bucket {
+                    bucket_name: bucket_name.to_string(),
+                    binding: ns.binding,
+                })
+            } else {
+                anyhow::bail!("You must specify the bucket name in the bucket_name field for the bucket with binding \"{}\"", &ns.binding)
             }
         }).collect()
     } else {
