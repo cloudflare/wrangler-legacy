@@ -67,8 +67,9 @@ pub fn build(
         log::info!("adding __STATIC_CONTENT_MANIFEST");
         let binding = "__STATIC_CONTENT_MANIFEST".to_string();
         let asset_manifest_blob = get_asset_manifest_blob(asset_manifest)?;
-        let text_blob = TextBlob::new(asset_manifest_blob, binding)?;
+        let text_blob = TextBlob::new(asset_manifest_blob.clone(), binding.clone())?;
         text_blobs.push(text_blob);
+        plain_texts.push(PlainText::new(binding, asset_manifest_blob)?)
     }
 
     match target_type {
