@@ -165,7 +165,11 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle)> {
     run_npm_install(&package_dir).expect("could not run `npm install`");
 
     let node = which::which("node").unwrap();
+
     let mut command = Command::new(node);
+
+    use_legacy_openssl_if_necessary(&mut command)?;
+
     let wranglerjs_path = install().expect("could not install wranglerjs");
     command.arg(wranglerjs_path);
 
@@ -309,4 +313,23 @@ fn random_chars(n: usize) -> String {
         .map(char::from)
         .take(n)
         .collect()
+}
+
+// if user is on node 17, we need legacy OpenSSL because webpack 4 relies on calls that were removed in
+// OpenSSL 3, which is the version that ships with node 17. See:
+// https://github.com/cloudflare/wrangler/issues/2108
+// https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V17.md#openssl-30
+fn use_legacy_openssl_if_necessary(command: &mut Command) -> Result<()> {
+    let node = which::which("node").unwrap();
+
+    let mut version_check_command = Command::new(node);
+    version_check_command.arg("--version");
+    let result = version_check_command.output()?.stdout;
+    let need_legacy_openssl = String::from_utf8_lossy(&result).contains("v17");
+
+    if need_legacy_openssl {
+        command.arg("--openssl-legacy-provider");
+    }
+
+    Ok(())
 }
