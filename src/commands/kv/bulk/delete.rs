@@ -43,7 +43,7 @@ pub fn run(
             let keys_vec: Result<Vec<KeyValuePair>, serde_json::Error> =
                 serde_json::from_str(&data);
             match keys_vec {
-                Ok(keys_vec) => keys_vec.iter().map(|kv| { kv.key.to_owned() }).collect(),
+                Ok(keys_vec) => keys_vec.iter().map(|kv| kv.key.to_owned()).collect(),
                 Err(_) => {
                     // Hide '{' in this error message from the formatting machinery in bail macro
                     let msg = "Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]";
