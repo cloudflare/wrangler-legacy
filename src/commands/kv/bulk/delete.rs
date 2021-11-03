@@ -44,7 +44,11 @@ pub fn run(
                 serde_json::from_str(&data);
             match keys_vec {
                 Ok(keys_vec) => keys_vec.iter().map(|kv| { kv.key.to_owned() }).collect(),
-                Err(_) => anyhow::bail!("Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]")
+                Err(_) => {
+                    // Hide '{' in this error message from the formatting machinery in bail macro
+                    let msg = "Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]";
+                    anyhow::bail!(msg);
+                }
             }
         }
         Ok(_) => anyhow::bail!("{} should be a JSON file, but is not", filename.display()),
