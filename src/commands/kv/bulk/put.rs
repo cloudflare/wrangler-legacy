@@ -21,7 +21,11 @@ pub fn run(target: &Target, user: &GlobalUser, namespace_id: &str, filename: &Pa
             let data_vec = serde_json::from_str(&data);
             match data_vec {
                 Ok(data_vec) => Ok(data_vec),
-                Err(_) => Err(anyhow!("Failed to decode JSON. Please make sure to follow the format, [{{\"key\": \"test_key\", \"value\": \"test_value\"}}, ...]"))
+                Err(_) => {
+                    // Hide '{' in this error message from the formatting machinery in anyhow macro
+                    let msg = "Failed to decode JSON. Please make sure to follow the format, [{\"key\": \"test_key\", \"value\": \"test_value\"}, ...]";
+                    Err(anyhow!(msg))
+                }
             }
         }
         Ok(_) => Err(anyhow!(
