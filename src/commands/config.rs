@@ -59,7 +59,7 @@ pub fn validate_credentials(user: &GlobalUser) -> Result<()> {
                 if success.result.status == "active" {
                     Ok(())
                 } else {
-                    anyhow::bail!("Authentication check failed. Your token has status \"{}\", not \"active\".\nTry rolling your token on the Cloudflare dashboard.")
+                    anyhow::bail!("Authentication check failed. Your token has status \"{}\", not \"active\".\nTry rolling your token on the Cloudflare dashboard.", success.result.status)
                 }
             }
             Err(e) => anyhow::bail!(

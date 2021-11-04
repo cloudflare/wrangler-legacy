@@ -32,6 +32,30 @@ fn it_generates_with_arguments() {
     cleanup(name);
 }
 
+#[test]
+fn it_generates_toml_file_in_correct_directory() {
+    let name = "collision-example";
+    let expected_name = "collision-example-1";
+    let template = "https://github.com/cloudflare/rustwasm-worker-template";
+    let project_type = "webpack";
+    fs::create_dir_all(Path::new(name)).unwrap();
+
+    generate(Some(name), Some(template), Some(project_type));
+    assert_eq!(Path::new(expected_name).exists(), true);
+
+    let wranglertoml_path = format!("{}/wrangler.toml", expected_name);
+    assert_eq!(Path::new(&wranglertoml_path).exists(), true);
+
+    let wranglertoml_text = fs::read_to_string(wranglertoml_path).unwrap();
+    assert!(wranglertoml_text.contains(expected_name));
+
+    let unexpected_wranglertoml_path = format!("{}/wrangler.toml", name);
+    assert_eq!(Path::new(&unexpected_wranglertoml_path).exists(), false);
+
+    cleanup(name);
+    cleanup(expected_name);
+}
+
 pub fn generate(name: Option<&str>, template: Option<&str>, project_type: Option<&str>) {
     let mut wrangler = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
     if name.is_none() && template.is_none() && project_type.is_none() {
