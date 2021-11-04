@@ -257,10 +257,10 @@ fn generate_url_safe_path(path: &Path) -> Result<String> {
     Ok(path.to_string())
 }
 
-// Adds the SHA-256 hash of the path's file contents to the url-safe path of a file to
+// Adds the XXhash hash of the path's file contents to the url-safe path of a file to
 // generate a versioned key for the file and its contents. Returns the url-safe path prefix
 // for the key, as well as the key with hash appended.
-// e.g (sitemap.xml, sitemap.ec717eb2131fdd4fff803b851d2aa5b1dc3e0af36bc3c8c40f2095c747e80d1e.xml)
+// e.g (sitemap.xml, sitemap.ec717eb2131fdd4f.xml)
 pub fn generate_path_and_key(
     path: &Path,
     directory: &Path,
