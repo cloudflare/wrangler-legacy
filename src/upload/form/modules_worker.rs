@@ -48,6 +48,15 @@ fn add_files(mut form: Form, assets: &ModulesAssets) -> Result<Form> {
             .file_name(name.clone());
         form = form.part(name.clone(), part);
     }
+
+    for text_blob in &assets.text_blobs {
+        let part = Part::text(text_blob.data.clone())
+            .file_name(text_blob.binding.clone())
+            .mime_str("text/plain")?;
+
+        form = form.part(text_blob.binding.clone(), part);
+    }
+
     Ok(form)
 }
 

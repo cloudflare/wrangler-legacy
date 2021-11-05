@@ -318,6 +318,7 @@ pub struct ModulesAssets {
     pub kv_namespaces: Vec<KvNamespace>,
     pub durable_object_classes: Vec<DurableObjectsClass>,
     pub migration: Option<ApiMigration>,
+    pub text_blobs: Vec<TextBlob>,
     pub plain_texts: Vec<PlainText>,
     pub usage_model: Option<UsageModel>,
 }
@@ -331,6 +332,7 @@ impl ModulesAssets {
         kv_namespaces: Vec<KvNamespace>,
         durable_object_classes: Vec<DurableObjectsClass>,
         migration: Option<ApiMigration>,
+        text_blobs: Vec<TextBlob>,
         plain_texts: Vec<PlainText>,
         usage_model: Option<UsageModel>,
     ) -> Result<Self> {
@@ -341,6 +343,7 @@ impl ModulesAssets {
             kv_namespaces,
             durable_object_classes,
             migration,
+            text_blobs,
             plain_texts,
             usage_model,
         })
