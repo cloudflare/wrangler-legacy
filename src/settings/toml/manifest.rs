@@ -27,7 +27,7 @@ use crate::settings::toml::route::RouteConfig;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
 use crate::settings::toml::triggers::Triggers;
-use crate::settings::toml::Target;
+use crate::settings::toml::{Target, UploadFormat};
 use crate::terminal::{
     emoji,
     message::{Message, StdOut},
@@ -375,10 +375,13 @@ impl Manifest {
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
             durable_objects: self.durable_objects.clone(), // Not inherited
-            migrations: self.migrations.as_ref().map(|migrations| Migrations::List {
-                script_tag: MigrationTag::Unknown,
-                migrations: migrations.clone(),
-            }), // Top Level
+            migrations: match (preview, &self.migrations) {
+                (false, Some(migrations)) => Some(Migrations::List {
+                    script_tag: MigrationTag::Unknown,
+                    migrations: migrations.clone(),
+                }),
+                _ => None,
+            }, // Top level
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited
