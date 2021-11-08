@@ -135,6 +135,7 @@ pub fn build(
                         kv_namespaces.to_vec(),
                         durable_object_classes,
                         migration,
+                        text_blobs,
                         plain_texts,
                         usage_model,
                     )?;
