@@ -21,7 +21,7 @@ chrono = "0.4.19"
 clap = "2.33.3"
 cloudflare = "0.8.3"
 colored_json = "2.1.0"
-config = "0.11.0"
+config = { version = "0.11.0", default-features = false, features = ["toml", "json", "yaml", "ini"]  }
 console = "0.14.1"
 dirs = "3.0.1"
 env_logger = "0.8.4"
