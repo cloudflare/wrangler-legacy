@@ -375,10 +375,13 @@ impl Manifest {
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
             durable_objects: self.durable_objects.clone(), // Not inherited
-            migrations: self.migrations.as_ref().map(|migrations| Migrations::List {
-                script_tag: MigrationTag::Unknown,
-                migrations: migrations.clone(),
-            }), // Top Level
+            migrations: match (preview, &self.migrations) {
+                (false, Some(migrations)) => Some(Migrations::List {
+                    script_tag: MigrationTag::Unknown,
+                    migrations: migrations.clone(),
+                }),
+                _ => None,
+            }, // Top level
             site: self.site.clone(), // Inherited
             vars: self.vars.clone(), // Not inherited
             text_blobs: self.text_blobs.clone(), // Inherited
