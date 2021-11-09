@@ -27,7 +27,7 @@ use crate::settings::toml::route::RouteConfig;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
 use crate::settings::toml::triggers::Triggers;
-use crate::settings::toml::{Target, UploadFormat};
+use crate::settings::toml::Target;
 use crate::terminal::{
     emoji,
     message::{Message, StdOut},
