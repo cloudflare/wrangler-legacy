@@ -76,7 +76,7 @@ pub async fn run(
 
         loop {
             tokio::select! {
-                _ = tokio::signal::ctrl_c() => break ()
+                _ = tokio::signal::ctrl_c() => break
             }
         }
     }
