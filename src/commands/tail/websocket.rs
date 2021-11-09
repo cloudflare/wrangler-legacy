@@ -111,9 +111,6 @@ impl WebSocketTail {
             },
             _ = tokio::signal::ctrl_c() => {
                 self.close(CloseCode::Away, "wrangler is closing due to ctrl-c").await
-            },
-            _ = tokio::time::sleep_until(self.tail.expires_at) => {
-                self.close(CloseCode::Normal, "wrangler is closing due to expiration").await
             }
         }
     }

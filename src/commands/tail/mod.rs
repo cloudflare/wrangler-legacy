@@ -74,13 +74,10 @@ pub async fn run(
             )
         ));
 
-        if let Err(err) = loop {
+        loop {
             tokio::select! {
-                _ = tokio::signal::ctrl_c() => break Ok(()),
-                _ = tokio::time::sleep_until(tail.expires_at) => if let Err(err) = tail.keep_alive().await { break Err(err) }
+                _ = tokio::signal::ctrl_c() => break
             }
-        } {
-            progress.abandon_with_message(&format!("{}", err));
         }
     }
 
