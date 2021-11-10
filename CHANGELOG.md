@@ -1,5 +1,97 @@
 # Changelog
 
+## v1.19.5
+
+- ## Features
+
+  - **add \_\_STATIC_CONTENT_MANIFEST as a text module for modules workers - [g45t345rt], [pull/2126]**
+
+    The `__STATIC_CONTENT_MANIFEST` is not accessible when using modules workers `[sites]`
+
+    This pr makes it possible to import the content of manifest as text.
+
+    It is also in favor of storing the manifest in vars
+    https://github.com/cloudf
+    ... truncated
+
+    [g45t345rt]: https://github.com/g45t345rt
+    [pull/2126]: https://github.com/cloudflare/wrangler/pull/2126
+
+- ## Maintenance
+
+  - **Bump os-version to 0.2.0 - [a1ien], [pull/2122]**
+
+    In 0.2 `os-version` use new stable version of `plist`
+    In plist 1.2.2(which is not published yet) remove chrono dependency and use time 0.3 which fix part of #2117
+
+    [a1ien]: https://github.com/a1ien
+    [pull/2122]: https://github.com/cloudflare/wrangler/pull/2122
+
+  - **Fix missing fmt argument in error message - [dtolnay], [pull/2118]**
+
+    - The first commit fills in a missing argument to `{}` in config.rs. Without this, the error message would literally be 'Your token has status "{}"' with curly braces in it instead of the token status.
+
+    - The second commit closes an incon
+      ... truncated
+
+    [dtolnay]: https://github.com/dtolnay
+    [pull/2118]: https://github.com/cloudflare/wrangler/pull/2118
+
+  - **Fix some migration errors - [xortive], [pull/2127]**
+
+    - Don't include migrations in Target for preview/dev uploads
+
+    [xortive]: https://github.com/xortive
+    [pull/2127]: https://github.com/cloudflare/wrangler/pull/2127
+
+  - **Fixes wrangler.toml being incorrectly inserted into existing directory - [Scotsoo], [pull/2110]**
+
+    Fixes #2051 by passing new_name rather than name to config_path path
+
+    [scotsoo]: https://github.com/Scotsoo
+    [pull/2110]: https://github.com/cloudflare/wrangler/pull/2110
+
+  - **Remove serde-hjson transitive dependency - [a1ien], [pull/2123]**
+
+    serde-hjson crate is not maintained anymore
+    With removing this dependency we also remove duplicate of old serde
+    Also in new version of `config` crate hjson also removed
+
+    [a1ien]: https://github.com/a1ien
+    [pull/2123]: https://github.com/cloudflare/wrangler/pull/2123
+
+  - **Remove unneeded heartbeat logic with sketchy time addition - [nataliescottdavidson], [pull/2129]**
+
+    [nataliescottdavidson]: https://github.com/nataliescottdavidson
+    [pull/2129]: https://github.com/cloudflare/wrangler/pull/2129
+
+  - **Remove unused eventual dependency - [a1ien], [pull/2119]**
+
+    This also fix part of #2117
+
+    [a1ien]: https://github.com/a1ien
+    [pull/2119]: https://github.com/cloudflare/wrangler/pull/2119
+
+  - **Update hash comment to changed XxHash64 usage - [dcousens], [pull/2124]**
+
+    As introduced in https://github.com/cloudflare/wrangler/pull/1221
+
+    [dcousens]: https://github.com/dcousens
+    [pull/2124]: https://github.com/cloudflare/wrangler/pull/2124
+
+  - **use --openssl-legacy-provider flag when running node 17 - [caass], [pull/2116]**
+
+    Closes #2108
+
+    Node 17 uses openssl 3 by default, which is not
+    compatible with webpack 4. This change adds a check to see if
+    the user is running node 17, and if they are, we add the appropriate
+    flag to the call to node (https://github.com/no
+    ... truncated
+
+    [caass]: https://github.com/caass
+    [pull/2116]: https://github.com/cloudflare/wrangler/pull/2116
+
 ## v1.19.4
 
 - ### Features
