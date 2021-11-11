@@ -11,7 +11,7 @@ use anyhow::Result;
 use chrono::prelude::*;
 use futures_util::{FutureExt, StreamExt};
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Client as HyperClient, Request, Response, Server};
+use hyper::{Body, Client as HyperClient, Response, Server};
 use hyper_rustls::HttpsConnector;
 use tokio::net::TcpListener;
 
@@ -60,11 +60,10 @@ pub async fn https(server_config: ServerConfig, preview_id: Arc<Mutex<String>>) 
 
                 async move {
                     // send the request to the preview service
-                    let resp = preview_request(
-                        Request::from_parts(parts, body),
-                        client,
+                    let resp = client.request(preview_request(
+                        parts, body,
                         preview_id.to_owned(),
-                    )
+                    ))
                     .await?;
                     let (mut parts, body) = resp.into_parts();
 

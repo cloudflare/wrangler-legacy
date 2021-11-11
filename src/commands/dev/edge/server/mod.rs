@@ -7,20 +7,16 @@ pub use self::https::https;
 use crate::commands::dev::utils::get_path_as_str;
 use crate::commands::dev::Protocol;
 
-use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
-use hyper::{Body, Client as HyperClient, Request};
-use hyper_rustls::HttpsConnector;
+use hyper::{Body, Request};
 
 fn preview_request(
-    req: Request<Body>,
-    client: HyperClient<HttpsConnector<HttpConnector>>,
+    mut parts: ::http::request::Parts,
+    body: Body,
     preview_token: String,
     host: String,
     protocol: Protocol,
-) -> ResponseFuture {
-    let (mut parts, body) = req.into_parts();
-
+) -> Request<Body> {
     let path = get_path_as_str(&parts.uri);
 
     parts.headers.insert(
@@ -40,7 +36,5 @@ fn preview_request(
     .parse()
     .expect("Could not construct preview url");
 
-    let req = Request::from_parts(parts, body);
-
-    client.request(req)
+    Request::from_parts(parts, body)
 }
