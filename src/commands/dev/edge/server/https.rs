@@ -10,7 +10,7 @@ use chrono::prelude::*;
 use futures_util::{stream::StreamExt, FutureExt};
 
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Client as HyperClient, Request, Server};
+use hyper::{Body, Client as HyperClient, Server};
 use hyper_rustls::HttpsConnector;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot::{Receiver, Sender};
@@ -52,13 +52,12 @@ pub async fn https(
                 let now: DateTime<Local> = Local::now();
                 let path = get_path_as_str(&parts.uri);
                 async move {
-                    let mut resp = preview_request(
-                        Request::from_parts(parts, body),
-                        client,
+                    let mut resp = client.request(preview_request(
+                        parts, body,
                         preview_token.to_owned(),
                         host.clone(),
                         Protocol::Https,
-                    )
+                    ))
                     .await?;
 
                     rewrite_redirect(&mut resp, &host, &local_host, true);
