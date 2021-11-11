@@ -60,11 +60,9 @@ pub async fn https(server_config: ServerConfig, preview_id: Arc<Mutex<String>>) 
 
                 async move {
                     // send the request to the preview service
-                    let resp = client.request(preview_request(
-                        parts, body,
-                        preview_id.to_owned(),
-                    ))
-                    .await?;
+                    let resp = client
+                        .request(preview_request(parts, body, preview_id.to_owned()))
+                        .await?;
                     let (mut parts, body) = resp.into_parts();
 
                     // format the response for the user
