@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use chrono::prelude::*;
+use http::StatusCode;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Client as HyperClient, Request, Server};
 use hyper_rustls::HttpsConnector;
@@ -47,7 +48,7 @@ pub async fn http(
                 let req_method = parts.method.to_string();
                 let now: DateTime<Local> = Local::now();
                 let path = get_path_as_str(&parts.uri);
-                async move {
+                let resp = async move {
                     let mut resp = preview_request(
                         Request::from_parts(parts, body),
                         client,
@@ -69,6 +70,16 @@ pub async fn http(
                         resp.status()
                     );
                     Ok::<_, anyhow::Error>(resp)
+                };
+                async {
+                    Ok::<_, std::convert::Infallible>(match resp.await {
+                        Ok(resp) => resp,
+                        Err(err) => {
+                            let mut resp = hyper::Response::new(format!("{:?}", err).into());
+                            *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                            resp
+                        }
+                    })
                 }
             }))
         }
