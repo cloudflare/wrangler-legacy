@@ -11,8 +11,6 @@ const PACKAGE_JSON_KEY_ERROR_MODULE: &str = "The `module` key in your `package.j
 pub struct Package {
     #[serde(default)]
     main: PathBuf,
-    #[serde(default)]
-    module: PathBuf,
 }
 impl Package {
     pub fn main(&self, package_dir: &Path) -> Result<PathBuf> {
