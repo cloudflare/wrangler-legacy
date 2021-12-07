@@ -6,6 +6,7 @@ on:
     paths:
       - "**/Cargo.toml"
       - "**/Cargo.lock"
+      - ".cargo/audit.toml"
       - "**/package-lock.json"
       - "**/npm-shrinkwrap.json"
   schedule:
