@@ -1,4 +1,5 @@
 use super::preview_request;
+use crate::commands::dev;
 use crate::commands::dev::gcs::headers::destructure_response;
 use crate::commands::dev::server_config::ServerConfig;
 use crate::commands::dev::tls;
@@ -11,8 +12,7 @@ use anyhow::Result;
 use chrono::prelude::*;
 use futures_util::{FutureExt, StreamExt};
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Client as HyperClient, Response, Server};
-use hyper_rustls::HttpsConnector;
+use hyper::{Response, Server};
 use tokio::net::TcpListener;
 
 /// performs all logic that takes an incoming request
@@ -21,8 +21,7 @@ pub async fn https(server_config: ServerConfig, preview_id: Arc<Mutex<String>>) 
     tls::generate_cert()?;
 
     // set up https client to connect to the preview service
-    let https = HttpsConnector::with_native_roots();
-    let client = HyperClient::builder().build::<_, Body>(https);
+    let client = dev::client();
 
     let listening_address = server_config.listening_address;
 

@@ -5,6 +5,9 @@ mod socket;
 mod tls;
 mod utils;
 
+use hyper::client::HttpConnector;
+use hyper::Body;
+use hyper_rustls::HttpsConnector;
 pub use server_config::Protocol;
 pub use server_config::ServerConfig;
 
@@ -16,6 +19,16 @@ use crate::terminal::message::{Message, StdOut};
 use crate::terminal::styles;
 
 use anyhow::Result;
+
+fn client() -> hyper::Client<HttpsConnector<HttpConnector>> {
+    let builder = hyper_rustls::HttpsConnectorBuilder::new()
+        .with_native_roots()
+        .https_or_http();
+    // Cloudflare doesn't currently support websockets with HTTP/2.
+    // Allow using HTTP/1.1 for websocket connections.
+    let https = builder.enable_http1().build();
+    hyper::Client::builder().build::<_, Body>(https)
+}
 
 /// `wrangler dev` starts a server on a dev machine that routes incoming HTTP requests
 /// to a Cloudflare Workers runtime and returns HTTP responses
