@@ -5,8 +5,7 @@ use anyhow::Result;
 use core::task::{Context, Poll};
 use fs::File;
 use futures_util::stream::Stream;
-use rustls::internal::pemfile;
-use rustls::{NoClientAuth, ServerConfig};
+use rustls::{server::NoClientAuth, ServerConfig};
 use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -30,10 +29,13 @@ pub(super) fn get_tls_acceptor() -> Result<TlsAcceptor> {
     let key = load_private_key(privkey)?;
 
     // Do not use client certificate authentication.
-    let mut cfg = ServerConfig::new(NoClientAuth::new());
+    let cfg = ServerConfig::builder()
+        .with_safe_defaults()
+        .with_client_cert_verifier(NoClientAuth::new());
 
     // Select a certificate to use.
-    cfg.set_single_cert(certs, key)
+    let cfg = cfg
+        .with_single_cert(certs, key)
         .map_err(|e| io_error(format!("{}", e)))?;
 
     Ok(TlsAcceptor::from(Arc::new(cfg)))
@@ -71,7 +73,10 @@ fn load_certs(file: PathBuf) -> io::Result<Vec<rustls::Certificate>> {
     let mut reader = io::BufReader::new(certfile);
 
     // Load and return certificate.
-    pemfile::certs(&mut reader).map_err(|_| io_error("failed to load certificate".into()))
+    match rustls_pemfile::certs(&mut reader) {
+        Ok(certs) => Ok(certs.into_iter().map(rustls::Certificate).collect()),
+        Err(_) => Err(io_error("failed to load certificate".into())),
+    }
 }
 
 // Load private key from file.
@@ -81,10 +86,10 @@ fn load_private_key(file: PathBuf) -> io::Result<rustls::PrivateKey> {
     let mut reader = io::BufReader::new(keyfile);
 
     // Load and return a single private key.
-    let keys = pemfile::pkcs8_private_keys(&mut reader)
+    let mut keys = rustls_pemfile::pkcs8_private_keys(&mut reader)
         .map_err(|_| io_error("failed to load private key".into()))?;
     if keys.len() != 1 {
         return Err(io_error("expected a single private key".into()));
     }
-    Ok(keys[0].clone())
+    Ok(rustls::PrivateKey(keys.pop().unwrap()))
 }

@@ -1,6 +1,6 @@
 use super::preview_request;
 use crate::commands::dev::utils::{get_path_as_str, rewrite_redirect};
-use crate::commands::dev::{Protocol, ServerConfig};
+use crate::commands::dev::{self, Protocol, ServerConfig};
 use crate::terminal::emoji;
 
 use std::sync::{Arc, Mutex};
@@ -9,8 +9,7 @@ use anyhow::Result;
 use chrono::prelude::*;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::upgrade::OnUpgrade;
-use hyper::{Body, Client as HyperClient, Server};
-use hyper_rustls::HttpsConnector;
+use hyper::Server;
 use tokio::sync::oneshot::{Receiver, Sender};
 
 pub async fn http(
@@ -21,8 +20,7 @@ pub async fn http(
     shutdown_channel: (Receiver<()>, Sender<()>),
 ) -> Result<()> {
     // set up https client to connect to the preview service
-    let https = HttpsConnector::with_native_roots();
-    let client = HyperClient::builder().build::<_, Body>(https);
+    let client = dev::client();
 
     let listening_address = server_config.listening_address;
 
