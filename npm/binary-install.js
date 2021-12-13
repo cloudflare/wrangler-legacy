@@ -92,7 +92,21 @@ class Binary {
 
         return axios({ url: this.url, responseType: "stream" })
             .then(res => {
-                res.data.pipe(tar.x({ strip: 1, C: this.binaryDirectory }));
+                const writer = tar.x({ strip: 1, C: this.binaryDirectory });
+
+                return new Promise((resolve, reject) => {
+                    res.data.pipe(writer);
+                    let error = null;
+                    writer.on('error', err => {
+                      error = err;
+                      reject(err);
+                    });
+                    writer.on('close', () => {
+                      if (!error) {
+                        resolve(true);
+                      }
+                    });
+                })
             })
             .then(() => {
                 console.log(
