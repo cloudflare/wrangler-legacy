@@ -388,7 +388,7 @@ mod tests {
         .unwrap();
 
         let tmp_dir = tempdir().unwrap();
-        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user)).unwrap();
 
         let mut temp_file = fs::OpenOptions::new()
             .append(true)
@@ -412,7 +412,7 @@ mod tests {
         let user_extra_toml = "refresh_token: \"thisisarefreshtoken\"";
 
         let tmp_dir = tempdir().unwrap();
-        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user)).unwrap();
 
         let mut temp_file = fs::OpenOptions::new()
             .append(true)
@@ -442,7 +442,7 @@ mod tests {
         .unwrap();
 
         let tmp_dir = tempdir().unwrap();
-        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user)).unwrap();
 
         let mut temp_file = fs::OpenOptions::new()
             .append(true)
@@ -467,7 +467,7 @@ mod tests {
         let user_extra_toml = "refresh_token: \"thisisarefreshtoken\"";
 
         let tmp_dir = tempdir().unwrap();
-        let tmp_config_path = test_config_dir(&tmp_dir, Some(user.clone())).unwrap();
+        let tmp_config_path = test_config_dir(&tmp_dir, Some(user)).unwrap();
 
         let mut temp_file = fs::OpenOptions::new()
             .append(true)
