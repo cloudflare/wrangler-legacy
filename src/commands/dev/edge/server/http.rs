@@ -8,7 +8,8 @@ use std::sync::{Arc, Mutex};
 use anyhow::Result;
 use chrono::prelude::*;
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Client as HyperClient, Request, Server};
+use hyper::upgrade::OnUpgrade;
+use hyper::{Body, Client as HyperClient, Server};
 use hyper_rustls::HttpsConnector;
 use tokio::sync::oneshot::{Receiver, Sender};
 
@@ -34,6 +35,11 @@ pub async fn http(
 
         async move {
             Ok::<_, anyhow::Error>(service_fn(move |req| {
+                let is_websocket = req
+                    .headers()
+                    .get("upgrade")
+                    .map_or(false, |h| h.as_bytes() == b"websocket");
+
                 let client = client.to_owned();
                 let preview_token = preview_token.lock().unwrap().to_owned();
                 let host = host.to_owned();
@@ -48,15 +54,17 @@ pub async fn http(
                 let now: DateTime<Local> = Local::now();
                 let path = get_path_as_str(&parts.uri);
                 async move {
-                    let mut resp = preview_request(
-                        Request::from_parts(parts, body),
-                        client,
+                    let mut req = preview_request(
+                        parts,
+                        body,
                         preview_token.to_owned(),
                         host.clone(),
                         upstream_protocol,
-                    )
-                    .await?;
+                    );
+                    let client_on_upgrade = req.extensions_mut().remove::<OnUpgrade>();
 
+                    let mut resp = client.request(req).await?;
+                    super::maybe_proxy_websocket(is_websocket, client_on_upgrade, &mut resp);
                     rewrite_redirect(&mut resp, &host, &local_host, false);
 
                     println!(

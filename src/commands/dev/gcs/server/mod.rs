@@ -7,11 +7,9 @@ pub use self::https::https;
 use crate::commands::dev::gcs::headers::structure_request;
 use crate::commands::dev::utils::get_path_as_str;
 
-use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::http::uri::InvalidUri;
-use hyper::{Body, Client as HyperClient, Request, Uri};
-use hyper_rustls::HttpsConnector;
+use hyper::{Body, Request, Uri};
 
 const PREVIEW_HOST: &str = "rawhttp.cloudflareworkers.com";
 
@@ -20,12 +18,10 @@ fn get_preview_url(path_string: &str) -> Result<Uri, InvalidUri> {
 }
 
 pub fn preview_request(
-    req: Request<Body>,
-    client: HyperClient<HttpsConnector<HttpConnector>>,
+    mut parts: ::http::request::Parts,
+    body: Body,
     preview_id: String,
-) -> ResponseFuture {
-    let (mut parts, body) = req.into_parts();
-
+) -> Request<Body> {
     let path = get_path_as_str(&parts.uri);
     let preview_id = &preview_id;
 
@@ -43,7 +39,5 @@ pub fn preview_request(
 
     parts.uri = get_preview_url(&path).expect("Could not get preview url");
 
-    let req = Request::from_parts(parts, body);
-
-    client.request(req)
+    Request::from_parts(parts, body)
 }

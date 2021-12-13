@@ -22,7 +22,6 @@ fn main() -> Result<()> {
     }
     env_logger::init();
 
-    let latest_version_receiver = background_check_for_updates();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
         // self-installation, otherwise just continue as usual.
@@ -36,7 +35,7 @@ fn main() -> Result<()> {
         }
     }
     run()?;
-    if let Ok(latest_version) = latest_version_receiver.try_recv() {
+    if let Ok(latest_version) = background_check_for_updates().try_recv() {
         let latest_version = styles::highlight(latest_version.to_string());
         let new_version_available = format!(
             "A new version of Wrangler ({}) is available!",

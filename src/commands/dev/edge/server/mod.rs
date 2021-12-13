@@ -7,20 +7,18 @@ pub use self::https::https;
 use crate::commands::dev::utils::get_path_as_str;
 use crate::commands::dev::Protocol;
 
-use hyper::client::{HttpConnector, ResponseFuture};
 use hyper::header::{HeaderName, HeaderValue};
-use hyper::{Body, Client as HyperClient, Request};
-use hyper_rustls::HttpsConnector;
+use hyper::upgrade::OnUpgrade;
+use hyper::{Body, Request};
+use tokio::io::copy_bidirectional;
 
 fn preview_request(
-    req: Request<Body>,
-    client: HyperClient<HttpsConnector<HttpConnector>>,
+    mut parts: ::http::request::Parts,
+    body: Body,
     preview_token: String,
     host: String,
     protocol: Protocol,
-) -> ResponseFuture {
-    let (mut parts, body) = req.into_parts();
-
+) -> Request<Body> {
     let path = get_path_as_str(&parts.uri);
 
     parts.headers.insert(
@@ -40,7 +38,31 @@ fn preview_request(
     .parse()
     .expect("Could not construct preview url");
 
-    let req = Request::from_parts(parts, body);
+    Request::from_parts(parts, body)
+}
 
-    client.request(req)
+fn maybe_proxy_websocket(
+    is_websocket: bool,
+    client_on_upgrade: Option<OnUpgrade>,
+    resp: &mut ::http::Response<Body>,
+) {
+    if is_websocket && resp.status() == 101 {
+        if let (Some(client_on_upgrade), Some(upstream_on_upgrade)) = (
+            client_on_upgrade,
+            resp.extensions_mut().remove::<OnUpgrade>(),
+        ) {
+            tokio::spawn(async move {
+                match tokio::try_join!(client_on_upgrade, upstream_on_upgrade) {
+                    Ok((mut client_upgraded, mut server_upgraded)) => {
+                        let proxy_future =
+                            copy_bidirectional(&mut client_upgraded, &mut server_upgraded);
+                        if let Err(err) = proxy_future.await {
+                            log::warn!("could not proxy WebSocket: {}", err);
+                        }
+                    }
+                    Err(e) => log::warn!("could not proxy WebSocket: {}", e),
+                }
+            });
+        }
+    }
 }
