@@ -1,12 +1,12 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.19.5",
+  "version": "1.19.6",
   "lockfileVersion": 2,
   "requires": true,
   "packages": {
     "": {
       "name": "@cloudflare/wrangler",
-      "version": "1.19.5",
+      "version": "1.19.6",
       "hasInstallScript": true,
       "license": "MIT OR Apache-2.0",
       "dependencies": {
@@ -15,7 +15,8 @@
         "tar": "^6.1.10"
       },
       "bin": {
-        "wrangler": "run-wrangler.js"
+        "wrangler": "run-wrangler.js",
+        "wrangler1": "run-wrangler.js"
       }
     },
     "node_modules/axios": {
