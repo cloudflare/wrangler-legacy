@@ -1,5 +1,86 @@
 # Changelog
 
+## v1.19.6
+
+- ### Features
+
+  - **Add `wrangler1` as an alias - [TehShrike], [pull/2139]**
+
+    So that when @cloudflare/wrangler is installed along wrangler2, they can each be referenced in npm run scripts.
+
+    See https://github.com/cloudflare/wrangler2/pull/40
+
+    [tehshrike]: https://github.com/TehShrike
+    [pull/2139]: https://github.com/cloudflare/wrangler/pull/2139
+
+- ### Fixes
+
+  - **Don't look for background updates unless Wrangler finished successfully - [jyn514], [pull/2150]**
+
+    This works around a segfault due to OpenSSL's exit handlers not being thread-safe.
+
+    See https://github.com/cloudflare/wrangler/issues/1464#issuecomment-988245785 for an explanation and alternatives.
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2150]: https://github.com/cloudflare/wrangler/pull/2150
+
+  - **fix: incomplete binary with npm installation - [12f23eddde], [pull/2149]**
+
+    Closes #2148.
+    This PR modifies binary-install.js ([reference](https://stackoverflow.com/questions/55374755/node-js-axios-download-file-stream-and-writefile)) to make sure the file stream is complete before the program finishes.
+    I'm not a
+    ... truncated
+
+    [12f23eddde]: https://github.com/12f23eddde
+    [pull/2149]: https://github.com/cloudflare/wrangler/pull/2149
+
+  - **Get https websockets working - [jyn514], [pull/2153]**
+
+    It turns out websocket upgrades with HTTP/2 require an HTTP extension,
+    which Cloudflare doesn't currently support: https://datatracker.ietf.org/doc/html/rfc8441
+
+    To avoid this, enable HTTP/1 for the remote client.
+
+    This required an upd
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2153]: https://github.com/cloudflare/wrangler/pull/2153
+
+  - **Get the audit CI job passing - [jyn514], [pull/2151]**
+
+    Note that I didn't say "fix the vulnerabilities" - this just ignores the `chrono` and `time` vulnerabilities because they're both very hard to fix and not very common in practice.
+
+    This uncovered a tokio vulnerability, which I've fixed by
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2151]: https://github.com/cloudflare/wrangler/pull/2151
+
+  - **Proxy websocket connections when using authenticated (realish) preview - [jyn514], [pull/2135]**
+
+    Previously, Wrangler would return a "101 Switching Protocols" response
+    and then immediately close the TCP connection. This changes it to instead
+    continue proxying the connection to the remote worker.
+
+    This is simpler than `wrangler dev
+    ... truncated
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2135]: https://github.com/cloudflare/wrangler/pull/2135
+
+- ### Maintenance
+
+  - **Update Rust toolchain to 1.57 - [taylorlee], [pull/2145]**
+
+    I originally updated my toolchain to 1.56.1 on a local branch, since afaict rust-analyzer wasn't able to work with derived StructOpt proc-macros in 1.54. Since 1.57 was released today, I figured I'd update it all the way in this pr.
+
+    foll
+    ... truncated
+
+    [taylorlee]: https://github.com/taylorlee
+    [pull/2145]: https://github.com/cloudflare/wrangler/pull/2145
+
 ## v1.19.5
 
 - ## Features
