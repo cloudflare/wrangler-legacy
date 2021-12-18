@@ -294,7 +294,7 @@ pub enum Command {
     },
 
     /// Logout from your current authentication method and remove any configuration files.
-    /// It does not logout if you have authenticated wrangler through envrionment variables.
+    /// It does not logout if you have authenticated wrangler through environment variables.
     #[structopt(name = "logout")]
     Logout,
 
