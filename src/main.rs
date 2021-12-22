@@ -9,9 +9,7 @@ use wrangler::cli::{exec, Cli, Command};
 use wrangler::commands;
 use wrangler::installer;
 use wrangler::reporter;
-use wrangler::terminal::message::{Message, StdOut};
-use wrangler::terminal::styles;
-use wrangler::version::background_check_for_updates;
+use wrangler::version::check_for_updates;
 
 use anyhow::Result;
 use structopt::StructOpt;
@@ -22,7 +20,6 @@ fn main() -> Result<()> {
     }
     env_logger::init();
 
-    let latest_version_receiver = background_check_for_updates();
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
         // self-installation, otherwise just continue as usual.
@@ -36,22 +33,7 @@ fn main() -> Result<()> {
         }
     }
     run()?;
-    if let Ok(latest_version) = latest_version_receiver.try_recv() {
-        let latest_version = styles::highlight(latest_version.to_string());
-        let new_version_available = format!(
-            "A new version of Wrangler ({}) is available!",
-            latest_version
-        );
-        let update_message = "You can learn more about updating here:".to_string();
-        let update_docs_url = styles::url(
-            "https://developers.cloudflare.com/workers/cli-wrangler/install-update#update",
-        );
-
-        StdOut::billboard(&format!(
-            "{}\n{}\n{}",
-            new_version_available, update_message, update_docs_url
-        ));
-    }
+    check_for_updates();
     Ok(())
 }
 

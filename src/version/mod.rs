@@ -1,11 +1,11 @@
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
-use std::sync::mpsc;
-use std::thread;
 use std::time::SystemTime;
 
 use crate::settings::get_wrangler_home_dir;
+use crate::terminal::message::{Message, StdOut};
+use crate::terminal::styles;
 
 use anyhow::Result;
 use reqwest::header::USER_AGENT;
@@ -14,21 +14,30 @@ use serde::{Deserialize, Serialize};
 
 const ONE_DAY: u64 = 60 * 60 * 24;
 
-pub fn background_check_for_updates() -> mpsc::Receiver<Version> {
-    let (sender, receiver) = mpsc::channel();
-
-    let _detached_thread = thread::spawn(move || match check_wrangler_versions() {
+pub fn check_for_updates() {
+    match check_wrangler_versions() {
         Ok(wrangler_versions) => {
             // If the wrangler version has not been checked within the last day and the versions
             // are different, print out an update message
             if wrangler_versions.is_outdated() {
-                let _ = sender.send(wrangler_versions.latest);
+                let latest_version = styles::highlight(wrangler_versions.latest.to_string());
+                let new_version_available = format!(
+                    "A new version of Wrangler ({}) is available!",
+                    latest_version
+                );
+                let update_message = "You can learn more about updating here:".to_string();
+                let update_docs_url = styles::url(
+                    "https://developers.cloudflare.com/workers/cli-wrangler/install-update#update",
+                );
+
+                StdOut::billboard(&format!(
+                    "{}\n{}\n{}",
+                    new_version_available, update_message, update_docs_url
+                ));
             }
         }
         Err(e) => log::debug!("could not determine if update is needed:\n{}", e),
-    });
-
-    receiver
+    }
 }
 
 #[derive(Debug, Clone)]
