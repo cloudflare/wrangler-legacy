@@ -8,6 +8,7 @@ use crate::settings::toml::builder::Builder;
 use crate::settings::toml::durable_objects::DurableObjects;
 use crate::settings::toml::kv_namespace::ConfigKvNamespace;
 use crate::settings::toml::route::RouteConfig;
+use crate::settings::toml::services::Service;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::triggers::Triggers;
 
@@ -32,6 +33,7 @@ pub struct Environment {
     pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,
     pub durable_objects: Option<DurableObjects>,
+    pub experimental_services: Option<Vec<Service>>,
 }
 
 impl Environment {

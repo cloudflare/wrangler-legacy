@@ -104,6 +104,7 @@ mod tests {
                 },
             ],
             durable_objects: None,
+            experimental_services: None,
             migrations: None,
             name: "test-target".to_string(),
             target_type: TargetType::Webpack,

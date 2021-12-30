@@ -24,6 +24,7 @@ use crate::settings::toml::durable_objects::DurableObjects;
 use crate::settings::toml::environment::Environment;
 use crate::settings::toml::kv_namespace::{ConfigKvNamespace, KvNamespace};
 use crate::settings::toml::route::RouteConfig;
+use crate::settings::toml::services::Service;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::target_type::TargetType;
 use crate::settings::toml::triggers::Triggers;
@@ -63,6 +64,7 @@ pub struct Manifest {
     pub env: Option<HashMap<String, Environment>>,
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
+    pub experimental_services: Option<Vec<Service>>,
     // TODO: maybe one day, serde toml support will allow us to serialize sites
     // as a TOML inline table (this would prevent confusion with environments too!)
     pub site: Option<Site>,
@@ -375,6 +377,7 @@ impl Manifest {
             name: self.name.clone(), // Inherited
             kv_namespaces: get_namespaces(self.kv_namespaces.clone(), preview)?, // Not inherited
             durable_objects: self.durable_objects.clone(), // Not inherited
+            experimental_services: self.experimental_services.clone(), // Not inherited
             migrations: match (preview, &self.migrations) {
                 (false, Some(migrations)) => Some(Migrations::List {
                     script_tag: MigrationTag::Unknown,
@@ -411,6 +414,9 @@ impl Manifest {
             // don't inherit durable object configuration
             target.durable_objects = environment.durable_objects.clone();
 
+            // don't inherit services
+            target.experimental_services = environment.experimental_services.clone();
+
             // inherit site configuration
             if let Some(site) = &environment.site {
                 target.site = Some(site.clone());
@@ -418,6 +424,10 @@ impl Manifest {
 
             // don't inherit vars
             target.vars = environment.vars.clone();
+        }
+
+        if target.experimental_services.is_some() {
+            StdOut::warn("The experimental_services field is only for cloudflare internal usage right now, and is subject to change. Please do not use this on production projects");
         }
 
         Ok(target)

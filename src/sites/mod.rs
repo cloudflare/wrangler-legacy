@@ -334,6 +334,7 @@ mod tests {
             account_id: None.into(),
             kv_namespaces: Vec::new(),
             durable_objects: None,
+            experimental_services: None,
             migrations: None,
             name: "".to_string(),
             target_type: TargetType::JavaScript,

@@ -1,6 +1,7 @@
 use super::durable_objects::DurableObjects;
 use super::kv_namespace::KvNamespace;
 pub(crate) use super::manifest::LazyAccountId;
+use super::services::Service;
 use super::site::Site;
 use super::target_type::TargetType;
 use super::UsageModel;
@@ -16,6 +17,7 @@ pub struct Target {
     pub account_id: LazyAccountId,
     pub kv_namespaces: Vec<KvNamespace>,
     pub durable_objects: Option<DurableObjects>,
+    pub experimental_services: Option<Vec<Service>>,
     pub migrations: Option<Migrations>,
     pub name: String,
     pub target_type: TargetType,

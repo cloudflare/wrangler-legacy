@@ -18,6 +18,11 @@ pub enum Binding {
         class_name: String,
         script_name: Option<String>,
     },
+    Service {
+        name: String,
+        service: String,
+        environment: String,
+    },
     TextBlob {
         name: String,
         part: String,
@@ -46,6 +51,14 @@ impl Binding {
             name,
             class_name,
             script_name,
+        }
+    }
+
+    pub fn new_service(name: String, service: String, environment: String) -> Binding {
+        Binding::Service {
+            name,
+            service,
+            environment,
         }
     }
 
