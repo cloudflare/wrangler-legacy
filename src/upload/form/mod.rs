@@ -41,6 +41,7 @@ pub fn build(
         .unwrap_or_default();
     let mut text_blobs: Vec<TextBlob> = Vec::new();
     let mut plain_texts: Vec<PlainText> = Vec::new();
+    let services = target.experimental_services.clone().unwrap_or_default();
     let mut wasm_modules: Vec<WasmModule> = Vec::new();
     let usage_model = target.usage_model;
 
@@ -94,6 +95,7 @@ pub fn build(
                 durable_object_classes,
                 text_blobs,
                 plain_texts,
+                services,
                 usage_model,
             };
 
@@ -116,6 +118,7 @@ pub fn build(
                         durable_object_classes,
                         text_blobs,
                         plain_texts,
+                        services,
                         usage_model,
                     };
 
@@ -137,6 +140,7 @@ pub fn build(
                         migration,
                         text_blobs,
                         plain_texts,
+                        services,
                         usage_model,
                     )?;
 
@@ -158,6 +162,7 @@ pub fn build(
                     durable_object_classes,
                     text_blobs,
                     plain_texts,
+                    services,
                     usage_model,
                 };
 
@@ -188,6 +193,7 @@ pub fn build(
                 durable_object_classes,
                 text_blobs,
                 plain_texts,
+                services,
                 usage_model,
             };
 

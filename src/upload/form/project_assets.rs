@@ -14,7 +14,7 @@ use super::wasm_module::WasmModule;
 use super::UsageModel;
 
 use crate::settings::toml::{
-    migrations::ApiMigration, DurableObjectsClass, KvNamespace, ModuleRule,
+    migrations::ApiMigration, DurableObjectsClass, KvNamespace, ModuleRule, Service,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -28,6 +28,7 @@ pub struct ServiceWorkerAssets {
     pub durable_object_classes: Vec<DurableObjectsClass>,
     pub text_blobs: Vec<TextBlob>,
     pub plain_texts: Vec<PlainText>,
+    pub services: Vec<Service>,
     pub usage_model: Option<UsageModel>,
 }
 
@@ -54,6 +55,10 @@ impl ServiceWorkerAssets {
         for plain_text in &self.plain_texts {
             let binding = plain_text.binding();
             bindings.push(binding);
+        }
+        for service in &self.services {
+            let binding = service.binding();
+            bindings.push(binding)
         }
 
         bindings
@@ -320,6 +325,7 @@ pub struct ModulesAssets {
     pub migration: Option<ApiMigration>,
     pub text_blobs: Vec<TextBlob>,
     pub plain_texts: Vec<PlainText>,
+    pub services: Vec<Service>,
     pub usage_model: Option<UsageModel>,
 }
 
@@ -334,6 +340,7 @@ impl ModulesAssets {
         migration: Option<ApiMigration>,
         text_blobs: Vec<TextBlob>,
         plain_texts: Vec<PlainText>,
+        services: Vec<Service>,
         usage_model: Option<UsageModel>,
     ) -> Result<Self> {
         Ok(Self {
@@ -345,6 +352,7 @@ impl ModulesAssets {
             migration,
             text_blobs,
             plain_texts,
+            services,
             usage_model,
         })
     }
@@ -365,6 +373,10 @@ impl ModulesAssets {
         }
         for plain_text in &self.plain_texts {
             let binding = plain_text.binding();
+            bindings.push(binding);
+        }
+        for service in &self.services {
+            let binding = service.binding();
             bindings.push(binding);
         }
 
