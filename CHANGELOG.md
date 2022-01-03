@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.19.7
+
+- ### Fixes
+
+  - **Check for updates in the foreground, not the background - [jyn514], [pull/2166]**
+
+    This avoids creating a new OpenSSL context while the main thread exits the process.
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2166]: https://github.com/cloudflare/wrangler/pull/2166
+
+  - **fix cli help typo - [saikatdas0790], [pull/2160]**
+
+    [saikatdas0790]: https://github.com/saikatdas0790
+    [pull/2160]: https://github.com/cloudflare/wrangler/pull/2160
+
+  - **Improve heuristic for --openssl-legacy-provider (#2155) - [eagleflo], [pull/2172]**
+
+    Improve the heuristic for detecting whether we need `--openssl-legacy-provider` added in #2116 by also checking whether the Node.js was actually built against OpenSSL 3 and has that option available.
+
+    [eagleflo]: https://github.com/eagleflo
+    [pull/2172]: https://github.com/cloudflare/wrangler/pull/2172
+
+  - **Revert "Don't look for background updates unless Wrangler finished successfully" - [jyn514], [pull/2165]**
+
+    [jyn514]: https://github.com/jyn514
+    [pull/2165]: https://github.com/cloudflare/wrangler/pull/2165
+
 ## v1.19.6
 
 - ### Features
