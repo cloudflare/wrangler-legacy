@@ -315,19 +315,27 @@ fn random_chars(n: usize) -> String {
         .collect()
 }
 
-// if user is on node 17, we need legacy OpenSSL because webpack 4 relies on calls that were removed in
-// OpenSSL 3, which is the version that ships with node 17. See:
+// If user is on Node 17, we may need legacy OpenSSL because Webpack 4 relies on
+// calls that were removed in OpenSSL 3. See:
 // https://github.com/cloudflare/wrangler/issues/2108
 // https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V17.md#openssl-30
+// Node 17 can still be built against OpenSSL 1, in which case the option
+// doesn't exist. We need to check for that as well. See:
+// https://github.com/cloudflare/wrangler/issues/2155
 fn use_legacy_openssl_if_necessary(command: &mut Command) -> Result<()> {
     let node = which::which("node").unwrap();
 
-    let mut version_check_command = Command::new(node);
+    let mut version_check_command = Command::new(&node);
     version_check_command.arg("--version");
     let result = version_check_command.output()?.stdout;
     let need_legacy_openssl = String::from_utf8_lossy(&result).contains("v17");
 
-    if need_legacy_openssl {
+    let mut option_exists_command = Command::new(&node);
+    option_exists_command.arg("--help");
+    let result = option_exists_command.output()?.stdout;
+    let option_exists = String::from_utf8_lossy(&result).contains("--openssl-legacy-provider");
+
+    if need_legacy_openssl && option_exists {
         command.arg("--openssl-legacy-provider");
     }
 
