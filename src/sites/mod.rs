@@ -333,6 +333,7 @@ mod tests {
         Target {
             account_id: None.into(),
             kv_namespaces: Vec::new(),
+            r2_buckets: Vec::new(),
             durable_objects: None,
             migrations: None,
             name: "".to_string(),

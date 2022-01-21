@@ -7,6 +7,7 @@ use serde_with::rust::string_empty_as_none;
 use crate::settings::toml::builder::Builder;
 use crate::settings::toml::durable_objects::DurableObjects;
 use crate::settings::toml::kv_namespace::ConfigKvNamespace;
+use crate::settings::toml::r2_bucket::ConfigR2Bucket;
 use crate::settings::toml::route::RouteConfig;
 use crate::settings::toml::site::Site;
 use crate::settings::toml::triggers::Triggers;
@@ -28,6 +29,7 @@ pub struct Environment {
     pub site: Option<Site>,
     #[serde(alias = "kv-namespaces")]
     pub kv_namespaces: Option<Vec<ConfigKvNamespace>>,
+    pub r2_buckets: Option<Vec<ConfigR2Bucket>>,
     pub vars: Option<HashMap<String, String>>,
     pub text_blobs: Option<HashMap<String, PathBuf>>,
     pub triggers: Option<Triggers>,

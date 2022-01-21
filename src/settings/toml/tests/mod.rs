@@ -79,6 +79,51 @@ fn it_builds_from_environments_config_with_kv() {
 }
 
 #[test]
+fn it_builds_from_environments_config_with_r2() {
+    let toml_path = toml_fixture_path("r2_buckets");
+
+    let manifest = Manifest::new(&toml_path).unwrap();
+
+    let target = manifest.get_target(None, false).unwrap();
+    assert!(target.r2_buckets.is_empty());
+
+    let target = manifest.get_target(Some("production"), false).unwrap();
+    let r2_1 = R2Bucket {
+        bucket_name: "long_bucket_name".to_string(),
+        binding: "prodr2_1".to_string(),
+    };
+    let r2_2 = R2Bucket {
+        bucket_name: "another_long_bucket_name".to_string(),
+        binding: "prodr2_2".to_string(),
+    };
+
+    if target.r2_buckets.is_empty() {
+        panic!("found no r2 buckets");
+    } else {
+        assert_eq!(target.r2_buckets.len(), 2);
+        assert!(target.r2_buckets.contains(&r2_1));
+        assert!(target.r2_buckets.contains(&r2_2));
+    }
+
+    let target = manifest.get_target(Some("staging"), false).unwrap();
+    let r2_1 = R2Bucket {
+        bucket_name: "long_bucket_name".to_string(),
+        binding: "stagingr2_1".to_string(),
+    };
+    let r2_2 = R2Bucket {
+        bucket_name: "another_long_bucket_name".to_string(),
+        binding: "stagingr2_2".to_string(),
+    };
+    if target.r2_buckets.is_empty() {
+        panic!("found no r2 buckets");
+    } else {
+        assert_eq!(target.r2_buckets.len(), 2);
+        assert!(target.r2_buckets.contains(&r2_1));
+        assert!(target.r2_buckets.contains(&r2_2));
+    }
+}
+
+#[test]
 fn parses_same_from_config_path_as_string() {
     env::remove_var("CF_ACCOUNT_ID");
     env::remove_var("CF_ZONE_ID");

@@ -12,6 +12,10 @@ pub enum Binding {
         name: String,
         namespace_id: String,
     },
+    R2Bucket {
+        name: String,
+        bucket_name: String,
+    },
     #[serde(rename = "durable_object_namespace")]
     DurableObjectsClass {
         name: String,
@@ -35,6 +39,10 @@ impl Binding {
 
     pub fn new_kv_namespace(name: String, namespace_id: String) -> Binding {
         Binding::KvNamespace { name, namespace_id }
+    }
+
+    pub fn new_r2_bucket(name: String, bucket_name: String) -> Binding {
+        Binding::R2Bucket { name, bucket_name }
     }
 
     pub fn new_durable_object_namespace(

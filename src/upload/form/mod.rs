@@ -34,6 +34,7 @@ pub fn build(
     let compatibility_date = target.compatibility_date.clone();
     let compatibility_flags = target.compatibility_flags.clone();
     let kv_namespaces = &target.kv_namespaces;
+    let r2_buckets = &target.r2_buckets;
     let durable_object_classes = target
         .durable_objects
         .as_ref()
@@ -91,6 +92,7 @@ pub fn build(
                 compatibility_flags,
                 wasm_modules,
                 kv_namespaces: kv_namespaces.to_vec(),
+                r2_buckets: r2_buckets.to_vec(),
                 durable_object_classes,
                 text_blobs,
                 plain_texts,
@@ -113,6 +115,7 @@ pub fn build(
                         compatibility_flags,
                         wasm_modules,
                         kv_namespaces: kv_namespaces.to_vec(),
+                        r2_buckets: r2_buckets.to_vec(),
                         durable_object_classes,
                         text_blobs,
                         plain_texts,
@@ -133,6 +136,7 @@ pub fn build(
                         compatibility_flags,
                         module_config.get_modules()?,
                         kv_namespaces.to_vec(),
+                        r2_buckets.to_vec(),
                         durable_object_classes,
                         migration,
                         text_blobs,
@@ -155,6 +159,7 @@ pub fn build(
                     compatibility_flags,
                     wasm_modules,
                     kv_namespaces: kv_namespaces.to_vec(),
+                    r2_buckets: r2_buckets.to_vec(),
                     durable_object_classes,
                     text_blobs,
                     plain_texts,
@@ -185,6 +190,7 @@ pub fn build(
                 compatibility_flags,
                 wasm_modules,
                 kv_namespaces: kv_namespaces.to_vec(),
+                r2_buckets: r2_buckets.to_vec(),
                 durable_object_classes,
                 text_blobs,
                 plain_texts,

@@ -1,6 +1,7 @@
 use super::durable_objects::DurableObjects;
 use super::kv_namespace::KvNamespace;
 pub(crate) use super::manifest::LazyAccountId;
+use super::r2_bucket::R2Bucket;
 use super::site::Site;
 use super::target_type::TargetType;
 use super::UsageModel;
@@ -15,6 +16,7 @@ use std::path::PathBuf;
 pub struct Target {
     pub account_id: LazyAccountId,
     pub kv_namespaces: Vec<KvNamespace>,
+    pub r2_buckets: Vec<R2Bucket>,
     pub durable_objects: Option<DurableObjects>,
     pub migrations: Option<Migrations>,
     pub name: String,

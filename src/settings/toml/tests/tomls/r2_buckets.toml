@@ -1,0 +1,33 @@
+type = "webpack"
+name = "worker"
+zone_id = ""
+account_id = ""
+route = "dev.example.com/*"
+
+[env.production]
+name = "production-worker"
+zone_id = ""
+account_id = ""
+route = "example.com/*"
+
+[[env.production.r2_buckets]]
+bucket_name = "long_bucket_name"
+binding = "prodr2_1"
+
+[[env.production.r2_buckets]]
+bucket_name = "another_long_bucket_name"
+binding = "prodr2_2"
+
+[env.staging]
+name = "staging-worker"
+zone_id = ""
+account_id = ""
+route = "staging.example.com/*"
+
+[[env.staging.r2_buckets]]
+bucket_name = "long_bucket_name"
+binding = "stagingr2_1"
+
+[[env.staging.r2_buckets]]
+bucket_name = "another_long_bucket_name"
+binding = "stagingr2_2"

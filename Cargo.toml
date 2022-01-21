@@ -19,7 +19,7 @@ binary-install = "0.0.3-alpha.1"
 chrome-devtools-rs = { version = "0.0.0-alpha.3", features = ["color"] }
 chrono = "0.4.19"
 clap = "2.33.3"
-cloudflare = "0.8.3"
+cloudflare = "0.9.0"
 colored_json = "2.1.0"
 config = { version = "0.11.0", default-features = false, features = ["toml", "json", "yaml", "ini"]  }
 console = "0.14.1"

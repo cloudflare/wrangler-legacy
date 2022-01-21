@@ -103,6 +103,7 @@ mod tests {
                     binding: "KV".to_string(),
                 },
             ],
+            r2_buckets: Vec::new(),
             durable_objects: None,
             migrations: None,
             name: "test-target".to_string(),
