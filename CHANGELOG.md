@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.19.8
+
+- ### Features
+
+  - **r2 bindings and subcommands - [taylorlee], [pull/2146]**
+
+    Added r2 sub-commands to create/delete/list r2 bucket
+
+    [taylorlee]: https://github.com/taylorlee
+    [pull/2146]: https://github.com/cloudflare/wrangler/pull/2146
+
 ## v1.19.7
 
 - ### Fixes
