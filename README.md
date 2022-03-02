@@ -48,7 +48,7 @@ In case you need to store/mirror binaries on premise you will need to specify wh
 cargo install wrangler
 ```
 
-If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](https://developers.cloudflare.com/workers/tooling/wrangler/install/).
+If you don't have `cargo` or `npm` installed, you will need to follow these [additional instructions](https://developers.cloudflare.com/workers/cli-wrangler/install-update/#manual-install).
 
 ### Install on Windows
 
