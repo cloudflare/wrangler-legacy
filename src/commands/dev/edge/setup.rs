@@ -24,10 +24,12 @@ pub(super) fn upload(
 ) -> Result<String> {
     let client = crate::http::legacy_auth_client(user);
 
-    let asset_manifest = if let Some(site_config) = target.site.clone() {
+    let (to_delete, asset_manifest, site_namespace_id) = if let Some(site_config) =
+        target.site.clone()
+    {
         let site_namespace = add_namespace(user, target, true)?;
         let path = Path::new(&site_config.bucket);
-        let (to_upload, asset_manifest) = sync(target, user, &site_namespace.id, path)?;
+        let (to_upload, to_delete, asset_manifest) = sync(target, user, &site_namespace.id, path)?;
 
         // First, upload all existing files in given directory
         if verbose {
@@ -35,9 +37,9 @@ pub(super) fn upload(
         }
 
         bulk::put(target, user, &site_namespace.id, to_upload, &None)?;
-        Some(asset_manifest)
+        (to_delete, Some(asset_manifest), Some(site_namespace.id))
     } else {
-        None
+        (Vec::new(), None, None)
     };
 
     let session_config = get_session_config(deploy_target);
@@ -55,6 +57,14 @@ pub(super) fn upload(
         return Err(BadRequestError(crate::format_api_errors(response.text()?)).into());
     }
     let response = response.error_for_status()?;
+
+    if !to_delete.is_empty() {
+        if verbose {
+            StdOut::info("Deleting stale files...");
+        }
+
+        bulk::delete(target, user, &site_namespace_id.unwrap(), to_delete, &None)?;
+    }
 
     let text = &response.text()?;
 
