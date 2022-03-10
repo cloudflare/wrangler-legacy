@@ -73,7 +73,8 @@ pub fn publish(
 
         let site_namespace = sites::add_namespace(user, target, false)?;
 
-        let (to_upload, asset_manifest) = sites::sync(target, user, &site_namespace.id, path)?;
+        let (to_upload, to_delete, asset_manifest) =
+            sites::sync(target, user, &site_namespace.id, path)?;
 
         // First, upload all existing files in bucket directory
         StdErr::working("Uploading site files");
@@ -104,6 +105,33 @@ pub fn publish(
         upload::script(&upload_client, target, Some(asset_manifest))?;
 
         run_deploy(target)?;
+
+        // Finally, remove any stale files
+        if !to_delete.is_empty() {
+            StdErr::info("Deleting stale files...");
+
+            let delete_progress_bar = if to_delete.len() > bulk::BATCH_KEY_MAX {
+                let delete_progress_bar = ProgressBar::new(to_delete.len() as u64);
+                delete_progress_bar.set_style(
+                    ProgressStyle::default_bar().template("{wide_bar} {pos}/{len}\n{msg}"),
+                );
+                Some(delete_progress_bar)
+            } else {
+                None
+            };
+
+            bulk::delete(
+                target,
+                user,
+                &site_namespace.id,
+                to_delete,
+                &delete_progress_bar,
+            )?;
+
+            if let Some(pb) = delete_progress_bar {
+                pb.finish_with_message("Done deleting");
+            }
+        }
     } else {
         let upload_client = http::legacy_auth_client(user);
 
