@@ -12,6 +12,9 @@ const getPlatform = () => {
   if (type === "Linux" && arch === "x64") {
     return "x86_64-unknown-linux-musl";
   }
+  if (type === "Linux" && arch === "arm64") {
+    return "aarch64-unknown-linux-musl"
+  }
   if (type === "Darwin" && (arch === "x64" || arch == "arm64")) {
     // for users of M1 / Apple Silicon devices, use an x86 binary automatically run by Rosetta 2.
     return "x86_64-apple-darwin";
