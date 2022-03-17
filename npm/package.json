@@ -1,6 +1,6 @@
 {
   "name": "@cloudflare/wrangler",
-  "version": "1.19.8",
+  "version": "1.19.9",
   "description": "Command-line interface for all things Cloudflare Workers",
   "main": "binary.js",
   "scripts": {

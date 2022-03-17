@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.19.9
+
+- ### Fixes
+
+  - **Expire unused assets on site upload - [caass], [pull/2221]**
+
+    Instead of deleting unused assets when uploading a new workers-sites project, mark the old assets for expiration in 5 minutes to prevent 404 errors before the new worker is propgated
+
+    [caass]: https://github.com/caass
+    [pull/2221]: https://github.com/cloudflare/wrangler/pull/2221
+
+  - **Revert #2096 - `[sites]` Don't delete unused assets - [threepointone], [pull/2214]**
+
+    This reverts the changes made in #2096 that would preserve already uploaded assets with `[site]`, even if they weren't being used. This leads to longer upload times for sites with rapidly changing assets, and a burgeoning kv store
+
+    [threepointone]: https://github.com/threepointone
+    [pull/2214]: https://github.com/cloudflare/wrangler/pull/2214
+
+  - **Updating an invalid URL for "additional instructions" Windows install. - [Scrumpyy], [pull/2208]**
+
+    The previous URL specified ( https://developers.cloudflare.com/workers/tooling/wrangler/install/ ) leads to a 404 page that was presumably intended to display the manual install instructions for Windows ( https://developers.cloudflare.com/workers/cli-wrangler/install-update/#manual-install )
+    [scrumpyy]: https://github.com/Scrumpyy
+    [pull/2208]: https://github.com/cloudflare/wrangler/pull/2208
+
 ## v1.19.8
 
 - ### Features
