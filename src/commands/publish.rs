@@ -133,25 +133,18 @@ pub fn publish(
             let to_delete_pairs = to_delete
                 .into_iter()
                 .map(|key| {
-                    match get_value(&key, &site_namespace.id, account_id, user, &http_client) {
-                        Ok((value, Some(old_expiration))) => Ok(KeyValuePair {
-                            key,
-                            value,
-                            expiration: Some(old_expiration.min(five_minutes_from_now)),
-                            expiration_ttl: None,
-                            base64: None,
-                        }),
-                        Ok((value, None)) => Ok(KeyValuePair {
+                    get_value(&key, &site_namespace.id, account_id, user, &http_client).map(
+                        // discard the timestamp to match wrangler2 implementation
+                        |(value, _)| KeyValuePair {
                             key,
                             value,
                             expiration: Some(five_minutes_from_now),
                             expiration_ttl: None,
                             base64: None,
-                        }),
-                        Err(e) => Err(e),
-                    }
+                        },
+                    )
                 })
-                .collect::<Result<Vec<KeyValuePair>>>()?;
+                .collect::<Result<Vec<_>>>()?;
 
             bulk::put(
                 target,
