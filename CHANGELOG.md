@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.19.10
+
+- ### Fixes
+
+  - **hotfix for expiring unused sites assets - [caass], [pull/2226]**
+
+  closes https://github.com/cloudflare/wrangler/issues/2224
+
+  [caass]: https://github.com/caass
+  [pull/2226]: https://github.com/cloudflare/wrangler/pull/2226
+
 ## v1.19.9
 
 - ### Fixes
