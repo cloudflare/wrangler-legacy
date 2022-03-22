@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.19.11
+
+- ### Fixes
+
+  - **revert sites expiry stuff - [caass], [pull/2228]**
+
+    After discussion with @threepointone and @petebacondarwin we've decided simply to revert back to the old behavior for workers-sites where we delete old assets, rather than marking them for expiration. See #2224 for our reasoning for this change.
+
+    [caass]: https://github.com/caass
+    [pull/2228]: https://github.com/cloudflare/wrangler/pull/2228
+
 ## 1.19.10
 
 - ### Fixes
