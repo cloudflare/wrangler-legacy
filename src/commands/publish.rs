@@ -1,7 +1,7 @@
 use std::env;
 use std::path::Path;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::blocking::Client;
@@ -19,8 +19,6 @@ use crate::sites;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, Output, StdErr, StdOut};
 use crate::upload;
-
-const FIVE_MINUTES: Option<i64> = Some(60 * 5);
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct PublishOutput {
@@ -130,21 +128,21 @@ pub fn publish(
             // isn't this very slow? yes. can we do this in bulk? unfortunately as of now
             // there isn't a KV endpoint for "bulk read".
             // https://api.cloudflare.com/#workers-kv-namespace-properties
+            let five_minutes_from_now = chrono::Utc::now().timestamp() + (60 * 5);
             let http_client = reqwest::blocking::Client::new();
             let to_delete_pairs = to_delete
                 .into_iter()
-                .filter_map(|key| {
-                    match get_value(&key, &site_namespace.id, account_id, user, &http_client) {
-                        Ok((_value, Some(_expiration))) => None,
-                        Ok((value, None)) => Some(Ok(KeyValuePair {
+                .map(|key| {
+                    get_value(&key, &site_namespace.id, account_id, user, &http_client).map(
+                        // discard the timestamp to match wrangler2 implementation
+                        |(value, _)| KeyValuePair {
                             key,
                             value,
-                            expiration: None,
-                            expiration_ttl: FIVE_MINUTES,
+                            expiration: Some(five_minutes_from_now),
+                            expiration_ttl: None,
                             base64: None,
-                        })),
-                        Err(e) => Some(Err(anyhow!(e))),
-                    }
+                        },
+                    )
                 })
                 .collect::<Result<Vec<_>>>()?;
 
