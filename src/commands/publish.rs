@@ -1,8 +1,7 @@
 use std::env;
 use std::path::Path;
 
-use anyhow::{anyhow, Result};
-use cloudflare::endpoints::workerskv::write_bulk::KeyValuePair;
+use anyhow::Result;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
@@ -11,7 +10,6 @@ use crate::build::build_target;
 use crate::deploy::{self, DeploymentSet};
 use crate::http::{self, Feature};
 use crate::kv::bulk;
-use crate::kv::key::get_value;
 use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::migrations::{MigrationTag, Migrations};
 use crate::settings::toml::Target;
@@ -19,8 +17,6 @@ use crate::sites;
 use crate::terminal::emoji;
 use crate::terminal::message::{Message, Output, StdErr, StdOut};
 use crate::upload;
-
-const FIVE_MINUTES: Option<i64> = Some(60 * 5);
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct PublishOutput {
@@ -110,7 +106,7 @@ pub fn publish(
 
         run_deploy(target)?;
 
-        // Finally, mark any stale files for expiration
+        // Finally, remove any stale files
         if !to_delete.is_empty() {
             StdErr::info("Deleting stale files...");
 
@@ -124,35 +120,11 @@ pub fn publish(
                 None
             };
 
-            let account_id = target.account_id.load()?;
-
-            // create identical key:value pairs, except set them to expire in five minutes
-            // isn't this very slow? yes. can we do this in bulk? unfortunately as of now
-            // there isn't a KV endpoint for "bulk read".
-            // https://api.cloudflare.com/#workers-kv-namespace-properties
-            let http_client = reqwest::blocking::Client::new();
-            let to_delete_pairs = to_delete
-                .into_iter()
-                .filter_map(|key| {
-                    match get_value(&key, &site_namespace.id, account_id, user, &http_client) {
-                        Ok((_value, Some(_expiration))) => None,
-                        Ok((value, None)) => Some(Ok(KeyValuePair {
-                            key,
-                            value,
-                            expiration: None,
-                            expiration_ttl: FIVE_MINUTES,
-                            base64: None,
-                        })),
-                        Err(e) => Some(Err(anyhow!(e))),
-                    }
-                })
-                .collect::<Result<Vec<_>>>()?;
-
-            bulk::put(
+            bulk::delete(
                 target,
                 user,
                 &site_namespace.id,
-                to_delete_pairs,
+                to_delete,
                 &delete_progress_bar,
             )?;
 

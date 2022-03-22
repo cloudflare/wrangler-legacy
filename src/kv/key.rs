@@ -1,10 +1,4 @@
-use std::num::ParseIntError;
-
-use anyhow::{anyhow, Result};
-use cloudflare::framework::auth::Credentials;
-use http::HeaderMap;
-use http::HeaderValue;
-use http::Method;
+use anyhow::Result;
 use serde_json::value::Value as JsonValue;
 
 use cloudflare::endpoints::workerskv::list_namespace_keys::ListNamespaceKeys;
@@ -14,7 +8,6 @@ use cloudflare::framework::apiclient::ApiClient;
 use cloudflare::framework::response::ApiFailure;
 use cloudflare::framework::HttpApiClient;
 
-use crate::settings::global_user::GlobalUser;
 use crate::settings::toml::Target;
 
 pub struct KeyList {
@@ -119,42 +112,4 @@ fn extract_cursor(result_info: Option<JsonValue>) -> Option<String> {
     } else {
         Some(returned_cursor)
     }
-}
-
-// since the value returned is just a naked string, and the TTL is in a response header,
-// we can't use the API crate for this :(
-pub fn get_value(
-    key: &str,
-    namespace: &str,
-    account_id: &str,
-    user: &GlobalUser,
-    client: &reqwest::blocking::Client,
-) -> Result<(String, Option<i64>)> {
-    let url = format!(
-        "https://api.cloudflare.com/client/v4/accounts/{}/storage/kv/namespaces/{}/values/{}",
-        account_id, namespace, key
-    );
-
-    let mut headers = HeaderMap::new();
-
-    for (header_key, header_str) in Credentials::from(user.clone()).headers() {
-        let header_value = HeaderValue::from_str(&header_str)?;
-        headers.append(header_key, header_value);
-    }
-
-    let request = client.request(Method::GET, url).headers(headers).build()?;
-    let response = client.execute(request)?;
-
-    let expiration = response
-        .headers()
-        .get("Expiration")
-        .map(|header| match header.to_str() {
-            Ok(s) => s.parse().map_err(|e: ParseIntError| anyhow!(e)),
-            Err(e) => Err(anyhow!(e)),
-        })
-        .transpose()?;
-
-    let value = response.text()?;
-
-    Ok((value, expiration))
 }
