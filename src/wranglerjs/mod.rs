@@ -328,7 +328,10 @@ fn use_legacy_openssl_if_necessary(command: &mut Command) -> Result<()> {
     let mut version_check_command = Command::new(&node);
     version_check_command.arg("--version");
     let result = version_check_command.output()?.stdout;
-    let need_legacy_openssl = String::from_utf8_lossy(&result)[1..3].parse::<i32>().unwrap() >= 17;
+    let need_legacy_openssl = String::from_utf8_lossy(&result)[1..3]
+        .parse::<i32>()
+        .unwrap()
+        >= 17;
 
     let mut option_exists_command = Command::new(&node);
     option_exists_command.arg("--help");
