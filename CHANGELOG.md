@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.19.12
+
+- ### Fixes
+
+  - **Improve version checking for --openssl-legacy-provider - [EatonZ], [pull/2241]**
+
+    [Node v18 came out yesterday](https://nodejs.org/en/blog/announcements/v18-release-announce/) and I noticed that the [issue I reported last year](https://github.com/cloudflare/wrangler/issues/2108) returned. I quickly identified the problem
+    ... truncated
+
+    [eatonz]: https://github.com/EatonZ
+    [pull/2241]: https://github.com/cloudflare/wrangler/pull/2241
+
 ## 1.19.11
 
 - ### Fixes
