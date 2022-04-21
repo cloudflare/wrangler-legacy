@@ -23,7 +23,7 @@ cloudflare = "0.9.0"
 colored_json = "2.1.0"
 config = { version = "0.11.0", default-features = false, features = ["toml", "json", "yaml", "ini"]  }
 console = "0.14.1"
-dirs = "3.0.1"
+dirs = "4.0.0"
 env_logger = "0.8.4"
 flate2 = "1.0.18"
 fs2 = "0.4.3"

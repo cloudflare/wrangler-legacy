@@ -647,9 +647,9 @@ dependencies = [
 
 [[package]]
 name = "dirs"
-version = "3.0.2"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30baa043103c9d0c2a57cf537cc2f35623889dc0d405e6c3cccfadbc81c71309"
+checksum = "ca3aa72a6f96ea37bbc5aa912f6788242832f75369bdfdadcb0e38423f100059"
 dependencies = [
  "dirs-sys",
 ]
@@ -3186,7 +3186,7 @@ dependencies = [
  "colored_json",
  "config",
  "console 0.14.1",
- "dirs 3.0.2",
+ "dirs 4.0.0",
  "env_logger",
  "erased-serde",
  "flate2",
