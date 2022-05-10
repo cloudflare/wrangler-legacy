@@ -193,8 +193,8 @@ All of the arguments and flags to this command are optional:
 
 All information regarding wrangler or Cloudflare Workers is located in the [Cloudflare Workers Developer Docs](https://developers.cloudflare.com/workers/). This includes:
 
-- Using wrangler [commands](https://developers.cloudflare.com/workers/tooling/wrangler/commands)
-- Wrangler [configuration](https://developers.cloudflare.com/workers/tooling/wrangler/configuration)
+- Using wrangler [commands](https://developers.cloudflare.com/workers/wrangler/commands/)
+- Wrangler [configuration](https://developers.cloudflare.com/workers/wrangler/configuration)
 - General documentation surrounding Workers development
 - All wrangler features such as Workers Sites and KV
 
