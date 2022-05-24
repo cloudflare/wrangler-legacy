@@ -21,6 +21,7 @@ pub use route::{Route, RouteConfig};
 pub use site::Site;
 pub use target::Target;
 pub use target_type::TargetType;
+pub use triggers::Triggers;
 
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
