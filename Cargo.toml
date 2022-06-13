@@ -71,7 +71,7 @@ toml = "0.5.8"
 toml_edit = "0.2.0"
 twox-hash = "1.6.0"
 url = "2.2.0"
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "1.1", features = ["v4"] }
 which = "4.0.2"
 ws = { version = "0.11", package = "parity-ws" }
 
