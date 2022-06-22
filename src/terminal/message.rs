@@ -94,22 +94,12 @@ impl Message for StdErr {
         eprintln!("{}", msg);
     }
 
-    fn billboard(msg: &str) {
-        let billboard = Billboard::builder()
-            .border_style(BorderStyle::Round)
-            .border_color(BorderColor::Cyan)
-            .margin(1)
-            .build();
-        eprint!("{}", billboard.as_str(msg));
+    fn billboard(_msg: &str) {
+        panic!("Can't display billboard to stderr.")
     }
 
-    fn deprecation_warning(msg: &str) {
-        let bb = Billboard::builder()
-            .border_style(BorderStyle::Round)
-            .border_color(BorderColor::Red)
-            .margin(1)
-            .build();
-        eprint!("{}", bb.as_str(msg))
+    fn deprecation_warning(_msg: &str) {
+        panic!("Can't display billboard warning to stderr.")
     }
     fn as_json<T>(_value: &T)
     where

@@ -9,8 +9,6 @@ use wrangler::cli::{exec, Cli, Command};
 use wrangler::commands;
 use wrangler::installer;
 use wrangler::reporter;
-use wrangler::terminal::message::{Message, StdErr};
-use wrangler::terminal::{emoji, styles};
 use wrangler::version::check_for_updates;
 
 use anyhow::Result;
@@ -21,22 +19,6 @@ fn main() -> Result<()> {
         reporter::init();
     }
     env_logger::init();
-
-    StdErr::deprecation_warning(&format!(
-        r#"{} {} {}
-
-You are using an outdated version of Wrangler (v{}).
-Please upgrade to v2 ({}).
-Detailed migration instructions can be found here:
-{}
-"#,
-        emoji::WARN,
-        styles::warning("DEPRECATION WARNING"),
-        emoji::WARN,
-        env!("CARGO_PKG_VERSION"),
-        styles::url("https://github.com/cloudflare/wrangler2"),
-        styles::url("https://developers.cloudflare.com/workers/wrangler/migration/migrating-from-wrangler-1/")
-    ));
 
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
