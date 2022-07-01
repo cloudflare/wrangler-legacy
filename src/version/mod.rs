@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 const ONE_DAY: u64 = 60 * 60 * 24;
 
 pub fn check_for_updates() {
-    let major_version_message = String::from("A new major version of wrangler is available!");
+    let major_version_message = String::from("A new major version of wrangler is available!\n");
     let minor_version_message = match check_wrangler_versions() {
         Err(e) => {
             log::debug!("could not determine if update is needed:\n{}", e);
@@ -24,7 +24,7 @@ pub fn check_for_updates() {
         Ok(versions) => {
             if let Some(diff) = versions.is_outdated() {
                 Some(format!(
-                    "Additionally, a new {} version is avilable ({})",
+                    "Additionally, a new {} version is available ({})\n",
                     diff, versions.current
                 ))
             } else {
@@ -39,10 +39,12 @@ pub fn check_for_updates() {
         styles::url("https://developers.cloudflare.com/workers/cli-wrangler/install-update#update",)
     );
 
-    StdOut::billboard(&format!(
-        "{}\n{}\n{}",
+    let message = format!(
+        "{}{}{}",
         major_version_message, minor_version_message, update_message
-    ));
+    );
+
+    StdOut::billboard(&message);
 }
 
 #[derive(Debug, Clone)]
