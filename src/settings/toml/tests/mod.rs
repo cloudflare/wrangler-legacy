@@ -7,6 +7,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+use toml_edit::easy as toml;
+
 #[path = "../../../../tests/fixtures/mod.rs"]
 mod fixtures;
 use fixtures::{EnvConfig, WranglerToml, TEST_ENV_NAME};

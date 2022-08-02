@@ -11,6 +11,7 @@ use chrono::Utc;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
+use toml_edit::easy as toml;
 
 use super::migrations::{MigrationConfig, MigrationTag, Migrations};
 use super::UsageModel;
@@ -161,14 +162,14 @@ impl Manifest {
                 if let Some(include) = &site.include {
                     let mut arr = toml_edit::Array::default();
                     include.iter().for_each(|i| {
-                        arr.push(i.as_ref()).unwrap();
+                        arr.push(i);
                     });
                     config_template_doc["site"]["include"] = toml_edit::value(arr);
                 }
                 if let Some(exclude) = &site.exclude {
                     let mut arr = toml_edit::Array::default();
                     exclude.iter().for_each(|i| {
-                        arr.push(i.as_ref()).unwrap();
+                        arr.push(i);
                     });
                     config_template_doc["site"]["exclude"] = toml_edit::value(arr);
                 }
@@ -180,7 +181,7 @@ impl Manifest {
 
         // TODO: https://github.com/cloudflare/wrangler/issues/773
 
-        let toml = config_template_doc.to_string_in_original_order();
+        let toml = config_template_doc.to_string();
         let manifest = toml::from_str::<Manifest>(&toml)?;
 
         log::info!("Writing a wrangler.toml file at {}", config_file.display());

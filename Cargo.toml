@@ -67,8 +67,7 @@ tokio-retry = "0.3"
 tokio-rustls = "0.23.0"
 tokio-stream = "0.1.5"
 tokio-tungstenite = "0.14.0"
-toml = "0.5.8"
-toml_edit = "0.2.0"
+toml_edit = { version = "0.14.4", features = ["easy"] }
 twox-hash = "1.6.0"
 url = "2.2.0"
 uuid = { version = "0.8", features = ["v4"] }

@@ -11,6 +11,7 @@ use anyhow::Result;
 use reqwest::header::USER_AGENT;
 use semver::Version;
 use serde::{Deserialize, Serialize};
+use toml_edit::easy as toml;
 
 const ONE_DAY: u64 = 60 * 60 * 24;
 

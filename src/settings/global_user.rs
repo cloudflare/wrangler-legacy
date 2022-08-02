@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use cloudflare::framework::auth::Credentials;
 use serde::{Deserialize, Serialize};
+use toml_edit::easy as toml;
 
 use crate::login::check_update_oauth_token;
 use crate::settings::{get_global_config_path, Environment, QueryEnvironment};

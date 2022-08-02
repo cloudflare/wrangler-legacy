@@ -5,6 +5,7 @@ use std::str;
 use assert_cmd::prelude::*;
 mod fixtures;
 use fixtures::{Fixture, WranglerToml};
+use toml_edit::easy as toml;
 
 #[test]
 fn it_builds_webpack() {

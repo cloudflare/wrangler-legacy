@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use toml_edit::easy as toml;
+
 use crate::deploy::{DeployTarget, ScheduleTarget, ZonedTarget, ZonelessTarget};
 use crate::settings::toml::route::Route;
 use crate::settings::toml::Manifest;

@@ -3,6 +3,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use serde::{self, Deserialize};
+use toml_edit::easy as toml;
 
 #[derive(Debug, Deserialize)]
 pub struct Krate {

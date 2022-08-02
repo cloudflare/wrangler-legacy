@@ -13,6 +13,7 @@ use std::path::PathBuf;
 use std::thread;
 
 use tempfile::TempDir;
+use toml_edit::easy as toml;
 
 const BUNDLE_OUT: &str = "worker";
 
