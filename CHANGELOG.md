@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.19.13
+
+- ### Fixes
+
+- **Update openssl-src - [imhunterand], [pull/2302]**
+
+    Bump openssl-src to patch vulnerability
+
+    [jspspike]: https://github.com/imhunterand
+    [pull/2302]: https://github.com/cloudflare/wrangler/pull/2302
+
+- ### Maintenance
+
+  - **Add deprecation warning - [caass], [pull/2273]**
+
+    [caass]: https://github.com/caass
+    [pull/2273]: https://github.com/cloudflare/wrangler/pull/2273
+
+  - **chore: add a banner on the readme with a link to wrangler2 - [threepointone], [pull/2252]**
+
+    This also autoformatted the README, which is fine.
+
+    [threepointone]: https://github.com/threepointone
+    [pull/2252]: https://github.com/cloudflare/wrangler/pull/2252
+
+  - **Disable dependabot. - [lrapoport-cf], [pull/2303]**
+
+    Disable automatic version updates via dependabot.
+
+    [lrapoport-cf]: https://github.com/lrapoport-cf
+    [pull/2303]: https://github.com/cloudflare/wrangler/pull/2303
+
+  - **Update stale links in README.md - [n0vad3v], [pull/2253]**
+
+    [n0vad3v]: https://github.com/n0vad3v
+    [pull/2253]: https://github.com/cloudflare/wrangler/pull/2253
+
+
+
 ## 1.19.12
 
 - ### Fixes
