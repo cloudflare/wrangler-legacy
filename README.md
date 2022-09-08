@@ -1,5 +1,7 @@
 # 🤠 wrangler
 
+**Note:** If you're looking for the latest version of the `wrangler` package, visit https://github.com/cloudflare/wrangler2
+
 ![Banner](/banner.png)
 
 [![crates.io](https://img.shields.io/crates/v/wrangler.svg)](https://crates.io/crates/wrangler) &nbsp;
@@ -11,11 +13,11 @@
 
 ![Wrangler Demo](/wrangler-demo.gif)
 
-> If you're looking for v2.x of the `wrangler` package, visit https://www.npmjs.com/package/wrangler / https://github.com/cloudflare/wrangler2.
-
 ## Installation
 
-You have many options to install wrangler!
+You have many options to install wrangler! 
+
+For the latest version, see https://github.com/cloudflare/wrangler2
 
 ### Install with `npm`
 
