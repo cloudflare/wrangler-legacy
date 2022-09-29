@@ -15,6 +15,21 @@ use structopt::StructOpt;
 fn main() -> Result<()> {
     env_logger::init();
 
+    StdErr::deprecation_warning(&format!(
+        r#"{} {} {}
+You are using deprecated Wrangler 1 (v{}).
+Please upgrade to v2 ({}).
+Detailed migration instructions can be found here:
+{}
+"#,
+        emoji::NO_ENTRY,
+        styles::warning("DEPRECATION"),
+        emoji::NO_ENTRY,
+        env!("CARGO_PKG_VERSION"),
+        styles::url("https://github.com/cloudflare/wrangler2"),
+        styles::url("https://developers.cloudflare.com/workers/wrangler/migration/migrating-from-wrangler-1/")
+    ));
+
     if let Ok(me) = env::current_exe() {
         // If we're actually running as the installer then execute our
         // self-installation, otherwise just continue as usual.
