@@ -23,7 +23,7 @@ Detailed migration instructions can be found here:
 {}
 "#,
         emoji::NO_ENTRY,
-        styles::warning("DEPRECATION"),
+        styles::warning("DEPRECATED"),
         emoji::NO_ENTRY,
         env!("CARGO_PKG_VERSION"),
         styles::url("https://github.com/cloudflare/wrangler2"),
