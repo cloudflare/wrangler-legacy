@@ -17,17 +17,13 @@ fn main() -> Result<()> {
 
     StdErr::deprecation_warning(&format!(
         r#"{} {} {}
-You are using deprecated Wrangler 1 (v{}).
-Please upgrade to v2 ({}).
-Detailed migration instructions can be found here:
-{}
+The version of Wrangler you are using is now deprecated.
+Please update to the latest version of wrangler to prevent critical errors.
+Run `npm uninstall -g @cloudflare/wrangler && npm install -g wrangler` to update to the latest version.
 "#,
         emoji::NO_ENTRY,
         styles::warning("DEPRECATED"),
         emoji::NO_ENTRY,
-        env!("CARGO_PKG_VERSION"),
-        styles::url("https://github.com/cloudflare/wrangler2"),
-        styles::url("https://developers.cloudflare.com/workers/wrangler/migration/migrating-from-wrangler-1/")
     ));
 
     if let Ok(me) = env::current_exe() {
