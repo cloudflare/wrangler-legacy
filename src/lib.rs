@@ -20,7 +20,6 @@ pub mod install;
 pub mod installer;
 pub mod kv;
 pub mod login;
-pub mod reporter;
 pub mod settings;
 pub mod sites;
 pub mod terminal;

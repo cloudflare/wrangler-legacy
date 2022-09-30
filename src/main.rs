@@ -6,18 +6,13 @@ extern crate tokio;
 use std::env;
 
 use wrangler::cli::{exec, Cli, Command};
-use wrangler::commands;
 use wrangler::installer;
-use wrangler::reporter;
 use wrangler::version::check_for_updates;
 
 use anyhow::Result;
 use structopt::StructOpt;
 
 fn main() -> Result<()> {
-    if !cfg!(debug_assertions) {
-        reporter::init();
-    }
     env_logger::init();
 
     if let Ok(me) = env::current_exe() {
@@ -123,8 +118,5 @@ fn run() -> Result<()> {
             scopes_list,
         } => exec::login(&scopes, scopes_list),
         Command::Logout => exec::logout(),
-        Command::Report { log } => commands::report::run(log.as_deref()).map(|_| {
-            eprintln!("Report submission sucessful. Thank you!");
-        }),
     }
 }
