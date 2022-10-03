@@ -303,14 +303,6 @@ pub enum Command {
     /// It does not logout if you have authenticated wrangler through environment variables.
     #[structopt(name = "logout")]
     Logout,
-
-    /// Report an error caught by wrangler to Cloudflare
-    #[structopt(name = "report")]
-    Report {
-        /// Specifies a log to report (e.g. --log=1619728882567.log)
-        #[structopt(name = "log", long)]
-        log: Option<PathBuf>,
-    },
 }
 
 #[derive(Debug, Clone, StructOpt)]
