@@ -1,15 +1,26 @@
 # Changelog
 
+## 1.20.0
+
+- ### Maintenance
+
+  - **chore: remove reporter - [JacobMGEvans], [pull/2316]**
+
+    As part of the deprecation efforts, removed reporter as we will no longer be supporting Wrangler 1
+
+    [jacobmgevans]: https://github.com/JacobMGEvans
+    [pull/2316]: https://github.com/cloudflare/wrangler/pull/2316
+
 ## 1.19.13
 
 - ### Fixes
 
 - **Update openssl-src - [imhunterand], [pull/2302]**
 
-    Bump openssl-src to patch vulnerability
+  Bump openssl-src to patch vulnerability
 
-    [jspspike]: https://github.com/imhunterand
-    [pull/2302]: https://github.com/cloudflare/wrangler/pull/2302
+  [jspspike]: https://github.com/imhunterand
+  [pull/2302]: https://github.com/cloudflare/wrangler/pull/2302
 
 - ### Maintenance
 
@@ -36,8 +47,6 @@
 
     [n0vad3v]: https://github.com/n0vad3v
     [pull/2253]: https://github.com/cloudflare/wrangler/pull/2253
-
-
 
 ## 1.19.12
 
