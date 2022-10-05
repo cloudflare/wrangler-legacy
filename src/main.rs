@@ -7,6 +7,8 @@ use std::env;
 
 use wrangler::cli::{exec, Cli, Command};
 use wrangler::installer;
+use wrangler::terminal::message::{Message, StdErr};
+use wrangler::terminal::{emoji, styles};
 use wrangler::version::check_for_updates;
 
 use anyhow::Result;
@@ -19,7 +21,9 @@ fn main() -> Result<()> {
         r#"{} {} {}
 The version of Wrangler you are using is now deprecated.
 Please update to the latest version of wrangler to prevent critical errors.
-Run `npm uninstall -g @cloudflare/wrangler && npm install -g wrangler` to update to the latest version.
+If originally installed via npm, run `npm uninstall -g @cloudflare/wrangler && npm install -g wrangler` to update to the latest version.
+If originally installed via cargo, run `cargo uninstall wrangler && npm install -g wrangler`
+Docs migration guide: https://developers.cloudflare.com/workers/wrangler/migration/migrating-from-wrangler-1/#update-wrangler-version
 "#,
         emoji::NO_ENTRY,
         styles::warning("DEPRECATED"),
