@@ -185,7 +185,8 @@ impl ModuleConfig {
             .map(|p| {
                 let p = p.as_ref();
                 p.strip_prefix(upload_dir).map(|p_stripped_prefix| {
-                    let p_stripped_prefix: PathBuf = p_stripped_prefix.to_slash_lossy().into();
+                    let p_stripped_prefix: PathBuf =
+                        p_stripped_prefix.to_slash_lossy().into_owned().into();
                     // we convert the path used for matching and names to a slash path
                     // so globs are the same on all platforms
                     // to_slash_lossy() strips non-unicode characters in the path on windows
