@@ -1,6 +1,6 @@
 # 🤠 wrangler
 
-**Note:** If you're looking for the latest version of the `wrangler` package, visit https://github.com/cloudflare/wrangler2
+**Note:** This repository contains version 1.x of wrangler, and is no longer updated. Continued development is ongoing at https://github.com/cloudflare/wrangler2.
 
 ![Banner](/banner.png)
 
