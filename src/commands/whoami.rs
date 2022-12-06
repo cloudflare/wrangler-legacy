@@ -140,7 +140,7 @@ pub(crate) fn fetch_accounts(user: &GlobalUser) -> Result<Vec<Account>> {
                     }
 
                 }
-                ApiFailure::Invalid(_) => StdOut::info("Something went wrong in processing a request. Please consider raising an issue at https://github.com/cloudflare/wrangler/issues"),
+                ApiFailure::Invalid(_) => StdOut::info("Something went wrong in processing a request. Please consider raising an issue at https://github.com/cloudflare/wrangler-legacy/issues"),
             }
 
             anyhow::bail!(http::format_error(e, None))
