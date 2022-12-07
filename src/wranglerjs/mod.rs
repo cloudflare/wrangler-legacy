@@ -317,11 +317,11 @@ fn random_chars(n: usize) -> String {
 
 // If user is on Node 17+, we may need legacy OpenSSL because Webpack 4 relies on
 // calls that were removed in OpenSSL 3. See:
-// https://github.com/cloudflare/wrangler/issues/2108
+// https://github.com/cloudflare/wrangler-legacy/issues/2108
 // https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V17.md#openssl-30
 // Node 17+ can still be built against OpenSSL 1, in which case the option
 // doesn't exist. We need to check for that as well. See:
-// https://github.com/cloudflare/wrangler/issues/2155
+// https://github.com/cloudflare/wrangler-legacy/issues/2155
 fn use_legacy_openssl_if_necessary(command: &mut Command) -> Result<()> {
     let node = which::which("node").unwrap();
 

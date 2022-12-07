@@ -10,9 +10,9 @@ This is a list of the things that need to happen during a release.
    they are not you should reassign all open issues and PRs to future
    milestones.
 1. Run the changelog generator in `./changelog-generator`.
-   1. Get the date after the most recent release,
-   1. run `cd ./changelog-generator && npm install && node index.js cloudflare wrangler YYYY-MM-DD`
-   1. the generated changelog is in `./changelog-generator/output.md`. Open it, and add the version at the top, and move the entries to their proper category.
+    1. Get the date after the most recent release,
+    1. run `cd ./changelog-generator && npm install && node index.js cloudflare wrangler YYYY-MM-DD`
+    1. the generated changelog is in `./changelog-generator/output.md`. Open it, and add the version at the top, and move the entries to their proper category.
 1. Choose an emoji for the release. Try to make it semi-related to something that's been included in the release (point releases can be a little weirder).
 1. Add the contents of `output.md` to the top of `CHANGELOG.md`, matching the structure of previous
    entries. If it is a release candidate, no official changelog is needed, but testing instructions will be added later in the process.
@@ -43,6 +43,7 @@ Most of your comments will be about the changelog. Once the PR is finalized and 
 
 1. If you made changes, squash or fixup all changes into a single commit.
 1. Run `git push` and wait for CI to pass.
+
 ## Merge
 
 1. Hit the big green Merge button on the release PR.
@@ -61,12 +62,12 @@ This part of the release process is handled by GitHub Actions, and our binaries 
 
 ### Edit the release
 
-After CI builds the release binaries and they appear on the [releases page](https://github.com/cloudflare/wrangler/releases), click `Edit` and update release notes.
+After CI builds the release binaries and they appear on the [releases page](https://github.com/cloudflare/wrangler-legacy/releases), click `Edit` and update release notes.
 
 #### For Full Releases
 
 1. Paste the current release notes from `CHANGELOG.md` into the release body.
-1. Update the *title* of the release (not the tag itself) to include the emoji for the current release
+1. Update the _title_ of the release (not the tag itself) to include the emoji for the current release
 1. Be sure to add any missing link definitions to the release.
 
 #### For Release Candidates
@@ -75,11 +76,11 @@ After CI builds the release binaries and they appear on the [releases page](http
 1. If this is a new rc (rc.0), paste testing instructions into the release notes.
 1. If this is a rc.1 or later, the old release candidate testing instructions should be moved to the latest release candidate testing instructions, and replaced with the following message:
 
-   ```markdown
-   This beta release is now out of date. If you previously installed this release, you should reinstall with `npm i -g @cloudflare/wrangler@beta` and see what's changed in the latest [release](https://github.com/cloudflare/wrangler/releases).
-   ```
+    ```markdown
+    This beta release is now out of date. If you previously installed this release, you should reinstall with `npm i -g @cloudflare/wrangler@beta` and see what's changed in the latest [release](https://github.com/cloudflare/wrangler-legacy/releases).
+    ```
 
-   The new release candidate should then include updated testing instructions with a small changelog at the top to get folks who installed the old release candidate up to speed.
+    The new release candidate should then include updated testing instructions with a small changelog at the top to get folks who installed the old release candidate up to speed.
 
 ### Publish to crates.io (full release only)
 
@@ -105,7 +106,7 @@ Mistakes happen. Most of these release steps are recoverable if you mess up. The
 
 Tags and releases can be removed in GitHub. First, [remove the remote tag](https://stackoverflow.com/questions/5480258/how-to-delete-a-remote-tag):
 
-``` console
+```console
 $ git push --delete origin tagname
 ```
 
@@ -113,7 +114,7 @@ This will turn the release into a `draft` and you can delete it from the edit pa
 
 Make sure you also delete the local tag:
 
-``` console
+```console
 $ git tag --delete vX.X.X
 ```
 
@@ -121,7 +122,7 @@ $ git tag --delete vX.X.X
 
 Never fear! We can fix this by updating npm tags. First, add a beta tag for the version you just published:
 
-``` console
+```console
 $ npm dist-tag add @cloudflare/wrangler@x.x.x-rc.x beta
 ```
 
@@ -129,13 +130,13 @@ once you add the beta tag, pause...
 
 ...and then list your tags:
 
-``` console
+```console
 $ npm dist-tag ls @cloudflare/wrangler
 ```
 
 You should now see two tags pointing to the version you just pushed; for example if you had tried to push v1.9.0-rc.0:
 
-``` console
+```console
 $ npm dist-tag ls @cloudflare/wrangler
 beta: 1.9.0-rc.0
 latest: 1.9.0-rc.0
@@ -143,13 +144,13 @@ latest: 1.9.0-rc.0
 
 Go back to the Changelog or GitHub releases, find the _actual_ latest version, and re-tag it as latest:
 
-``` console
+```console
 $ npm dist-tag add @cloudflare/wrangler@x.x.x latest
 ```
 
 List tags again and you should see the latest restored, and your new release candidate as beta (e.g. 1.9.0-rc.0 is beta and 1.8.4 was last stable version)
 
-``` console
+```console
 $ npm dist-tag ls @cloudflare/wrangler
 beta: 1.9.0-rc.0
 latest: 1.8.4

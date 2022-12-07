@@ -1,13 +1,13 @@
 # 🤠 wrangler
 
-**Note:** If you're looking for the latest version of the `wrangler` package, visit https://github.com/cloudflare/wrangler2
+**Note:** If you're looking for the latest version of the `wrangler` package, visit https://github.com/cloudflare/wrangler
 
 ![Banner](/banner.png)
 
 [![crates.io](https://img.shields.io/crates/v/wrangler.svg)](https://crates.io/crates/wrangler) &nbsp;
 [![npm](https://img.shields.io/npm/v/@cloudflare/wrangler.svg)](https://www.npmjs.com/package/@cloudflare/wrangler) &nbsp;
-[![GitHub Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions) &nbsp;
-[![GitHub Actions - Linter Status](https://github.com/cloudflare/wrangler/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler/actions) &nbsp;
+[![GitHub Actions - Test Status](https://github.com/cloudflare/wrangler-legacy/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler-legacy/actions) &nbsp;
+[![GitHub Actions - Linter Status](https://github.com/cloudflare/wrangler-legacy/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler-legacy/actions) &nbsp;
 
 `wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare Workers](https://workers.cloudflare.com/).
 
@@ -17,7 +17,7 @@
 
 You have many options to install wrangler!
 
-For the latest version, see https://github.com/cloudflare/wrangler2
+For the latest version, see https://github.com/cloudflare/wrangler
 
 ### Install with `npm`
 
@@ -35,15 +35,15 @@ If you are running an ARM based system (eg Raspberry Pi, Pinebook) you'll need t
 
 In case you need `wrangler`'s npm installer to place the binary in a non-default location (such as when using `wrangler` in CI), you can use the following configuration options to specify an install location:
 
-- Environment variable: `WRANGLER_INSTALL_PATH`
-- NPM configuration: `wrangler_install_path`
+-   Environment variable: `WRANGLER_INSTALL_PATH`
+-   NPM configuration: `wrangler_install_path`
 
 #### Specify binary site URL
 
 In case you need to store/mirror binaries on premise you will need to specify where wrangler should search for them by providing any of the following:
 
-- Environment variable: `WRANGLER_BINARY_HOST`
-- NPM configuration: `wrangler_binary_host`
+-   Environment variable: `WRANGLER_BINARY_HOST`
+-   NPM configuration: `wrangler_binary_host`
 
 ### Install with `cargo`
 
@@ -85,9 +85,9 @@ wrangler generate <name> <template> --type=["webpack", "javascript", "rust"]
 
 All of the arguments and flags to this command are optional:
 
-- `name`: defaults to `worker`
-- `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
-- `type`: defaults to `javascript` based on the ["worker-template"](https://github.com/cloudflare/worker-template/blob/master/wrangler.toml)
+-   `name`: defaults to `worker`
+-   `template`: defaults to the [`https://github.com/cloudflare/worker-template`](https://github.com/cloudflare/worker-template)
+-   `type`: defaults to `javascript` based on the ["worker-template"](https://github.com/cloudflare/worker-template/blob/master/wrangler.toml)
 
 ### 📥 `init`
 
@@ -99,8 +99,8 @@ wrangler init <name> --type=["webpack", "javascript", "rust"]
 
 All of the arguments and flags to this command are optional:
 
-- `name`: defaults to the name of your working directory
-- `type`: defaults to ["webpack"](https://developers.cloudflare.com/workers/tooling/wrangler/webpack).
+-   `name`: defaults to the name of your working directory
+-   `type`: defaults to ["webpack"](https://developers.cloudflare.com/workers/tooling/wrangler/webpack).
 
 ### 🦀⚙️ `build`
 
@@ -120,8 +120,8 @@ wrangler login --scopes-list --scopes <scopes>
 
 All of the arguments and flags to this command are optional:
 
-- `scopes-list`: list all the available OAuth scopes with descriptions.
-- `scopes`: allows to choose your set of OAuth scopes.
+-   `scopes-list`: list all the available OAuth scopes with descriptions.
+-   `scopes`: allows to choose your set of OAuth scopes.
 
 Read more about this command in [Wrangler Login Documentation](https://developers.cloudflare.com/workers/cli-wrangler/commands#login).
 
@@ -186,19 +186,19 @@ From here you should be able to send HTTP requests to `localhost:8787` along wit
 
 All of the arguments and flags to this command are optional:
 
-- `env`: environment to build
-- `host`: domain to test behind your worker. defaults to example.com
-- `ip`: ip to listen on. defaults to localhost
-- `port`: port to listen on. defaults to 8787
+-   `env`: environment to build
+-   `host`: domain to test behind your worker. defaults to example.com
+-   `ip`: ip to listen on. defaults to localhost
+-   `port`: port to listen on. defaults to 8787
 
 ## Additional Documentation
 
 All information regarding wrangler or Cloudflare Workers is located in the [Cloudflare Workers Developer Docs](https://developers.cloudflare.com/workers/). This includes:
 
-- Using wrangler [commands](https://developers.cloudflare.com/workers/wrangler/commands/)
-- Wrangler [configuration](https://developers.cloudflare.com/workers/wrangler/configuration)
-- General documentation surrounding Workers development
-- All wrangler features such as Workers Sites and KV
+-   Using wrangler [commands](https://developers.cloudflare.com/workers/wrangler/commands/)
+-   Wrangler [configuration](https://developers.cloudflare.com/workers/wrangler/configuration)
+-   General documentation surrounding Workers development
+-   All wrangler features such as Workers Sites and KV
 
 ## ✨Workers Sites
 

@@ -1,50 +1,50 @@
 {
-  "name": "@cloudflare/wrangler",
-  "version": "1.20.0",
-  "description": "Command-line interface for all things Cloudflare Workers",
-  "main": "binary.js",
-  "scripts": {
-    "postinstall": "node ./install-wrangler.js"
-  },
-  "bin": {
-    "wrangler": "./run-wrangler.js",
-    "wrangler1": "./run-wrangler.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/cloudflare/wrangler.git"
-  },
-  "author": "wrangler@cloudflare.com",
-  "license": "MIT OR Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/cloudflare/wrangler/issues"
-  },
-  "homepage": "https://github.com/cloudflare/wrangler#readme",
-  "keywords": [
-    "wrangler",
-    "cloudflare",
-    "workers",
-    "cloudflare workers",
-    "edge",
-    "compute",
-    "serverless",
-    "serverless application",
-    "serverless module",
-    "wasm",
-    "web",
-    "assembly",
-    "webassembly",
-    "rust",
-    "emscripten",
-    "typescript",
-    "graphql",
-    "router",
-    "http",
-    "cli"
-  ],
-  "dependencies": {
-    "axios": "^0.21.1",
-    "rimraf": "^3.0.2",
-    "tar": "^6.1.10"
-  }
+    "name": "@cloudflare/wrangler",
+    "version": "1.20.0",
+    "description": "Command-line interface for all things Cloudflare Workers",
+    "main": "binary.js",
+    "scripts": {
+        "postinstall": "node ./install-wrangler.js"
+    },
+    "bin": {
+        "wrangler": "./run-wrangler.js",
+        "wrangler1": "./run-wrangler.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/cloudflare/wrangler.git"
+    },
+    "author": "wrangler@cloudflare.com",
+    "license": "MIT OR Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/cloudflare/wrangler-legacy/issues"
+    },
+    "homepage": "https://github.com/cloudflare/wrangler#readme",
+    "keywords": [
+        "wrangler",
+        "cloudflare",
+        "workers",
+        "cloudflare workers",
+        "edge",
+        "compute",
+        "serverless",
+        "serverless application",
+        "serverless module",
+        "wasm",
+        "web",
+        "assembly",
+        "webassembly",
+        "rust",
+        "emscripten",
+        "typescript",
+        "graphql",
+        "router",
+        "http",
+        "cli"
+    ],
+    "dependencies": {
+        "axios": "^0.21.1",
+        "rimraf": "^3.0.2",
+        "tar": "^6.1.10"
+    }
 }

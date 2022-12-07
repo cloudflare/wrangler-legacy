@@ -22,7 +22,7 @@ use project_assets::{ModulesAssets, ServiceWorkerAssets};
 use text_blob::TextBlob;
 use wasm_module::WasmModule;
 
-// TODO: https://github.com/cloudflare/wrangler/issues/1083
+// TODO: https://github.com/cloudflare/wrangler-legacy/issues/1083
 use super::{krate, Package};
 
 pub fn build(
@@ -171,7 +171,7 @@ pub fn build(
         },
         TargetType::Webpack => {
             log::info!("webpack project detected. Publishing...");
-            // TODO: https://github.com/cloudflare/wrangler/issues/850
+            // TODO: https://github.com/cloudflare/wrangler-legacy/issues/850
             let package_dir = target.package_dir()?;
             let bundle = wranglerjs::Bundle::new(&package_dir);
 
