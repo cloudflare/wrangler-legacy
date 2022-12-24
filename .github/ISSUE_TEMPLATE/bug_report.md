@@ -37,6 +37,6 @@ A clear and concise description of what you expected to happen.
 Fill out the following information about your environment.
 
 * operating system:
-* output of `wrangler -V`:
+* output of `wrangler -v`:
 * output of `node -v`:
 * content of `wrangler.toml`:
