@@ -37,7 +37,7 @@ jobs:
             os: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Query version number
         id: get_version
@@ -137,22 +137,22 @@ jobs:
           release_name: ${{ steps.get_version.outputs.VERSION }}
 
       - name: Download wranglerjs tarball
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: wranglerjs
 
       - name: Download Linux tarball
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: linux
 
       - name: Download Windows tarball
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: windows
 
       - name: Download MacOS tarball
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: macos
 
