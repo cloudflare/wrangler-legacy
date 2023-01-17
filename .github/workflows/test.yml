@@ -27,13 +27,13 @@ jobs:
             rust: stable
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # for some reason our caching is causing flakiness
       # temporarily disable it
 
       # - name: Cache Cargo registry
-      #   uses: actions/cache@v2
+      #   uses: actions/cache@v3
       #   with:
       #     path: ~/.cargo/registry
       #     key: ${{ matrix.build }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -41,7 +41,7 @@ jobs:
       #       ${{ matrix.build }}-cargo-registry-
 
       # - name: Cache Cargo index
-      #   uses: actions/cache@v2
+      #   uses: actions/cache@v3
       #   with:
       #     path: ~/.cargo/git
       #     key: ${{ matrix.build }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
@@ -49,7 +49,7 @@ jobs:
       #       ${{ matrix.build }}-cargo-index-
 
       # - name: Cache Cargo build
-      #   uses: actions/cache@v2
+      #   uses: actions/cache@v3
       #   with:
       #     path: target
       #     key: ${{ matrix.build }}-target-${{ hashFiles('**/Cargo.lock') }}
