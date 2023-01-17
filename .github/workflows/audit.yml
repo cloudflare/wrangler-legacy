@@ -16,19 +16,19 @@ jobs:
   security_audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: cargo audit
         uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: npm audit
-        uses: oke-py/npm-audit-action@v1.7.3
+        uses: oke-py/npm-audit-action@v2.4.4
         with:
           dedupe_issues: true
           working_directory: npm
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: changelog-generator audit
-        uses: oke-py/npm-audit-action@v1.7.3
+        uses: oke-py/npm-audit-action@v2.4.4
         with:
           dedupe_issues: true
           working_directory: changelog-generator
