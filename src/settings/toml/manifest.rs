@@ -178,7 +178,7 @@ impl Manifest {
         config_template_doc["compatibility_date"] =
             toml_edit::value(Utc::now().format("%F").to_string());
 
-        // TODO: https://github.com/cloudflare/wrangler/issues/773
+        // TODO: https://github.com/cloudflare/wrangler-legacy/issues/773
 
         let toml = config_template_doc.to_string_in_original_order();
         let manifest = toml::from_str::<Manifest>(&toml)?;

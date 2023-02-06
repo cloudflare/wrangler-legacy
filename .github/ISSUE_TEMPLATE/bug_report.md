@@ -13,7 +13,7 @@ assignees: ''
   https://developers.cloudflare.com/workers/cli-wrangler/install-update#update
 
   Did you search for related issues?
-  https://github.com/cloudflare/wrangler/issues
+  https://github.com/cloudflare/wrangler-legacy/issues
 -->
 
 #### Describe the bug

@@ -10,7 +10,7 @@ assignees: ''
 
 <!--
   Did you search for related issues?
-  https://github.com/cloudflare/wrangler/issues
+  https://github.com/cloudflare/wrangler-legacy/issues
 -->
 
 #### Describe the feature

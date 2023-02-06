@@ -6,8 +6,8 @@
 
 [![crates.io](https://img.shields.io/crates/v/wrangler.svg)](https://crates.io/crates/wrangler) &nbsp;
 [![npm](https://img.shields.io/npm/v/@cloudflare/wrangler.svg)](https://www.npmjs.com/package/@cloudflare/wrangler) &nbsp;
-[![GitHub Actions - Test Status](https://github.com/cloudflare/wrangler/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler/actions) &nbsp;
-[![GitHub Actions - Linter Status](https://github.com/cloudflare/wrangler/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler/actions) &nbsp;
+[![GitHub Actions - Test Status](https://github.com/cloudflare/wrangler-legacy/workflows/Tests/badge.svg)](https://github.com/cloudflare/wrangler-legacy/actions) &nbsp;
+[![GitHub Actions - Linter Status](https://github.com/cloudflare/wrangler-legacy/workflows/Linters/badge.svg)](https://github.com/cloudflare/wrangler-legacy/actions) &nbsp;
 
 `wrangler` is a CLI tool designed for folks who are interested in using [Cloudflare Workers](https://workers.cloudflare.com/).
 
