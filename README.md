@@ -1,6 +1,13 @@
 # 🤠 wrangler
 
-**Note:** If you're looking for the latest version of the `wrangler` package, visit https://github.com/cloudflare/wrangler2
+:stop_sign: This repository was for Wrangler version 1, which is now deprecated and no longer updated.
+
+New versions of Wrangler are maintained in the [Workers SDK repository](https://github.com/cloudflare/workers-sdk).
+
+---
+
+<details>
+<summary>Legacy Documentation</summary>
 
 ![Banner](/banner.png)
 
@@ -203,3 +210,5 @@ All information regarding wrangler or Cloudflare Workers is located in the [Clou
 ## ✨Workers Sites
 
 To learn about deploying static assets using `wrangler`, see the [Workers Sites Quickstart](https://developers.cloudflare.com/workers/sites/).
+
+</details>
