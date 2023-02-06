@@ -37,6 +37,6 @@ A clear and concise description of what you expected to happen.
 Fill out the following information about your environment.
 
 * operating system:
-* output of `wrangler -V` _(if this fails, it's likely you're using Wrangler 2+, please create an issue here instead: https://github.com/cloudflare/workers-sdk)_
+* output of `wrangler -V` _(if this fails, it's likely you're using Wrangler v2+, please create an issue here instead: https://github.com/cloudflare/workers-sdk)_
 * output of `node -v`:
 * content of `wrangler.toml`:
