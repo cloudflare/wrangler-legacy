@@ -1,6 +1,6 @@
 # 🤠 wrangler
 
-**Note:** If you're looking for the latest version of the `wrangler` package, visit https://github.com/cloudflare/wrangler2
+**Note:** If you're looking for the latest version of the `wrangler` package, visit https://github.com/cloudflare/workers-sdk
 
 ![Banner](/banner.png)
 
@@ -17,7 +17,7 @@
 
 You have many options to install wrangler!
 
-For the latest version, see https://github.com/cloudflare/wrangler2
+For the latest version, see https://github.com/cloudflare/workers-sdk
 
 ### Install with `npm`
 

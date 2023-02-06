@@ -153,7 +153,7 @@
 
     So that when @cloudflare/wrangler is installed along wrangler2, they can each be referenced in npm run scripts.
 
-    See https://github.com/cloudflare/wrangler2/pull/40
+    See https://github.com/cloudflare/workers-sdk/pull/40
 
     [tehshrike]: https://github.com/TehShrike
     [pull/2139]: https://github.com/cloudflare/wrangler/pull/2139
