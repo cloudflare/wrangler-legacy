@@ -61,7 +61,7 @@ This part of the release process is handled by GitHub Actions, and our binaries 
 
 ### Edit the release
 
-After CI builds the release binaries and they appear on the [releases page](https://github.com/cloudflare/wrangler/releases), click `Edit` and update release notes.
+After CI builds the release binaries and they appear on the [releases page](https://github.com/cloudflare/wrangler-legacy/releases), click `Edit` and update release notes.
 
 #### For Full Releases
 
@@ -76,7 +76,7 @@ After CI builds the release binaries and they appear on the [releases page](http
 1. If this is a rc.1 or later, the old release candidate testing instructions should be moved to the latest release candidate testing instructions, and replaced with the following message:
 
    ```markdown
-   This beta release is now out of date. If you previously installed this release, you should reinstall with `npm i -g @cloudflare/wrangler@beta` and see what's changed in the latest [release](https://github.com/cloudflare/wrangler/releases).
+   This beta release is now out of date. If you previously installed this release, you should reinstall with `npm i -g @cloudflare/wrangler@beta` and see what's changed in the latest [release](https://github.com/cloudflare/wrangler-legacy/releases).
    ```
 
    The new release candidate should then include updated testing instructions with a small changelog at the top to get folks who installed the old release candidate up to speed.
