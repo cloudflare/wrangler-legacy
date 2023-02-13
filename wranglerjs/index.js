@@ -64,7 +64,7 @@ function filterByExtension(ext) {
   // We can tell webpack to name the generated worker by configuring the output.
   // It's also safe to force that configuration because it mirrors what the
   // runtime does.
-  // https://github.com/cloudflare/wrangler/issues/681
+  // https://github.com/cloudflare/wrangler-legacy/issues/681
   if (config.output === undefined) {
     config.output = {};
   }

@@ -1,13 +1,18 @@
 [package]
 name = "wrangler"
-version = "1.19.13"
+version = "1.20.0"
 authors = ["The Wrangler Team <wrangler@cloudflare.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
 description = "Command-line interface for all things Cloudflare Workers"
 readme = "README.md"
-repository = "https://github.com/cloudflare/wrangler"
-categories = ["wasm", "development-tools", "command-line-utilities", "web-programming"]
+repository = "https://github.com/cloudflare/wrangler-legacy"
+categories = [
+  "wasm",
+  "development-tools",
+  "command-line-utilities",
+  "web-programming",
+]
 
 [dependencies]
 anyhow = { version = "1.0", features = ["backtrace"] }
@@ -21,7 +26,12 @@ chrono = "0.4.19"
 clap = "2.33.3"
 cloudflare = "0.9.0"
 colored_json = "2.1.0"
-config = { version = "0.11.0", default-features = false, features = ["toml", "json", "yaml", "ini"]  }
+config = { version = "0.11.0", default-features = false, features = [
+  "toml",
+  "json",
+  "yaml",
+  "ini",
+] }
 console = "0.14.1"
 dirs = "3.0.1"
 env_logger = "0.8.4"
@@ -42,7 +52,7 @@ oauth2 = "4.1"
 once_cell = "1"
 openssl = { version = "0.10.35", optional = true }
 os-version = "0.2.0"
-path-slash = "0.1.4"
+path-slash = "0.2.1"
 percent-encoding = "2.1.0"
 predicates = "2.0.0"
 prettytable-rs = "0.8.0"
@@ -61,7 +71,14 @@ sys-info = "0.9"
 tempfile = "3.1.0"
 term_size = "0.3"
 text_io = "0.1.8"
-tokio = { version = "1.5.0", default-features = false, features = ["io-std", "time", "macros", "process", "signal", "sync"] }
+tokio = { version = "1.5.0", default-features = false, features = [
+  "io-std",
+  "time",
+  "macros",
+  "process",
+  "signal",
+  "sync",
+] }
 tokio-native-tls = "0.3.0"
 tokio-retry = "0.3"
 tokio-rustls = "0.23.0"

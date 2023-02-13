@@ -102,7 +102,7 @@ mod tests {
 
         // Test #1
         // Tests that the API endpoint base URL can be read from an environment variable
-        let url = "https://github.com/cloudflare/wrangler";
+        let url = "https://github.com/cloudflare/wrangler-legacy";
 
         env::set_var(CF_API_BASE_URL, url);
         let test_environment_url = url::Url::from(&get_environment().unwrap());

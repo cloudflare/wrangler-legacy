@@ -1742,9 +1742,9 @@ dependencies = [
 
 [[package]]
 name = "path-slash"
-version = "0.1.4"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cacbb3c4ff353b534a67fb8d7524d00229da4cb1dc8c79f4db96e375ab5b619"
+checksum = "1e91099d4268b0e11973f036e885d652fb0b21fedcf69738c627f94db6a44f42"
 
 [[package]]
 name = "percent-encoding"
@@ -3170,7 +3170,7 @@ dependencies = [
 
 [[package]]
 name = "wrangler"
-version = "1.19.13"
+version = "1.20.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
