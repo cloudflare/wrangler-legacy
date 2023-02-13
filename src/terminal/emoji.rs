@@ -27,3 +27,4 @@ pub static WARN: Emoji = Emoji("⚠️ ", "");
 pub static WAVING: Emoji = Emoji("👋 ", "");
 pub static WORKER: Emoji = Emoji("👷 ", "");
 pub static X: Emoji = Emoji("❌ ", "");
+pub static NO_ENTRY: Emoji = Emoji("⛔ ", "");
