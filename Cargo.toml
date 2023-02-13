@@ -6,13 +6,16 @@ edition = "2018"
 license = "MIT/Apache-2.0"
 description = "Command-line interface for all things Cloudflare Workers"
 readme = "README.md"
-repository = "https://github.com/cloudflare/wrangler"
+repository = "https://github.com/cloudflare/wrangler-legacy"
 categories = [
   "wasm",
   "development-tools",
   "command-line-utilities",
   "web-programming",
 ]
+
+[badges]
+maintenance = { status = "deprecated" }
 
 [dependencies]
 anyhow = { version = "1.0", features = ["backtrace"] }

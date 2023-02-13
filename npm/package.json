@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cloudflare/wrangler.git"
+    "url": "git+https://github.com/cloudflare/wrangler-legacy.git"
   },
   "author": "wrangler@cloudflare.com",
   "license": "MIT OR Apache-2.0",
   "bugs": {
-    "url": "https://github.com/cloudflare/wrangler/issues"
+    "url": "https://github.com/cloudflare/wrangler-legacy/issues"
   },
-  "homepage": "https://github.com/cloudflare/wrangler#readme",
+  "homepage": "https://github.com/cloudflare/wrangler-legacy#readme",
   "keywords": [
     "wrangler",
     "cloudflare",
