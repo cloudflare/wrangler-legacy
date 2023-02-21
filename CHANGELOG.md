@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.20.1
+
+- ### Maintenance
+
+  - **Add deprecation badge to Cargo.toml - [caass], [pull/2332]**
+
+    [caass]: https://github.com/caass
+    [pull/2332]: https://github.com/cloudflare/wrangler-legacy/pull/2332
+
+  - **Add deprecation message on install Wrangler1 - [JacobMGEvans], [pull/2315] [pull/2314]**
+
+    Additional efforts in deprecation of Wrangler 1
+
+    [jacobmgevans]: https://github.com/JacobMGEvans
+    [pull/2315]: https://github.com/cloudflare/wrangler-legacy/pull/2315
+
+  - **Mark as deprecated and redirect to Workers SDK in README - [mrbbot], [pull/2348]**
+
+    [mrbbot]: https://github.com/mrbbot
+    [pull/2348]: https://github.com/cloudflare/wrangler-legacy/pull/2348
+
+  - **Suggest Wrangler 2 if `wrangler -V` fails - [mrbbot], [pull/2342]**
+
+    [mrbbot]: https://github.com/mrbbot
+    [pull/2342]: https://github.com/cloudflare/wrangler-legacy/pull/2342
+
+  - **Update path-slash to v0.2.1 - [rhysd], [pull/2311]**
+ 
+    [rhysd]: https://github.com/rhysd
+    [pull/2311]: https://github.com/cloudflare/wrangler-legacy/pull/2311
+
+  - **Update README.md - [rozenmd], [pull/2306]**
+
+    [rozenmd]: https://github.com/rozenmd
+    [pull/2306]: https://github.com/cloudflare/wrangler-legacy/pull/2306
+
+  - **Update URLs for Wrangler v1/v2 GitHub repos - [penalosa], [pull/2347]** 
+
+    [penalosa]: https://github.com/penalosa
+    [pull/2347]: https://github.com/cloudflare/wrangler-legacy/pull/2347
+
+  - **Upgrade minimatch - [penalosa], [pull/2349]**
+
+    Resolve `npm audit` for https://github.com/advisories/GHSA-f8q6-p94x-37v3. Closes https://github.com/cloudflare/wrangler-legacy/issues/2326
+
+    [penalosa]: https://github.com/penalosa
+    [pull/2349]: https://github.com/cloudflare/wrangler-legacy/pull/2349
+
 ## 1.20.0
 
 - ### Maintenance

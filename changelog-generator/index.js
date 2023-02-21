@@ -124,7 +124,7 @@ const getMergedPRs = async (octokit, owner, repo, since) => {
   // TODO: The script doesn't handle pagination. If we merge more than 100 pull requests between
   // releases then this becomes a problem. But if we wait that long, we're doing something wrong :)
   let res = await octokit.search.issuesAndPullRequests({
-    q: `repo:cloudflare/wrangler is:pr base:master merged:>=${since} sort:updated-desc`,
+    q: `repo:cloudflare/wrangler-legacy is:pr base:master merged:>=${since} sort:updated-desc`,
   });
 
   console.log(res.url);
@@ -147,7 +147,7 @@ const getClosedIssues = async (octokit, owner, repo, since) => {
   // TODO: The script doesn't handle pagination. If we close more than 100 issues between
   // releases then this becomes a problem. But if we wait that long, we're doing something wrong :)
   let res = await octokit.search.issuesAndPullRequests({
-    q: `repo:cloudflare/wrangler is:issue is:closed closed:>=${since} sort:updated-desc`,
+    q: `repo:cloudflare/wrangler-legacy is:issue is:closed closed:>=${since} sort:updated-desc`,
   });
 
   console.log(res.url);
