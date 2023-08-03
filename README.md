@@ -1,6 +1,6 @@
 # 🤠 wrangler
 
-:stop_sign: This repository was for Wrangler version 1, which is now deprecated and no longer updated.
+:stop_sign: This repository is for Wrangler version 1, which is deprecated and no longer updated. This repository is now archived.
 
 New versions of Wrangler are maintained in the [Workers SDK repository](https://github.com/cloudflare/workers-sdk).
 
